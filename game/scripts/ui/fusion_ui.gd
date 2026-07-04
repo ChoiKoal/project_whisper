@@ -275,7 +275,7 @@ func _add_strip_item(id: String) -> void:
 	var btn := Button.new()
 	btn.flat = true
 	btn.focus_mode = Control.FOCUS_NONE
-	btn.custom_minimum_size = Vector2(150, 34)
+	btn.custom_minimum_size = Vector2(150, 44)  # ≥44px touch target (M6a mobile)
 	btn.pressed.connect(_on_strip_pressed.bind(id))
 
 	var row := HBoxContainer.new()

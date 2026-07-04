@@ -16,6 +16,7 @@
 [ext_resource type="Script" path="res://scripts/world/night_gate_guard.gd" id="14_guard"]
 [ext_resource type="Script" path="res://scripts/ui/pause_menu.gd" id="15_pause"]
 [ext_resource type="Script" path="res://scripts/world/grove_session.gd" id="16_session"]
+[ext_resource type="Script" path="res://scripts/world/touch_controller.gd" id="17_touch"]
 
 [sub_resource type="CircleShape2D" id="col_player"]
 radius = 20.0
@@ -71,6 +72,12 @@ feedback_layer_path = NodePath("../YSortLayer")
 script = ExtResource("13_respawn")
 map_loader_path = NodePath("../Ground")
 ysort_layer_path = NodePath("../YSortLayer")
+
+[node name="TouchController" type="Node2D" parent="."]
+script = ExtResource("17_touch")
+map_loader_path = NodePath("../Ground")
+player_path = NodePath("../YSortLayer/Player")
+interaction_path = NodePath("../Interaction")
 
 [node name="NightGateGuard" type="Node2D" parent="."]
 script = ExtResource("14_guard")

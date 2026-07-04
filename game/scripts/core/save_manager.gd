@@ -384,6 +384,9 @@ func _apply_object_states(states: Array) -> void:
 
 
 func _respawn_entry_for(cell: Vector2i):
+	# O(1) via the respawn manager's index (dense object maps in M6a).
+	if _respawn.has_method("entry_for_cell"):
+		return _respawn.entry_for_cell(cell)
 	for entry: Dictionary in _respawn._tracked:
 		if entry["cell"] == cell:
 			return entry

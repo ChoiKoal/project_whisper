@@ -35,7 +35,9 @@
     "T": {"scene": "tree.tscn", "gatherable": {"item_id": "I4"}, "variants": ["O2A", "O2B", "O2C", "O2D", "O2E", "O2F"]},
     "F": {"scene": "flower.tscn", "gatherable": {"item_id": "I5"}, "variants": ["O1A", "O1B", "O1C", "O1D", "O1E"]},
     "R": {"scene": "rock.tscn", "gatherable": {"item_id": "I6"}},
-    "s": {"scene": "stone.tscn", "gatherable": {"item_id": "I8"}}
+    "s": {"scene": "stone.tscn", "gatherable": {"item_id": "I8"}},
+    "t": {"scene": "grass_tuft.tscn", "gatherable": {"item_id": "I2"}, "_note": "M6a scatter-only (grass tuft, not in layout)"},
+    "h": {"scene": "bush_green.tscn", "gatherable": {"item_id": "I2"}, "_note": "M6a scatter-only (decorative gatherable bush 풀, not in layout)"}
   },
   "landmarks": {
     "1": "world_tree",

@@ -133,7 +133,7 @@ func _add_row(id: String, index: int) -> void:
 	var btn := Button.new()
 	btn.flat = true
 	btn.focus_mode = Control.FOCUS_NONE
-	btn.custom_minimum_size = Vector2(0, 40)
+	btn.custom_minimum_size = Vector2(0, 44)  # ≥44px touch target (M6a mobile)
 	btn.pressed.connect(_on_row_pressed.bind(index))
 
 	var row := HBoxContainer.new()

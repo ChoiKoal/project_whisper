@@ -148,6 +148,37 @@ func _do_interact() -> void:
 		_try_gather_tile(_target_cell)
 
 
+# ---- public tap/click entrypoints (M6a touch) ----------------------------
+
+## Interact with a specific object (gather / use held item / on_interact). Used by
+## the touch controller once the player has reached / is adjacent to a tapped
+## object, bypassing the per-frame facing resolution.
+func interact_with_object(obj: Node) -> void:
+	if obj == null:
+		return
+	var g := obj as Gatherable
+	if _held_item != "" and g != null and _try_use_on_object(g):
+		return
+	if obj.has_method("can_gather") and obj.can_gather():
+		var granted: String = obj.gather()
+		if granted != "":
+			_spawn_feedback(obj.target_point(), granted)
+		return
+	if obj.has_method("on_interact"):
+		obj.on_interact()
+
+
+## Interact with a specific tile cell (place held item / gather tile). Used by the
+## touch controller for tapped tiles (water for D14, VOID for D22, gatherable
+## ground). Returns nothing; no-op if neither placement nor gather applies.
+func interact_with_cell(cell: Vector2i) -> void:
+	if _tilemap.get_cell_source_id(cell) == -1:
+		return
+	if _held_item != "" and _try_place_on_tile(cell):
+		return
+	_try_gather_tile(cell)
+
+
 func _try_gather_tile(cell: Vector2i) -> void:
 	var data := _tilemap.get_cell_tile_data(cell)
 	if data == null:

@@ -18,6 +18,8 @@ var _ysort: Node2D
 
 ## Each entry: {cell, symbol, node, respawn_at (float or -1)}.
 var _tracked: Array = []
+## cell -> tracked entry, for O(1) lookups (save/load with a dense object map).
+var _by_cell: Dictionary = {}
 
 
 func _ready() -> void:
@@ -30,11 +32,25 @@ func _ready() -> void:
 
 
 func _index() -> void:
+	# Build a position→node map once (O(children)) so indexing the (now dense, M6a)
+	# spawn list stays linear instead of O(objects × children).
+	var by_pos: Dictionary = {}
+	if _ysort != null:
+		for ch in _ysort.get_children():
+			if ch is Gatherable:
+				by_pos[(ch as Node2D).position.round()] = ch
 	# Rebuild the tracked list from the loader's spawn record + live children.
 	for entry in _loader.object_spawns:
 		var cell: Vector2i = entry["cell"]
-		var node := _find_object_at(cell)
-		_tracked.append({"cell": cell, "symbol": entry["symbol"], "node": node, "respawn_at": -1.0})
+		var node = by_pos.get(_loader.cell_center_world(cell).round(), null)
+		var te := {"cell": cell, "symbol": entry["symbol"], "node": node, "respawn_at": -1.0}
+		_tracked.append(te)
+		_by_cell[cell] = te
+
+
+## O(1) tracked-entry lookup by cell (used by SaveManager on load).
+func entry_for_cell(cell: Vector2i):
+	return _by_cell.get(cell, null)
 
 
 func _find_object_at(cell: Vector2i) -> Node:
@@ -70,25 +86,15 @@ func _respawn(entry: Dictionary) -> void:
 	if _loader.get_cell_source_id(cell) == 0:
 		entry["respawn_at"] = -1.0
 		return
-	var spec: Dictionary = _loader._legend.get("objects", {}).get(entry["symbol"], {})
-	var node := _rebuild(entry["symbol"], spec, cell)
+	# Deterministic rebuild (same texture variant as the initial spawn) so save /
+	# respawn state matches. All symbol/texture logic lives on the MapLoader.
+	var node := _loader.rebuild_gatherable(entry["symbol"], cell)
 	if node != null:
 		node.position = _loader.cell_center_world(cell)
 		node.y_sort_enabled = true
 		_ysort.add_child(node)
 	entry["node"] = node
 	entry["respawn_at"] = -1.0
-
-
-func _rebuild(sym: String, spec: Dictionary, cell: Vector2i) -> Gatherable:
-	var tex := ""
-	var off := Vector2(0, -24)
-	match sym:
-		"T": tex = "res://assets/objects/tree_a.png"; off = Vector2(0, -120)
-		"F": tex = "res://assets/objects/flower.png"
-		"R": tex = "res://assets/objects/rock.png"
-		"s": tex = "res://assets/objects/stone.png"
-	return _loader._gatherable(spec, cell, tex, off)
 
 
 ## Test helper: force any pending respawns whose time has come.

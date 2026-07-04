@@ -172,7 +172,12 @@ func _test_save_load_roundtrip() -> void:
 	var ticked := Codex.register_failed_fusion("I1", "I2")
 	_check("codex attempted-pair restored (no re-tick)", Codex.hint_gauge() == g0 and not ticked)
 
-	_check("game_time restored", abs(GameState.game_time - exp_time) < 0.01)
+	# GameState.game_time keeps accumulating in _process; load restores the exact
+	# saved value via set_game_time, but the one idle frame awaited after load adds
+	# a single frame's delta on top. Tolerate one generous frame (0.1s) so the
+	# check verifies restoration without racing the real-time clock. (Pre-existing
+	# harness fragility surfaced under heavier scenes; the restore itself is exact.)
+	_check("game_time restored", abs(GameState.game_time - exp_time) < 0.1)
 	_check("player position restored", player_b.global_position.distance_to(exp_pos) < 1.0)
 
 	_check("VOID tile restored", loader_b.get_cell_source_id(void_cell) == 0)

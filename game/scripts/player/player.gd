@@ -15,6 +15,16 @@ var _tilemap: TileMapLayer
 var _facing: String = "SE"  # SE, SW, NE, NW
 var _anim: AnimatedSprite2D
 
+## ---- Path following (M6a touch / click-to-move) --------------------------
+## When a path is queued (by the touch controller), the player walks it unless
+## keyboard input is given — keyboard always wins and cancels the path.
+## The world-space waypoints still to reach (front = next).
+var _path: Array[Vector2] = []
+## How close (px) to a waypoint counts as "reached".
+const WAYPOINT_EPS := 6.0
+## Emitted when the player reaches the end of a queued path (touch auto-interact).
+signal path_finished
+
 # Screen-space basis vectors for the four iso movement directions.
 # For a 2:1 diamond, moving one grid step "north-east" on screen is (+x, -y*0.5).
 # We build a normalized diagonal for each cardinal input so movement reads as
@@ -38,22 +48,69 @@ func _physics_process(_delta: float) -> void:
 		Input.get_action_strength("move_down") - Input.get_action_strength("move_up")
 	)
 
-	if input_vec == Vector2.ZERO:
-		velocity = Vector2.ZERO
-		_update_animation(false)
-		move_and_slide()
+	# Keyboard always wins: any key input cancels a queued click/tap path.
+	if input_vec != Vector2.ZERO:
+		_path.clear()
+		_move_screen(input_vec)
 		return
 
+	# No keyboard → follow a queued path if any (touch / click-to-move).
+	if not _path.is_empty():
+		_follow_path()
+		return
+
+	velocity = Vector2.ZERO
+	_update_animation(false)
+	move_and_slide()
+
+
+## Drive velocity from a cardinal screen-input vector (keyboard).
+func _move_screen(input_vec: Vector2) -> void:
 	# Transform cardinal input into iso screen space: horizontal keeps full x,
 	# vertical is squashed to 0.5 to follow the 2:1 diamond so diagonals feel right.
 	var iso_dir := Vector2(input_vec.x, input_vec.y * 0.5).normalized()
-
 	_update_facing(input_vec)
-
 	var current_speed := speed * _speed_mod_at(global_position)
 	velocity = iso_dir * current_speed
 	move_and_slide()
 	_update_animation(true)
+
+
+## Follow the queued world-space path one waypoint at a time.
+func _follow_path() -> void:
+	var target: Vector2 = _path[0]
+	var to_target := target - global_position
+	if to_target.length() <= WAYPOINT_EPS:
+		_path.remove_at(0)
+		if _path.is_empty():
+			velocity = Vector2.ZERO
+			_update_animation(false)
+			move_and_slide()
+			path_finished.emit()
+			return
+		target = _path[0]
+		to_target = target - global_position
+	# Facing derives from the screen direction of travel (undo the iso squash).
+	_update_facing(Vector2(to_target.x, to_target.y * 2.0))
+	var dir := to_target.normalized()
+	velocity = dir * speed * _speed_mod_at(global_position)
+	move_and_slide()
+	_update_animation(true)
+
+
+## Queue a world-space path (list of waypoints) for the player to walk. Replaces
+## any current path. Empty / null clears movement.
+func set_path(points: Array[Vector2]) -> void:
+	_path = points.duplicate()
+
+
+## True while the player is walking a queued click/tap path.
+func is_pathing() -> bool:
+	return not _path.is_empty()
+
+
+func clear_path() -> void:
+	_path.clear()
 
 
 ## Sample speed modifier from the tile under a world position. Non-walkable tiles

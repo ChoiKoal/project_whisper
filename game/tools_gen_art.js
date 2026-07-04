@@ -666,4 +666,145 @@ save(makeBlob('stone.png', 64, 64, 32, 50, 12, 8, '#b0b0ba', '#6c6c76'), 'stone.
   bud('night_bud_open.png', true);
 })();
 
+// ============================================================================
+// M6a art — seamless-ground edge overlays + object-density variety.
+// Palette (art guide §3) strict. Lighting top-right (soft light), origin at the
+// bottom-center diamond for objects, tile-center for edge overlays.
+// ============================================================================
+
+// ---- Edge / transition overlays (128x64 diamonds, mostly transparent). ------
+// These sit ON TOP of the base grass tile as separate Sprite2D overlays (the
+// base tilemap is never altered, so M4 tile counts stay exact). Each overlay
+// bleeds a neighbour material in from ONE shared diamond edge, fading to
+// transparent toward the tile centre so grass shows through.
+//
+// Direction codes map to the iso grid neighbours (Godot Diamond-Down):
+//   br = neighbour (c+1, r)  bottom-right edge   e = (u + v)
+//   bl = neighbour (c,   r+1) bottom-left  edge  e = (-u + v)
+//   tl = neighbour (c-1, r)  top-left     edge   e = (-u - v)
+//   tr = neighbour (c,   r-1) top-right    edge  e = (u - v)
+// where u=(x-cx)/64, v=(y-cy)/32 (diamond interior |u|+|v|<=1).
+function edgeCoord(dir, u, v) {
+  switch (dir) {
+    case 'br': return u + v;
+    case 'bl': return -u + v;
+    case 'tl': return -u - v;
+    case 'tr': return u - v;
+  }
+  return 0;
+}
+// mat: {lit, dark} hex for the neighbour material. foam: optional shoreline hex.
+function makeEdgeOverlay(name, dir, mat, opts = {}) {
+  const W = 128, H = 64;
+  const cv = makeCanvas(W, H);
+  const lit = hexToRGB(mat.lit);
+  const dark = hexToRGB(mat.dark);
+  const foam = opts.foam ? hexToRGB(opts.foam) : null;
+  const cx = (W - 1) / 2, cy = (H - 1) / 2;
+  // Bleed band: fill where the neighbour edge coord is within [start, 1].
+  const start = opts.start !== undefined ? opts.start : 0.42;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (!inDiamond(x, y, W, H)) continue;
+      const u = (x - cx) / (W / 2), v = (y - cy) / (H / 2);
+      const e = edgeCoord(dir, u, v);
+      if (e < start) continue;                 // toward centre: leave grass showing
+      // alpha ramps 0 at `start` -> full at the edge (e≈1)
+      const t = Math.min(1, (e - start) / (1.0 - start));
+      let a = Math.round(255 * (0.25 + 0.75 * t));
+      // top-right soft light on the bleed
+      let c = (u - v) > 0.15 ? lit : dark;
+      // shoreline foam: a bright waterline right at the boundary band
+      if (foam && e > 0.80 && e <= 0.94) { c = foam; a = 235; }
+      setPx(cv, x, y, c, a);
+    }
+  }
+  save(cv, name);
+}
+// grass→dirt (path-side crumble), grass→water (teal + cream foam), grass→mud.
+for (const dir of ['br', 'bl', 'tl', 'tr']) {
+  makeEdgeOverlay('edge_dirt_' + dir + '.png', dir,
+    { lit: '#8a6a4a', dark: '#5c4433' });
+  makeEdgeOverlay('edge_water_' + dir + '.png', dir,
+    { lit: '#4aa3b8', dark: '#2e6b8a' }, { foam: '#8fd4d9', start: 0.50 });
+  makeEdgeOverlay('edge_mud_' + dir + '.png', dir,
+    { lit: '#5c4433', dark: '#3a2a20' });
+}
+
+// ---- tree_c: taller pine-ish conifer (128x256, top-right light). -----------
+(function () {
+  const W = 128, H = 256;
+  const cv = makeCanvas(W, H);
+  const trunk = hexToRGB('#5c4433');
+  const trunkLit = hexToRGB('#8a6a4a');
+  const needle = hexToRGB('#2e5d3b');
+  const needleLit = hexToRGB('#4d8b4f');
+  // contact shadow
+  const sh = hexToRGB('#000000');
+  for (let y = -6; y <= 6; y++)
+    for (let x = -22; x <= 22; x++) {
+      const dx = x / 22, dy = y / 6;
+      if (dx * dx + dy * dy <= 1.0) setPx(cv, (W >> 1) + x, H - 12 + y, sh, 40);
+    }
+  // narrow trunk
+  fillRect(cv, 58, 176, 70, 244, trunk);
+  fillRect(cv, 58, 176, 62, 244, trunkLit);
+  // stacked triangular tiers (pine), top-right lit
+  const tiers = [[48, 118], [58, 150], [70, 186]]; // [halfWidth at base, baseY]
+  let topY = 40;
+  for (const [halfW, baseY] of tiers) {
+    for (let y = topY; y < baseY; y++) {
+      const t = (y - topY) / (baseY - topY);
+      const hw = Math.floor(halfW * t);
+      for (let x = -hw; x <= hw; x++) {
+        const c = (x - (y - topY) * 0.3) > 4 ? needleLit : needle;
+        setPx(cv, 64 + x, y, c, 255);
+      }
+    }
+    topY = baseY - 40;
+  }
+  save(cv, 'tree_c.png');
+})();
+
+// ---- Flower colour variants (64x64) — palette pinks/violets. ----------------
+// flower.png (base pink) already exists from M2; add two more hues.
+function makeFlower(name, bloomLit, bloomDark) {
+  const cv = makeBlob(name, 64, 64, 32, 28, 12, 12, bloomLit, bloomDark, false);
+  const stem = hexToRGB('#4d8b4f');
+  fillRect(cv, 30, 30, 34, 56, stem);
+  save(cv, name);
+}
+makeFlower('flower_violet.png', '#9e7ad9', '#6b4a9e');   // violet bloom
+makeFlower('flower_pink.png', '#d9b8ff', '#9e7ad9');     // light violet-pink
+
+// ---- bush_green: decorative gatherable bush (풀, I2). 128x128. --------------
+// NOT the gate bush (that is bush_dry/bloom). A rounded green shrub, top-right lit.
+(function () {
+  const W = 128, H = 128;
+  const cv = makeCanvas(W, H);
+  const sh = hexToRGB('#000000');
+  for (let y = -6; y <= 6; y++)
+    for (let x = -28; x <= 28; x++) {
+      const dx = x / 28, dy = y / 6;
+      if (dx * dx + dy * dy <= 1.0) setPx(cv, (W >> 1) + x, H - 12 + y, sh, 40);
+    }
+  const green = hexToRGB('#4d8b4f');
+  const greenLit = hexToRGB('#7ab567');
+  const greenHi = hexToRGB('#a8d982');
+  const blobs = [[64, 80, 32, 26], [46, 90, 22, 18], [86, 90, 22, 18]];
+  for (const [bcx, bcy, brx, bry] of blobs) {
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++) {
+        const dx = (x - bcx) / brx, dy = (y - bcy) / bry;
+        const d = dx * dx + dy * dy;
+        if (d <= 1.0) {
+          let c = (dx - dy) > 0.15 ? greenLit : green;
+          if ((dx - dy) > 0.55) c = greenHi; // top-right highlight
+          setPx(cv, x, y, c, 255);
+        }
+      }
+  }
+  save(cv, 'bush_green.png');
+})();
+
 console.log('DONE');
