@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://bwhispermap001"]
+[gd_scene load_steps=19 format=3 uid="uid://bwhispermap001"]
 
 [ext_resource type="TileSet" uid="uid://bwhisperts0001" path="res://data/whisper_tileset.tres" id="1_tileset"]
 [ext_resource type="Script" path="res://scripts/world/map_builder.gd" id="2_mapbuilder"]
@@ -14,6 +14,10 @@
 [ext_resource type="Script" path="res://scripts/world/tile_highlight.gd" id="12_highlight"]
 [ext_resource type="Script" path="res://scripts/world/interaction_controller.gd" id="13_interaction"]
 [ext_resource type="Script" path="res://scripts/ui/inventory_ui.gd" id="14_inv_ui"]
+[ext_resource type="Texture2D" uid="uid://8t3ugwhvwr20" path="res://assets/objects/cauldron.png" id="15_cauldron"]
+[ext_resource type="Script" path="res://scripts/world/cauldron.gd" id="16_cauldron"]
+[ext_resource type="Script" path="res://scripts/ui/fusion_ui.gd" id="17_fusion_ui"]
+[ext_resource type="Script" path="res://scripts/ui/codex_ui.gd" id="18_codex_ui"]
 
 [sub_resource type="CircleShape2D" id="col_player"]
 radius = 20.0
@@ -94,6 +98,14 @@ texture = ExtResource("6_tree_b")
 script = ExtResource("7_gatherable")
 object_id = "bush_dry"
 
+[node name="Cauldron" type="Sprite2D" parent="YSortLayer"]
+y_sort_enabled = true
+position = Vector2(96, 32)
+offset = Vector2(0, -64)
+texture = ExtResource("15_cauldron")
+script = ExtResource("16_cauldron")
+object_id = "cauldron"
+
 [node name="Player" type="CharacterBody2D" parent="YSortLayer"]
 y_sort_enabled = true
 position = Vector2(0, 0)
@@ -124,3 +136,11 @@ feedback_layer_path = NodePath("../YSortLayer")
 [node name="InventoryUI" type="CanvasLayer" parent="."]
 script = ExtResource("14_inv_ui")
 interaction_path = NodePath("../Interaction")
+
+[node name="FusionUI" type="CanvasLayer" parent="."]
+layer = 2
+script = ExtResource("17_fusion_ui")
+
+[node name="CodexUI" type="CanvasLayer" parent="."]
+layer = 2
+script = ExtResource("18_codex_ui")

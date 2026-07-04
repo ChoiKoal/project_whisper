@@ -307,4 +307,75 @@ save(makeBlob('stone.png', 64, 64, 32, 50, 12, 8, '#b0b0ba', '#6c6c76'), 'stone.
   save(cv, 'grass_tuft.png');
 })();
 
+// ---- Cauldron (솥단지, M3) ----
+// 128x128, ground origin at bottom-center. Dark pot body with a violet glow rim
+// (accent #9e7ad9) around the mouth — reads as the fusion cauldron. Palette per
+// art guide: dark #2a2a33 base, violet accent #9e7ad9, cream highlight #faf5e6.
+(function () {
+  const W = 128, H = 128;
+  const cv = makeCanvas(W, H);
+  const bodyDark = hexToRGB('#2a2a33');
+  const bodyLit = hexToRGB('#3d3d4a');
+  const glow = hexToRGB('#9e7ad9');
+  const glowBright = hexToRGB('#c8a8ec');
+  const brew = hexToRGB('#6b4a9e');
+  const cream = hexToRGB('#faf5e6');
+
+  // contact shadow at the base
+  const sh = hexToRGB('#000000');
+  for (let y = -8; y <= 8; y++)
+    for (let x = -40; x <= 40; x++) {
+      const dx = x / 40, dy = y / 8;
+      if (dx * dx + dy * dy <= 1.0) setPx(cv, (W >> 1) + x, H - 10 + y, sh, 50);
+    }
+
+  // pot body: rounded cauldron. Center ~ (64, 74), radii (44, 38). Only draw the
+  // lower ~3/4 (the belly), leaving an open mouth ellipse on top.
+  const bcx = 64, bcy = 74, brx = 44, bry = 40;
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const dx = (x - bcx) / brx, dy = (y - bcy) / bry;
+      const d = dx * dx + dy * dy;
+      if (d <= 1.0 && y >= 48) {
+        // top-right light on the belly
+        const c = (dx - dy) > 0.15 ? bodyLit : bodyDark;
+        setPx(cv, x, y, c, 255);
+      }
+    }
+
+  // three little feet
+  for (const fx of [40, 64, 88]) {
+    fillRect(cv, fx - 6, 108, fx + 6, 118, bodyDark);
+  }
+
+  // mouth: brewing ellipse at the top of the belly (the violet fusion surface)
+  const mcx = 64, mcy = 52, mrx = 40, mry = 13;
+  for (let y = -mry; y <= mry; y++)
+    for (let x = -mrx; x <= mrx; x++) {
+      const dx = x / mrx, dy = y / mry;
+      if (dx * dx + dy * dy <= 1.0) {
+        // shimmer: alternate brew / glow for a bubbling look
+        const c = (((x >> 2) + (y >> 1)) % 2 === 0) ? brew : glow;
+        setPx(cv, mcx + x, mcy + y, c, 255);
+      }
+    }
+
+  // glow rim: bright violet ring around the mouth
+  for (let a = 0; a < 360; a++) {
+    const rad = a * Math.PI / 180;
+    const rx = mrx + 3, ry = mry + 3;
+    const x = Math.round(mcx + Math.cos(rad) * rx);
+    const y = Math.round(mcy + Math.sin(rad) * ry);
+    setPx(cv, x, y, glowBright, 255);
+    setPx(cv, x, y + 1, glow, 200);
+  }
+
+  // faint cream sparkle above the brew (the "whisper")
+  setPx(cv, 60, 40, cream, 220); setPx(cv, 61, 40, cream, 220);
+  setPx(cv, 72, 36, cream, 180);
+  setPx(cv, 52, 38, cream, 160);
+
+  save(cv, 'cauldron.png');
+})();
+
 console.log('DONE');

@@ -1,0 +1,379 @@
+extends CanvasLayer
+class_name FusionUI
+## Fusion UI (조합) — opened by interacting with the Cauldron.
+##
+## Layout: an inventory strip (click an item to fill the next empty input slot),
+## two input slots + a result slot, and a 조합 button. On fuse:
+##   - match → Fusion consumes inputs, adds output, records Codex; the result slot
+##     shows the output with its flavor text and does a small celebratory scale
+##     pulse (Tween).
+##   - no match → inputs stay, "…반응이 없다" shows, and the 5-dot hint gauge ticks.
+##
+## Colors: bg #2a2a33, text cream #faf5e6, accent #9e7ad9 (art guide §7).
+
+const BG := Color("#2a2a33")
+const PANEL := Color("#33333d")
+const TEXT := Color("#faf5e6")
+const ACCENT := Color("#9e7ad9")
+const SLOT_EMPTY := Color("#1f1f26")
+const DOT_ON := Color("#9e7ad9")
+const DOT_OFF := Color("#44444f")
+
+const CATEGORY_COLOR := {
+	"gather": Color("#7ab567"),
+	"craft": Color("#c89ae0"),
+}
+
+var _root: PanelContainer
+var _strip: HFlowContainer
+var _slot_icons: Array[ColorRect] = []
+var _slot_labels: Array[Label] = []
+var _result_icon: ColorRect
+var _result_name: Label
+var _result_flavor: Label
+var _status: Label
+var _dots: Array[ColorRect] = []
+var _fuse_btn: Button
+
+var _open: bool = false
+## Two input slot ids ("" = empty).
+var _inputs: Array[String] = ["", ""]
+
+
+func _ready() -> void:
+	_build_ui()
+	Inventory.changed.connect(func(): if _open: _rebuild_strip())
+	Codex.hint_gauge_changed.connect(_on_gauge_changed)
+	_set_visible(false)
+	# Autowire: bind every Cauldron already in the scene (deferred so the whole
+	# tree — including YSortLayer children — is present).
+	call_deferred("_autobind_cauldrons")
+
+
+## Bind every Cauldron in the `gatherable` group so interacting opens this UI. No
+## scene node-path wiring needed; the cauldron lives under YSortLayer.
+func _autobind_cauldrons() -> void:
+	for node in get_tree().get_nodes_in_group(Gatherable.GROUP):
+		if node is Cauldron:
+			bind_cauldron(node)
+
+
+## Wire a cauldron's `interacted` signal to open this UI.
+func bind_cauldron(cauldron: Cauldron) -> void:
+	if cauldron != null and not cauldron.interacted.is_connected(open):
+		cauldron.interacted.connect(open)
+
+
+# ---- build ---------------------------------------------------------------
+
+func _build_ui() -> void:
+	_root = PanelContainer.new()
+	_root.set_anchors_preset(Control.PRESET_CENTER)
+	_root.custom_minimum_size = Vector2(520, 460)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = BG
+	sb.set_content_margin_all(18)
+	sb.set_corner_radius_all(8)
+	sb.set_border_width_all(2)
+	sb.border_color = ACCENT
+	_root.add_theme_stylebox_override("panel", sb)
+	add_child(_root)
+
+	var outer := VBoxContainer.new()
+	outer.add_theme_constant_override("separation", 12)
+	_root.add_child(outer)
+
+	var title := Label.new()
+	title.text = "솥단지 — 조합"
+	title.add_theme_color_override("font_color", TEXT)
+	title.add_theme_font_size_override("font_size", 24)
+	outer.add_child(title)
+
+	# --- slots row: [slot0] + [slot1] = [result] ---
+	var slots_row := HBoxContainer.new()
+	slots_row.add_theme_constant_override("separation", 10)
+	slots_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	outer.add_child(slots_row)
+
+	_slot_icons.clear()
+	_slot_labels.clear()
+	for i in 2:
+		if i == 1:
+			slots_row.add_child(_symbol("+"))
+		slots_row.add_child(_make_slot(i))
+	slots_row.add_child(_symbol("="))
+	slots_row.add_child(_make_result_slot())
+
+	# --- clear + fuse buttons ---
+	var btn_row := HBoxContainer.new()
+	btn_row.add_theme_constant_override("separation", 10)
+	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	outer.add_child(btn_row)
+
+	var clear_btn := Button.new()
+	clear_btn.text = "비우기"
+	clear_btn.focus_mode = Control.FOCUS_NONE
+	clear_btn.pressed.connect(_clear_inputs)
+	btn_row.add_child(clear_btn)
+
+	_fuse_btn = Button.new()
+	_fuse_btn.text = "조합"
+	_fuse_btn.focus_mode = Control.FOCUS_NONE
+	_fuse_btn.custom_minimum_size = Vector2(120, 40)
+	_fuse_btn.pressed.connect(_on_fuse_pressed)
+	btn_row.add_child(_fuse_btn)
+
+	# --- status + flavor ---
+	_status = Label.new()
+	_status.add_theme_color_override("font_color", ACCENT)
+	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	outer.add_child(_status)
+
+	_result_flavor = Label.new()
+	_result_flavor.add_theme_color_override("font_color", TEXT)
+	_result_flavor.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_result_flavor.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_result_flavor.custom_minimum_size = Vector2(480, 0)
+	outer.add_child(_result_flavor)
+
+	# --- hint gauge (5 dots) ---
+	var gauge_row := HBoxContainer.new()
+	gauge_row.add_theme_constant_override("separation", 6)
+	gauge_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	outer.add_child(gauge_row)
+	var gauge_lbl := Label.new()
+	gauge_lbl.text = "힌트"
+	gauge_lbl.add_theme_color_override("font_color", TEXT)
+	gauge_row.add_child(gauge_lbl)
+	_dots.clear()
+	for i in Codex.HINT_THRESHOLD:
+		var dot := ColorRect.new()
+		dot.custom_minimum_size = Vector2(14, 14)
+		dot.color = DOT_OFF
+		gauge_row.add_child(dot)
+		_dots.append(dot)
+
+	# --- inventory strip ---
+	var strip_lbl := Label.new()
+	strip_lbl.text = "재료 선택"
+	strip_lbl.add_theme_color_override("font_color", TEXT)
+	outer.add_child(strip_lbl)
+
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(484, 120)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	outer.add_child(scroll)
+
+	_strip = HFlowContainer.new()
+	_strip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(_strip)
+
+
+func _symbol(t: String) -> Label:
+	var l := Label.new()
+	l.text = t
+	l.add_theme_color_override("font_color", TEXT)
+	l.add_theme_font_size_override("font_size", 28)
+	return l
+
+
+func _make_slot(index: int) -> Control:
+	var box := _slot_panel()
+	var v := VBoxContainer.new()
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	box.add_child(v)
+
+	var icon := ColorRect.new()
+	icon.custom_minimum_size = Vector2(56, 56)
+	icon.color = SLOT_EMPTY
+	v.add_child(icon)
+
+	var lbl := Label.new()
+	lbl.text = "비어 있음"
+	lbl.add_theme_color_override("font_color", TEXT)
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(lbl)
+
+	# Click a filled slot to clear just that slot.
+	var btn := Button.new()
+	btn.flat = true
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.set_anchors_preset(Control.PRESET_FULL_RECT)
+	btn.pressed.connect(_on_slot_pressed.bind(index))
+	box.add_child(btn)
+
+	_slot_icons.append(icon)
+	_slot_labels.append(lbl)
+	return box
+
+
+func _make_result_slot() -> Control:
+	var box := _slot_panel()
+	box.name = "ResultSlot"
+	var v := VBoxContainer.new()
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	box.add_child(v)
+
+	_result_icon = ColorRect.new()
+	_result_icon.custom_minimum_size = Vector2(56, 56)
+	_result_icon.color = SLOT_EMPTY
+	v.add_child(_result_icon)
+
+	_result_name = Label.new()
+	_result_name.text = "???"
+	_result_name.add_theme_color_override("font_color", TEXT)
+	_result_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(_result_name)
+	return box
+
+
+func _slot_panel() -> PanelContainer:
+	var box := PanelContainer.new()
+	box.custom_minimum_size = Vector2(96, 96)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = PANEL
+	sb.set_content_margin_all(6)
+	sb.set_corner_radius_all(6)
+	box.add_theme_stylebox_override("panel", sb)
+	return box
+
+
+# ---- open / close --------------------------------------------------------
+
+func open() -> void:
+	_clear_inputs()
+	_status.text = ""
+	_result_flavor.text = ""
+	_rebuild_strip()
+	_refresh_dots()
+	_set_visible(true)
+
+
+func _set_visible(v: bool) -> void:
+	_open = v
+	_root.visible = v
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not _open:
+		return
+	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("interact"):
+		_set_visible(false)
+		get_viewport().set_input_as_handled()
+
+
+# ---- inventory strip -----------------------------------------------------
+
+func _rebuild_strip() -> void:
+	for c in _strip.get_children():
+		c.queue_free()
+	for id: String in Inventory.ids():
+		_add_strip_item(id)
+
+
+func _add_strip_item(id: String) -> void:
+	var btn := Button.new()
+	btn.flat = true
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.custom_minimum_size = Vector2(150, 34)
+	btn.pressed.connect(_on_strip_pressed.bind(id))
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	btn.add_child(row)
+
+	var icon := ColorRect.new()
+	icon.custom_minimum_size = Vector2(24, 24)
+	icon.color = CATEGORY_COLOR.get(ItemDB.item_category(id), Color("#888888"))
+	row.add_child(icon)
+
+	var lbl := Label.new()
+	lbl.text = "%s x%d" % [ItemDB.item_name(id), Inventory.count(id)]
+	lbl.add_theme_color_override("font_color", TEXT)
+	row.add_child(lbl)
+
+	_strip.add_child(btn)
+
+
+func _on_strip_pressed(id: String) -> void:
+	# Fill the first empty slot with this id.
+	for i in _inputs.size():
+		if _inputs[i] == "":
+			_inputs[i] = id
+			_refresh_slots()
+			return
+
+
+func _on_slot_pressed(index: int) -> void:
+	if _inputs[index] != "":
+		_inputs[index] = ""
+		_refresh_slots()
+
+
+func _clear_inputs() -> void:
+	_inputs = ["", ""]
+	_refresh_slots()
+	_result_icon.color = SLOT_EMPTY
+	_result_name.text = "???"
+
+
+func _refresh_slots() -> void:
+	for i in _inputs.size():
+		var id := _inputs[i]
+		if id == "":
+			_slot_icons[i].color = SLOT_EMPTY
+			_slot_labels[i].text = "비어 있음"
+		else:
+			_slot_icons[i].color = CATEGORY_COLOR.get(ItemDB.item_category(id), Color("#888888"))
+			_slot_labels[i].text = ItemDB.item_name(id)
+
+
+# ---- fuse ----------------------------------------------------------------
+
+func _on_fuse_pressed() -> void:
+	if _inputs[0] == "" or _inputs[1] == "":
+		_status.text = "재료를 두 개 넣어라."
+		return
+
+	var res := Fusion.fuse(_inputs[0], _inputs[1])
+	if res["matched"]:
+		var out: String = res["output"]
+		_result_icon.color = CATEGORY_COLOR.get(ItemDB.item_category(out), Color("#888888"))
+		_result_name.text = ItemDB.item_name(out)
+		_result_flavor.text = ItemDB.item_flavor(out)
+		_status.text = "새로운 것을 만들었다!"
+		_pulse_result()
+		# Inputs are consumed; clear the slots but keep the result showing.
+		_inputs = ["", ""]
+		_refresh_slots()
+		_rebuild_strip()
+	else:
+		_status.text = "…반응이 없다"
+		_result_flavor.text = ""
+		if res["hint_revealed"]:
+			_status.text = "…반응이 없다  (힌트가 도감에 나타났다)"
+
+
+func _pulse_result() -> void:
+	var slot := _root.find_child("ResultSlot", true, false) as Control
+	if slot == null:
+		return
+	slot.pivot_offset = slot.size * 0.5
+	slot.scale = Vector2.ONE
+	var tw := create_tween()
+	tw.tween_property(slot, "scale", Vector2(1.25, 1.25), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(slot, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_SINE)
+
+
+# ---- hint gauge dots -----------------------------------------------------
+
+func _on_gauge_changed(_value: int) -> void:
+	if _open:
+		_refresh_dots()
+
+
+func _refresh_dots() -> void:
+	var g := Codex.hint_gauge()
+	for i in _dots.size():
+		_dots[i].color = DOT_ON if i < g else DOT_OFF

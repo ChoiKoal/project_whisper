@@ -25,8 +25,13 @@ func _ready() -> void:
 	var interaction := map.get_node("Interaction") as InteractionController
 	_check("InteractionController present", interaction != null)
 
-	# Gatherable objects registered into the group (7 gatherable + 1 use-only bush).
-	var gatherables := get_tree().get_nodes_in_group(Gatherable.GROUP)
+	# Gatherable objects registered into the group (7 gatherable + 1 use-only bush;
+	# the M3 Cauldron also joins this group but is not a Gatherable — skip it).
+	var all_in_group := get_tree().get_nodes_in_group(Gatherable.GROUP)
+	var gatherables := []
+	for n in all_in_group:
+		if n is Gatherable:
+			gatherables.append(n)
 	_check("gatherable group populated (>=8)", gatherables.size() >= 8)
 
 	# Every expected gather item id is reachable from a world object or a tile.

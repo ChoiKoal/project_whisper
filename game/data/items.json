@@ -1,35 +1,481 @@
 {
   "items": [
-    {"id": "I1", "name": "흙", "category": "gather", "flavor": "부드럽고 축축하다. 무언가 심고 싶어진다.", "placeable_on": [], "usable_on": []},
-    {"id": "I2", "name": "풀", "category": "gather", "flavor": "바람이 없는데도, 아주 가끔 흔들린다.", "placeable_on": [], "usable_on": []},
-    {"id": "I3", "name": "진흙", "category": "gather", "flavor": "발이 푹푹 빠진다. 신발이 없어서 다행이다.", "placeable_on": [], "usable_on": []},
-    {"id": "I4", "name": "나무", "category": "gather", "flavor": "나이테가 어느 순간부터 늘지 않았다.", "placeable_on": [], "usable_on": []},
-    {"id": "I5", "name": "꽃", "category": "gather", "flavor": "지지도, 피지도 않는다. 그냥 계속 이 모습이다.", "placeable_on": [], "usable_on": []},
-    {"id": "I6", "name": "바위", "category": "gather", "flavor": "이 세계에서 가장 변하지 않은 것. …원래 바위는 그렇던가?", "placeable_on": [], "usable_on": []},
-    {"id": "I7", "name": "물", "category": "gather", "flavor": "잔물결 하나 없이 고요하다.", "placeable_on": [], "usable_on": ["bush_dry"]},
-    {"id": "I8", "name": "돌", "category": "gather", "flavor": "손에 딱 맞는다. 던지지는 말자.", "placeable_on": [], "usable_on": []},
-    {"id": "I9", "name": "세계수 정수", "category": "gather", "unique": true, "flavor": "따뜻하다. 이 세계에서 처음 느끼는 온기다.", "placeable_on": [], "usable_on": []},
-    {"id": "D01", "name": "모래", "category": "craft", "flavor": "바위도 물 앞에서는 결국 이렇게 된다.", "placeable_on": [], "usable_on": []},
-    {"id": "D02", "name": "점토", "category": "craft", "flavor": "빚는 대로 모양이 남는다. 세계도 이랬으면.", "placeable_on": [], "usable_on": []},
-    {"id": "D03", "name": "씨앗", "category": "craft", "flavor": "잠들어 있다. 깨울 방법이 있을 것이다.", "placeable_on": [], "usable_on": []},
-    {"id": "D04", "name": "새싹", "category": "craft", "flavor": "이 세계에서 처음으로 '자라는' 것을 봤다.", "placeable_on": [], "usable_on": []},
-    {"id": "D05", "name": "묘목", "category": "craft", "flavor": "아직 작다. 하지만 분명히 어제보다 크다.", "placeable_on": [], "usable_on": []},
-    {"id": "D06", "name": "나무", "category": "craft", "alias_of": "I4", "flavor": "채집한 것과 똑같다. 하지만 이건 내가 키웠다.", "placeable_on": [], "usable_on": []},
-    {"id": "D07", "name": "이끼", "category": "craft", "flavor": "축축하고 보드랍다.", "placeable_on": [], "usable_on": []},
-    {"id": "D08", "name": "이끼바위", "category": "craft", "flavor": "바위도 무언가를 입는다.", "placeable_on": [], "usable_on": []},
-    {"id": "D09", "name": "건초", "category": "craft", "flavor": "마른 풀 냄새. 어딘가 그리운 냄새다.", "placeable_on": [], "usable_on": []},
-    {"id": "D10", "name": "둥지", "category": "craft", "flavor": "새는 없다. 아주 오래전부터.", "placeable_on": [], "usable_on": []},
-    {"id": "D11", "name": "석기", "category": "craft", "flavor": "최초의 도구. 손에 익는다.", "placeable_on": [], "usable_on": []},
-    {"id": "D12", "name": "목재", "category": "craft", "flavor": "반듯하게 다듬었다. 뭐든 만들 수 있을 것 같다.", "placeable_on": [], "usable_on": []},
-    {"id": "D13", "name": "벽돌", "category": "craft", "flavor": "불이 없는 세계라, 돌틀에 눌러 굳혔다.", "placeable_on": [], "usable_on": []},
-    {"id": "D14", "name": "디딤돌", "category": "craft", "key_item": true, "flavor": "물 위에 놓으면 건널 수 있을 것 같다.", "placeable_on": ["T5A", "T5B"], "usable_on": []},
-    {"id": "D15", "name": "늪", "category": "craft", "flavor": "…만들고 나서 후회했다.", "placeable_on": [], "usable_on": []},
-    {"id": "D16", "name": "꽃즙", "category": "craft", "flavor": "달콤한 향. 마시면 안 될 것 같은 색.", "placeable_on": [], "usable_on": []},
-    {"id": "D17", "name": "물감", "category": "craft", "flavor": "이 세계에 없던 색을 만들 수 있다.", "placeable_on": [], "usable_on": []},
-    {"id": "D18", "name": "꽃다발", "category": "craft", "flavor": "줄 사람이 없다. 아직은.", "placeable_on": [], "usable_on": []},
-    {"id": "D19", "name": "생명수", "category": "craft", "key_item": true, "flavor": "빛이 물속에서 숨 쉬고 있다.", "placeable_on": [], "usable_on": []},
-    {"id": "D20", "name": "빛나는 새싹", "category": "craft", "key_item": true, "flavor": "멈춘 세계에서, 이것만은 자라고 있다.", "placeable_on": [], "usable_on": []},
-    {"id": "D21", "name": "정령꽃", "category": "craft", "flavor": "속삭임에 대답하듯, 은은하게 빛난다.", "placeable_on": [], "usable_on": []},
-    {"id": "D22", "name": "어린 세계수", "category": "craft", "key_item": true, "flavor": "비워낸 자리에, 되돌려 줄 차례다.", "placeable_on": ["T0"], "usable_on": []}
+    {
+      "id": "I1",
+      "name": "흙",
+      "category": "gather",
+      "flavor": "부드럽고 축축하다. 무언가 심고 싶어진다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "I2",
+      "name": "풀",
+      "category": "gather",
+      "flavor": "바람이 없는데도, 아주 가끔 흔들린다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "I3",
+      "name": "진흙",
+      "category": "gather",
+      "flavor": "발이 푹푹 빠진다. 신발이 없어서 다행이다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "I4",
+      "name": "나무",
+      "category": "gather",
+      "flavor": "나이테가 어느 순간부터 늘지 않았다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "I5",
+      "name": "꽃",
+      "category": "gather",
+      "flavor": "지지도, 피지도 않는다. 그냥 계속 이 모습이다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "I6",
+      "name": "바위",
+      "category": "gather",
+      "flavor": "이 세계에서 가장 변하지 않은 것. …원래 바위는 그렇던가?",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "I7",
+      "name": "물",
+      "category": "gather",
+      "flavor": "잔물결 하나 없이 고요하다.",
+      "placeable_on": [],
+      "usable_on": [
+        "bush_dry"
+      ]
+    },
+    {
+      "id": "I8",
+      "name": "돌",
+      "category": "gather",
+      "flavor": "손에 딱 맞는다. 던지지는 말자.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "I9",
+      "name": "세계수 정수",
+      "category": "gather",
+      "unique": true,
+      "flavor": "따뜻하다. 이 세계에서 처음 느끼는 온기다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D01",
+      "name": "모래",
+      "category": "craft",
+      "flavor": "바위도 물 앞에서는 결국 이렇게 된다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D02",
+      "name": "점토",
+      "category": "craft",
+      "flavor": "빚는 대로 모양이 남는다. 세계도 이랬으면.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D03",
+      "name": "씨앗",
+      "category": "craft",
+      "flavor": "잠들어 있다. 깨울 방법이 있을 것이다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D04",
+      "name": "새싹",
+      "category": "craft",
+      "flavor": "이 세계에서 처음으로 '자라는' 것을 봤다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D05",
+      "name": "묘목",
+      "category": "craft",
+      "flavor": "아직 작다. 하지만 분명히 어제보다 크다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D06",
+      "name": "나무",
+      "category": "craft",
+      "alias_of": "I4",
+      "flavor": "채집한 것과 똑같다. 하지만 이건 내가 키웠다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D07",
+      "name": "이끼",
+      "category": "craft",
+      "flavor": "축축하고 보드랍다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D08",
+      "name": "이끼바위",
+      "category": "craft",
+      "flavor": "바위도 무언가를 입는다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D09",
+      "name": "건초",
+      "category": "craft",
+      "flavor": "마른 풀 냄새. 어딘가 그리운 냄새다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D10",
+      "name": "둥지",
+      "category": "craft",
+      "flavor": "새는 없다. 아주 오래전부터.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D11",
+      "name": "석기",
+      "category": "craft",
+      "flavor": "최초의 도구. 손에 익는다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D12",
+      "name": "목재",
+      "category": "craft",
+      "flavor": "반듯하게 다듬었다. 뭐든 만들 수 있을 것 같다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D13",
+      "name": "벽돌",
+      "category": "craft",
+      "flavor": "불이 없는 세계라, 돌틀에 눌러 굳혔다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D14",
+      "name": "디딤돌",
+      "category": "craft",
+      "key_item": true,
+      "flavor": "물 위에 놓으면 건널 수 있을 것 같다.",
+      "placeable_on": [
+        "T5A",
+        "T5B"
+      ],
+      "usable_on": []
+    },
+    {
+      "id": "D15",
+      "name": "늪",
+      "category": "craft",
+      "flavor": "…만들고 나서 후회했다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D16",
+      "name": "꽃즙",
+      "category": "craft",
+      "flavor": "달콤한 향. 마시면 안 될 것 같은 색.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D17",
+      "name": "물감",
+      "category": "craft",
+      "flavor": "이 세계에 없던 색을 만들 수 있다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D18",
+      "name": "꽃다발",
+      "category": "craft",
+      "flavor": "줄 사람이 없다. 아직은.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D19",
+      "name": "생명수",
+      "category": "craft",
+      "key_item": true,
+      "flavor": "빛이 물속에서 숨 쉬고 있다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D20",
+      "name": "빛나는 새싹",
+      "category": "craft",
+      "key_item": true,
+      "flavor": "멈춘 세계에서, 이것만은 자라고 있다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D21",
+      "name": "정령꽃",
+      "category": "craft",
+      "flavor": "속삭임에 대답하듯, 은은하게 빛난다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D22",
+      "name": "어린 세계수",
+      "category": "craft",
+      "key_item": true,
+      "flavor": "비워낸 자리에, 되돌려 줄 차례다.",
+      "placeable_on": [
+        "T0"
+      ],
+      "usable_on": []
+    },
+    {
+      "id": "D23",
+      "name": "판자",
+      "category": "craft",
+      "flavor": "목재를 얇고 반듯하게. 문명의 첫 페이지.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D24",
+      "name": "울타리",
+      "category": "craft",
+      "flavor": "지킬 것이 생겼다는 뜻이다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D25",
+      "name": "밧줄",
+      "category": "craft",
+      "flavor": "풀에도 심지가 있다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D26",
+      "name": "바구니",
+      "category": "craft",
+      "flavor": "담을 것을 찾아다니게 된다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D27",
+      "name": "낚싯대",
+      "category": "craft",
+      "flavor": "…걸리는 게 없다. 이 세계의 물에는 아무도 없다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D28",
+      "name": "흙벽돌",
+      "category": "craft",
+      "flavor": "햇빛에 말린 벽돌. 불이 없어도 단단하다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D29",
+      "name": "화분",
+      "category": "craft",
+      "flavor": "꽃에게 작은 세계를 선물했다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D30",
+      "name": "모래성",
+      "category": "craft",
+      "flavor": "금방 무너질 걸 알면서도 만들었다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D31",
+      "name": "조약돌",
+      "category": "craft",
+      "flavor": "물이 오래 쓰다듬은 돌.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D32",
+      "name": "물레방아",
+      "category": "craft",
+      "flavor": "아직 돌지 않는다. 흐르는 시간이 없어서.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D33",
+      "name": "나무다리",
+      "category": "craft",
+      "flavor": "디딤돌보다 안전하게. 누군가 뒤따라올 것처럼.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D34",
+      "name": "화환",
+      "category": "craft",
+      "flavor": "축하할 일을 만들고 싶어진다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D35",
+      "name": "향수",
+      "category": "craft",
+      "flavor": "시들지 않는 꽃의 향기를 병에 담았다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D36",
+      "name": "비료",
+      "category": "craft",
+      "flavor": "좋은 흙은 만들어지는 것이다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D37",
+      "name": "옥토",
+      "category": "craft",
+      "flavor": "생명을 기다리는 흙.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D38",
+      "name": "텃밭",
+      "category": "craft",
+      "flavor": "심고, 기다리고, 돌보는 곳.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D39",
+      "name": "클로버",
+      "category": "craft",
+      "flavor": "행운… 이 세계에도 있을까.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D40",
+      "name": "수련",
+      "category": "craft",
+      "flavor": "늪에도 꽃은 핀다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D41",
+      "name": "연꽃",
+      "category": "craft",
+      "flavor": "생명수를 머금고, 늪의 꽃이 빛이 되었다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D42",
+      "name": "정원",
+      "category": "craft",
+      "flavor": "울타리 안에 나만의 작은 계절.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D43",
+      "name": "새집",
+      "category": "craft",
+      "flavor": "둥지를 지붕 아래로. 와 줄 새를 기다린다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D44",
+      "name": "허수아비",
+      "category": "craft",
+      "flavor": "지킬 새가 없다. 그래도 세워뒀다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D45",
+      "name": "돌탑",
+      "category": "craft",
+      "flavor": "돌 하나에 소원 하나.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D46",
+      "name": "벽",
+      "category": "craft",
+      "flavor": "막기 위해서가 아니라, 기대기 위해서.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D47",
+      "name": "축복받은 가지",
+      "category": "craft",
+      "flavor": "생명수가 스민 가지. 지팡이 같기도 하다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D48",
+      "name": "등불꽃",
+      "category": "craft",
+      "flavor": "정령꽃을 바구니에 담으니, 등불이 되었다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D49",
+      "name": "생명의 정원",
+      "category": "craft",
+      "flavor": "정원이 숨을 쉰다. 세계가 부러워할 만큼.",
+      "placeable_on": [],
+      "usable_on": []
+    }
   ]
 }

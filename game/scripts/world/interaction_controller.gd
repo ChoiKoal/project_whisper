@@ -39,8 +39,11 @@ var _feedback_layer: Node
 ## Currently held item id (from inventory selection), or "" for none.
 var _held_item: String = ""
 
-## Current frame's resolved target.
-var _target_object: Gatherable = null
+## Current frame's resolved target. Any node in the `gatherable` group that
+## implements the target_point()/can_gather()/gather() interface (Gatherable, or
+## a duck-typed object like Cauldron). Typed as Node2D so non-Gatherable
+## interactables (Cauldron) are supported.
+var _target_object: Node = null
 var _target_cell: Vector2i = Vector2i.ZERO
 var _has_tile_target: bool = false
 
@@ -81,17 +84,16 @@ func _resolve_target() -> void:
 	if _player == null or _tilemap == null:
 		return
 
-	# Prefer the nearest in-reach gatherable/usable object.
-	var best: Gatherable = null
+	# Prefer the nearest in-reach interactable object (Gatherable or Cauldron).
+	var best: Node = null
 	var best_d := OBJECT_REACH
 	for node in get_tree().get_nodes_in_group(Gatherable.GROUP):
-		var g := node as Gatherable
-		if g == null:
+		if not node.has_method("target_point"):
 			continue
-		var d := g.target_point().distance_to(_player.global_position)
+		var d: float = node.target_point().distance_to(_player.global_position)
 		if d <= best_d:
 			best_d = d
-			best = g
+			best = node
 	if best != null:
 		_target_object = best
 		return
@@ -121,21 +123,27 @@ func _cell_center_world(cell: Vector2i) -> Vector2:
 # ---- interaction ---------------------------------------------------------
 
 func _do_interact() -> void:
+	var obj := _target_object as Gatherable
 	# 1. Held item: try placement (tile) or use (object) first.
 	if _held_item != "":
-		if _target_object != null and _try_use_on_object(_target_object):
+		if obj != null and _try_use_on_object(obj):
 			return
 		if _has_tile_target and _try_place_on_tile(_target_cell):
 			return
 
 	# 2. Gather a targeted object.
 	if _target_object != null and _target_object.can_gather():
-		var granted := _target_object.gather()
+		var granted: String = _target_object.gather()
 		if granted != "":
 			_spawn_feedback(_target_object.target_point(), granted)
 		return
 
-	# 3. Gather a tile.
+	# 3. Non-gather interactable (e.g. Cauldron opens the Fusion UI).
+	if _target_object != null and _target_object.has_method("on_interact"):
+		_target_object.on_interact()
+		return
+
+	# 4. Gather a tile.
 	if _has_tile_target:
 		_try_gather_tile(_target_cell)
 
