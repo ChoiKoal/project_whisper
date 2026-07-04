@@ -77,6 +77,25 @@ func _update_facing(input_vec: Vector2) -> void:
 		_facing = "SW" if input_vec.y > 0 else "NE"
 
 
+## Current cardinal facing string (SE/SW/NE/NW), read by the interaction system.
+func get_facing() -> String:
+	return _facing
+
+
+## Grid-space step for the current facing, used to find the facing-adjacent cell.
+## In this iso setup the four cardinal inputs map to the four diagonal-screen
+## directions; the corresponding tile-grid neighbor is:
+##   SE (input +x) -> +x,  NW (input -x) -> -x,
+##   SW (input +y) -> +y,  NE (input -y) -> -y.
+func facing_cell_step() -> Vector2i:
+	match _facing:
+		"SE": return Vector2i(1, 0)
+		"NW": return Vector2i(-1, 0)
+		"SW": return Vector2i(0, 1)
+		"NE": return Vector2i(0, -1)
+	return Vector2i(1, 0)
+
+
 func _update_animation(moving: bool) -> void:
 	if _anim == null:
 		return

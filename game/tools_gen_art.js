@@ -249,4 +249,62 @@ function makeCharSheet() {
 }
 makeCharSheet();
 
+// ---- Small gatherable objects (M2) ----
+// 64x64 sprites, ground origin at bottom-center. Placed via Sprite2D offset so
+// the object's base sits on the tile it occupies. Simple geometric placeholders.
+function makeBlob(name, W, H, cx, cy, rx, ry, litHex, darkHex, groundShadow = true) {
+  const cv = makeCanvas(W, H);
+  const lit = hexToRGB(litHex);
+  const dark = hexToRGB(darkHex);
+  if (groundShadow) {
+    // faint contact ellipse shadow at the base
+    const sh = hexToRGB('#000000');
+    for (let y = -6; y <= 6; y++)
+      for (let x = -18; x <= 18; x++) {
+        const dx = x / 18, dy = y / 6;
+        if (dx * dx + dy * dy <= 1.0) setPx(cv, (W >> 1) + x, H - 8 + y, sh, 40);
+      }
+  }
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const dx = (x - cx) / rx, dy = (y - cy) / ry;
+      if (dx * dx + dy * dy <= 1.0) {
+        // top-right light
+        const c = (dx - dy) > 0.15 ? lit : dark;
+        setPx(cv, x, y, c, 255);
+      }
+    }
+  return cv;
+}
+
+// Rock (I6): grey rounded boulder.
+save(makeBlob('rock.png', 64, 64, 32, 40, 20, 16, '#9a9aa4', '#5c5c66'), 'rock.png');
+// Stone (I8): small grey pebble, low to the ground.
+save(makeBlob('stone.png', 64, 64, 32, 50, 12, 8, '#b0b0ba', '#6c6c76'), 'stone.png');
+
+// Flower (I5): green stem + pink bloom.
+(function () {
+  const cv = makeBlob('flower.png', 64, 64, 32, 28, 12, 12, '#f0a8b8', '#c86a86', false);
+  const stem = hexToRGB('#4d8b4f');
+  fillRect(cv, 30, 30, 34, 56, stem); // stem to ground
+  save(cv, 'flower.png');
+})();
+
+// Grass tuft (I2): a small clump of green blades.
+(function () {
+  const cv = makeCanvas(64, 64);
+  const g1 = hexToRGB('#7ab567'), g2 = hexToRGB('#4d8b4f');
+  for (let b = 0; b < 9; b++) {
+    const bx = 16 + b * 4;
+    const h = 18 + ((b * 7) % 12);
+    const c = b % 2 === 0 ? g1 : g2;
+    for (let y = 0; y < h; y++) {
+      const lean = Math.floor((y / h) * ((b % 3) - 1) * 4);
+      setPx(cv, bx + lean, 56 - y, c);
+      setPx(cv, bx + lean + 1, 56 - y, c);
+    }
+  }
+  save(cv, 'grass_tuft.png');
+})();
+
 console.log('DONE');

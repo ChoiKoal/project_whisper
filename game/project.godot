@@ -13,6 +13,8 @@ config/features=PackedStringArray("4.5", "GL Compatibility")
 [autoload]
 
 GameState="*res://scripts/core/game_state.gd"
+ItemDB="*res://scripts/core/item_db.gd"
+Inventory="*res://scripts/core/inventory.gd"
 
 [display]
 

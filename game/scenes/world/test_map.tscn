@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://bwhispermap001"]
+[gd_scene load_steps=15 format=3 uid="uid://bwhispermap001"]
 
 [ext_resource type="TileSet" uid="uid://bwhisperts0001" path="res://data/whisper_tileset.tres" id="1_tileset"]
 [ext_resource type="Script" path="res://scripts/world/map_builder.gd" id="2_mapbuilder"]
@@ -6,6 +6,14 @@
 [ext_resource type="SpriteFrames" uid="uid://bwhisperpf0001" path="res://data/player_frames.tres" id="4_frames"]
 [ext_resource type="Texture2D" uid="uid://cabg5m43s34gd" path="res://assets/objects/tree_a.png" id="5_tree_a"]
 [ext_resource type="Texture2D" uid="uid://c0vgv5v7ymimg" path="res://assets/objects/tree_b.png" id="6_tree_b"]
+[ext_resource type="Script" path="res://scripts/world/gatherable.gd" id="7_gatherable"]
+[ext_resource type="Texture2D" uid="uid://d0nyid2kbkliy" path="res://assets/objects/rock.png" id="8_rock"]
+[ext_resource type="Texture2D" uid="uid://ctwm7qaiad6g3" path="res://assets/objects/stone.png" id="9_stone"]
+[ext_resource type="Texture2D" uid="uid://ddn4ea2ff325d" path="res://assets/objects/flower.png" id="10_flower"]
+[ext_resource type="Texture2D" uid="uid://hli05e421s6q" path="res://assets/objects/grass_tuft.png" id="11_grass"]
+[ext_resource type="Script" path="res://scripts/world/tile_highlight.gd" id="12_highlight"]
+[ext_resource type="Script" path="res://scripts/world/interaction_controller.gd" id="13_interaction"]
+[ext_resource type="Script" path="res://scripts/ui/inventory_ui.gd" id="14_inv_ui"]
 
 [sub_resource type="CircleShape2D" id="col_player"]
 radius = 20.0
@@ -16,6 +24,9 @@ radius = 20.0
 tile_set = ExtResource("1_tileset")
 script = ExtResource("2_mapbuilder")
 
+[node name="TileHighlight" type="Node2D" parent="."]
+script = ExtResource("12_highlight")
+
 [node name="YSortLayer" type="Node2D" parent="."]
 y_sort_enabled = true
 
@@ -24,18 +35,64 @@ y_sort_enabled = true
 position = Vector2(320, 200)
 offset = Vector2(0, -120)
 texture = ExtResource("5_tree_a")
+script = ExtResource("7_gatherable")
+item_id = "I4"
 
 [node name="TreeB" type="Sprite2D" parent="YSortLayer"]
 y_sort_enabled = true
 position = Vector2(0, 320)
 offset = Vector2(0, -120)
 texture = ExtResource("6_tree_b")
+script = ExtResource("7_gatherable")
+item_id = "I4"
 
 [node name="TreeC" type="Sprite2D" parent="YSortLayer"]
 y_sort_enabled = true
 position = Vector2(-260, 120)
 offset = Vector2(0, -120)
 texture = ExtResource("5_tree_a")
+script = ExtResource("7_gatherable")
+item_id = "I4"
+
+[node name="RockA" type="Sprite2D" parent="YSortLayer"]
+y_sort_enabled = true
+position = Vector2(128, 128)
+offset = Vector2(0, -24)
+texture = ExtResource("8_rock")
+script = ExtResource("7_gatherable")
+item_id = "I6"
+
+[node name="StoneA" type="Sprite2D" parent="YSortLayer"]
+y_sort_enabled = true
+position = Vector2(-128, 128)
+offset = Vector2(0, -24)
+texture = ExtResource("9_stone")
+script = ExtResource("7_gatherable")
+item_id = "I8"
+
+[node name="FlowerA" type="Sprite2D" parent="YSortLayer"]
+y_sort_enabled = true
+position = Vector2(128, 64)
+offset = Vector2(0, -24)
+texture = ExtResource("10_flower")
+script = ExtResource("7_gatherable")
+item_id = "I5"
+
+[node name="GrassTuftA" type="Sprite2D" parent="YSortLayer"]
+y_sort_enabled = true
+position = Vector2(0, 128)
+offset = Vector2(0, -24)
+texture = ExtResource("11_grass")
+script = ExtResource("7_gatherable")
+item_id = "I2"
+
+[node name="BushDry" type="Sprite2D" parent="YSortLayer"]
+y_sort_enabled = true
+position = Vector2(-128, 256)
+offset = Vector2(0, -80)
+texture = ExtResource("6_tree_b")
+script = ExtResource("7_gatherable")
+object_id = "bush_dry"
 
 [node name="Player" type="CharacterBody2D" parent="YSortLayer"]
 y_sort_enabled = true
@@ -56,3 +113,14 @@ shape = SubResource("col_player")
 [node name="Camera2D" type="Camera2D" parent="YSortLayer/Player"]
 position_smoothing_enabled = true
 position_smoothing_speed = 5.0
+
+[node name="Interaction" type="Node2D" parent="."]
+script = ExtResource("13_interaction")
+player_path = NodePath("../YSortLayer/Player")
+tilemap_path = NodePath("../Ground")
+highlight_path = NodePath("../TileHighlight")
+feedback_layer_path = NodePath("../YSortLayer")
+
+[node name="InventoryUI" type="CanvasLayer" parent="."]
+script = ExtResource("14_inv_ui")
+interaction_path = NodePath("../Interaction")
