@@ -1,0 +1,46 @@
+{
+  "_comment": "Project Whisper 시작의 숲 legend. Symbol -> (tileset source, object scene). Parsed by MapLoader. source ids == tile ids (SOURCE_TO_TILE_ID). 기획 수정 = 이 파일 + map_layout.txt 수정.",
+  "tiles": {
+    "G": {"source": 2, "tile_id": "T2A"},
+    "g": {"source": 2, "tile_id": "T2A", "variants": ["T2B", "T2C", "T2D"], "variant_random": true},
+    "D": {"source": 1, "tile_id": "T1"},
+    "M": {"source": 7, "tile_id": "T4", "speed_mult": 0.5},
+    "W": {"source": 8, "tile_id": "T5A", "walkable": false},
+    "w": {"source": 9, "tile_id": "T5B", "walkable": false},
+    "m": {"source": 10, "tile_id": "T5M", "walkable": false, "glow": "violet"},
+    "V": {"source": 0, "tile_id": "T0", "walkable": false, "void": true},
+    "S": {"source": 2, "tile_id": "T2A", "spawn": true},
+    "C": {"source": 2, "tile_id": "T2A"},
+    "U": {"source": 2, "tile_id": "T2A"},
+    "K": {"source": 8, "tile_id": "T5A", "walkable": false, "place_slot": "D14"},
+    "N": {"source": 2, "tile_id": "T2A", "gate": "G3_night", "walkable_when": "night"},
+    "B": {"source": 2, "tile_id": "T2A"},
+    "O": {"source": 2, "tile_id": "T2A"},
+    "T": {"source": 2, "tile_id": "T2A"},
+    "F": {"source": 2, "tile_id": "T2A"},
+    "R": {"source": 2, "tile_id": "T2A"},
+    "s": {"source": 2, "tile_id": "T2A"},
+    "1": {"source": 2, "tile_id": "T2A"},
+    "2": {"source": 2, "tile_id": "T2A"},
+    "3": {"source": 2, "tile_id": "T2A"},
+    "4": {"source": 2, "tile_id": "T2A"}
+  },
+  "objects": {
+    "C": {"scene": "cauldron.tscn", "object_id": "cauldron"},
+    "U": {"scene": "rest_stump.tscn", "object_id": "rest_stump"},
+    "B": {"scene": "bush_dry.tscn", "object_id": "bush_dry", "gate": "G2"},
+    "N": {"scene": "night_gate.tscn", "object_id": "night_bloom_gate", "gate": "G3"},
+    "O": {"scene": "world_tree.tscn", "object_id": "world_tree", "gatherable": {"item_id": "I9", "unique": true}, "gate": "G4"},
+    "m": {"scene": "mystic_water.tscn", "object_id": "mystic_water", "gatherable": {"item_id": "I7"}},
+    "T": {"scene": "tree.tscn", "gatherable": {"item_id": "I4"}, "variants": ["O2A", "O2B", "O2C", "O2D", "O2E", "O2F"]},
+    "F": {"scene": "flower.tscn", "gatherable": {"item_id": "I5"}, "variants": ["O1A", "O1B", "O1C", "O1D", "O1E"]},
+    "R": {"scene": "rock.tscn", "gatherable": {"item_id": "I6"}},
+    "s": {"scene": "stone.tscn", "gatherable": {"item_id": "I8"}}
+  },
+  "landmarks": {
+    "1": "world_tree",
+    "2": "cairn",
+    "3": "gate_hint_G3",
+    "4": "tutorial_tree"
+  }
+}

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bwhisperm4harness"]
+
+[ext_resource type="Script" path="res://scenes/dev/m4_test_harness.gd" id="1_m4"]
+
+[node name="M4Harness" type="Node"]
+script = ExtResource("1_m4")

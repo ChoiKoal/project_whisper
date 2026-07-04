@@ -1,0 +1,104 @@
+[gd_scene load_steps=15 format=3 uid="uid://bwhispergrove01"]
+
+[ext_resource type="TileSet" uid="uid://bwhisperts0001" path="res://data/whisper_tileset.tres" id="1_tileset"]
+[ext_resource type="Script" path="res://scripts/world/map_loader.gd" id="2_maploader"]
+[ext_resource type="Script" path="res://scripts/player/player.gd" id="3_player"]
+[ext_resource type="SpriteFrames" uid="uid://bwhisperpf0001" path="res://data/player_frames.tres" id="4_frames"]
+[ext_resource type="Script" path="res://scripts/world/tile_highlight.gd" id="5_highlight"]
+[ext_resource type="Script" path="res://scripts/world/interaction_controller.gd" id="6_interaction"]
+[ext_resource type="Script" path="res://scripts/ui/inventory_ui.gd" id="7_inv_ui"]
+[ext_resource type="Script" path="res://scripts/ui/fusion_ui.gd" id="8_fusion_ui"]
+[ext_resource type="Script" path="res://scripts/ui/codex_ui.gd" id="9_codex_ui"]
+[ext_resource type="Script" path="res://scripts/world/day_night.gd" id="10_daynight"]
+[ext_resource type="Script" path="res://scripts/ui/time_hud.gd" id="11_timehud"]
+[ext_resource type="Script" path="res://scripts/world/clear_sequence.gd" id="12_clear"]
+[ext_resource type="Script" path="res://scripts/world/object_respawn.gd" id="13_respawn"]
+[ext_resource type="Script" path="res://scripts/world/night_gate_guard.gd" id="14_guard"]
+
+[sub_resource type="CircleShape2D" id="col_player"]
+radius = 20.0
+
+[node name="StartingGrove" type="Node2D"]
+
+[node name="DayNight" type="CanvasModulate" parent="."]
+script = ExtResource("10_daynight")
+
+[node name="Ground" type="TileMapLayer" parent="."]
+tile_set = ExtResource("1_tileset")
+script = ExtResource("2_maploader")
+ysort_layer_path = NodePath("../YSortLayer")
+feedback_layer_path = NodePath("../YSortLayer")
+player_path = NodePath("../YSortLayer/Player")
+fade_rect_path = NodePath("../FadeLayer/Fade")
+
+[node name="TileHighlight" type="Node2D" parent="."]
+script = ExtResource("5_highlight")
+
+[node name="YSortLayer" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="Player" type="CharacterBody2D" parent="YSortLayer"]
+y_sort_enabled = true
+position = Vector2(0, 0)
+motion_mode = 1
+script = ExtResource("3_player")
+tilemap_path = NodePath("../../Ground")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="YSortLayer/Player"]
+position = Vector2(0, -40)
+scale = Vector2(1.25, 1.25)
+sprite_frames = ExtResource("4_frames")
+animation = &"idle_SE"
+autoplay = "idle_SE"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="YSortLayer/Player"]
+shape = SubResource("col_player")
+
+[node name="Camera2D" type="Camera2D" parent="YSortLayer/Player"]
+position_smoothing_enabled = true
+position_smoothing_speed = 5.0
+
+[node name="Interaction" type="Node2D" parent="."]
+script = ExtResource("6_interaction")
+player_path = NodePath("../YSortLayer/Player")
+tilemap_path = NodePath("../Ground")
+highlight_path = NodePath("../TileHighlight")
+feedback_layer_path = NodePath("../YSortLayer")
+
+[node name="ObjectRespawn" type="Node" parent="."]
+script = ExtResource("13_respawn")
+map_loader_path = NodePath("../Ground")
+ysort_layer_path = NodePath("../YSortLayer")
+
+[node name="NightGateGuard" type="Node2D" parent="."]
+script = ExtResource("14_guard")
+player_path = NodePath("../YSortLayer/Player")
+feedback_layer_path = NodePath("../YSortLayer")
+
+[node name="InventoryUI" type="CanvasLayer" parent="."]
+script = ExtResource("7_inv_ui")
+interaction_path = NodePath("../Interaction")
+
+[node name="FusionUI" type="CanvasLayer" parent="."]
+layer = 2
+script = ExtResource("8_fusion_ui")
+
+[node name="CodexUI" type="CanvasLayer" parent="."]
+layer = 2
+script = ExtResource("9_codex_ui")
+
+[node name="TimeHUD" type="CanvasLayer" parent="."]
+script = ExtResource("11_timehud")
+
+[node name="ClearSequence" type="CanvasLayer" parent="."]
+script = ExtResource("12_clear")
+
+[node name="FadeLayer" type="CanvasLayer" parent="."]
+layer = 8
+
+[node name="Fade" type="ColorRect" parent="FadeLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.03, 0.02, 0.05, 1)
+visible = false

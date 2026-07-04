@@ -227,7 +227,7 @@ func _try_use_on_object(obj: Gatherable) -> bool:
 ## Data-driven: source ids equal tile ids per the tileset convention.
 const SOURCE_TO_TILE_ID := {
 	0: "T0", 1: "T1", 2: "T2A", 3: "T2B", 4: "T2C", 5: "T2D",
-	7: "T4", 8: "T5A", 9: "T5B",
+	7: "T4", 8: "T5A", 9: "T5B", 10: "T5M",
 }
 
 func _logical_tile_id(cell: Vector2i) -> String:

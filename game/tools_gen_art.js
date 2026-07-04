@@ -378,4 +378,292 @@ save(makeBlob('stone.png', 64, 64, 32, 50, 12, 8, '#b0b0ba', '#6c6c76'), 'stone.
   save(cv, 'cauldron.png');
 })();
 
+// ============================================================================
+// M4 art — 시작의 숲 landmarks & gates.
+// Palette (art guide §3): green #4d8b4f/#7ab567, brown #5c4433/#8a6a4a,
+// violet #6b4a9e/#9e7ad9/#d9b8ff, moss #4d8b4f, cream #faf5e6.
+// All objects: bottom-center ground origin; violet glow baked as a separate
+// *_glow.png additive layer (kept out of CanvasModulate so night makes it pop).
+// ============================================================================
+
+// ---- Dry bush (G2, bush_dry). 128x128, dry brown/grey, thorny clumps. ----
+(function () {
+  const W = 128, H = 128;
+  const cv = makeCanvas(W, H);
+  // contact shadow
+  const sh = hexToRGB('#000000');
+  for (let y = -6; y <= 6; y++)
+    for (let x = -30; x <= 30; x++) {
+      const dx = x / 30, dy = y / 6;
+      if (dx * dx + dy * dy <= 1.0) setPx(cv, (W >> 1) + x, H - 10 + y, sh, 40);
+    }
+  const dry = hexToRGB('#8a6a4a');      // dry brown
+  const dryDark = hexToRGB('#5c4433');
+  const grey = hexToRGB('#6e6e7a');     // dead grey
+  // three overlapping dry blobs
+  const blobs = [[64, 78, 30, 26], [44, 88, 22, 18], [86, 90, 20, 16]];
+  for (const [bcx, bcy, brx, bry] of blobs) {
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++) {
+        const dx = (x - bcx) / brx, dy = (y - bcy) / bry;
+        if (dx * dx + dy * dy <= 1.0) {
+          const c = (dx - dy) > 0.2 ? dry : dryDark;
+          setPx(cv, x, y, c, 255);
+        }
+      }
+  }
+  // grey dead twigs sticking up
+  let seed = 99;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  for (let t = 0; t < 14; t++) {
+    const bx = 40 + Math.floor(rnd() * 48);
+    const h = 14 + Math.floor(rnd() * 22);
+    for (let y = 0; y < h; y++) {
+      const lean = Math.floor((y / h) * (rnd() * 6 - 3));
+      setPx(cv, bx + lean, 70 - y, grey);
+    }
+  }
+  save(cv, 'bush_dry.png');
+})();
+
+// ---- Bloomed bush (G2 after I7 water). Same silhouette, green + violet flowers. ----
+(function () {
+  const W = 128, H = 128;
+  const cv = makeCanvas(W, H);
+  const sh = hexToRGB('#000000');
+  for (let y = -6; y <= 6; y++)
+    for (let x = -30; x <= 30; x++) {
+      const dx = x / 30, dy = y / 6;
+      if (dx * dx + dy * dy <= 1.0) setPx(cv, (W >> 1) + x, H - 10 + y, sh, 40);
+    }
+  const green = hexToRGB('#4d8b4f');
+  const greenLit = hexToRGB('#7ab567');
+  const bloom = hexToRGB('#d9b8ff');
+  const blobs = [[64, 78, 30, 26], [44, 88, 22, 18], [86, 90, 20, 16]];
+  for (const [bcx, bcy, brx, bry] of blobs) {
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++) {
+        const dx = (x - bcx) / brx, dy = (y - bcy) / bry;
+        if (dx * dx + dy * dy <= 1.0) {
+          const c = (dx - dy) > 0.2 ? greenLit : green;
+          setPx(cv, x, y, c, 255);
+        }
+      }
+  }
+  let seed = 7;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  for (let f = 0; f < 20; f++) {
+    const x = 40 + Math.floor(rnd() * 48);
+    const y = 62 + Math.floor(rnd() * 34);
+    setPx(cv, x, y, bloom); setPx(cv, x + 1, y, bloom);
+    setPx(cv, x, y + 1, bloom); setPx(cv, x + 1, y + 1, bloom);
+  }
+  save(cv, 'bush_bloom.png');
+})();
+
+// ---- Rest Stump (U). 128x128, brown stump with moss-green top. ----
+(function () {
+  const W = 128, H = 128;
+  const cv = makeCanvas(W, H);
+  const sh = hexToRGB('#000000');
+  for (let y = -6; y <= 6; y++)
+    for (let x = -28; x <= 28; x++) {
+      const dx = x / 28, dy = y / 6;
+      if (dx * dx + dy * dy <= 1.0) setPx(cv, (W >> 1) + x, H - 10 + y, sh, 45);
+    }
+  const bark = hexToRGB('#5c4433');
+  const barkLit = hexToRGB('#8a6a4a');
+  const moss = hexToRGB('#4d8b4f');
+  const mossLit = hexToRGB('#7ab567');
+  const rings = hexToRGB('#3a2a20');
+  // trunk cylinder: x 40..88, y 60..112
+  for (let y = 60; y < 112; y++)
+    for (let x = 40; x < 88; x++) {
+      // rounded sides
+      const dx = (x - 64) / 24;
+      if (dx * dx > 1.0) continue;
+      const c = (x - 64) > 4 ? bark : barkLit;
+      setPx(cv, x, y, c, 255);
+    }
+  // top ellipse (moss-covered cut face)
+  const tcx = 64, tcy = 60, trx = 26, tryy = 12;
+  for (let y = -tryy; y <= tryy; y++)
+    for (let x = -trx; x <= trx; x++) {
+      const dx = x / trx, dy = y / tryy;
+      const d = dx * dx + dy * dy;
+      if (d <= 1.0) {
+        // concentric rings + moss patches
+        let c = (x - y) > 2 ? mossLit : moss;
+        if (Math.abs(d - 0.5) < 0.08) c = rings;
+        setPx(cv, tcx + x, tcy + y, c, 255);
+      }
+    }
+  save(cv, 'rest_stump.png');
+})();
+
+// ---- World Tree (O0). 512x512, big canopy with violet glow accents. ----
+// Plus a separate world_tree_glow.png additive layer.
+(function () {
+  const W = 512, H = 512;
+  const cv = makeCanvas(W, H);
+  const glowCv = makeCanvas(W, H);
+  const trunk = hexToRGB('#5c4433');
+  const trunkLit = hexToRGB('#8a6a4a');
+  const canopy = hexToRGB('#2e5d3b');
+  const canopyLit = hexToRGB('#4d8b4f');
+  const violet = hexToRGB('#9e7ad9');
+  const violetBright = hexToRGB('#d9b8ff');
+  // contact shadow
+  const sh = hexToRGB('#000000');
+  for (let y = -14; y <= 14; y++)
+    for (let x = -90; x <= 90; x++) {
+      const dx = x / 90, dy = y / 14;
+      if (dx * dx + dy * dy <= 1.0) setPx(cv, (W >> 1) + x, H - 22 + y, sh, 55);
+    }
+  // trunk: wide, tapering. base y~492 center x=256
+  for (let y = 300; y < 492; y++) {
+    const t = (y - 300) / 192;
+    const halfW = 26 + t * 34;
+    for (let x = -halfW; x <= halfW; x++) {
+      const c = x > 6 ? trunk : trunkLit;
+      setPx(cv, 256 + x, y, c, 255);
+    }
+  }
+  // roots spread at base
+  for (let r = -2; r <= 2; r++) {
+    const rx = 256 + r * 40;
+    for (let y = 470; y < 496; y++) {
+      const w = 8 - Math.floor((y - 470) / 4);
+      for (let x = -w; x <= w; x++) setPx(cv, rx + x, y, trunk, 255);
+    }
+  }
+  // canopy: large blobby cloud, upper 2/3
+  const ccx = 256, ccy = 210, rx = 200, ry = 200;
+  let seed = 4242;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  for (let y = 0; y < 430; y++)
+    for (let x = 0; x < W; x++) {
+      const dx = (x - ccx) / rx, dy = (y - ccy) / ry;
+      const d = dx * dx + dy * dy;
+      if (d <= 1.0) {
+        // ragged edge
+        if (d > 0.85 && rnd() < 0.4) continue;
+        const c = (dx - dy) > 0.15 ? canopyLit : canopy;
+        setPx(cv, x, y, c, 255);
+      }
+    }
+  // violet glow motes scattered in canopy (baked faint + strong in glow layer)
+  seed = 909;
+  for (let n = 0; n < 90; n++) {
+    const x = 80 + Math.floor(rnd() * 352);
+    const y = 60 + Math.floor(rnd() * 300);
+    const dx = (x - ccx) / rx, dy = (y - ccy) / ry;
+    if (dx * dx + dy * dy > 0.95) continue;
+    const bright = rnd() < 0.3;
+    const c = bright ? violetBright : violet;
+    setPx(cv, x, y, c, 220);
+    setPx(cv, x + 1, y, c, 200);
+    setPx(cv, x, y + 1, c, 200);
+    // glow layer: soft blob
+    for (let gy = -3; gy <= 3; gy++)
+      for (let gx = -3; gx <= 3; gx++) {
+        const gd = gx * gx + gy * gy;
+        if (gd <= 9) setPx(glowCv, x + gx, y + gy, violetBright, Math.max(0, 120 - gd * 12));
+      }
+  }
+  save(cv, 'world_tree.png');
+  save(glowCv, 'world_tree_glow.png');
+})();
+
+// ---- Young world tree (D22 planted / clear). 128x128 sapling with glow. ----
+(function () {
+  const W = 128, H = 128;
+  const cv = makeCanvas(W, H);
+  const trunk = hexToRGB('#5c4433');
+  const canopy = hexToRGB('#4d8b4f');
+  const canopyLit = hexToRGB('#7ab567');
+  const violet = hexToRGB('#d9b8ff');
+  fillRect(cv, 60, 80, 68, 116, trunk);
+  const ccx = 64, ccy = 60, rx = 30, ry = 34;
+  for (let y = 0; y < 100; y++)
+    for (let x = 0; x < W; x++) {
+      const dx = (x - ccx) / rx, dy = (y - ccy) / ry;
+      if (dx * dx + dy * dy <= 1.0) {
+        const c = (dx - dy) > 0.15 ? canopyLit : canopy;
+        setPx(cv, x, y, c, 255);
+      }
+    }
+  let seed = 31;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  for (let n = 0; n < 14; n++) {
+    const x = 44 + Math.floor(rnd() * 40);
+    const y = 40 + Math.floor(rnd() * 40);
+    setPx(cv, x, y, violet, 220);
+  }
+  save(cv, 'young_tree.png');
+})();
+
+// ---- Mystic water tile (m). 128x64 diamond, deep teal + violet glow. ----
+(function () {
+  makeTile('t5m_mystic.png', '#1e3a5c', { edgeHex: '#6b4a9e', dither: true, ditherHex: '#3a2a5c' });
+  // glow overlay diamond
+  const W = 128, H = 64;
+  const cv = makeCanvas(W, H);
+  const violet = hexToRGB('#9e7ad9');
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      if (!inDiamond(x, y, W, H)) continue;
+      const cx = 64, cy = 32;
+      const d = Math.hypot((x - cx) / 64, (y - cy) / 32);
+      setPx(cv, x, y, violet, Math.max(0, Math.floor(90 * (1 - d))));
+    }
+  save(cv, 't5m_mystic_glow.png');
+})();
+
+// ---- Night bloom gate flower (G3). 128x128 closed (day) + open (night). ----
+(function () {
+  function bud(name, open) {
+    const W = 128, H = 128;
+    const cv = makeCanvas(W, H);
+    const stem = hexToRGB('#4d8b4f');
+    fillRect(cv, 60, 70, 68, 116, stem);
+    if (open) {
+      // open glowing violet blossom
+      const pet = hexToRGB('#9e7ad9');
+      const petLit = hexToRGB('#d9b8ff');
+      for (let a = 0; a < 8; a++) {
+        const rad = a * Math.PI / 4;
+        const px = 64 + Math.cos(rad) * 24;
+        const py = 56 + Math.sin(rad) * 24;
+        for (let y = -10; y <= 10; y++)
+          for (let x = -10; x <= 10; x++) {
+            if (x * x + y * y <= 100) {
+              const c = (x - y) > 2 ? petLit : pet;
+              setPx(cv, Math.round(px) + x, Math.round(py) + y, c, 220);
+            }
+          }
+      }
+      const core = hexToRGB('#faf5e6');
+      for (let y = -6; y <= 6; y++)
+        for (let x = -6; x <= 6; x++)
+          if (x * x + y * y <= 36) setPx(cv, 64 + x, 56 + y, core, 255);
+    } else {
+      // closed grey-green bud
+      const budC = hexToRGB('#5c4433');
+      const budLit = hexToRGB('#6e6e7a');
+      for (let y = -20; y <= 14; y++)
+        for (let x = -14; x <= 14; x++) {
+          const dx = x / 14, dy = y / 20;
+          if (dx * dx + dy * dy <= 1.0) {
+            const c = (x - y) > 2 ? budLit : budC;
+            setPx(cv, 64 + x, 54 + y, c, 255);
+          }
+        }
+    }
+    save(cv, name);
+  }
+  bud('night_bud_closed.png', false);
+  bud('night_bud_open.png', true);
+})();
+
 console.log('DONE');
