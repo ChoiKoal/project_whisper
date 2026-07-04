@@ -30,11 +30,13 @@ const OBJECT_REACH := 140.0
 @export var tilemap_path: NodePath
 @export var highlight_path: NodePath
 @export var feedback_layer_path: NodePath  ## where floating labels spawn (world space)
+@export var slot_hint_path: NodePath  ## optional SteppingSlotHint for D14 guidance
 
 var _player: Player
 var _tilemap: TileMapLayer
 var _highlight: TileHighlight
 var _feedback_layer: Node
+var _slot_hint: SteppingSlotHint
 
 ## Currently held item id (from inventory selection), or "" for none.
 var _held_item: String = ""
@@ -55,6 +57,7 @@ func _ready() -> void:
 	_feedback_layer = get_node_or_null(feedback_layer_path)
 	if _feedback_layer == null:
 		_feedback_layer = self
+	_slot_hint = get_node_or_null(slot_hint_path) as SteppingSlotHint
 
 
 func set_held_item(item_id: String) -> void:
@@ -68,6 +71,7 @@ func get_held_item() -> String:
 func _process(_delta: float) -> void:
 	_resolve_target()
 	_update_highlight()
+	_update_slot_hint()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -118,6 +122,28 @@ func _update_highlight() -> void:
 
 func _cell_center_world(cell: Vector2i) -> Vector2:
 	return _tilemap.to_global(_tilemap.map_to_local(cell))
+
+
+## G1 guidance: while D14 is held, pulse a diamond over every stepping-slot cell
+## that is still water (un-filled). No-op unless a SteppingSlotHint is wired and the
+## tilemap exposes `stepping_slot_cells` (the real grove; test_map has neither).
+func _update_slot_hint() -> void:
+	if _slot_hint == null:
+		return
+	if _held_item != "D14" or _tilemap == null or not ("stepping_slot_cells" in _tilemap):
+		_slot_hint.hide_all()
+		return
+	var centers := PackedVector2Array()
+	for cell in _tilemap.stepping_slot_cells:
+		if _is_water_cell(cell):
+			centers.append(_cell_center_world(cell))
+	_slot_hint.show_cells(centers)
+
+
+## Source ids that are still water (un-filled stepping slot). T5A/T5B/T5M.
+func _is_water_cell(cell: Vector2i) -> bool:
+	var src := _tilemap.get_cell_source_id(cell)
+	return src == 8 or src == 9 or src == 10
 
 
 # ---- interaction ---------------------------------------------------------
@@ -236,6 +262,40 @@ func _apply_placement_effect(item_id: String, cell: Vector2i) -> bool:
 func _place_stepping_stone(cell: Vector2i) -> void:
 	_tilemap.set_cell(cell, STEPPING_STONE_SOURCE, ATLAS)
 	GameState.stepping_stone_placed.emit(cell)
+	# G1 guidance: if the crossing this cell belongs to still has un-filled (water)
+	# slots, tell the player more stones are needed (a 3-deep stream can't be crossed
+	# with one stone — the #1 first-user drop-off risk).
+	if _crossing_still_has_water(cell):
+		FloatingLabel.spawn(_feedback_layer, _cell_center_world(cell) - Vector2(0, 40),
+			"아직 물이 깊다… 발판이 더 필요해")
+
+
+## True if any stepping-slot cell in the same crossing as `placed` is still water.
+## "Same crossing" = the connected group of stepping_slot_cells (4-neighbour flood)
+## containing `placed`, so multiple independent crossings never cross-trigger.
+func _crossing_still_has_water(placed: Vector2i) -> bool:
+	if _tilemap == null or not ("stepping_slot_cells" in _tilemap):
+		return false
+	var slots: Array = _tilemap.stepping_slot_cells
+	var slot_set := {}
+	for c in slots:
+		slot_set[c] = true
+	# Flood-fill the crossing group from `placed` over 4-connected slot cells.
+	var group := {}
+	var stack: Array = [placed]
+	while not stack.is_empty():
+		var cur: Vector2i = stack.pop_back()
+		if group.has(cur):
+			continue
+		group[cur] = true
+		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var nb: Vector2i = cur + d
+			if slot_set.has(nb) and not group.has(nb):
+				stack.append(nb)
+	for c in group:
+		if _is_water_cell(c):
+			return true
+	return false
 
 
 ## Try to use the held item on the target object. Returns true if consumed.

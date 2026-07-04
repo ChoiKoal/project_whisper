@@ -47,6 +47,8 @@ func _ready() -> void:
 	_test_astar_reachable(loader, touch)
 	await _test_g1_refresh(map, loader, touch)
 	await _test_tap_to_move(loader, touch)
+	await _test_slot_hint(map, loader)
+	_test_glow_layer_separation(map)
 
 	print("=== RESULT: %s (%d failures) ===" % ["PASS" if _fail == 0 else "FAIL", _fail])
 	get_tree().quit(_fail)
@@ -253,3 +255,90 @@ func _test_tap_to_move(loader: MapLoader, touch: TouchController) -> void:
 			break
 	print("    arrived within-tolerance: dist=%.1f" % player.global_position.distance_to(target_world))
 	_check("tap-to-move: player arrives within N frames", arrived)
+
+
+# ---- M6c QA polish: G1 slot hint + glow-layer separation -----------------
+
+func _test_slot_hint(map: Node, loader: MapLoader) -> void:
+	# (Fix 1a) Holding D14 pulses a diamond over every un-filled (still-water)
+	# stepping slot; releasing D14 clears them.
+	var interaction := map.get_node("Interaction") as InteractionController
+	var hint := map.get_node("SteppingSlotHint")
+	_check("SteppingSlotHint node present", hint != null)
+	if hint == null:
+		return
+
+	# Count remaining water slots so the highlight count is meaningful.
+	var water_slots := 0
+	for cell in loader.stepping_slot_cells:
+		var src := loader.get_cell_source_id(cell)
+		if src == 8 or src == 9 or src == 10:
+			water_slots += 1
+
+	# Not holding D14 → no hint diamonds.
+	interaction.set_held_item("")
+	await get_tree().process_frame
+	_check("slot hint hidden when D14 not held", hint.call("get_highlight_count") == 0)
+
+	# Hold D14 → one diamond per remaining water slot (> 0).
+	Inventory.add("D14", 1)
+	interaction.set_held_item("D14")
+	await get_tree().process_frame
+	var n: int = hint.call("get_highlight_count")
+	print("    slot-hint diamonds while holding D14 = %d (water slots = %d)" % [n, water_slots])
+	_check("slot hint appears when D14 held (count > 0)", n > 0 and n == water_slots)
+
+	# Release again → cleared.
+	interaction.set_held_item("")
+	await get_tree().process_frame
+	_check("slot hint clears when D14 released", hint.call("get_highlight_count") == 0)
+	Inventory.clear()
+
+
+func _test_glow_layer_separation(map: Node) -> void:
+	# (Fix 2) Glow sprites must NOT sit under the CanvasModulate-affected canvas.
+	# The DayNight CanvasModulate lives on the root (layer-0) canvas; glow sprites
+	# reparent onto the GlowLayer CanvasLayer (layer 1), so the day/night tint can't
+	# dim them. Assert: a glow layer exists, holds glows, and no GlowSprite is a
+	# descendant of the DayNight canvas (i.e. its nearest CanvasLayer ancestor is the
+	# GlowLayer, not the default root canvas the CanvasModulate tints).
+	var daynight := map.get_node_or_null("DayNight")
+	var glow_layer := map.get_node_or_null("GlowLayer")
+	_check("DayNight CanvasModulate present", daynight != null)
+	_check("GlowLayer CanvasLayer present", glow_layer != null)
+	if glow_layer == null:
+		return
+	_check("GlowLayer is layer 1 (above ground, own canvas)", glow_layer.layer == 1)
+
+	var glows := _find_glow_sprites(map)
+	print("    glow sprites found = %d" % glows.size())
+	_check("glow sprites exist in scene", glows.size() > 0)
+
+	var all_on_glow_layer := true
+	for g in glows:
+		if _nearest_canvas_layer(g) != glow_layer:
+			all_on_glow_layer = false
+			print("    glow NOT on GlowLayer: %s" % g.get_path())
+	_check("no GlowSprite descends the CanvasModulate canvas (all on GlowLayer)",
+		all_on_glow_layer)
+
+
+func _find_glow_sprites(node: Node) -> Array:
+	var out: Array = []
+	if node is GlowSprite:
+		out.append(node)
+	for c in node.get_children():
+		out.append_array(_find_glow_sprites(c))
+	return out
+
+
+## Nearest CanvasLayer ancestor of a node (the canvas it actually renders on), or
+## null if it renders on the viewport's default/root canvas (the one CanvasModulate
+## on the root tints).
+func _nearest_canvas_layer(node: Node) -> CanvasLayer:
+	var p := node.get_parent()
+	while p != null:
+		if p is CanvasLayer:
+			return p
+		p = p.get_parent()
+	return null

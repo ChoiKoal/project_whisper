@@ -2,8 +2,10 @@ extends CanvasModulate
 class_name DayNight
 ## Drives the global day/night tint via a CanvasModulate color curve keyed off
 ## GameState.day_fraction(). Per art guide §3 / level design C-3: don't bake time
-## into sprites — tint the whole scene. Additive glow layers (GlowSprite) live in
-## a separate CanvasLayer so they are NOT dimmed by this node.
+## into sprites — tint the whole scene. A CanvasModulate only tints its OWN canvas
+## layer; the additive glow sprites (GlowSprite) reparent themselves at runtime onto
+## the sibling "GlowLayer" CanvasLayer (layer 1, follow_viewport_enabled), so they
+## are NOT dimmed by this node and the night glow pops as designed.
 ##
 ## Keyframes (level design C-3):
 ##   day     0.00 .. 0.60  cream/warm  #faf5e6 -> #e8dfc8

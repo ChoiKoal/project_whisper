@@ -1,11 +1,17 @@
 extends Sprite2D
 class_name GlowSprite
 ## Additive violet glow overlay for the world tree / mystic water / night bloom.
-## Kept in a separate CanvasLayer (or with additive material) so the day/night
-## CanvasModulate does not dim it — at night the base darkens and the glow pops.
+## Rendered on a SEPARATE CanvasLayer (the "glow_layer" group node, layer 1,
+## follow_viewport_enabled) so the day/night CanvasModulate — which only tints its
+## own canvas layer — does NOT dim it. At night the base darkens and the glow pops.
+## If no glow layer exists (e.g. test_map), it stays under its spawner; the additive
+## material still reads as light, just tint-affected (acceptable there).
 ##
 ## Intensity ramps with the day/night phase: faint by day, strong at night.
 ## Driven by GameState.day_phase_changed (no per-frame polling).
+
+## Group name of the CanvasLayer that hosts glow sprites, unaffected by CanvasModulate.
+const GLOW_LAYER_GROUP := "glow_layer"
 
 ## Alpha at each phase.
 const DAY_ALPHA := 0.15
@@ -30,6 +36,20 @@ func _ready() -> void:
 	if GameState.day_phase_changed.connect(_on_phase) == OK:
 		pass
 	_apply_phase(GameState.phase())
+	# Move onto the CanvasModulate-free glow layer once the spawner has finished
+	# positioning us (offset/scale are set by the parent AFTER our _ready runs).
+	call_deferred("_reparent_to_glow_layer")
+
+
+## Reparent onto the dedicated glow CanvasLayer (unaffected by the day/night
+## CanvasModulate), preserving world position. No-op if there is no glow layer.
+func _reparent_to_glow_layer() -> void:
+	if not is_inside_tree():
+		return
+	var layer := get_tree().get_first_node_in_group(GLOW_LAYER_GROUP)
+	if layer == null or layer == get_parent():
+		return
+	reparent(layer, true)  # keep_global_transform → glow stays over its object
 
 
 func _process(delta: float) -> void:

@@ -15,6 +15,7 @@ const FLAVOR := "꽃봉오리가 닫혀 있다… 밤을 기다리는 걸까"
 
 var _sprite: Sprite2D
 var _body: StaticBody2D
+var _glow: GlowSprite
 var _open: bool = false
 ## Cooldown so the flavor message doesn't spam every frame of contact.
 var _msg_cooldown: float = 0.0
@@ -38,13 +39,15 @@ func _ready() -> void:
 	_body.add_child(col)
 	add_child(_body)
 
-	# Glow overlay (only visible when open at night) — additive.
-	var glow := GlowSprite.new()
-	glow.texture = load(OPEN_TEX)
-	glow.offset = Vector2(0, -60)
-	glow.visible = false
-	glow.name = "Glow"
-	add_child(glow)
+	# Glow overlay (only visible when open at night) — additive. Kept as a direct
+	# reference because GlowSprite reparents itself onto the glow CanvasLayer, so a
+	# by-name child lookup would no longer find it.
+	_glow = GlowSprite.new()
+	_glow.texture = load(OPEN_TEX)
+	_glow.offset = Vector2(0, -60)
+	_glow.visible = false
+	_glow.name = "Glow"
+	add_child(_glow)
 
 	GameState.day_phase_changed.connect(_on_phase)
 	_apply(GameState.is_night_window())
@@ -70,15 +73,13 @@ func _apply(open: bool) -> void:
 		if is_instance_valid(_body):
 			_body.process_mode = Node.PROCESS_MODE_DISABLED
 			_set_collision(false)
-		var g := get_node_or_null("Glow")
-		if g: g.visible = true
+		if is_instance_valid(_glow): _glow.visible = true
 	else:
 		_sprite.texture = load(CLOSED_TEX)
 		if is_instance_valid(_body):
 			_body.process_mode = Node.PROCESS_MODE_INHERIT
 			_set_collision(true)
-		var g := get_node_or_null("Glow")
-		if g: g.visible = false
+		if is_instance_valid(_glow): _glow.visible = false
 
 
 func _set_collision(on: bool) -> void:

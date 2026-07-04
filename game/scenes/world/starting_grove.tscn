@@ -17,6 +17,7 @@
 [ext_resource type="Script" path="res://scripts/ui/pause_menu.gd" id="15_pause"]
 [ext_resource type="Script" path="res://scripts/world/grove_session.gd" id="16_session"]
 [ext_resource type="Script" path="res://scripts/world/touch_controller.gd" id="17_touch"]
+[ext_resource type="Script" path="res://scripts/world/stepping_slot_hint.gd" id="18_slothint"]
 
 [sub_resource type="CircleShape2D" id="col_player"]
 radius = 20.0
@@ -25,6 +26,10 @@ radius = 20.0
 
 [node name="DayNight" type="CanvasModulate" parent="."]
 script = ExtResource("10_daynight")
+
+[node name="GlowLayer" type="CanvasLayer" parent="." groups=["glow_layer"]]
+layer = 1
+follow_viewport_enabled = true
 
 [node name="Ground" type="TileMapLayer" parent="."]
 tile_set = ExtResource("1_tileset")
@@ -36,6 +41,9 @@ fade_rect_path = NodePath("../FadeLayer/Fade")
 
 [node name="TileHighlight" type="Node2D" parent="."]
 script = ExtResource("5_highlight")
+
+[node name="SteppingSlotHint" type="Node2D" parent="."]
+script = ExtResource("18_slothint")
 
 [node name="YSortLayer" type="Node2D" parent="."]
 y_sort_enabled = true
@@ -67,6 +75,7 @@ player_path = NodePath("../YSortLayer/Player")
 tilemap_path = NodePath("../Ground")
 highlight_path = NodePath("../TileHighlight")
 feedback_layer_path = NodePath("../YSortLayer")
+slot_hint_path = NodePath("../SteppingSlotHint")
 
 [node name="ObjectRespawn" type="Node" parent="."]
 script = ExtResource("13_respawn")
