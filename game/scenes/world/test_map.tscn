@@ -1,0 +1,58 @@
+[gd_scene load_steps=8 format=3 uid="uid://bwhispermap001"]
+
+[ext_resource type="TileSet" uid="uid://bwhisperts0001" path="res://data/whisper_tileset.tres" id="1_tileset"]
+[ext_resource type="Script" path="res://scripts/world/map_builder.gd" id="2_mapbuilder"]
+[ext_resource type="Script" path="res://scripts/player/player.gd" id="3_player"]
+[ext_resource type="SpriteFrames" uid="uid://bwhisperpf0001" path="res://data/player_frames.tres" id="4_frames"]
+[ext_resource type="Texture2D" uid="uid://cabg5m43s34gd" path="res://assets/objects/tree_a.png" id="5_tree_a"]
+[ext_resource type="Texture2D" uid="uid://c0vgv5v7ymimg" path="res://assets/objects/tree_b.png" id="6_tree_b"]
+
+[sub_resource type="CircleShape2D" id="col_player"]
+radius = 20.0
+
+[node name="TestMap" type="Node2D"]
+
+[node name="Ground" type="TileMapLayer" parent="."]
+tile_set = ExtResource("1_tileset")
+script = ExtResource("2_mapbuilder")
+
+[node name="YSortLayer" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="TreeA" type="Sprite2D" parent="YSortLayer"]
+y_sort_enabled = true
+position = Vector2(320, 200)
+offset = Vector2(0, -120)
+texture = ExtResource("5_tree_a")
+
+[node name="TreeB" type="Sprite2D" parent="YSortLayer"]
+y_sort_enabled = true
+position = Vector2(0, 320)
+offset = Vector2(0, -120)
+texture = ExtResource("6_tree_b")
+
+[node name="TreeC" type="Sprite2D" parent="YSortLayer"]
+y_sort_enabled = true
+position = Vector2(-260, 120)
+offset = Vector2(0, -120)
+texture = ExtResource("5_tree_a")
+
+[node name="Player" type="CharacterBody2D" parent="YSortLayer"]
+y_sort_enabled = true
+position = Vector2(0, 0)
+motion_mode = 1
+script = ExtResource("3_player")
+tilemap_path = NodePath("../../Ground")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="YSortLayer/Player"]
+position = Vector2(0, -40)
+sprite_frames = ExtResource("4_frames")
+animation = &"idle_SE"
+autoplay = "idle_SE"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="YSortLayer/Player"]
+shape = SubResource("col_player")
+
+[node name="Camera2D" type="Camera2D" parent="YSortLayer/Player"]
+position_smoothing_enabled = true
+position_smoothing_speed = 5.0

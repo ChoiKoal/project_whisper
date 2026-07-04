@@ -1,0 +1,27 @@
+{
+  "recipes": [
+    {"id": "R01", "inputs": ["I7", "I1"], "output": "I3", "hint": "물과 땅이 만나면"},
+    {"id": "R02", "inputs": ["I6", "I7"], "output": "D01", "hint": "바위도 물 앞에서는"},
+    {"id": "R03", "inputs": ["D01", "I3"], "output": "D02", "hint": "고운 것과 끈적한 것"},
+    {"id": "R04", "inputs": ["I5", "I2"], "output": "D03", "hint": "꽃이 풀에게 남기는 것"},
+    {"id": "R05", "inputs": ["D03", "I7"], "output": "D04", "hint": "잠든 것을 깨우는 법"},
+    {"id": "R06", "inputs": ["D04", "I1"], "output": "D05", "hint": "자라려면 뿌리내릴 곳이"},
+    {"id": "R07", "inputs": ["D05", "I7"], "output": "I4", "hint": "돌보면 자란다"},
+    {"id": "R08", "inputs": ["I2", "I7"], "output": "D07", "hint": "축축한 곳의 초록"},
+    {"id": "R09", "inputs": ["D07", "I6"], "output": "D08", "hint": "바위에 옷을 입히면"},
+    {"id": "R10", "inputs": ["I2", "I2"], "output": "D09", "hint": "풀을 모으고 모으면"},
+    {"id": "R11", "inputs": ["D09", "I4"], "output": "D10", "hint": "나무 위의 보금자리"},
+    {"id": "R12", "inputs": ["I8", "I4"], "output": "D11", "hint": "돌과 나무, 최초의 도구"},
+    {"id": "R13", "inputs": ["D11", "I4"], "output": "D12", "hint": "도구가 있으면 나무를 다듬는다"},
+    {"id": "R14", "inputs": ["D02", "I6"], "output": "D13", "hint": "점토를 단단한 틀에"},
+    {"id": "R15", "inputs": ["I6", "I8"], "output": "D14", "hint": "크고 작은 돌을 쌓으면 물을 건널"},
+    {"id": "R16", "inputs": ["I3", "I7"], "output": "D15", "hint": "진흙에 물을 더 부으면…?"},
+    {"id": "R17", "inputs": ["I5", "I7"], "output": "D16", "hint": "꽃을 우려내면"},
+    {"id": "R18", "inputs": ["D16", "I8"], "output": "D17", "hint": "즙을 갈아 색을 얻는다"},
+    {"id": "R19", "inputs": ["I5", "I5"], "output": "D18", "hint": "꽃에 꽃을 더하면"},
+    {"id": "R20", "inputs": ["I9", "I7"], "output": "D19", "hint": "세계수의 온기를 물에"},
+    {"id": "R21", "inputs": ["D19", "D03"], "output": "D20", "hint": "생명의 물이 잠든 씨앗을 만나면"},
+    {"id": "R22", "inputs": ["D19", "I5"], "output": "D21", "hint": "생명의 물이 꽃을 만나면"},
+    {"id": "R23", "inputs": ["D20", "I1"], "output": "D22", "hint": "빛나는 생명에게 흙을"}
+  ]
+}
