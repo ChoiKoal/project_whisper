@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bwhispere2e0001"]
+
+[ext_resource type="Script" path="res://scenes/dev/e2e_playthrough.gd" id="1_e2e"]
+
+[node name="E2EPlaythrough" type="Node"]
+script = ExtResource("1_e2e")
