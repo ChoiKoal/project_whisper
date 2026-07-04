@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://bwhispergrove01"]
+[gd_scene load_steps=17 format=3 uid="uid://bwhispergrove01"]
 
 [ext_resource type="TileSet" uid="uid://bwhisperts0001" path="res://data/whisper_tileset.tres" id="1_tileset"]
 [ext_resource type="Script" path="res://scripts/world/map_loader.gd" id="2_maploader"]
@@ -14,6 +14,8 @@
 [ext_resource type="Script" path="res://scripts/world/clear_sequence.gd" id="12_clear"]
 [ext_resource type="Script" path="res://scripts/world/object_respawn.gd" id="13_respawn"]
 [ext_resource type="Script" path="res://scripts/world/night_gate_guard.gd" id="14_guard"]
+[ext_resource type="Script" path="res://scripts/ui/pause_menu.gd" id="15_pause"]
+[ext_resource type="Script" path="res://scripts/world/grove_session.gd" id="16_session"]
 
 [sub_resource type="CircleShape2D" id="col_player"]
 radius = 20.0
@@ -102,3 +104,14 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color(0.03, 0.02, 0.05, 1)
 visible = false
+
+[node name="PauseMenu" type="CanvasLayer" parent="."]
+layer = 9
+script = ExtResource("15_pause")
+
+[node name="GroveSession" type="Node" parent="."]
+script = ExtResource("16_session")
+map_loader_path = NodePath("../Ground")
+player_path = NodePath("../YSortLayer/Player")
+respawn_path = NodePath("../ObjectRespawn")
+clear_sequence_path = NodePath("../ClearSequence")

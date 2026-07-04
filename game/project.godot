@@ -7,7 +7,7 @@ config_version=5
 [application]
 
 config/name="Project Whisper"
-run/main_scene="res://scenes/world/starting_grove.tscn"
+run/main_scene="res://scenes/ui/title.tscn"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 
 [autoload]
@@ -18,6 +18,7 @@ Inventory="*res://scripts/core/inventory.gd"
 RecipeDB="*res://scripts/core/recipe_db.gd"
 Codex="*res://scripts/core/codex.gd"
 Fusion="*res://scripts/core/fusion.gd"
+SaveManager="*res://scripts/core/save_manager.gd"
 
 [display]
 
