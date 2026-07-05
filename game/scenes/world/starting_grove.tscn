@@ -47,6 +47,7 @@ script = ExtResource("18_slothint")
 
 [node name="YSortLayer" type="Node2D" parent="."]
 y_sort_enabled = true
+z_index = 5
 
 [node name="Player" type="CharacterBody2D" parent="YSortLayer"]
 y_sort_enabled = true

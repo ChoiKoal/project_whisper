@@ -190,58 +190,144 @@ makeTree('tree_b.png', '#5c4433', '#4d8b4f');
 // ---- Character sheet ----
 // Frames 96x96. Layout: rows = directions [SE, SW, NE, NW],
 // cols = [idle, walk0, walk1]. Sheet = 3 cols x 4 rows = 288x384.
-function drawCat(cv, ox, oy, dir, walkPhase) {
-  // dir: 0=SE,1=SW,2=NE,3=NW. Body cream, eyes violet.
-  const body = hexToRGB('#e8dfc8');
-  const bodyDark = hexToRGB('#b8b4a8');
-  const eye = hexToRGB('#9e7ad9');
-  const F = 96;
-  const cx = ox + F / 2;
-  // body: rounded blob centered, ground at oy+F-10
-  const baseY = oy + F - 16;
-  const bodyR = 22, bodyH = 30;
-  // legs bob for walk
-  const bob = walkPhase === 1 ? 2 : 0;
-  // body ellipse (torso)
-  for (let y = -bodyH; y <= 0; y++) {
-    for (let x = -bodyR; x <= bodyR; x++) {
-      const dx = x / bodyR, dy = y / bodyH;
-      if (dx * dx + dy * dy <= 1.0) {
-        const c = (x - y) > 4 ? body : bodyDark;
-        setPx(cv, cx + x, baseY + y - bob, c, 255);
-      }
-    }
+//
+// v0.2.1: the cat protagonist is OUT (owner decision). New protagonist is a small
+// 망토 두른 컨스트럭터 — a hooded cloaked figure in a cream robe with violet trim,
+// holding a wooden staff topped with a glowing violet orb. Drawn on a 24×24 logical
+// grid (chunky 4px pixel blocks) then upscaled ×4 to fill the 96×96 frame, matching
+// the existing sheet's chunky look. selout outlines (面색보다 어두운 동색계 1블록,
+// 순수 검정 없음), top-right soft light, palette-strict (art guide §2–§4).
+const CHAR_PAL = {
+  robe:      hexToRGB('#e8dfc8'),  // cream robe (mid)
+  robeLit:   hexToRGB('#faf5e6'),  // top-right lift
+  robeShade: hexToRGB('#ceccaa'),  // lower-left shade
+  robeLine:  hexToRGB('#b8b4a8'),  // selout outline (robe, 2 steps darker family)
+  trim:      hexToRGB('#9e7ad9'),  // violet trim / sigil
+  trimLit:   hexToRGB('#d9b8ff'),  // bright violet (orb core / eye glow)
+  staff:     hexToRGB('#8a6a4a'),  // wooden staff
+  staffLine: hexToRGB('#5c4433'),  // staff outline (2 steps darker brown)
+  hoodDark:  hexToRGB('#6e6e7a'),  // hood interior shadow (neutral)
+  orbGlow:   hexToRGB('#d9b8ff'),  // additive-bright orb accent (baked bright)
+};
+
+// The logical grid is 24×24; block size 4 → 96×96. Each "set" paints a 4×4 block.
+const CHAR_G = 24, CHAR_BLK = 4;
+function gBlock(cv, ox, oy, gx, gy, rgb, a = 255) {
+  if (gx < 0 || gy < 0 || gx >= CHAR_G || gy >= CHAR_G) return;
+  const px = ox + gx * CHAR_BLK, py = oy + gy * CHAR_BLK;
+  fillRect(cv, px, py, px + CHAR_BLK, py + CHAR_BLK, rgb, a);
+}
+
+// Draw the cloaked constructor into a 96×96 frame at (ox,oy).
+// dir: 0=SE, 1=SW, 2=NE, 3=NW (front-facing = SE/SW show face+eyes; back = NE/NW
+// show hood back + violet sigil). walkPhase 0/1/2 → idle / walk-down / walk-up.
+function drawConstructor(cv, ox, oy, dir, walkPhase) {
+  const P = CHAR_PAL;
+  const front = (dir === 0 || dir === 1);
+  // Mirror SW/NW to the left by flipping gx around the 24-wide grid center.
+  const flip = (dir === 1 || dir === 3);
+  const put = (gx, gy, rgb, a = 255) => gBlock(cv, ox, oy, flip ? (23 - gx) : gx, gy, rgb, a);
+
+  // Walk motion: a slight vertical bob + a robe-hem sway + staff swing.
+  const bob = walkPhase === 2 ? -1 : 0;              // lift on the up-beat
+  const hemSway = walkPhase === 1 ? 1 : (walkPhase === 2 ? -1 : 0);
+  const staffSwing = walkPhase === 1 ? 1 : (walkPhase === 2 ? -1 : 0);
+
+  // Vertical layout (grid rows, before bob). Body ~15 blocks tall, grounded low so
+  // the AnimatedSprite2D offset (0,-40) plants it on the tile.
+  const topHood = 4 + bob;   // hood crown
+  const shoulder = 9 + bob;
+  const hemTop = 12 + bob;
+  const hemBot = 19 + bob;   // robe hem (ground contact area)
+
+  // ---- staff (behind the robe on the far side, drawn first) ----
+  // Held to one side (screen-right for the un-flipped SE/NE). A vertical shaft
+  // topped by a glowing orb. Swings slightly with the walk.
+  const staffX = 18 + staffSwing;
+  for (let gy = 3 + bob; gy <= hemBot; gy++) {
+    put(staffX, gy, P.staff);
+    if (gy === 3 + bob) put(staffX, gy, P.staffLine); // subtle top cap line
   }
-  // head: circle on top
-  const hy = baseY - bodyH - 8 - bob;
-  const hR = 18;
-  for (let y = -hR; y <= hR; y++) {
-    for (let x = -hR; x <= hR; x++) {
-      if (x * x + y * y <= hR * hR) {
-        const c = (x - y) > 3 ? body : bodyDark;
-        setPx(cv, cx + x, hy + y, c, 255);
-      }
+  // staff selout on its lower-left
+  for (let gy = 4 + bob; gy <= hemBot; gy++) put(staffX - 1, gy, P.staffLine);
+  // orb: 2×2 glowing violet ball at the staff top, with a bright core + glow rim.
+  const orbY = 2 + bob;
+  put(staffX - 1, orbY, P.trim);      put(staffX, orbY, P.trimLit);
+  put(staffX - 1, orbY + 1, P.trimLit); put(staffX, orbY + 1, P.trim);
+  // baked additive-bright glow accent around the orb (bright pixels, no engine change)
+  put(staffX, orbY - 1, P.orbGlow, 150);
+  put(staffX + 1, orbY, P.orbGlow, 130);
+  put(staffX - 2, orbY + 1, P.orbGlow, 110);
+  put(staffX, orbY + 2, P.orbGlow, 120);
+
+  // ---- robe body (a rounded trapezoid: narrow shoulders → wide hem) ----
+  for (let gy = shoulder; gy <= hemBot; gy++) {
+    const t = (gy - shoulder) / (hemBot - shoulder); // 0 at shoulder, 1 at hem
+    const halfW = Math.round(3 + t * 4);             // 3 → 7 blocks half-width
+    const sway = gy >= hemTop ? Math.round(hemSway * t) : 0;
+    const cxg = 11 + sway;
+    for (let gx = cxg - halfW; gx <= cxg + halfW; gx++) {
+      // top-right light: lit on the right/upper, shaded on the lower-left.
+      let col = P.robe;
+      if (gx - cxg >= halfW - 1 && gy <= hemTop) col = P.robeLit;
+      else if (gx - cxg <= -(halfW - 1) || gy >= hemBot - 1) col = P.robeShade;
+      put(gx, gy, col);
     }
+    // selout on the robe silhouette edges
+    put(cxg - halfW - 1, gy, P.robeLine);
+    put(cxg + halfW + 1, gy, P.robeLine);
   }
-  // ears (two triangles)
-  for (let e = -1; e <= 1; e += 2) {
-    const exc = cx + e * 11;
-    for (let y = 0; y < 10; y++) {
-      const halfw = Math.floor((10 - y) / 2);
-      for (let x = -halfw; x <= halfw; x++) setPx(cv, exc + x, hy - hR - 2 + y, body, 255);
+  // hem bottom outline
+  for (let gx = 4; gx <= 18; gx++) {
+    const cxg = 11 + Math.round(hemSway);
+    if (Math.abs(gx - cxg) <= 7) put(gx, hemBot + 1, P.robeLine);
+  }
+
+  // violet trim: a vertical band down the robe front (front views) or a sigil (back).
+  if (front) {
+    for (let gy = shoulder + 1; gy <= hemBot - 1; gy++) {
+      put(11, gy, (gy % 2 === 0) ? P.trim : P.trimLit);
     }
-  }
-  // eyes: depend on direction. NE/NW (facing away) -> no eyes / faint.
-  const facingAway = (dir === 2 || dir === 3);
-  if (!facingAway) {
-    const ex = (dir === 0) ? 5 : -5; // SE looks right-ish, SW left-ish
-    setPx(cv, cx + ex - 4, hy - 2, eye); setPx(cv, cx + ex - 3, hy - 2, eye);
-    setPx(cv, cx + ex - 4, hy - 1, eye); setPx(cv, cx + ex - 3, hy - 1, eye);
-    setPx(cv, cx + ex + 4, hy - 2, eye); setPx(cv, cx + ex + 5, hy - 2, eye);
-    setPx(cv, cx + ex + 4, hy - 1, eye); setPx(cv, cx + ex + 5, hy - 1, eye);
   } else {
-    // tail hint for back views
-    fillRect(cv, cx + (dir === 2 ? 12 : -16), baseY - 20, cx + (dir === 2 ? 18 : -10), baseY - 6, bodyDark);
+    // back sigil: a small diamond of violet on the cloak back.
+    put(11, 12 + bob, P.trimLit);
+    put(10, 13 + bob, P.trim); put(12, 13 + bob, P.trim);
+    put(11, 14 + bob, P.trimLit);
+  }
+
+  // ---- hood (over the head, casting an inner shadow) ----
+  // A rounded hood shape from topHood down to the shoulders.
+  for (let gy = topHood; gy < shoulder; gy++) {
+    const t = (gy - topHood) / (shoulder - topHood);
+    const halfW = Math.round(2 + t * 3);   // 2 → 5 blocks
+    for (let gx = 11 - halfW; gx <= 11 + halfW; gx++) {
+      let col = P.robe;
+      if (gx - 11 >= halfW - 1) col = P.robeLit;         // top-right catch
+      else if (gx - 11 <= -(halfW - 1)) col = P.robeShade;
+      put(gx, gy, col);
+    }
+    put(11 - halfW - 1, gy, P.robeLine);
+    put(11 + halfW + 1, gy, P.robeLine);
+  }
+  // hood crown outline
+  for (let gx = 9; gx <= 13; gx++) put(gx, topHood - 1, P.robeLine);
+
+  if (front) {
+    // hood interior shadow (the face is in darkness) with two violet glowing eyes.
+    for (let gy = 7 + bob; gy <= 9 + bob; gy++) {
+      for (let gx = 9; gx <= 13; gx++) put(gx, gy, P.hoodDark);
+    }
+    // two violet eyes (SE looks slightly right of center; mirrored for SW).
+    put(10, 8 + bob, P.trimLit);
+    put(12, 8 + bob, P.trimLit);
+    // faint eye glow
+    put(10, 7 + bob, P.trim, 120);
+    put(12, 7 + bob, P.trim, 120);
+  } else {
+    // back of hood: fill the interior with robe shade (no face).
+    for (let gy = 7 + bob; gy <= 9 + bob; gy++) {
+      for (let gx = 9; gx <= 13; gx++) put(gx, gy, P.robeShade);
+    }
   }
 }
 
@@ -249,10 +335,10 @@ function makeCharSheet() {
   const cols = 3, rows = 4, F = 96;
   const cv = makeCanvas(cols * F, rows * F);
   for (let r = 0; r < rows; r++) {
-    // col0 idle (phase 0), col1 walk0 (phase 0), col2 walk1 (phase 1)
-    drawCat(cv, 0 * F, r * F, r, 0);
-    drawCat(cv, 1 * F, r * F, r, 0);
-    drawCat(cv, 2 * F, r * F, r, 1);
+    // col0 idle (phase 0), col1 walk0 (phase 1 = hem down), col2 walk1 (phase 2 = up).
+    drawConstructor(cv, 0 * F, r * F, r, 0);
+    drawConstructor(cv, 1 * F, r * F, r, 1);
+    drawConstructor(cv, 2 * F, r * F, r, 2);
   }
   save(cv, 'character_sheet.png');
 }
@@ -316,11 +402,14 @@ save(makeBlob('stone.png', 64, 64, 32, 50, 12, 8, '#b0b0ba', '#6c6c76'), 'stone.
   save(cv, 'grass_tuft.png');
 })();
 
-// ---- Cauldron (솥단지, M3) ----
+// ---- Cauldron (솥단지, M3; v0.2.1 gets a 2-frame bubble) ----
 // 128x128, ground origin at bottom-center. Dark pot body with a violet glow rim
 // (accent #9e7ad9) around the mouth — reads as the fusion cauldron. Palette per
 // art guide: dark #2a2a33 base, violet accent #9e7ad9, cream highlight #faf5e6.
-(function () {
+// v0.2.1: factored into makeCauldron(name, bubble) so we emit two brew-surface
+// frames (cauldron.png + cauldron_bubble.png); the world sprite alternates them for
+// a subtle bubbling animation (조합 쾌감 §5, world-cauldron polish).
+function makeCauldron(name, bubble) {
   const W = 128, H = 128;
   const cv = makeCanvas(W, H);
   const bodyDark = hexToRGB('#2a2a33');
@@ -328,6 +417,7 @@ save(makeBlob('stone.png', 64, 64, 32, 50, 12, 8, '#b0b0ba', '#6c6c76'), 'stone.
   const glow = hexToRGB('#9e7ad9');
   const glowBright = hexToRGB('#c8a8ec');
   const brew = hexToRGB('#6b4a9e');
+  const brewLit = hexToRGB('#8a5ac8');
   const cream = hexToRGB('#faf5e6');
 
   // contact shadow at the base
@@ -357,17 +447,28 @@ save(makeBlob('stone.png', 64, 64, 32, 50, 12, 8, '#b0b0ba', '#6c6c76'), 'stone.
     fillRect(cv, fx - 6, 108, fx + 6, 118, bodyDark);
   }
 
-  // mouth: brewing ellipse at the top of the belly (the violet fusion surface)
+  // mouth: brewing ellipse at the top of the belly (the violet fusion surface).
+  // The bubble frame shifts the shimmer checker phase and lifts a couple of rising
+  // bubbles so the two frames read as a gentle boil.
   const mcx = 64, mcy = 52, mrx = 40, mry = 13;
+  const phase = bubble ? 1 : 0;
   for (let y = -mry; y <= mry; y++)
     for (let x = -mrx; x <= mrx; x++) {
       const dx = x / mrx, dy = y / mry;
       if (dx * dx + dy * dy <= 1.0) {
-        // shimmer: alternate brew / glow for a bubbling look
-        const c = (((x >> 2) + (y >> 1)) % 2 === 0) ? brew : glow;
+        // shimmer: alternate brew / glow for a bubbling look (phase-shifted per frame)
+        const c = ((((x >> 2) + (y >> 1) + phase) % 2 === 0)) ? brew : glow;
         setPx(cv, mcx + x, mcy + y, c, 255);
       }
     }
+  // rising bubbles: small bright blobs, positioned differently per frame.
+  const bubbles = bubble
+    ? [[54, 48], [70, 46], [62, 50]]
+    : [[58, 50], [74, 49]];
+  for (const [bx, by] of bubbles) {
+    setPx(cv, bx, by, brewLit); setPx(cv, bx + 1, by, brewLit);
+    setPx(cv, bx, by - 1, glowBright, 220); setPx(cv, bx + 1, by - 1, glowBright, 220);
+  }
 
   // glow rim: bright violet ring around the mouth
   for (let a = 0; a < 360; a++) {
@@ -379,13 +480,16 @@ save(makeBlob('stone.png', 64, 64, 32, 50, 12, 8, '#b0b0ba', '#6c6c76'), 'stone.
     setPx(cv, x, y + 1, glow, 200);
   }
 
-  // faint cream sparkle above the brew (the "whisper")
+  // faint cream sparkle above the brew (the "whisper") — one extra on the bubble frame.
   setPx(cv, 60, 40, cream, 220); setPx(cv, 61, 40, cream, 220);
   setPx(cv, 72, 36, cream, 180);
   setPx(cv, 52, 38, cream, 160);
+  if (bubble) { setPx(cv, 66, 34, cream, 200); setPx(cv, 67, 34, cream, 200); }
 
-  save(cv, 'cauldron.png');
-})();
+  save(cv, name);
+}
+makeCauldron('cauldron.png', false);
+makeCauldron('cauldron_bubble.png', true);
 
 // ============================================================================
 // M4 art — 시작의 숲 landmarks & gates.

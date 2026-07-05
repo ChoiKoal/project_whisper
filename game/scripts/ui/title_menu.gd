@@ -33,6 +33,8 @@ const SKY_TOP := Color("#1a1a20")
 const SKY_BOTTOM := Color("#2a2a3c")
 
 const GROVE_SCENE := "res://scenes/world/starting_grove.tscn"
+## 새로 시작 routes through the opening cutscene (v0.2.1); 이어하기/NG+ skip it.
+const OPENING_SCENE := "res://scenes/ui/opening.tscn"
 
 ## Iso tile footprint (matches the in-game 128×64 diamonds): half-width, half-height.
 const ISO := Vector2(64, 32)
@@ -397,7 +399,8 @@ func _on_new_game() -> void:
 	SaveManager.new_game()
 	SaveManager.delete_save()
 	SaveManager.pending_load = false
-	get_tree().change_scene_to_file(GROVE_SCENE)
+	# v0.2.1: 새로 시작 plays the opening cutscene first, which then loads the grove.
+	get_tree().change_scene_to_file(OPENING_SCENE)
 
 
 func _on_continue() -> void:

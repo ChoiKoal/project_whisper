@@ -19,9 +19,42 @@ const GROUP := "gatherable"
 ## Emitted when the player interacts with the cauldron.
 signal interacted
 
+## v0.2.1: subtle bubbling — alternate between two brew-surface frames on a slow
+## timer + a faint scale pulse. Purely cosmetic (world-cauldron polish, 조합 쾌감 §5).
+const TEX_CALM := "res://assets/objects/cauldron.png"
+const TEX_BUBBLE := "res://assets/objects/cauldron_bubble.png"
+const BUBBLE_PERIOD := 0.55  ## seconds per brew frame
+
+var _tex_calm: Texture2D
+var _tex_bubble: Texture2D
+var _bubble_t: float = 0.0
+var _bubble_on: bool = false
+var _pulse_t: float = 0.0
+
 
 func _ready() -> void:
 	add_to_group(GROUP)
+	_tex_calm = load(TEX_CALM)
+	_tex_bubble = load(TEX_BUBBLE)
+	# Cache the base texture actually assigned by the loader as the "calm" frame in
+	# case art paths change; only animate if both frames resolved.
+	if texture != null:
+		_tex_calm = texture
+
+
+func _process(delta: float) -> void:
+	if _tex_bubble == null or _tex_calm == null:
+		return
+	_bubble_t += delta
+	if _bubble_t >= BUBBLE_PERIOD:
+		_bubble_t -= BUBBLE_PERIOD
+		_bubble_on = not _bubble_on
+		texture = _tex_bubble if _bubble_on else _tex_calm
+	# Very subtle breathing pulse so the whole pot reads as alive (kept tiny so the
+	# base footprint / Y-sort origin doesn't visibly shift).
+	_pulse_t += delta * 2.2
+	var s := 1.0 + sin(_pulse_t) * 0.02
+	scale = Vector2(s, s)
 
 
 # ---- Gatherable-compatible interface (so the controller can target it) ----

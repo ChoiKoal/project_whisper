@@ -34,6 +34,25 @@ var _open: bool = false
 ## Two input slot ids ("" = empty).
 var _inputs: Array[String] = ["", ""]
 
+# ---- v0.2.1 fusion juice (조합 쾌감 §5) -----------------------------------
+## Central cauldron graphic the input icons fly into on a valid fuse.
+var _cauldron: TextureRect
+var _cauldron_calm: Texture2D
+var _cauldron_bubble: Texture2D
+## Overlay layer (above the panel) hosting the flying icons, particles, flash,
+## banner. Kept separate so it can be cleared each sequence without disturbing UI.
+var _fx: Control
+## Discovery banner ("✦ 새로운 발견! ✦") + codex counter, built lazily.
+var _banner: Label
+var _codex_counter: Label
+## Guards against re-entrant fuse presses while a juice sequence is running.
+var _animating: bool = false
+## The currently running success sequence tween (so a click can skip it).
+var _seq_tween: Tween
+## Deferred result payload applied when the sequence completes or is skipped.
+var _pending_result: Dictionary = {}
+const SUCCESS_TOTAL := 1.2  ## seconds, full success sequence
+
 
 func _ready() -> void:
 	_build_ui()
@@ -99,6 +118,20 @@ func _build_ui() -> void:
 	slots_row.add_child(_symbol("="))
 	slots_row.add_child(_make_result_slot())
 
+	# Central cauldron graphic (juice §5): input icons fly into this on a valid fuse.
+	var caul_center := CenterContainer.new()
+	outer.add_child(caul_center)
+	_cauldron = TextureRect.new()
+	_cauldron.custom_minimum_size = Vector2(96, 96)
+	_cauldron.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_cauldron.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_cauldron.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_cauldron.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cauldron_calm = load("res://assets/objects/cauldron.png")
+	_cauldron_bubble = load("res://assets/objects/cauldron_bubble.png")
+	_cauldron.texture = _cauldron_calm
+	caul_center.add_child(_cauldron)
+
 	# --- clear + fuse buttons ---
 	var btn_row := HBoxContainer.new()
 	btn_row.add_theme_constant_override("separation", 10)
@@ -162,6 +195,14 @@ func _build_ui() -> void:
 	_strip = HFlowContainer.new()
 	_strip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_strip)
+
+	# FX overlay: full-rect, above the panel, ignores mouse. Flying icons, particle
+	# bursts, the success flash and the discovery banner all live here so they never
+	# reflow the panel layout.
+	_fx = Control.new()
+	_fx.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_fx)
 
 
 func _symbol(t: String) -> Label:
@@ -261,6 +302,14 @@ func _set_visible(v: bool) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not _open:
 		return
+	# A click / interact / left-mouse during a running success sequence SKIPS the
+	# juice (jump to result) instead of closing the panel (juice §5).
+	if _animating and (event.is_action_pressed("interact")
+			or (event is InputEventMouseButton and event.pressed
+				and event.button_index == MOUSE_BUTTON_LEFT)):
+		_skip_sequence()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("interact"):
 		_set_visible(false)
 		get_viewport().set_input_as_handled()
@@ -335,38 +384,261 @@ func _refresh_slots() -> void:
 # ---- fuse ----------------------------------------------------------------
 
 func _on_fuse_pressed() -> void:
+	# A click during a running success sequence skips it to the result (juice §5).
+	if _animating:
+		_skip_sequence()
+		return
 	if _inputs[0] == "" or _inputs[1] == "":
 		_status.text = "재료를 두 개 넣어라."
 		return
 
+	# --- LOGIC UNCHANGED: capture the input icons for the fly-in BEFORE fuse mutates
+	# the slots, snapshot the codex recipe count for first-discovery detection, run
+	# the real fuse, then drive the juice around the identical result payload. ---
+	var in_icons: Array[Texture2D] = [ItemDB.icon(_inputs[0]), ItemDB.icon(_inputs[1])]
+	var recipes_before := Codex.discovered_recipe_count()
+
 	var res := Fusion.fuse(_inputs[0], _inputs[1])
 	if res["matched"]:
-		var out: String = res["output"]
-		_result_icon.texture = ItemDB.icon(out)
-		_result_name.text = ItemDB.item_name(out)
-		_result_flavor.text = ItemDB.item_flavor(out)
-		_status.text = "새로운 것을 만들었다!"
-		_pulse_result()
-		# Inputs are consumed; clear the slots but keep the result showing.
+		var first_discovery := Codex.discovered_recipe_count() > recipes_before
+		# Inputs are consumed by fuse(); clear the slots + strip now (as before).
 		_inputs = ["", ""]
 		_refresh_slots()
 		_rebuild_strip()
+		# Defer the visible result until the sequence pops it (or a skip fast-forwards).
+		_pending_result = {
+			"output": res["output"],
+			"first": first_discovery,
+		}
+		_status.text = ""
+		_play_success_sequence(in_icons)
 	else:
 		_status.text = "…반응이 없다"
 		_result_flavor.text = ""
 		if res["hint_revealed"]:
 			_status.text = "…반응이 없다  (힌트가 도감에 나타났다)"
+		_play_failure_feedback()
 
 
-func _pulse_result() -> void:
+# ==== success juice sequence (~1.2s, click-skippable) ======================
+
+func _play_success_sequence(in_icons: Array[Texture2D]) -> void:
+	_animating = true
+	_clear_fx()
+	# Clear the result slot while brewing (it pops in at the end).
+	_result_icon.texture = null
+	_result_name.text = "???"
+	_result_flavor.text = ""
+
+	var caul_pos := _center_global(_cauldron)
+
+	# 1. Input icons fly from the two input slots into the cauldron (arc + shrink).
+	for i in in_icons.size():
+		if in_icons[i] == null:
+			continue
+		var fly := TextureRect.new()
+		fly.texture = in_icons[i]
+		fly.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		fly.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		fly.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		fly.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fly.size = Vector2(56, 56)
+		fly.pivot_offset = Vector2(28, 28)
+		var start := _center_global(_slot_icons[i]) - Vector2(28, 28)
+		fly.global_position = start
+		_fx.add_child(fly)
+		var arc := create_tween()
+		arc.set_parallel(true)
+		# arc via an intermediate raised midpoint
+		var mid := start.lerp(caul_pos - Vector2(28, 28), 0.5) - Vector2(0, 60)
+		arc.tween_property(fly, "global_position", mid, 0.18).set_ease(Tween.EASE_OUT)
+		arc.chain().tween_property(fly, "global_position", caul_pos - Vector2(28, 28), 0.18).set_ease(Tween.EASE_IN)
+		arc.parallel().tween_property(fly, "scale", Vector2(0.3, 0.3), 0.36)
+		arc.parallel().tween_property(fly, "modulate:a", 0.4, 0.36)
+		arc.chain().tween_callback(fly.queue_free)
+
+	# 2. Cauldron anticipation: bubble frame + scale pulse + violet particle burst.
+	_seq_tween = create_tween()
+	_seq_tween.tween_interval(0.36)  # wait for the fly-in
+	_seq_tween.tween_callback(func():
+		if _cauldron_bubble != null:
+			_cauldron.texture = _cauldron_bubble
+		_burst_particles(caul_pos, Color("#9e7ad9"), 26))
+	_cauldron.pivot_offset = _cauldron.size * 0.5
+	_seq_tween.tween_property(_cauldron, "scale", Vector2(1.22, 1.22), 0.2).set_trans(Tween.TRANS_SINE)
+	_seq_tween.tween_property(_cauldron, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_SINE)
+	# 3. Flash.
+	_seq_tween.tween_callback(_flash)
+	# 4. Result POPS + sparkles.
+	_seq_tween.tween_callback(_reveal_result)
+	_seq_tween.tween_callback(func(): _animating = false)
+
+
+## Apply the pending result to the result slot and pop it (overshoot). Idempotent.
+func _reveal_result() -> void:
+	if _pending_result.is_empty():
+		return
+	var out: String = _pending_result.get("output", "")
+	var first: bool = _pending_result.get("first", false)
+	_pending_result = {}
+	if _cauldron != null:
+		_cauldron.texture = _cauldron_calm
+	_result_icon.texture = ItemDB.icon(out)
+	_result_name.text = ItemDB.item_name(out)
+	_result_flavor.text = ItemDB.item_flavor(out)
+	_status.text = "새로운 것을 만들었다!"
+	_pop_result_slot()
+	_burst_particles(_center_global(_result_icon), Color("#d9b8ff"), 20)
+	if first:
+		_show_discovery_banner()
+
+
+func _pop_result_slot() -> void:
 	var slot := _root.find_child("ResultSlot", true, false) as Control
 	if slot == null:
 		return
 	slot.pivot_offset = slot.size * 0.5
 	slot.scale = Vector2.ONE
 	var tw := create_tween()
-	tw.tween_property(slot, "scale", Vector2(1.25, 1.25), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(slot, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(slot, "scale", Vector2(1.35, 1.35), 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(slot, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_SINE)
+
+
+## Click-skip: jump straight to the popped result.
+func _skip_sequence() -> void:
+	if _seq_tween != null and _seq_tween.is_valid():
+		_seq_tween.kill()
+	_clear_fx()
+	if _cauldron != null:
+		_cauldron.scale = Vector2.ONE
+	_reveal_result()
+	_animating = false
+
+
+# ==== failure feedback (gray smoke + panel shake) ==========================
+
+func _play_failure_feedback() -> void:
+	# Gray smoke puff at the cauldron.
+	_burst_particles(_center_global(_cauldron), Color(0.72, 0.72, 0.76), 16)
+	# Panel shake (position tween).
+	var base := _root.position
+	var tw := create_tween()
+	for i in 4:
+		var dx := 10.0 if i % 2 == 0 else -10.0
+		tw.tween_property(_root, "position", base + Vector2(dx, 0), 0.05).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(_root, "position", base, 0.05)
+
+
+# ==== fx primitives ========================================================
+
+## A short-lived violet flash over the whole panel.
+func _flash() -> void:
+	var f := ColorRect.new()
+	f.color = Color(0.85, 0.72, 1.0, 0.0)
+	f.set_anchors_preset(Control.PRESET_FULL_RECT)
+	f.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fx.add_child(f)
+	var tw := create_tween()
+	tw.tween_property(f, "color:a", 0.5, 0.06)
+	tw.tween_property(f, "color:a", 0.0, 0.22)
+	tw.tween_callback(f.queue_free)
+
+
+## A one-shot CPUParticles2D burst at a global position.
+func _burst_particles(global_pos: Vector2, col: Color, amount: int) -> void:
+	var p := CPUParticles2D.new()
+	p.position = global_pos
+	p.amount = amount
+	p.one_shot = true
+	p.explosiveness = 0.9
+	p.lifetime = 0.5
+	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = 6.0
+	p.direction = Vector2(0, -1)
+	p.spread = 180.0
+	p.gravity = Vector2(0, 120)
+	p.initial_velocity_min = 60.0
+	p.initial_velocity_max = 160.0
+	p.scale_amount_min = 2.0
+	p.scale_amount_max = 4.0
+	p.color = col
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	p.material = mat
+	_fx.add_child(p)
+	p.emitting = true
+	# Auto-free after the burst finishes.
+	var t := get_tree().create_timer(1.0)
+	t.timeout.connect(func():
+		if is_instance_valid(p):
+			p.queue_free())
+
+
+## Slide-in "✦ 새로운 발견! ✦" banner + a visible codex recipe counter tick.
+func _show_discovery_banner() -> void:
+	if _banner == null:
+		_banner = Label.new()
+		_banner.add_theme_color_override("font_color", Color("#d9b8ff"))
+		_banner.add_theme_font_size_override("font_size", 22)
+		_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0.16, 0.12, 0.22, 0.92)
+		sb.set_corner_radius_all(8)
+		sb.set_content_margin_all(8)
+		sb.set_border_width_all(2)
+		sb.border_color = Color("#9e7ad9")
+		_banner.add_theme_stylebox_override("normal", sb)
+		_fx.add_child(_banner)
+
+		_codex_counter = Label.new()
+		_codex_counter.add_theme_color_override("font_color", Color("#faf5e6"))
+		_codex_counter.add_theme_font_size_override("font_size", 16)
+		_codex_counter.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_fx.add_child(_codex_counter)
+
+	_banner.text = "✦ 새로운 발견! ✦"
+	_banner.visible = true
+	_banner.size = _banner.get_minimum_size()
+	var cx := _root.global_position.x + _root.size.x * 0.5 - _banner.size.x * 0.5
+	var top_y := _root.global_position.y - 6
+	_banner.global_position = Vector2(cx, top_y - 40)
+	_banner.modulate.a = 0.0
+
+	_codex_counter.text = "도감 레시피 %d종" % Codex.discovered_recipe_count()
+	_codex_counter.visible = true
+	_codex_counter.size = _codex_counter.get_minimum_size()
+	_codex_counter.global_position = Vector2(
+		_root.global_position.x + _root.size.x * 0.5 - _codex_counter.size.x * 0.5,
+		top_y - 8)
+	_codex_counter.modulate = Color(1, 1, 1, 0)
+
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(_banner, "global_position:y", top_y - 8, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_banner, "modulate:a", 1.0, 0.3)
+	tw.parallel().tween_property(_codex_counter, "modulate:a", 1.0, 0.4).set_delay(0.2)
+	# Tick pulse on the counter.
+	tw.chain().tween_callback(func():
+		if not is_instance_valid(_codex_counter):
+			return
+		_codex_counter.pivot_offset = _codex_counter.size * 0.5
+		var pt := create_tween()
+		pt.tween_property(_codex_counter, "scale", Vector2(1.3, 1.3), 0.12)
+		pt.tween_property(_codex_counter, "scale", Vector2.ONE, 0.15))
+
+
+func _clear_fx() -> void:
+	if _fx == null:
+		return
+	for c in _fx.get_children():
+		c.queue_free()
+	_banner = null
+	_codex_counter = null
+
+
+## Global-space center of a Control.
+func _center_global(c: Control) -> Vector2:
+	return c.global_position + c.size * 0.5
 
 
 # ---- hint gauge dots -----------------------------------------------------

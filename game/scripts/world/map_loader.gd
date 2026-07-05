@@ -28,6 +28,19 @@ const ATLAS := Vector2i(0, 0)
 ## Deterministic global seed mixed into every procedural hash (map coords → value).
 const MAP_SEED := 0x9E3779B9
 
+## ---- Draw-order z tiers (v0.2.1 bug-A fix) --------------------------------
+## Ground tiles sit at the tilemap's own z (0). The edge overlays and brightness
+## jitter are children of the tilemap (z_as_relative) at these z values, and the
+## sibling YSortLayer carries YSORT_Z (set in the scene) which MUST be greater than
+## both so the player/objects always draw above the ground treatment. The glow
+## sprites live on a separate CanvasLayer (always above the root canvas); UI panels
+## are on higher CanvasLayers. Exposed as constants so the harness can assert the
+## ordering programmatically.
+const EDGE_OVERLAY_Z := 1
+const JITTER_Z := 2
+## Expected z_index of the YSortLayer node in the grove scene (player + objects).
+const YSORT_Z := 5
+
 ## Where object instances are added (must be Y-sorted).
 @export var ysort_layer_path: NodePath
 ## Where floating labels / fade spawn for gate feedback.
@@ -98,6 +111,7 @@ func _ready() -> void:
 	_scatter_objects()
 	_build_edge_overlays()
 	_build_brightness_jitter()
+	_build_border_collision()
 	_place_player()
 	_wire_stump_fade()
 
@@ -236,9 +250,14 @@ func _variant_source(c: int, r: int) -> int:
 func _build_edge_overlays() -> void:
 	_edge_overlay = Node2D.new()
 	_edge_overlay.name = "EdgeOverlay"
-	# z_index 0 relative to the tilemap draws it right on top of the ground cells;
-	# the sibling YSortLayer is drawn afterwards, so objects stay above overlays.
-	_edge_overlay.z_index = 1
+	# Draw order (v0.2.1 bug-A fix): ground tiles (z0) < edge overlays (z1) <
+	# brightness jitter (z2) < YSortLayer objects+player (z5, set in the scene) <
+	# glow (separate CanvasLayer) < UI. These overlays are children of the Ground
+	# tilemap with z_as_relative, so their effective z is 0+1 / 0+2 — strictly below
+	# the YSortLayer's z5, so the player/objects always render ABOVE the ground
+	# treatment (previously z1/z2 beat the YSortLayer's z0 and drew over the player,
+	# most visibly at night when the CanvasModulate darkened the overlays).
+	_edge_overlay.z_index = EDGE_OVERLAY_Z
 	add_child(_edge_overlay)
 	for r in range(height):
 		var row := _layout[r]
@@ -287,7 +306,7 @@ func _build_brightness_jitter() -> void:
 		return
 	_bright_overlay = Node2D.new()
 	_bright_overlay.name = "BrightnessJitter"
-	_bright_overlay.z_index = 2
+	_bright_overlay.z_index = JITTER_Z
 	_bright_overlay.set_script(jitter_script)
 	add_child(_bright_overlay)
 	# Duck-typed call: only invoke if the script actually exposes setup().
@@ -302,6 +321,108 @@ func brightness_jitter(cell: Vector2i) -> float:
 		return 0.0
 	var n := float(_cell_hash(cell.x, cell.y, 53) & 0xffff) / 65535.0
 	return (n - 0.5) * 0.06
+
+
+# ---- border collision (v0.2.1 bug-B fix) ---------------------------------
+
+## Physics node holding the map-border walls. Built in code.
+var _border_body: StaticBody2D
+
+## Half-extents of a 128×64 iso diamond, for per-cell collision polygons.
+const TILE_HALF_W := 64.0
+const TILE_HALF_H := 32.0
+
+## Seal the playable area so WASD movement (which only samples tile speed, not
+## walkability — non-walkable tiles rely on physics) can never leave the map.
+##
+## Two layers, belt-and-suspenders:
+##   1. A diamond collision polygon on every ORIGINAL-layout VOID cell (symbol 'V').
+##      Read from `_layout`, NOT from live tile data, so a VOID hole created at
+##      runtime by GATHERING a tile inside the map stays walkable exactly as before
+##      — only the authored border band becomes solid.
+##   2. A rectangular perimeter frame just outside the 40×40 iso bounds, catching
+##      the outermost edge (e.g. the southern grass row that borders open space with
+##      no VOID beyond it).
+##
+## Water/mystic cells already carry their own TileSet physics polygons, so they are
+## left to the tilemap; the stepping-stone mechanism (swap water→dirt via set_cell)
+## keeps working untouched. This node never covers water cells.
+func _build_border_collision() -> void:
+	_border_body = StaticBody2D.new()
+	_border_body.name = "BorderCollision"
+	# collision_layer 1 matches the tileset physics layer the player collides with.
+	_border_body.collision_layer = 1
+	_border_body.collision_mask = 0
+	add_child(_border_body)
+
+	# 1. Per-cell diamond walls on authored VOID cells.
+	for r in range(height):
+		var row := _layout[r] if r < _layout.size() else ""
+		for c in range(min(width, row.length())):
+			if row[c] != "V":
+				continue
+			var col := CollisionPolygon2D.new()
+			var center := map_to_local(Vector2i(c, r))
+			col.polygon = PackedVector2Array([
+				center + Vector2(0, -TILE_HALF_H),
+				center + Vector2(TILE_HALF_W, 0),
+				center + Vector2(0, TILE_HALF_H),
+				center + Vector2(-TILE_HALF_W, 0),
+			])
+			_border_body.add_child(col)
+
+	# 2. Perimeter frame just outside the iso bounds (thick walls so fast motion
+	#    can't tunnel). Computed from the four extreme cell centers.
+	_build_perimeter_frame()
+
+
+## A rectangular ring of four thick wall segments enclosing the whole iso map, so
+## the outermost walkable cells (with no VOID beyond them) are still sealed.
+func _build_perimeter_frame() -> void:
+	if width <= 0 or height <= 0:
+		return
+	# Iso extremes: top = cell(0,0) top vertex, bottom = cell(w-1,h-1) bottom vertex,
+	# left = cell(0,h-1) left vertex, right = cell(w-1,0) right vertex.
+	var top := map_to_local(Vector2i(0, 0)).y - TILE_HALF_H
+	var bottom := map_to_local(Vector2i(width - 1, height - 1)).y + TILE_HALF_H
+	var left := map_to_local(Vector2i(0, height - 1)).x - TILE_HALF_W
+	var right := map_to_local(Vector2i(width - 1, 0)).x + TILE_HALF_W
+	var thick := 128.0
+	var pad := 8.0
+	# Each wall is a CollisionShape2D rectangle hugging one outer edge.
+	var walls := [
+		# top:    spans full width, sits above `top`
+		[Vector2((left + right) * 0.5, top - pad - thick * 0.5), Vector2(right - left + thick * 2, thick)],
+		# bottom: below `bottom`
+		[Vector2((left + right) * 0.5, bottom + pad + thick * 0.5), Vector2(right - left + thick * 2, thick)],
+		# left:   left of `left`
+		[Vector2(left - pad - thick * 0.5, (top + bottom) * 0.5), Vector2(thick, bottom - top + thick * 2)],
+		# right:  right of `right`
+		[Vector2(right + pad + thick * 0.5, (top + bottom) * 0.5), Vector2(thick, bottom - top + thick * 2)],
+	]
+	for w in walls:
+		var cs := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = w[1]
+		cs.shape = rect
+		cs.position = w[0]
+		_border_body.add_child(cs)
+
+
+## Test helper: true if a world point lies inside a border wall (VOID cell diamond
+## or the perimeter frame). Used by the containment harness to prove a motion test
+## at a border midpoint is blocked. Uses the same authored-VOID data as the builder.
+func point_in_border(world: Vector2) -> bool:
+	var cell := world_to_cell(world)
+	# Authored VOID cell?
+	if cell.y >= 0 and cell.y < _layout.size():
+		var row: String = _layout[cell.y]
+		if cell.x >= 0 and cell.x < row.length() and row[cell.x] == "V":
+			return true
+	# Outside the iso bounds → caught by the perimeter frame.
+	if cell.x < 0 or cell.y < 0 or cell.x >= width or cell.y >= height:
+		return true
+	return false
 
 
 # ---- objects -------------------------------------------------------------

@@ -5,8 +5,10 @@ extends Node
 ## States:
 ##   BOOT      → switch to title.tscn
 ##   AT_TITLE1 → find title menu, press 새로 시작
+##   AT_OPENING→ (v0.2.1) 새로 시작 now enters the opening cutscene; traverse it by
+##               calling advance() a few times then skip_all() → grove
 ##   IN_GROVE1 → survive GROVE1_FRAMES, then open pause + 저장, then 타이틀로
-##   AT_TITLE2 → find title menu, press 이어하기
+##   AT_TITLE2 → find title menu, press 이어하기 (continues skip the opening)
 ##   IN_GROVE2 → survive GROVE2_FRAMES, then report + quit
 ##
 ## Assertions are collected and printed PASS/FAIL; exit code = failure count.
@@ -15,13 +17,15 @@ const TITLE_SCENE := "res://scenes/ui/title.tscn"
 const GROVE1_FRAMES := 90
 const GROVE2_FRAMES := 60
 
-enum State { BOOT, AT_TITLE1, IN_GROVE1, AT_TITLE2, IN_GROVE2, DONE }
+enum State { BOOT, AT_TITLE1, AT_OPENING, IN_GROVE1, AT_TITLE2, IN_GROVE2, DONE }
 
 var _state: int = State.BOOT
 var _frames: int = 0
 var _fail: int = 0
 var _saved := false
 var _pressed_title := false
+## How many times we've stepped the opening cutscene forward (v0.2.1).
+var _opening_advances: int = 0
 
 
 func _ready() -> void:
@@ -44,6 +48,8 @@ func _process(_delta: float) -> void:
 	match _state:
 		State.AT_TITLE1:
 			_tick_title1()
+		State.AT_OPENING:
+			_tick_opening()
 		State.IN_GROVE1:
 			_tick_grove1()
 		State.AT_TITLE2:
@@ -63,10 +69,39 @@ func _tick_title1() -> void:
 	_check("title screen built (새로 시작 present)", true)
 	menu.call("_on_new_game")
 	_frames = 0
+	_opening_advances = 0
+	_state = State.AT_OPENING
+
+
+## Traverse the opening cutscene (v0.2.1). 새로 시작 now lands on the Opening scene;
+## exercise its real advance() a couple of times (proving the card flow), then
+## skip_all() to change into the grove — keeping the downstream grove assertions.
+func _tick_opening() -> void:
+	var opening := _find_method(_current(), "skip_all")
+	if opening == null:
+		# Opening not up yet (scene change still flushing) — wait a frame. If we
+		# somehow already reached the grove, fall through to IN_GROVE1.
+		if _grove_ok():
+			_frames = 0
+			_state = State.IN_GROVE1
+		return
+	if _opening_advances == 0:
+		_check("opening cutscene reached after 새로 시작", true)
+	if _opening_advances < 2:
+		opening.call("advance")   # step through a couple of cards
+		_opening_advances += 1
+		return
+	# Skip the rest → grove.
+	opening.call("skip_all")
+	_frames = 0
 	_state = State.IN_GROVE1
 
 
 func _tick_grove1() -> void:
+	# skip_all() fades then change_scene_to_file — wait until the grove is actually
+	# up before starting the survive-count (the fade adds a few frames).
+	if _frames == 0 and not _grove_ok():
+		return
 	_frames += 1
 	if _frames == 1:
 		_check("grove reached after 새로 시작", _grove_ok())
