@@ -103,6 +103,49 @@ func is_key_item(id: String) -> bool:
 	return bool(get_item(id).get("key_item", false))
 
 
+# ---- v0.4.0-C placement expansion ----------------------------------------
+## The `placement` sub-record for an item, or {} if the item isn't placeable via the
+## expanded placement framework. Shape: {class, on:[tile_ids], blocks:bool, glows?:bool}.
+func get_placement(id: String) -> Dictionary:
+	return get_item(id).get("placement", {})
+
+
+## True if the item participates in the expanded placement framework (has a placement
+## record). Note: this is broader than get_placeable_on(); it covers structures/decor.
+func is_placeable(id: String) -> bool:
+	return not get_placement(id).is_empty()
+
+
+## Placement class: "functional" (consumed — D14/D22), "structure" (persistent object,
+## may block), "decor" (persistent object, never blocks). "" if not placeable.
+func placement_class(id: String) -> String:
+	return String(get_placement(id).get("class", ""))
+
+
+## Tile ids this item may be placed on under the expanded framework. Falls back to the
+## legacy placeable_on list when no placement record exists.
+func placement_tiles(id: String) -> Array:
+	var p := get_placement(id)
+	if p.is_empty():
+		return get_placeable_on(id)
+	return p.get("on", [])
+
+
+## True if placing this item drops a blocking collision body (structures with blocks=true).
+func placement_blocks(id: String) -> bool:
+	return bool(get_placement(id).get("blocks", false))
+
+
+## True if this placed object glows at night (등불꽃 D48 / 연꽃 D41).
+func placement_glows(id: String) -> bool:
+	return bool(get_placement(id).get("glows", false))
+
+
+## True if placing this item on `tile_id` is valid under the expanded framework.
+func can_place_expanded(id: String, tile_id: String) -> bool:
+	return tile_id in placement_tiles(id)
+
+
 func can_place_on_tile(id: String, tile_id: String) -> bool:
 	return tile_id in get_placeable_on(id)
 

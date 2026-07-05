@@ -130,6 +130,7 @@ func build_save_dict() -> Dictionary:
 			"lifetime_recipes": lifetime_recipes.keys(),
 			"cleared": cleared,
 		},
+		"quests": QuestManager.to_dict(),
 	}
 	if _loader != null:
 		data["map"] = _map_dict()
@@ -209,11 +210,26 @@ func _map_dict() -> Dictionary:
 		"void_cells": void_cells,
 		"stepping_stones": stone_cells,
 		"objects": _object_states(),
+		"placed_objects": _placed_object_states(),
 		"gates": {
 			"bush_bloomed": _bush_bloomed(),
 			"world_tree_gathered": _world_tree_gathered(),
 		},
 	}
+
+
+## (v0.4.0-C) Serialize every persistent PlacedObject (structure/decor the player built).
+## Each entry is that object's own to_dict() ({item_id, cell:[x,y]}). Functional placeables
+## (디딤돌 tile swaps, 어린 세계수) are NOT PlacedObjects — they live in the tile diff.
+func _placed_object_states() -> Array:
+	var out: Array = []
+	var root := _scene_root()
+	if root == null:
+		return out
+	for node in root.get_tree().get_nodes_in_group("placed_object"):
+		if node.has_method("to_dict"):
+			out.append(node.to_dict())
+	return out
 
 
 ## Base source id for a layout symbol (mirror of MapLoader/legend, minus the
@@ -329,6 +345,9 @@ func _apply_core_state(data: Dictionary) -> void:
 	lifetime_recipes.clear()
 	for rid in ng.get("lifetime_recipes", []):
 		lifetime_recipes[rid] = true
+	# (v0.4.0-C) Quest line state.
+	if data.has("quests"):
+		QuestManager.from_dict(data["quests"])
 	# Held item is applied in apply_world_state (needs the InteractionController).
 
 
@@ -348,6 +367,8 @@ func apply_world_state(data: Dictionary) -> void:
 		_loader.set_cell(Vector2i(int(pair[0]), int(pair[1])), STEPPING_STONE_SOURCE, ATLAS)
 	# Objects: remove ones recorded absent, restore respawn timers.
 	_apply_object_states(m.get("objects", []))
+	# (v0.4.0-C) Persistent placed structures/decor.
+	_apply_placed_objects(m.get("placed_objects", []))
 	# Gates
 	var gates: Dictionary = m.get("gates", {})
 	if bool(gates.get("bush_bloomed", false)):
@@ -366,6 +387,39 @@ func apply_world_state(data: Dictionary) -> void:
 	var ic := _find_interaction()
 	if ic != null:
 		ic.set_held_item(String(data.get("held_item", "")))
+
+
+## (v0.4.0-C) Rebuild persistent PlacedObjects from the save. Parents them under the
+## scene's YSortLayer (so they sort with the player) and refreshes pathfinding for any
+## blocking structure. Does NOT emit placed_object_placed (loading is not a play action,
+## so quests/audio must not re-fire).
+func _apply_placed_objects(states: Array) -> void:
+	if states.is_empty():
+		return
+	var ysort := _find_ysort_layer()
+	var parent: Node = ysort if ysort != null else _scene_root()
+	if parent == null:
+		return
+	for st: Dictionary in states:
+		var item_id := String(st.get("item_id", ""))
+		var arr: Array = st.get("cell", [])
+		if item_id == "" or arr.size() != 2:
+			continue
+		var cell := Vector2i(int(arr[0]), int(arr[1]))
+		var obj := PlacedObject.new()
+		obj.setup(item_id, cell)
+		parent.add_child(obj)
+		obj.global_position = _loader.cell_center_world(cell)
+		if ItemDB.placement_blocks(item_id):
+			GameState.tile_walkable_changed.emit(cell)
+
+
+## Find the YSortLayer node (placed objects' parent) in the live scene, or null.
+func _find_ysort_layer() -> Node:
+	var root := _scene_root()
+	if root == null:
+		return null
+	return root.find_child("YSortLayer", true, false)
 
 
 func _apply_object_states(states: Array) -> void:
@@ -434,6 +488,7 @@ func start_ng_plus(finished_run_recipes: Array = []) -> Array:
 	Inventory.clear()
 	GameState.set_game_time(0.0)
 	Codex.reset()
+	QuestManager.reset()   # (v0.4.0-C) fresh 속삭임 line on NG+
 	cleared = false
 	run_number += 1
 	carried_recipes = carry.duplicate()
@@ -471,6 +526,7 @@ func new_game() -> void:
 	Inventory.clear()
 	GameState.set_game_time(0.0)
 	Codex.reset()
+	QuestManager.reset()   # (v0.4.0-C) fresh 속삭임 line on 새로 시작
 	run_number = 1
 	carried_recipes = []
 	lifetime_recipes.clear()

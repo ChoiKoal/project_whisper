@@ -1,0 +1,87 @@
+{
+  "_comment": "v0.4.0-C 속삭임 퀘스트 (Q1-Q9). Each quest listens to an EXISTING GameState/Codex signal via QuestManager. `type` documents intent; `signal` is the concrete hook; `target` filters the payload (\"\" or \"any\" = no filter); `count` = required occurrences; `next` = id advanced to on completion (\"\" = final → clear).",
+  "quests": [
+    {
+      "id": "Q1",
+      "whisper": "…뭐든, 주워봐.",
+      "type": "gather",
+      "signal": "item_gathered",
+      "target": "any",
+      "count": 1,
+      "next": "Q2"
+    },
+    {
+      "id": "Q2",
+      "whisper": "섞으면, 무언가 태어나.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "any",
+      "count": 1,
+      "next": "Q3"
+    },
+    {
+      "id": "Q3",
+      "whisper": "물이 길을 끊었어… 딛고 갈 무언가를.",
+      "type": "place",
+      "signal": "stepping_stone_placed",
+      "target": "any",
+      "count": 3,
+      "next": "Q4"
+    },
+    {
+      "id": "Q4",
+      "whisper": "목이 말라. 저 마른 것에게 물을.",
+      "type": "use",
+      "signal": "item_used_on_object",
+      "target": "bush_dry",
+      "count": 1,
+      "next": "Q5"
+    },
+    {
+      "id": "Q5",
+      "whisper": "꽃은 밤에만 길을 열어. 기다려.",
+      "type": "event",
+      "signal": "day_phase_changed",
+      "target": "night",
+      "count": 1,
+      "next": "Q6"
+    },
+    {
+      "id": "Q6",
+      "whisper": "위로… 빛나는 곳으로 와.",
+      "type": "reach",
+      "signal": "player_entered_area",
+      "target": "world_tree",
+      "count": 1,
+      "next": "Q7"
+    },
+    {
+      "id": "Q7",
+      "whisper": "내 마지막 온기를 가져가.",
+      "type": "gather",
+      "signal": "item_gathered",
+      "target": "I9",
+      "count": 1,
+      "next": "Q8"
+    },
+    {
+      "id": "Q8",
+      "whisper": "그 온기를, 생명으로 바꿔.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D22",
+      "count": 1,
+      "sub_steps": ["생명수", "빛나는 새싹", "어린 세계수"],
+      "next": "Q9"
+    },
+    {
+      "id": "Q9",
+      "whisper": "비워낸 자리에… 다시 심어줘.",
+      "type": "place",
+      "signal": "world_tree_planted",
+      "target": "any",
+      "count": 1,
+      "next": ""
+    }
+  ]
+}

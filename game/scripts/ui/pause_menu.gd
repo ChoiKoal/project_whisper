@@ -70,12 +70,47 @@ func _build() -> void:
 	_add_button("저장", _on_save)
 	_add_button("타이틀로", _on_title)
 
+	# (v0.4.0-C) audio volume sliders — master / 효과 / 음악, persisted via AudioManager.
+	_add_volume_sliders()
+
 	_toast = _label("", 20, CREAM)
 	_toast.modulate.a = 0.0
 	_panel.add_child(_toast)
 
 	# (B3.2) close-affordance hint at the panel bottom (ESC resumes).
 	_panel.add_child(WindowChrome.make_esc_hint())
+
+
+## Three labelled volume sliders bound to AudioManager. Guards a missing AudioManager so
+## the menu still builds if audio failed to load.
+func _add_volume_sliders() -> void:
+	if AudioManager == null:
+		return
+	var sep := HSeparator.new()
+	_panel.add_child(sep)
+	_add_slider("전체 음량", AudioManager.volume_master, func(v): AudioManager.set_volume("master", v))
+	_add_slider("효과음", AudioManager.volume_sfx, func(v): AudioManager.set_volume("sfx", v))
+	_add_slider("음악", AudioManager.volume_bgm, func(v): AudioManager.set_volume("bgm", v))
+
+
+func _add_slider(label_text: String, value: float, cb: Callable) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	row.custom_minimum_size = Vector2(260, 0)
+	var l := _label(label_text, 16, CREAM)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	l.custom_minimum_size = Vector2(90, 0)
+	row.add_child(l)
+	var s := HSlider.new()
+	s.min_value = 0.0
+	s.max_value = 1.0
+	s.step = 0.05
+	s.value = value
+	s.custom_minimum_size = Vector2(150, 20)
+	s.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	s.value_changed.connect(func(v): cb.call(v))
+	row.add_child(s)
+	_panel.add_child(row)
 
 
 func _label(txt: String, size: int, col: Color) -> Label:

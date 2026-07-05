@@ -8,6 +8,13 @@ signal game_time_changed(new_time: float)
 signal day_phase_changed(phase: String)
 signal item_gathered(item_id: String)    ## M2 gathering: fired when an item is gathered
 signal recipe_discovered(recipe_id: String)  ## M3 fusion
+## (v0.4.0-C) Fired on EVERY successful fuse (unlike recipe_discovered which fires only
+## the first time a recipe is found). `output` = canonical crafted item id. Quests count
+## crafts against this so Q2/Q3/Q8 advance on repeat crafts too.
+signal item_crafted(output_id: String, recipe_id: String)
+## (v0.4.0-C) Fired when the player enters a tagged Area2D region (Q6 world-tree area).
+## `area_id` identifies the region.
+signal player_entered_area(area_id: String)
 
 ## M2 placement/use framework signals.
 ## Emitted when D22 (어린 세계수) is placed on a T0 VOID tile — the MVP clear
@@ -18,6 +25,12 @@ signal world_tree_planted(cell: Vector2i)
 signal item_used_on_object(item_id: String, object: Node)
 ## Emitted when D14 (디딤돌) makes a water tile walkable, for later SFX / audit.
 signal stepping_stone_placed(cell: Vector2i)
+
+## (v0.4.0-C) Emitted when a structure/decor item is PLACED into the world (persistent
+## PlacedObject). `item_id` = the placed item, `cell` = its tile. Quests/audio hook here.
+signal placed_object_placed(item_id: String, cell: Vector2i)
+## (v0.4.0-C) Emitted when a placed object is RECALLED (returned to inventory).
+signal placed_object_recalled(item_id: String, cell: Vector2i)
 ## (v0.3.1 Fix 4) Emitted when gathering an interior tile turns it into a walkable
 ## HOLLOW (빈 자국). The pathfinding grid rebuilds its solids so tap-to-move crosses
 ## the emptied spot; before this the gathered cell was VOID (non-walkable to AStar)

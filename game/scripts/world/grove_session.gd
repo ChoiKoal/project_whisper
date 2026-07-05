@@ -39,6 +39,10 @@ func _setup() -> void:
 	if clear != null:
 		clear.cleared.connect(_on_cleared)
 
+	# (v0.4.0-C) Kick off the day/night soundscape (BGM + ambience) for this run.
+	if AudioManager != null:
+		AudioManager.start_world_audio()
+
 
 func _on_cleared() -> void:
 	SaveManager.mark_cleared()

@@ -138,7 +138,19 @@
       "category": "craft",
       "flavor": "바위도 무언가를 입는다.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": true
+      }
     },
     {
       "id": "D09",
@@ -154,7 +166,19 @@
       "category": "craft",
       "flavor": "새는 없다. 아주 오래전부터.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": false
+      }
     },
     {
       "id": "D12",
@@ -170,7 +194,19 @@
       "category": "craft",
       "flavor": "불이 없는 세계라, 돌틀에 눌러 굳혔다.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": false
+      }
     },
     {
       "id": "D14",
@@ -182,7 +218,15 @@
         "T5A",
         "T5B"
       ],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "functional",
+        "on": [
+          "T5A",
+          "T5B"
+        ],
+        "blocks": false
+      }
     },
     {
       "id": "D15",
@@ -214,7 +258,19 @@
       "category": "craft",
       "flavor": "줄 사람이 없다. 아직은.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": false
+      }
     },
     {
       "id": "D19",
@@ -251,7 +307,14 @@
       "placeable_on": [
         "T0"
       ],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "functional",
+        "on": [
+          "T0"
+        ],
+        "blocks": false
+      }
     },
     {
       "id": "D23",
@@ -267,7 +330,19 @@
       "category": "craft",
       "flavor": "지킬 것이 생겼다는 뜻이다.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": true
+      }
     },
     {
       "id": "D25",
@@ -283,7 +358,19 @@
       "category": "craft",
       "flavor": "담을 것을 찾아다니게 된다.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": false
+      }
     },
     {
       "id": "D27",
@@ -299,7 +386,19 @@
       "category": "craft",
       "flavor": "햇빛에 말린 벽돌. 불이 없어도 단단하다.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": false
+      }
     },
     {
       "id": "D29",
@@ -307,7 +406,19 @@
       "category": "craft",
       "flavor": "꽃에게 작은 세계를 선물했다.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": false
+      }
     },
     {
       "id": "D30",
@@ -315,7 +426,19 @@
       "category": "craft",
       "flavor": "금방 무너질 걸 알면서도 만들었다.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": false
+      }
     },
     {
       "id": "D31",
@@ -331,7 +454,19 @@
       "category": "craft",
       "flavor": "아직 돌지 않는다. 흐르는 시간이 없어서.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": true
+      }
     },
     {
       "id": "D33",
@@ -339,7 +474,16 @@
       "category": "craft",
       "flavor": "디딤돌보다 안전하게. 누군가 뒤따라올 것처럼.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "T5A",
+          "T5B",
+          "T5M"
+        ],
+        "blocks": false
+      }
     },
     {
       "id": "D34",
@@ -347,7 +491,19 @@
       "category": "craft",
       "flavor": "축하할 일을 만들고 싶어진다.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": false
+      }
     },
     {
       "id": "D35",
@@ -403,7 +559,17 @@
       "category": "craft",
       "flavor": "생명수를 머금고, 늪의 꽃이 빛이 되었다.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "T5A",
+          "T5B",
+          "T5M"
+        ],
+        "blocks": false,
+        "glows": true
+      }
     },
     {
       "id": "D42",
@@ -411,7 +577,19 @@
       "category": "craft",
       "flavor": "울타리 안에 나만의 작은 계절.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": false
+      }
     },
     {
       "id": "D43",
@@ -419,7 +597,19 @@
       "category": "craft",
       "flavor": "둥지를 지붕 아래로. 와 줄 새를 기다린다.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": false
+      }
     },
     {
       "id": "D44",
@@ -427,7 +617,19 @@
       "category": "craft",
       "flavor": "지킬 새가 없다. 그래도 세워뒀다.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": true
+      }
     },
     {
       "id": "D45",
@@ -435,7 +637,19 @@
       "category": "craft",
       "flavor": "돌 하나에 소원 하나.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": true
+      }
     },
     {
       "id": "D46",
@@ -443,7 +657,19 @@
       "category": "craft",
       "flavor": "막기 위해서가 아니라, 기대기 위해서.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": true
+      }
     },
     {
       "id": "D47",
@@ -459,7 +685,20 @@
       "category": "craft",
       "flavor": "정령꽃을 바구니에 담으니, 등불이 되었다.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": false,
+        "glows": true
+      }
     },
     {
       "id": "D49",
@@ -467,7 +706,19 @@
       "category": "craft",
       "flavor": "정원이 숨을 쉰다. 세계가 부러워할 만큼.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": true
+      }
     },
     {
       "id": "D50",
@@ -515,7 +766,19 @@
       "category": "craft",
       "flavor": "돌에도 계절이 물든다.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": false
+      }
     },
     {
       "id": "D56",
@@ -523,7 +786,19 @@
       "category": "craft",
       "flavor": "누군가에게 씌워주고 싶다.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": false
+      }
     },
     {
       "id": "D57",
@@ -555,7 +830,19 @@
       "category": "craft",
       "flavor": "꽃에게 물을, 물에게 꽃을.",
       "placeable_on": [],
-      "usable_on": []
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "T1",
+          "T2A",
+          "T2B",
+          "T2C",
+          "T2D",
+          "T0"
+        ],
+        "blocks": false
+      }
     },
     {
       "id": "D61",

@@ -42,6 +42,8 @@ func fuse(a_id: String, b_id: String) -> Dictionary:
 	Inventory.add(output, 1)
 	Codex.discover_recipe(recipe["id"])
 	Codex.discover_item(output)
+	# (v0.4.0-C) Per-craft signal for quests/audio (fires every fuse, not just first).
+	GameState.item_crafted.emit(ItemDB.resolve_id(output), recipe["id"])
 
 	result["matched"] = true
 	result["recipe_id"] = recipe["id"]

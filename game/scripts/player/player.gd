@@ -15,6 +15,12 @@ var _tilemap: TileMapLayer
 var _facing: String = "SE"  # SE, SW, NE, NW
 var _anim: AnimatedSprite2D
 
+## (v0.4.0-C) Footstep SFX cadence. Accumulates while moving; every FOOTSTEP_INTERVAL of
+## movement plays an alternating grass footstep through AudioManager.
+const FOOTSTEP_INTERVAL := 0.34
+var _footstep_t := 0.0
+var _footstep_toggle := false
+
 ## ---- Path following (M6a touch / click-to-move) --------------------------
 ## When a path is queued (by the touch controller), the player walks it unless
 ## keyboard input is given — keyboard always wins and cancels the path.
@@ -179,6 +185,7 @@ func facing_cell_step() -> Vector2i:
 
 
 func _update_animation(moving: bool) -> void:
+	_tick_footsteps(moving)
 	if _anim == null:
 		return
 	var state := "walk" if moving else "idle"
@@ -186,3 +193,17 @@ func _update_animation(moving: bool) -> void:
 	if _anim.sprite_frames != null and _anim.sprite_frames.has_animation(anim_name):
 		if _anim.animation != anim_name or not _anim.is_playing():
 			_anim.play(anim_name)
+
+
+## (v0.4.0-C) Play a footstep SFX at a walking cadence while moving. Resets when stopped so
+## the first step after standing still lands promptly. Guards a missing AudioManager (headless).
+func _tick_footsteps(moving: bool) -> void:
+	if not moving:
+		_footstep_t = FOOTSTEP_INTERVAL   # arm an immediate step on next move
+		return
+	_footstep_t += get_physics_process_delta_time()
+	if _footstep_t >= FOOTSTEP_INTERVAL:
+		_footstep_t = 0.0
+		_footstep_toggle = not _footstep_toggle
+		if AudioManager != null:
+			AudioManager.play_sfx("footstep_grass2" if _footstep_toggle else "footstep_grass1")

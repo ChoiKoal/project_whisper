@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bwhisperv040ctst"]
+
+[ext_resource type="Script" path="res://scenes/dev/v040c_test_harness.gd" id="1_v040c"]
+
+[node name="V040cTestHarness" type="Node"]
+script = ExtResource("1_v040c")

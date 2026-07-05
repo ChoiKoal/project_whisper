@@ -47,6 +47,8 @@ const HOVER_PICK_PX := 72.0
 @export var feedback_layer_path: NodePath  ## where floating labels spawn (world space)
 @export var slot_hint_path: NodePath  ## optional SteppingSlotHint for D14 guidance
 @export var tile_glow_path: NodePath  ## optional TileGlow decal for tile-gather targets
+@export var ysort_layer_path: NodePath  ## (v0.4.0-C) parent for placed structure/decor objects
+@export var placement_ghost_path: NodePath  ## (v0.4.0-C) optional PlacementGhost preview
 
 var _player: Player
 var _tilemap: TileMapLayer
@@ -54,6 +56,8 @@ var _highlight: TileHighlight
 var _feedback_layer: Node
 var _slot_hint: SteppingSlotHint
 var _tile_glow: Node2D
+var _ysort_layer: Node2D
+var _ghost: PlacementGhost
 
 ## Floating "E …" prompt shown above the current target (world space). Created lazily.
 var _prompt: Label = null
@@ -96,6 +100,8 @@ func _ready() -> void:
 		_feedback_layer = self
 	_slot_hint = get_node_or_null(slot_hint_path) as SteppingSlotHint
 	_tile_glow = get_node_or_null(tile_glow_path) as Node2D
+	_ysort_layer = get_node_or_null(ysort_layer_path) as Node2D
+	_ghost = get_node_or_null(placement_ghost_path) as PlacementGhost
 
 
 func set_held_item(item_id: String) -> void:
@@ -115,7 +121,7 @@ func held_action_hint() -> String:
 	var obj := _target_object as Gatherable
 	if obj != null and obj.object_id != "" and ItemDB.can_use_on_object(_held_item, obj.object_id):
 		return "E: 사용"
-	if _has_tile_target and ItemDB.can_place_on_tile(_held_item, _logical_tile_id(_target_cell)):
+	if _has_tile_target and ItemDB.can_place_expanded(_held_item, _logical_tile_id(_target_cell)):
 		return "E: 배치"
 	return ""
 
@@ -146,6 +152,8 @@ func _clear_targeting_visuals() -> void:
 	_brightened = null
 	if _tile_glow != null and _tile_glow.has_method("hide_glow"):
 		_tile_glow.hide_glow()
+	if _ghost != null:
+		_ghost.hide_ghost()
 	if _highlight != null:
 		_highlight.visible = false
 	if _prompt != null:
@@ -194,6 +202,25 @@ func _resolve_target() -> void:
 	if best != null:
 		_target_object = best
 		return
+
+	# (v0.4.0-C) No gatherable adjacent → an adjacent PLACED object (structure/decor) is a
+	# recall target. Skipped while a placeable item is held so placing a NEW object over an
+	# empty neighbour isn't hijacked by a recall prompt.
+	if _held_item == "" or not ItemDB.is_placeable(_held_item):
+		var pbest: Node = null
+		var pbest_d := INF
+		for node in get_tree().get_nodes_in_group(PlacedObject.GROUP):
+			if not node.has_method("target_point"):
+				continue
+			if not _cell_adjacent(_object_cell(node), player_cell):
+				continue
+			var d: float = node.target_point().distance_to(_player.global_position)
+			if d < pbest_d:
+				pbest_d = d
+				pbest = node
+		if pbest != null:
+			_target_object = pbest
+			return
 
 	# Otherwise the facing-adjacent tile (already adjacent by construction).
 	_target_cell = player_cell + _player.facing_cell_step()
@@ -267,7 +294,7 @@ func _idle_tile_gatherable() -> bool:
 func _idle_tile_placeable() -> bool:
 	if not _has_tile_target or _held_item == "":
 		return false
-	return ItemDB.can_place_on_tile(_held_item, _logical_tile_id(_target_cell))
+	return ItemDB.can_place_expanded(_held_item, _logical_tile_id(_target_cell))
 
 
 ## v0.4.0 A2 targeting display. Three visual channels, mutually exclusive per frame:
@@ -302,13 +329,28 @@ func _update_targeting() -> void:
 		else:
 			_tile_glow.call("hide_glow")
 
-	# --- placement diamond: kept ONLY for held-item placement targeting ---
+	# --- placement diamond: kept ONLY for FUNCTIONAL held-item placement (D14/D22) ---
+	# Structure/decor placeables use the ghost preview below instead of the bare diamond.
+	var held_placeable := _held_item != "" and ItemDB.is_placeable(_held_item)
+	var held_functional := held_placeable and ItemDB.placement_class(_held_item) == "functional"
 	if _highlight != null:
 		if not moving and _hover_object == null and not _has_hover_cell \
-				and _target_object == null and _idle_tile_placeable():
+				and _target_object == null and held_functional and _idle_tile_placeable():
 			_highlight.show_cell(_cell_center_world(_target_cell), false)
 		else:
 			_highlight.hide_highlight()
+
+	# --- placement ghost: structure/decor preview (green valid / red invalid) ---
+	if _ghost != null:
+		var pclass := ItemDB.placement_class(_held_item) if held_placeable else ""
+		var show_ghost: bool = (pclass == "structure" or pclass == "decor") \
+			and not moving and _hover_object == null and _target_object == null \
+			and _has_tile_target
+		if show_ghost:
+			var valid := _idle_tile_placeable() and _placed_object_at(_target_cell) == null
+			_ghost.show_ghost(_held_item, _cell_center_world(_target_cell), valid)
+		else:
+			_ghost.hide_ghost()
 
 
 ## Brighten `node` (a gatherable with set_targeted), clearing any previously-brightened
@@ -365,10 +407,12 @@ func _prompt_text() -> String:
 		var obj := _target_object as Gatherable
 		if obj != null and obj.object_id != "" and ItemDB.can_use_on_object(_held_item, obj.object_id):
 			return "E 사용"
-		if _has_tile_target and ItemDB.can_place_on_tile(_held_item, _logical_tile_id(_target_cell)):
+		if _has_tile_target and ItemDB.can_place_expanded(_held_item, _logical_tile_id(_target_cell)):
 			return "E 배치"
 	# Object interactions.
 	if _target_object != null:
+		if _target_object is PlacedObject:
+			return "E 회수"     # (v0.4.0-C) recall a placed structure/decor
 		if _target_object.has_method("can_gather") and _target_object.can_gather():
 			return "E 채집"
 		if _target_object.has_method("on_interact"):
@@ -534,7 +578,13 @@ func _try_place_on_tile(cell: Vector2i) -> bool:
 	var tile_id := _logical_tile_id(cell)
 	if tile_id == "":
 		return false
-	if not ItemDB.can_place_on_tile(_held_item, tile_id):
+	if not ItemDB.can_place_expanded(_held_item, tile_id):
+		return false
+	# (v0.4.0-C) structure/decor may not stack on a cell that already holds a placed object.
+	var pclass := ItemDB.placement_class(_held_item)
+	if (pclass == "structure" or pclass == "decor") and _placed_object_at(cell) != null:
+		FloatingLabel.spawn(_feedback_layer, _cell_center_world(cell) - Vector2(0, 40),
+			"이미 무언가 놓여 있다")
 		return false
 	# Apply the effect keyed by item id (named-effect registry).
 	var applied := _apply_placement_effect(_held_item, cell)
@@ -555,9 +605,37 @@ func _apply_placement_effect(item_id: String, cell: Vector2i) -> bool:
 		"D22":  # 어린 세계수 — plant on VOID: clear condition.
 			GameState.world_tree_planted.emit(cell)
 			return true
+	# (v0.4.0-C) structure/decor: spawn a persistent, recallable PlacedObject.
+	var pclass := ItemDB.placement_class(item_id)
+	if pclass == "structure" or pclass == "decor":
+		_spawn_placed_object(item_id, cell)
+		return true
 	# Unknown placeable item with no registered effect: refuse (don't consume).
 	push_warning("InteractionController: no placement effect for '%s'" % item_id)
 	return false
+
+
+## (v0.4.0-C) Spawn a PlacedObject at `cell` and emit the placement signal. Parented to the
+## YSortLayer so it sorts with the player; positioned at the cell centre.
+func _spawn_placed_object(item_id: String, cell: Vector2i) -> void:
+	var parent: Node = _ysort_layer if _ysort_layer != null else _feedback_layer
+	var obj := PlacedObject.new()
+	obj.setup(item_id, cell)
+	obj.global_position = _cell_center_world(cell)
+	parent.add_child(obj)
+	# Blocking structures change walkability — refresh the pathfinding grid.
+	if ItemDB.placement_blocks(item_id) and GameState != null:
+		GameState.tile_walkable_changed.emit(cell)
+	if GameState != null:
+		GameState.placed_object_placed.emit(item_id, cell)
+
+
+## The PlacedObject currently occupying `cell`, or null.
+func _placed_object_at(cell: Vector2i) -> Node:
+	for node in get_tree().get_nodes_in_group(PlacedObject.GROUP):
+		if node is PlacedObject and node.cell == cell:
+			return node
+	return null
 
 
 ## Swap a water cell to a walkable stepping-stone state. Reuses T1 dirt art for
