@@ -53,6 +53,14 @@ var l2_progress: int = 0
 ## id of the L2 chain head (first "L2-" quest), resolved at load.
 var _l2_head_id: String = ""
 
+## (L3-5) The Layer-3 속삭임 line (L3-Q1…L3-Q7) is a THIRD independent chain coexisting with the
+## L1 + L2 lines in the quest log. Dormant until first Layer-3 entry (clockwork_city calls
+## activate_l3_line()). Mirrors the L2 line exactly with an "L3-" prefix.
+var l3_active_id: String = ""
+var l3_progress: int = 0
+## id of the L3 chain head (first "L3-" quest), resolved at load.
+var _l3_head_id: String = ""
+
 
 func _ready() -> void:
 	_load()
@@ -80,13 +88,16 @@ func _load() -> void:
 			continue
 		_order.append(q)
 		_by_id[String(q["id"])] = q
-	# L1 head = first NON-L2 quest; L2 head = first "L2-" quest (the two coexisting lines).
+	# L1 head = first quest NOT prefixed L2-/L3-; L2 head = first "L2-"; L3 head = first "L3-"
+	# (three coexisting lines).
 	for q in _order:
 		var qid := String(q["id"])
-		if _head_id == "" and not qid.begins_with("L2-"):
+		if _head_id == "" and not qid.begins_with("L2-") and not qid.begins_with("L3-"):
 			_head_id = qid
 		if _l2_head_id == "" and qid.begins_with("L2-"):
 			_l2_head_id = qid
+		if _l3_head_id == "" and qid.begins_with("L3-"):
+			_l3_head_id = qid
 	if _head_id == "" and not _order.is_empty():
 		_head_id = String(_order[0]["id"])
 
@@ -123,12 +134,17 @@ func _object_id(obj: Node) -> String:
 ## A gameplay signal fired. Tick BOTH coexisting lines (L1 + L2) that match it — each has its
 ## own active pointer, so a shared signal (e.g. item_gathered) advances whichever line is live.
 func _event(sig: String, payload: String) -> void:
-	_event_line(sig, payload, false)   # L1 line
-	_event_line(sig, payload, true)    # L2 line
+	_event_line(sig, payload, 1)   # L1 line
+	_event_line(sig, payload, 2)   # L2 line
+	_event_line(sig, payload, 3)   # (L3-5) L3 line
 
 
-func _event_line(sig: String, payload: String, l2: bool) -> void:
-	var aid := l2_active_id if l2 else active_id
+func _event_line(sig: String, payload: String, line: int) -> void:
+	var aid := active_id
+	if line == 2:
+		aid = l2_active_id
+	elif line == 3:
+		aid = l3_active_id
 	if aid == "":
 		return
 	var q: Dictionary = _by_id.get(aid, {})
@@ -139,10 +155,15 @@ func _event_line(sig: String, payload: String, l2: bool) -> void:
 	if not _target_matches(String(q.get("target", "any")), payload):
 		return
 	var need := int(q.get("count", 1))
-	if l2:
+	if line == 2:
 		l2_progress += 1
 		quest_progress.emit(aid, min(l2_progress, need), need)
 		if l2_progress >= need:
+			_complete(aid)
+	elif line == 3:
+		l3_progress += 1
+		quest_progress.emit(aid, min(l3_progress, need), need)
+		if l3_progress >= need:
 			_complete(aid)
 	else:
 		progress += 1
@@ -172,6 +193,9 @@ func _start(id: String) -> void:
 	if id.begins_with("L2-"):
 		l2_active_id = id
 		l2_progress = 0
+	elif id.begins_with("L3-"):
+		l3_active_id = id
+		l3_progress = 0
 	else:
 		active_id = id
 		progress = 0
@@ -200,17 +224,43 @@ func l2_active_quest() -> Dictionary:
 	return _by_id.get(l2_active_id, {})
 
 
+## (L3-5) Activate the Layer-3 속삭임 line on first L3 entry. Idempotent: no-op if the line is
+## already active or already finished. The L1/L2 lines are untouched — the three coexist.
+func activate_l3_line() -> void:
+	if _l3_head_id == "":
+		return
+	if l3_active_id != "":
+		return
+	for qid in _by_id.keys():
+		if String(qid).begins_with("L3-") and _done.has(qid):
+			return
+	_start(_l3_head_id)
+
+
+## (L3-5) The active L3 quest record ({} if the L3 line is dormant/finished).
+func l3_active_quest() -> Dictionary:
+	return _by_id.get(l3_active_id, {})
+
+
 func _complete(id: String) -> void:
 	_done[id] = true
 	quest_completed.emit(id)
 	var q: Dictionary = _by_id.get(id, {})
 	var nxt := String(q.get("next", ""))
 	var l2 := id.begins_with("L2-")
-	var old := l2_active_id if l2 else active_id
+	var l3 := id.begins_with("L3-")
+	var old := active_id
+	if l2:
+		old = l2_active_id
+	elif l3:
+		old = l3_active_id
 	if nxt == "":
 		if l2:
 			l2_active_id = ""
 			l2_progress = 0
+		elif l3:
+			l3_active_id = ""
+			l3_progress = 0
 		else:
 			active_id = ""
 			progress = 0
@@ -271,6 +321,9 @@ func to_dict() -> Dictionary:
 		# (L2-5) the coexisting Layer-2 line pointer.
 		"l2_active_id": l2_active_id,
 		"l2_progress": l2_progress,
+		# (L3-5) the coexisting Layer-3 line pointer.
+		"l3_active_id": l3_active_id,
+		"l3_progress": l3_progress,
 	}
 
 
@@ -283,6 +336,9 @@ func from_dict(data: Dictionary) -> void:
 	# (L2-5) restore the L2 line (dormant "" if the save predates it).
 	l2_active_id = String(data.get("l2_active_id", ""))
 	l2_progress = int(data.get("l2_progress", 0))
+	# (L3-5) restore the L3 line (dormant "" if the save predates it).
+	l3_active_id = String(data.get("l3_active_id", ""))
+	l3_progress = int(data.get("l3_progress", 0))
 	# Re-announce so a freshly-built HUD reflects restored state.
 	if active_id != "":
 		quest_started.emit(active_id)
@@ -292,6 +348,9 @@ func from_dict(data: Dictionary) -> void:
 	if l2_active_id != "":
 		quest_started.emit(l2_active_id)
 		quest_progress.emit(l2_active_id, min(l2_progress, quest_count(l2_active_id)), quest_count(l2_active_id))
+	if l3_active_id != "":
+		quest_started.emit(l3_active_id)
+		quest_progress.emit(l3_active_id, min(l3_progress, quest_count(l3_active_id)), quest_count(l3_active_id))
 
 
 ## Reset to a fresh line head (P0) (NG+ / new game). Both lines reset; L2 line goes dormant
@@ -301,6 +360,8 @@ func reset() -> void:
 	progress = 0
 	l2_active_id = ""
 	l2_progress = 0
+	l3_active_id = ""
+	l3_progress = 0
 	_start(_head_id)
 
 

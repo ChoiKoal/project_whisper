@@ -35,6 +35,7 @@ func _ready() -> void:
 	# contract below.
 	var canonical_ids: Array[String] = []       # Layer-1 canonical (icon-covered)
 	var l2_ids: Array[String] = []              # Layer-2 canonical (icon-covered, L2-4)
+	var l3_ids: Array[String] = []              # Layer-3 canonical (icon-covered, L3-4)
 	var alias_ids: Array[String] = []
 	for rec: Dictionary in records:
 		var id := String(rec.get("id", ""))
@@ -44,51 +45,55 @@ func _ready() -> void:
 			alias_ids.append(id)
 		elif int(rec.get("layer", 1)) == 2:
 			l2_ids.append(id)
+		elif int(rec.get("layer", 1)) == 3:
+			l3_ids.append(id)
 		else:
 			canonical_ids.append(id)
-	_check("68 Layer-1 canonical + 48 Layer-2 + 1 alias split",
-		canonical_ids.size() == 68 and l2_ids.size() == 48 and alias_ids.size() == 1)
+	# (L3-4) Layer-3 clockwork items: K1-K7 (7 gather) + D103-D139 (37 craft) = 44 bespoke icons.
+	_check("68 Layer-1 + 48 Layer-2 + 44 Layer-3 canonical + 1 alias split",
+		canonical_ids.size() == 68 and l2_ids.size() == 48 and l3_ids.size() == 44 \
+		and alias_ids.size() == 1)
 
-	# 1. every canonical id (Layer-1 AND Layer-2) has a real icon FILE (present on disk).
+	# 1. every canonical id (Layer-1, -2, -3) has a real icon FILE (present on disk).
 	var missing: Array[String] = []
-	for id in canonical_ids + l2_ids:
+	for id in canonical_ids + l2_ids + l3_ids:
 		if not ResourceLoader.exists(ICON_DIR + id + ".png"):
 			missing.append(id)
-	_check("every canonical id (L1+L2) has an icon PNG (missing=%s)" % [missing], missing.is_empty())
+	_check("every canonical id (L1+L2+L3) has an icon PNG (missing=%s)" % [missing], missing.is_empty())
 
-	# 2. ItemDB.icon(id) non-null for every id (canonical + L2 + alias).
+	# 2. ItemDB.icon(id) non-null for every id (canonical + L2 + L3 + alias).
 	var null_ids: Array[String] = []
-	for id in canonical_ids + l2_ids + alias_ids:
+	for id in canonical_ids + l2_ids + l3_ids + alias_ids:
 		if ItemDB.icon(id) == null:
 			null_ids.append(id)
 	_check("ItemDB.icon() non-null for all ids (null=%s)" % [null_ids], null_ids.is_empty())
 
-	# 2b. Layer-2 icons resolve to a REAL painted file, not the category fallback square.
+	# 2b. Layer-2 + Layer-3 icons resolve to a REAL painted file, not the category fallback square.
 	# (ItemDB.icon returns a fallback ImageTexture when the PNG is absent; assert the PNG exists
-	# AND load() succeeds so L2 items are genuinely covered, not silently squared.)
+	# AND load() succeeds so those items are genuinely covered, not silently squared.)
 	var l2_fallback: Array[String] = []
-	for id in l2_ids:
+	for id in l2_ids + l3_ids:
 		if not ResourceLoader.exists(ICON_DIR + id + ".png") or load(ICON_DIR + id + ".png") == null:
 			l2_fallback.append(id)
-	_check("all 48 Layer-2 icons are real painted files (fallback=%s)" % [l2_fallback], l2_fallback.is_empty())
+	_check("all 92 Layer-2+3 icons are real painted files (fallback=%s)" % [l2_fallback], l2_fallback.is_empty())
 
 	# alias D06 resolves to I4's icon (same texture object / same file).
 	var d06 := ItemDB.icon("D06")
 	var i4 := ItemDB.icon("I4")
 	_check("D06 icon resolves to I4's icon", d06 != null and d06 == i4)
 
-	# 3. no two icon files byte-identical (116 canonical files all unique: 68 L1 + 48 L2).
+	# 3. no two icon files byte-identical (160 canonical files all unique: 68 L1 + 48 L2 + 44 L3).
 	var hashes := {}
 	var dup_pairs: Array = []
-	for id in canonical_ids + l2_ids:
+	for id in canonical_ids + l2_ids + l3_ids:
 		var bytes := _read_bytes(ICON_DIR + id + ".png")
 		var h := bytes.get_string_from_ascii() if false else str(bytes.size()) + ":" + _digest(bytes)
 		if hashes.has(h):
 			dup_pairs.append([hashes[h], id])
 		else:
 			hashes[h] = id
-	_check("all 116 canonical icon files are byte-unique (dupes=%s)" % [dup_pairs], dup_pairs.is_empty())
-	_check("distinct icon hashes == 116", hashes.size() == 116)
+	_check("all 160 canonical icon files are byte-unique (dupes=%s)" % [dup_pairs], dup_pairs.is_empty())
+	_check("distinct icon hashes == 160", hashes.size() == 160)
 
 	# Sanity: the alias file, if present, equals I4's file (spec: D06 shares I4 art).
 	if ResourceLoader.exists(ICON_DIR + "D06.png"):

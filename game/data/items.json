@@ -1,1411 +1,2397 @@
 {
-  "items": [
-    {
-      "id": "J1",
-      "name": "고철",
-      "category": "gather",
-      "layer": 2,
-      "flavor": "누군가의 도구였을 것이다. 이제는 그냥, 무거운 침묵.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "J2",
-      "name": "전선",
-      "category": "gather",
-      "layer": 2,
-      "flavor": "아직 어딘가로 이어지고 싶은 듯 꿈틀거린다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "J3",
-      "name": "유리",
-      "category": "gather",
-      "layer": 2,
-      "flavor": "깨진 뒤에도, 빛을 담으려 애쓴다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "J4",
-      "name": "회로",
-      "category": "gather",
-      "layer": 2,
-      "flavor": "생각을 하던 조각. 마지막으로 무슨 계산을 하다 멈췄을까.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "J5",
-      "name": "기름",
-      "category": "gather",
-      "layer": 2,
-      "flavor": "고이지 못하고 번진다. 흐를 곳을 잃은 채.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "J6",
-      "name": "네온 결정",
-      "category": "gather",
-      "layer": 2,
-      "flavor": "죽은 도시에서 유일하게 아직 숨 쉬는 빛.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "J7",
-      "name": "재",
-      "category": "gather",
-      "layer": 2,
-      "flavor": "무엇이 여기서 탔는지는, 이제 아무도 모른다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "I1",
-      "name": "흙",
-      "category": "gather",
-      "flavor": "부드럽고 축축하다. 무언가 심고 싶어진다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "I2",
-      "name": "풀",
-      "category": "gather",
-      "flavor": "바람이 없는데도, 아주 가끔 흔들린다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "I3",
-      "name": "진흙",
-      "category": "gather",
-      "flavor": "발이 푹푹 빠진다. 신발이 없어서 다행이다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "I4",
-      "name": "나무",
-      "category": "gather",
-      "flavor": "나이테가 어느 순간부터 늘지 않았다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "I5",
-      "name": "꽃",
-      "category": "gather",
-      "flavor": "지지도, 피지도 않는다. 그냥 계속 이 모습이다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "I6",
-      "name": "바위",
-      "category": "gather",
-      "flavor": "이 세계에서 가장 변하지 않은 것. …원래 바위는 그렇던가?",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "I7",
-      "name": "물",
-      "category": "gather",
-      "flavor": "잔물결 하나 없이 고요하다.",
-      "placeable_on": [],
-      "usable_on": [
-        "bush_dry"
-      ]
-    },
-    {
-      "id": "I8",
-      "name": "돌",
-      "category": "gather",
-      "flavor": "손에 딱 맞는다. 던지지는 말자.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "I9",
-      "name": "세계수 정수",
-      "category": "gather",
-      "unique": true,
-      "flavor": "따뜻하다. 이 세계에서 처음 느끼는 온기다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D01",
-      "name": "모래",
-      "category": "craft",
-      "flavor": "바위도 물 앞에서는 결국 이렇게 된다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D02",
-      "name": "점토",
-      "category": "craft",
-      "flavor": "빚는 대로 모양이 남는다. 세계도 이랬으면.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D03",
-      "name": "씨앗",
-      "category": "craft",
-      "flavor": "잠들어 있다. 깨울 방법이 있을 것이다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D04",
-      "name": "새싹",
-      "category": "craft",
-      "flavor": "이 세계에서 처음으로 '자라는' 것을 봤다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D05",
-      "name": "묘목",
-      "category": "craft",
-      "flavor": "아직 작다. 하지만 분명히 어제보다 크다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D06",
-      "name": "나무",
-      "category": "craft",
-      "alias_of": "I4",
-      "flavor": "채집한 것과 똑같다. 하지만 이건 내가 키웠다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D07",
-      "name": "이끼",
-      "category": "craft",
-      "flavor": "축축하고 보드랍다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D08",
-      "name": "이끼바위",
-      "category": "craft",
-      "flavor": "바위도 무언가를 입는다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "structure",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": true
-      }
-    },
-    {
-      "id": "D09",
-      "name": "건초",
-      "category": "craft",
-      "flavor": "마른 풀 냄새. 어딘가 그리운 냄새다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D10",
-      "name": "둥지",
-      "category": "craft",
-      "flavor": "새는 없다. 아주 오래전부터.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D12",
-      "name": "목재",
-      "category": "craft",
-      "flavor": "반듯하게 다듬었다. 뭐든 만들 수 있을 것 같다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D13",
-      "name": "벽돌",
-      "category": "craft",
-      "flavor": "불이 없는 세계라, 돌틀에 눌러 굳혔다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D14",
-      "name": "디딤돌",
-      "category": "craft",
-      "key_item": true,
-      "flavor": "물 위에 놓으면 건널 수 있을 것 같다.",
-      "placeable_on": [
-        "T5A",
-        "T5B"
-      ],
-      "usable_on": [],
-      "placement": {
-        "class": "functional",
-        "on": [
-          "T5A",
-          "T5B"
-        ],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D15",
-      "name": "늪",
-      "category": "craft",
-      "flavor": "…만들고 나서 후회했다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D16",
-      "name": "꽃즙",
-      "category": "craft",
-      "flavor": "달콤한 향. 마시면 안 될 것 같은 색.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D17",
-      "name": "물감",
-      "category": "craft",
-      "flavor": "이 세계에 없던 색을 만들 수 있다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D18",
-      "name": "꽃다발",
-      "category": "craft",
-      "flavor": "줄 사람이 없다. 아직은.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D19",
-      "name": "생명수",
-      "category": "craft",
-      "key_item": true,
-      "flavor": "빛이 물속에서 숨 쉬고 있다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D20",
-      "name": "빛나는 새싹",
-      "category": "craft",
-      "key_item": true,
-      "flavor": "멈춘 세계에서, 이것만은 자라고 있다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D21",
-      "name": "정령꽃",
-      "category": "craft",
-      "flavor": "속삭임에 대답하듯, 은은하게 빛난다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D22",
-      "name": "어린 세계수",
-      "category": "craft",
-      "key_item": true,
-      "flavor": "비워낸 자리에, 되돌려 줄 차례다.",
-      "placeable_on": [
-        "T0"
-      ],
-      "usable_on": [],
-      "placement": {
-        "class": "functional",
-        "on": [
-          "T0"
-        ],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D23",
-      "name": "판자",
-      "category": "craft",
-      "flavor": "목재를 얇고 반듯하게. 문명의 첫 페이지.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D24",
-      "name": "울타리",
-      "category": "craft",
-      "flavor": "지킬 것이 생겼다는 뜻이다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "structure",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": true
-      }
-    },
-    {
-      "id": "D25",
-      "name": "밧줄",
-      "category": "craft",
-      "flavor": "풀에도 심지가 있다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D26",
-      "name": "바구니",
-      "category": "craft",
-      "flavor": "담을 것을 찾아다니게 된다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D27",
-      "name": "낚싯대",
-      "category": "craft",
-      "flavor": "…걸리는 게 없다. 이 세계의 물에는 아무도 없다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D28",
-      "name": "흙벽돌",
-      "category": "craft",
-      "flavor": "햇빛에 말린 벽돌. 불이 없어도 단단하다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D29",
-      "name": "화분",
-      "category": "craft",
-      "flavor": "꽃에게 작은 세계를 선물했다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D30",
-      "name": "모래성",
-      "category": "craft",
-      "flavor": "금방 무너질 걸 알면서도 만들었다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D31",
-      "name": "조약돌",
-      "category": "craft",
-      "flavor": "물이 오래 쓰다듬은 돌.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D32",
-      "name": "물레방아",
-      "category": "craft",
-      "flavor": "아직 돌지 않는다. 흐르는 시간이 없어서.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "structure",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": true
-      }
-    },
-    {
-      "id": "D33",
-      "name": "나무다리",
-      "category": "craft",
-      "flavor": "디딤돌보다 안전하게. 누군가 뒤따라올 것처럼.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "structure",
-        "on": [
-          "T5A",
-          "T5B",
-          "T5M"
-        ],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D34",
-      "name": "화환",
-      "category": "craft",
-      "flavor": "축하할 일을 만들고 싶어진다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D35",
-      "name": "향수",
-      "category": "craft",
-      "flavor": "시들지 않는 꽃의 향기를 병에 담았다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D36",
-      "name": "비료",
-      "category": "craft",
-      "flavor": "좋은 흙은 만들어지는 것이다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D37",
-      "name": "옥토",
-      "category": "craft",
-      "flavor": "생명을 기다리는 흙.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D38",
-      "name": "텃밭",
-      "category": "craft",
-      "flavor": "심고, 기다리고, 돌보는 곳.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D39",
-      "name": "클로버",
-      "category": "craft",
-      "flavor": "행운… 이 세계에도 있을까.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D40",
-      "name": "수련",
-      "category": "craft",
-      "flavor": "늪에도 꽃은 핀다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D41",
-      "name": "연꽃",
-      "category": "craft",
-      "flavor": "생명수를 머금고, 늪의 꽃이 빛이 되었다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": [
-          "T5A",
-          "T5B",
-          "T5M"
-        ],
-        "blocks": false,
-        "glows": true
-      }
-    },
-    {
-      "id": "D42",
-      "name": "정원",
-      "category": "craft",
-      "flavor": "울타리 안에 나만의 작은 계절.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D43",
-      "name": "새집",
-      "category": "craft",
-      "flavor": "둥지를 지붕 아래로. 와 줄 새를 기다린다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D44",
-      "name": "허수아비",
-      "category": "craft",
-      "flavor": "지킬 새가 없다. 그래도 세워뒀다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "structure",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": true
-      }
-    },
-    {
-      "id": "D45",
-      "name": "돌탑",
-      "category": "craft",
-      "flavor": "돌 하나에 소원 하나.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "structure",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": true
-      }
-    },
-    {
-      "id": "D46",
-      "name": "벽",
-      "category": "craft",
-      "flavor": "막기 위해서가 아니라, 기대기 위해서.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "structure",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": true
-      }
-    },
-    {
-      "id": "D47",
-      "name": "축복받은 가지",
-      "category": "craft",
-      "flavor": "생명수가 스민 가지. 지팡이 같기도 하다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D48",
-      "name": "등불꽃",
-      "category": "craft",
-      "flavor": "정령꽃을 바구니에 담으니, 등불이 되었다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": false,
-        "glows": true
-      }
-    },
-    {
-      "id": "D49",
-      "name": "생명의 정원",
-      "category": "craft",
-      "flavor": "정원이 숨을 쉰다. 세계가 부러워할 만큼.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "structure",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": true
-      }
-    },
-    {
-      "id": "D50",
-      "name": "잔디",
-      "category": "craft",
-      "flavor": "밟으면 폭신하다. 눕고 싶어진다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D51",
-      "name": "화단",
-      "category": "craft",
-      "flavor": "흙이 꽃을 안았다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D52",
-      "name": "자갈",
-      "category": "craft",
-      "flavor": "잘게 부서진 시간.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D53",
-      "name": "암석층",
-      "category": "craft",
-      "flavor": "땅의 나이테.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D54",
-      "name": "초원",
-      "category": "craft",
-      "flavor": "풀과 꽃이 손을 잡으면, 들판이 된다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D55",
-      "name": "이끼돌",
-      "category": "craft",
-      "flavor": "돌에도 계절이 물든다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D56",
-      "name": "화관",
-      "category": "craft",
-      "flavor": "누군가에게 씌워주고 싶다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D57",
-      "name": "도끼",
-      "category": "craft",
-      "flavor": "나무와 바위가 만나, 도구가 되었다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D58",
-      "name": "수액",
-      "category": "craft",
-      "flavor": "나무의 심장 소리, 한 방울.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D59",
-      "name": "돌도끼",
-      "category": "craft",
-      "flavor": "더 단단하게, 더 날카롭게.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D60",
-      "name": "꽃병",
-      "category": "craft",
-      "flavor": "꽃에게 물을, 물에게 꽃을.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": [
-          "T1",
-          "T2A",
-          "T2B",
-          "T2C",
-          "T2D",
-          "T0"
-        ],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D61",
-      "name": "암석",
-      "category": "craft",
-      "flavor": "돌 위에 바위 — 산의 첫 글자.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D62",
-      "name": "구리 도선",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "쓸 만한 부분만 살려낸다. 폐허에서 배우는 첫 기술.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D63",
-      "name": "정류 회로",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "굳은 관절에 기름을. 계산이 천천히 깨어난다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D64",
-      "name": "전지",
-      "category": "craft",
-      "layer": 2,
-      "key_item": true,
-      "flavor": "작지만, 이 죽은 땅에서 처음으로 '차오르는' 것.",
-      "placeable_on": [],
-      "usable_on": ["breaker"]
-    },
-    {
-      "id": "D65",
-      "name": "네온 랜턴",
-      "category": "craft",
-      "layer": 2,
-      "key_item": true,
-      "unique": true,
-      "flavor": "손안의 작은 새벽. 들고 있는 동안만, 어둠이 물러선다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D66",
-      "name": "절연 퓨즈",
-      "category": "craft",
-      "layer": 2,
-      "key_item": true,
-      "flavor": "끊어질 것을 대신 끊어 주는 것. 희생하려고 태어났다.",
-      "placeable_on": [],
-      "usable_on": ["gen_sub"]
-    },
-    {
-      "id": "D67",
-      "name": "코어 골격",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "심장이 될 뼈대. 아직은 차갑다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D68",
-      "name": "코어 조각",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "한 조각만으로도 희미하게 맥이 뛴다. 아직 하나가 모자라다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D69",
-      "name": "파워 코어",
-      "category": "craft",
-      "layer": 2,
-      "key_item": true,
-      "flavor": "죽은 문명의 마지막 심장. 여기에 온기를 꽂는다.",
-      "placeable_on": [],
-      "usable_on": ["breaker"]
-    },
-    {
-      "id": "D70",
-      "name": "강철판",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "부순 것을 다시 반듯하게. 문명은 늘 그렇게 시작했다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D71",
-      "name": "유리 렌즈",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "초점이 맺힌다. 볼 것이 남아 있다면.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D72",
-      "name": "회로 기판",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "판 위에 생각을 정렬한다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D73",
-      "name": "네온관",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "가둔 게 아니라, 재워 둔 것에 가깝다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": false,
-        "glows": true
-      }
-    },
-    {
-      "id": "D74",
-      "name": "기름 헝겊",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "탄 것과 흐르는 것. 어울리지 않는 둘이 뭉친다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D75",
-      "name": "축전 셀",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "조금씩, 아주 조금씩 모은다. 다시 쓸 날을 위해.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D76",
-      "name": "절연 피복선",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "맨살로는 위험하다. 무엇이든.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D77",
-      "name": "콘크리트 반죽",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "폐허를 갈아 다시 굳힌다. 무엇을 세우려고.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D78",
-      "name": "방열판",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "열을 흘려보낸다. 식지 않으면 죽으니까.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D79",
-      "name": "신호기",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "깜빡인다. 아무도 읽지 않을 신호를.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": false,
-        "glows": true
-      }
-    },
-    {
-      "id": "D80",
-      "name": "방탄 유리",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "지키려던 것이, 지켜 주지 못한 흔적.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "structure",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": true
-      }
-    },
-    {
-      "id": "D81",
-      "name": "콘크리트 블록",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "쌓으면 벽이, 무너지면 다시 재.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D82",
-      "name": "기폭 심지",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "…쓸 데를 생각하니, 손이 멈춘다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D83",
-      "name": "전선 횃대",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "나무와 전선. 두 세계가 처음으로 손을 잡는다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D84",
-      "name": "유리 모래",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "원래 하나였던 것으로 되돌아간다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D85",
-      "name": "이끼 낀 잔해",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "기계도 오래 두면, 결국 자연이 데려간다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": false,
-        "glows": true
-      }
-    },
-    {
-      "id": "D86",
-      "name": "화분 안테나",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "신호 대신 꽃을 기다리기로 했다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D87",
-      "name": "기름 등불",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "마법과 기계, 둘 다 빛을 내는 방식일 뿐.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": false,
-        "glows": true
-      }
-    },
-    {
-      "id": "D88",
-      "name": "강철 도끼",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "더 단단한 세계를 자르기 위해.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
-      "id": "D89",
-      "name": "꺼진 로봇",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "마지막 명령을 기다리는 자세로 멈춰 있다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "structure",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": true
-      }
-    },
-    {
-      "id": "D90",
-      "name": "고장 난 라디오",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "주파수를 아무리 돌려도, 이제 아무도 방송하지 않는다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D91",
-      "name": "멈춘 시계",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "몇 시에 멈췄을까. 그때 무슨 일이 있었을까.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D92",
-      "name": "빈 액자",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "누구의 얼굴이 있었는지, 액자는 말하지 않는다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D93",
-      "name": "녹슨 훈장",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "누군가는 이걸 자랑스러워했다. 그 누군가도 이제 없다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D94",
-      "name": "말라붙은 잉크병",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "마지막 문장은 끝내 쓰이지 못했다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D95",
-      "name": "부서진 헬멧",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "지켜 주었을까. 묻지 않는 편이 낫겠다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": false
-      }
-    },
-    {
-      "id": "D96",
-      "name": "가로등",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "이 죽은 거리에, 내가 켠 첫 불빛.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": false,
-        "glows": true
-      }
-    },
-    {
-      "id": "D97",
-      "name": "위성 안테나(모형)",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "이제는 내가 하늘에 말을 건다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "structure",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": true
-      }
-    },
-    {
-      "id": "D98",
-      "name": "모니터",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "두 프레임짜리 삶. 그래도 살아는 있다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": false,
-        "glows": true
-      }
-    },
-    {
-      "id": "D99",
-      "name": "로봇 동상",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "기념할 것이 이것뿐이라도, 세워 둔다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "structure",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": true
-      }
-    },
-    {
-      "id": "D100",
-      "name": "발전기 모형",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "작게나마, 스스로 도는 것을 하나 갖고 싶었다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "structure",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": true,
-        "glows": true
-      }
-    },
-    {
-      "id": "D101",
-      "name": "철조망",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "지킬 것이 생겼다는 뜻… 이라고, 믿고 싶다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "structure",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": true
-      }
-    },
-    {
-      "id": "D102",
-      "name": "네온 간판",
-      "category": "craft",
-      "layer": 2,
-      "flavor": "무슨 가게였을까. 이제는 빛만 남았다.",
-      "placeable_on": [],
-      "usable_on": [],
-      "placement": {
-        "class": "decor",
-        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
-        "blocks": false,
-        "glows": true
-      }
-    }
-  ]
+ "items": [
+  {
+   "id": "J1",
+   "name": "고철",
+   "category": "gather",
+   "layer": 2,
+   "flavor": "누군가의 도구였을 것이다. 이제는 그냥, 무거운 침묵.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "J2",
+   "name": "전선",
+   "category": "gather",
+   "layer": 2,
+   "flavor": "아직 어딘가로 이어지고 싶은 듯 꿈틀거린다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "J3",
+   "name": "유리",
+   "category": "gather",
+   "layer": 2,
+   "flavor": "깨진 뒤에도, 빛을 담으려 애쓴다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "J4",
+   "name": "회로",
+   "category": "gather",
+   "layer": 2,
+   "flavor": "생각을 하던 조각. 마지막으로 무슨 계산을 하다 멈췄을까.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "J5",
+   "name": "기름",
+   "category": "gather",
+   "layer": 2,
+   "flavor": "고이지 못하고 번진다. 흐를 곳을 잃은 채.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "J6",
+   "name": "네온 결정",
+   "category": "gather",
+   "layer": 2,
+   "flavor": "죽은 도시에서 유일하게 아직 숨 쉬는 빛.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "J7",
+   "name": "재",
+   "category": "gather",
+   "layer": 2,
+   "flavor": "무엇이 여기서 탔는지는, 이제 아무도 모른다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "I1",
+   "name": "흙",
+   "category": "gather",
+   "flavor": "부드럽고 축축하다. 무언가 심고 싶어진다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "I2",
+   "name": "풀",
+   "category": "gather",
+   "flavor": "바람이 없는데도, 아주 가끔 흔들린다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "I3",
+   "name": "진흙",
+   "category": "gather",
+   "flavor": "발이 푹푹 빠진다. 신발이 없어서 다행이다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "I4",
+   "name": "나무",
+   "category": "gather",
+   "flavor": "나이테가 어느 순간부터 늘지 않았다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "I5",
+   "name": "꽃",
+   "category": "gather",
+   "flavor": "지지도, 피지도 않는다. 그냥 계속 이 모습이다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "I6",
+   "name": "바위",
+   "category": "gather",
+   "flavor": "이 세계에서 가장 변하지 않은 것. …원래 바위는 그렇던가?",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "I7",
+   "name": "물",
+   "category": "gather",
+   "flavor": "잔물결 하나 없이 고요하다.",
+   "placeable_on": [],
+   "usable_on": [
+    "bush_dry"
+   ]
+  },
+  {
+   "id": "I8",
+   "name": "돌",
+   "category": "gather",
+   "flavor": "손에 딱 맞는다. 던지지는 말자.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "I9",
+   "name": "세계수 정수",
+   "category": "gather",
+   "unique": true,
+   "flavor": "따뜻하다. 이 세계에서 처음 느끼는 온기다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D01",
+   "name": "모래",
+   "category": "craft",
+   "flavor": "바위도 물 앞에서는 결국 이렇게 된다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D02",
+   "name": "점토",
+   "category": "craft",
+   "flavor": "빚는 대로 모양이 남는다. 세계도 이랬으면.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D03",
+   "name": "씨앗",
+   "category": "craft",
+   "flavor": "잠들어 있다. 깨울 방법이 있을 것이다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D04",
+   "name": "새싹",
+   "category": "craft",
+   "flavor": "이 세계에서 처음으로 '자라는' 것을 봤다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D05",
+   "name": "묘목",
+   "category": "craft",
+   "flavor": "아직 작다. 하지만 분명히 어제보다 크다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D06",
+   "name": "나무",
+   "category": "craft",
+   "alias_of": "I4",
+   "flavor": "채집한 것과 똑같다. 하지만 이건 내가 키웠다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D07",
+   "name": "이끼",
+   "category": "craft",
+   "flavor": "축축하고 보드랍다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D08",
+   "name": "이끼바위",
+   "category": "craft",
+   "flavor": "바위도 무언가를 입는다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true
+   }
+  },
+  {
+   "id": "D09",
+   "name": "건초",
+   "category": "craft",
+   "flavor": "마른 풀 냄새. 어딘가 그리운 냄새다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D10",
+   "name": "둥지",
+   "category": "craft",
+   "flavor": "새는 없다. 아주 오래전부터.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D12",
+   "name": "목재",
+   "category": "craft",
+   "flavor": "반듯하게 다듬었다. 뭐든 만들 수 있을 것 같다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D13",
+   "name": "벽돌",
+   "category": "craft",
+   "flavor": "불이 없는 세계라, 돌틀에 눌러 굳혔다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D14",
+   "name": "디딤돌",
+   "category": "craft",
+   "key_item": true,
+   "flavor": "물 위에 놓으면 건널 수 있을 것 같다.",
+   "placeable_on": [
+    "T5A",
+    "T5B"
+   ],
+   "usable_on": [],
+   "placement": {
+    "class": "functional",
+    "on": [
+     "T5A",
+     "T5B"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D15",
+   "name": "늪",
+   "category": "craft",
+   "flavor": "…만들고 나서 후회했다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D16",
+   "name": "꽃즙",
+   "category": "craft",
+   "flavor": "달콤한 향. 마시면 안 될 것 같은 색.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D17",
+   "name": "물감",
+   "category": "craft",
+   "flavor": "이 세계에 없던 색을 만들 수 있다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D18",
+   "name": "꽃다발",
+   "category": "craft",
+   "flavor": "줄 사람이 없다. 아직은.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D19",
+   "name": "생명수",
+   "category": "craft",
+   "key_item": true,
+   "flavor": "빛이 물속에서 숨 쉬고 있다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D20",
+   "name": "빛나는 새싹",
+   "category": "craft",
+   "key_item": true,
+   "flavor": "멈춘 세계에서, 이것만은 자라고 있다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D21",
+   "name": "정령꽃",
+   "category": "craft",
+   "flavor": "속삭임에 대답하듯, 은은하게 빛난다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D22",
+   "name": "어린 세계수",
+   "category": "craft",
+   "key_item": true,
+   "flavor": "비워낸 자리에, 되돌려 줄 차례다.",
+   "placeable_on": [
+    "T0"
+   ],
+   "usable_on": [],
+   "placement": {
+    "class": "functional",
+    "on": [
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D23",
+   "name": "판자",
+   "category": "craft",
+   "flavor": "목재를 얇고 반듯하게. 문명의 첫 페이지.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D24",
+   "name": "울타리",
+   "category": "craft",
+   "flavor": "지킬 것이 생겼다는 뜻이다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true
+   }
+  },
+  {
+   "id": "D25",
+   "name": "밧줄",
+   "category": "craft",
+   "flavor": "풀에도 심지가 있다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D26",
+   "name": "바구니",
+   "category": "craft",
+   "flavor": "담을 것을 찾아다니게 된다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D27",
+   "name": "낚싯대",
+   "category": "craft",
+   "flavor": "…걸리는 게 없다. 이 세계의 물에는 아무도 없다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D28",
+   "name": "흙벽돌",
+   "category": "craft",
+   "flavor": "햇빛에 말린 벽돌. 불이 없어도 단단하다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D29",
+   "name": "화분",
+   "category": "craft",
+   "flavor": "꽃에게 작은 세계를 선물했다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D30",
+   "name": "모래성",
+   "category": "craft",
+   "flavor": "금방 무너질 걸 알면서도 만들었다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D31",
+   "name": "조약돌",
+   "category": "craft",
+   "flavor": "물이 오래 쓰다듬은 돌.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D32",
+   "name": "물레방아",
+   "category": "craft",
+   "flavor": "아직 돌지 않는다. 흐르는 시간이 없어서.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true
+   }
+  },
+  {
+   "id": "D33",
+   "name": "나무다리",
+   "category": "craft",
+   "flavor": "디딤돌보다 안전하게. 누군가 뒤따라올 것처럼.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "T5A",
+     "T5B",
+     "T5M"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D34",
+   "name": "화환",
+   "category": "craft",
+   "flavor": "축하할 일을 만들고 싶어진다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D35",
+   "name": "향수",
+   "category": "craft",
+   "flavor": "시들지 않는 꽃의 향기를 병에 담았다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D36",
+   "name": "비료",
+   "category": "craft",
+   "flavor": "좋은 흙은 만들어지는 것이다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D37",
+   "name": "옥토",
+   "category": "craft",
+   "flavor": "생명을 기다리는 흙.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D38",
+   "name": "텃밭",
+   "category": "craft",
+   "flavor": "심고, 기다리고, 돌보는 곳.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D39",
+   "name": "클로버",
+   "category": "craft",
+   "flavor": "행운… 이 세계에도 있을까.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D40",
+   "name": "수련",
+   "category": "craft",
+   "flavor": "늪에도 꽃은 핀다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D41",
+   "name": "연꽃",
+   "category": "craft",
+   "flavor": "생명수를 머금고, 늪의 꽃이 빛이 되었다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "T5A",
+     "T5B",
+     "T5M"
+    ],
+    "blocks": false,
+    "glows": true
+   }
+  },
+  {
+   "id": "D42",
+   "name": "정원",
+   "category": "craft",
+   "flavor": "울타리 안에 나만의 작은 계절.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D43",
+   "name": "새집",
+   "category": "craft",
+   "flavor": "둥지를 지붕 아래로. 와 줄 새를 기다린다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D44",
+   "name": "허수아비",
+   "category": "craft",
+   "flavor": "지킬 새가 없다. 그래도 세워뒀다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true
+   }
+  },
+  {
+   "id": "D45",
+   "name": "돌탑",
+   "category": "craft",
+   "flavor": "돌 하나에 소원 하나.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true
+   }
+  },
+  {
+   "id": "D46",
+   "name": "벽",
+   "category": "craft",
+   "flavor": "막기 위해서가 아니라, 기대기 위해서.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true
+   }
+  },
+  {
+   "id": "D47",
+   "name": "축복받은 가지",
+   "category": "craft",
+   "flavor": "생명수가 스민 가지. 지팡이 같기도 하다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D48",
+   "name": "등불꽃",
+   "category": "craft",
+   "flavor": "정령꽃을 바구니에 담으니, 등불이 되었다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": true
+   }
+  },
+  {
+   "id": "D49",
+   "name": "생명의 정원",
+   "category": "craft",
+   "flavor": "정원이 숨을 쉰다. 세계가 부러워할 만큼.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true
+   }
+  },
+  {
+   "id": "D50",
+   "name": "잔디",
+   "category": "craft",
+   "flavor": "밟으면 폭신하다. 눕고 싶어진다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D51",
+   "name": "화단",
+   "category": "craft",
+   "flavor": "흙이 꽃을 안았다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D52",
+   "name": "자갈",
+   "category": "craft",
+   "flavor": "잘게 부서진 시간.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D53",
+   "name": "암석층",
+   "category": "craft",
+   "flavor": "땅의 나이테.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D54",
+   "name": "초원",
+   "category": "craft",
+   "flavor": "풀과 꽃이 손을 잡으면, 들판이 된다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D55",
+   "name": "이끼돌",
+   "category": "craft",
+   "flavor": "돌에도 계절이 물든다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D56",
+   "name": "화관",
+   "category": "craft",
+   "flavor": "누군가에게 씌워주고 싶다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D57",
+   "name": "도끼",
+   "category": "craft",
+   "flavor": "나무와 바위가 만나, 도구가 되었다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D58",
+   "name": "수액",
+   "category": "craft",
+   "flavor": "나무의 심장 소리, 한 방울.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D59",
+   "name": "돌도끼",
+   "category": "craft",
+   "flavor": "더 단단하게, 더 날카롭게.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D60",
+   "name": "꽃병",
+   "category": "craft",
+   "flavor": "꽃에게 물을, 물에게 꽃을.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D61",
+   "name": "암석",
+   "category": "craft",
+   "flavor": "돌 위에 바위 — 산의 첫 글자.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D62",
+   "name": "구리 도선",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "쓸 만한 부분만 살려낸다. 폐허에서 배우는 첫 기술.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D63",
+   "name": "정류 회로",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "굳은 관절에 기름을. 계산이 천천히 깨어난다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D64",
+   "name": "전지",
+   "category": "craft",
+   "layer": 2,
+   "key_item": true,
+   "flavor": "작지만, 이 죽은 땅에서 처음으로 '차오르는' 것.",
+   "placeable_on": [],
+   "usable_on": [
+    "breaker"
+   ]
+  },
+  {
+   "id": "D65",
+   "name": "네온 랜턴",
+   "category": "craft",
+   "layer": 2,
+   "key_item": true,
+   "unique": true,
+   "flavor": "손안의 작은 새벽. 들고 있는 동안만, 어둠이 물러선다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D66",
+   "name": "절연 퓨즈",
+   "category": "craft",
+   "layer": 2,
+   "key_item": true,
+   "flavor": "끊어질 것을 대신 끊어 주는 것. 희생하려고 태어났다.",
+   "placeable_on": [],
+   "usable_on": [
+    "gen_sub"
+   ]
+  },
+  {
+   "id": "D67",
+   "name": "코어 골격",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "심장이 될 뼈대. 아직은 차갑다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D68",
+   "name": "코어 조각",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "한 조각만으로도 희미하게 맥이 뛴다. 아직 하나가 모자라다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D69",
+   "name": "파워 코어",
+   "category": "craft",
+   "layer": 2,
+   "key_item": true,
+   "flavor": "죽은 문명의 마지막 심장. 여기에 온기를 꽂는다.",
+   "placeable_on": [],
+   "usable_on": [
+    "breaker"
+   ]
+  },
+  {
+   "id": "D70",
+   "name": "강철판",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "부순 것을 다시 반듯하게. 문명은 늘 그렇게 시작했다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D71",
+   "name": "유리 렌즈",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "초점이 맺힌다. 볼 것이 남아 있다면.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D72",
+   "name": "회로 기판",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "판 위에 생각을 정렬한다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D73",
+   "name": "네온관",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "가둔 게 아니라, 재워 둔 것에 가깝다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": true
+   }
+  },
+  {
+   "id": "D74",
+   "name": "기름 헝겊",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "탄 것과 흐르는 것. 어울리지 않는 둘이 뭉친다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D75",
+   "name": "축전 셀",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "조금씩, 아주 조금씩 모은다. 다시 쓸 날을 위해.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D76",
+   "name": "절연 피복선",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "맨살로는 위험하다. 무엇이든.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D77",
+   "name": "콘크리트 반죽",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "폐허를 갈아 다시 굳힌다. 무엇을 세우려고.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D78",
+   "name": "방열판",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "열을 흘려보낸다. 식지 않으면 죽으니까.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D79",
+   "name": "신호기",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "깜빡인다. 아무도 읽지 않을 신호를.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": true
+   }
+  },
+  {
+   "id": "D80",
+   "name": "방탄 유리",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "지키려던 것이, 지켜 주지 못한 흔적.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true
+   }
+  },
+  {
+   "id": "D81",
+   "name": "콘크리트 블록",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "쌓으면 벽이, 무너지면 다시 재.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D82",
+   "name": "기폭 심지",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "…쓸 데를 생각하니, 손이 멈춘다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D83",
+   "name": "전선 횃대",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "나무와 전선. 두 세계가 처음으로 손을 잡는다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D84",
+   "name": "유리 모래",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "원래 하나였던 것으로 되돌아간다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D85",
+   "name": "이끼 낀 잔해",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "기계도 오래 두면, 결국 자연이 데려간다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": true
+   }
+  },
+  {
+   "id": "D86",
+   "name": "화분 안테나",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "신호 대신 꽃을 기다리기로 했다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D87",
+   "name": "기름 등불",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "마법과 기계, 둘 다 빛을 내는 방식일 뿐.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": true
+   }
+  },
+  {
+   "id": "D88",
+   "name": "강철 도끼",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "더 단단한 세계를 자르기 위해.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D89",
+   "name": "꺼진 로봇",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "마지막 명령을 기다리는 자세로 멈춰 있다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true
+   }
+  },
+  {
+   "id": "D90",
+   "name": "고장 난 라디오",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "주파수를 아무리 돌려도, 이제 아무도 방송하지 않는다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D91",
+   "name": "멈춘 시계",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "몇 시에 멈췄을까. 그때 무슨 일이 있었을까.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D92",
+   "name": "빈 액자",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "누구의 얼굴이 있었는지, 액자는 말하지 않는다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D93",
+   "name": "녹슨 훈장",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "누군가는 이걸 자랑스러워했다. 그 누군가도 이제 없다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D94",
+   "name": "말라붙은 잉크병",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "마지막 문장은 끝내 쓰이지 못했다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D95",
+   "name": "부서진 헬멧",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "지켜 주었을까. 묻지 않는 편이 낫겠다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false
+   }
+  },
+  {
+   "id": "D96",
+   "name": "가로등",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "이 죽은 거리에, 내가 켠 첫 불빛.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": true
+   }
+  },
+  {
+   "id": "D97",
+   "name": "위성 안테나(모형)",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "이제는 내가 하늘에 말을 건다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true
+   }
+  },
+  {
+   "id": "D98",
+   "name": "모니터",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "두 프레임짜리 삶. 그래도 살아는 있다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": true
+   }
+  },
+  {
+   "id": "D99",
+   "name": "로봇 동상",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "기념할 것이 이것뿐이라도, 세워 둔다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true
+   }
+  },
+  {
+   "id": "D100",
+   "name": "발전기 모형",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "작게나마, 스스로 도는 것을 하나 갖고 싶었다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true,
+    "glows": true
+   }
+  },
+  {
+   "id": "D101",
+   "name": "철조망",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "지킬 것이 생겼다는 뜻… 이라고, 믿고 싶다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true
+   }
+  },
+  {
+   "id": "D102",
+   "name": "네온 간판",
+   "category": "craft",
+   "layer": 2,
+   "flavor": "무슨 가게였을까. 이제는 빛만 남았다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "L2T-A",
+     "L2T-m",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": true
+   }
+  },
+  {
+   "id": "K1",
+   "name": "태엽",
+   "category": "gather",
+   "layer": 3,
+   "flavor": "끝까지 감겼다가, 끝까지 풀렸다. 이제 아무것도 밀어내지 않는다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "K2",
+   "name": "톱니",
+   "category": "gather",
+   "layer": 3,
+   "flavor": "이 하나가 맞물릴 곳을, 아직 찾고 있는 듯하다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "K3",
+   "name": "황동",
+   "category": "gather",
+   "layer": 3,
+   "flavor": "닦으면 아직 빛난다. 누군가 정성껏 깎아 만든 것.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "K4",
+   "name": "증기응축수",
+   "category": "gather",
+   "layer": 3,
+   "flavor": "김이 식어 맺힌 물방울. 뜨거웠던 시절의 흔적.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "K5",
+   "name": "가죽 벨트",
+   "category": "gather",
+   "layer": 3,
+   "flavor": "힘을 옮기던 띠. 이제 걸릴 축이 없어 늘어져 있다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "K6",
+   "name": "석탄",
+   "category": "gather",
+   "layer": 3,
+   "flavor": "태우려고 캐 두었을 것이다. 태울 화로가, 먼저 식었다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "K7",
+   "name": "기름때 유리",
+   "category": "gather",
+   "layer": 3,
+   "flavor": "계기판의 얼굴. 기름때 너머로, 멈춘 바늘이 비친다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D103",
+   "name": "황동 톱니 원판",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "이가 빠진 자리를, 새 이로 채운다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D104",
+   "name": "맞물림 톱니",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "혼자서는 아무것도 아니다. 맞물려야, 비로소 힘이 된다.",
+   "placeable_on": [],
+   "usable_on": [
+    "gear_assembly"
+   ],
+   "key_item": true
+  },
+  {
+   "id": "D105",
+   "name": "압력 밸브",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "새어 나가려는 것을, 붙든다.",
+   "placeable_on": [],
+   "usable_on": [
+    "boiler"
+   ],
+   "key_item": true
+  },
+  {
+   "id": "D106",
+   "name": "젖은 석탄",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "축축해도 탄다. 마지막 불씨는 늘 그렇다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D107",
+   "name": "강철 케이블",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "끊어지면, 모든 게 떨어진다. 그러니 겹겹이 꼰다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D108",
+   "name": "평형추",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "한쪽이 오르려면, 다른 쪽이 가라앉아야 한다.",
+   "placeable_on": [],
+   "usable_on": [
+    "elevator_ctrl"
+   ],
+   "key_item": true
+  },
+  {
+   "id": "D109",
+   "name": "심장 뼈대",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "심장이 될 뼈대. 아직은 태엽만 감겨 있다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D110",
+   "name": "태엽 문자판",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "몇 시에 멈췄는지, 이 유리는 알고 있다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D111",
+   "name": "태엽심장",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "멈춘 도시의 마지막 심장. 여기에 온기를, 마지막으로 한 번.",
+   "placeable_on": [],
+   "usable_on": [
+    "clock_mount"
+   ],
+   "key_item": true
+  },
+  {
+   "id": "D112",
+   "name": "강철 톱니바퀴",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "혼자 돌던 것들이, 함께 돌기 시작한다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D113",
+   "name": "연마 유리알",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "닦을수록, 비친 얼굴이 낯설어진다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D114",
+   "name": "황동관",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "속이 빈 채로도, 증기를 나른다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D115",
+   "name": "그을린 벨트",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "타다 만 채로도, 아직 돌아간다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D116",
+   "name": "기름 헝겊",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "닦아 낼수록, 손이 더 검어진다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D117",
+   "name": "태엽 감개",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "감아 둔 힘. 언젠가 풀릴 것을 알면서.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D118",
+   "name": "황동 볼트",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "조이는 것. 풀리지 않기를 바라며 만든 것.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D119",
+   "name": "연료 벽돌",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "네모반듯한 불. 태우기 좋게, 슬프도록 정갈하게.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D120",
+   "name": "응결 렌즈",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "물방울 하나에, 멈춘 도시가 거꾸로 담긴다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D121",
+   "name": "벨트 도르래",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "힘을 옮긴다. 제 것은 하나도 남기지 않고.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D122",
+   "name": "구동 모듈",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "돌아가려는 의지를, 멀리까지 전한다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D123",
+   "name": "압력 계기",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "바늘이 붉은 선을 향한다. 아무도 보지 않아도.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D124",
+   "name": "증기 파이프",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "쉭 — 도시가 마지막 숨을 내쉰다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D125",
+   "name": "태엽 인형",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "감아 주면 춤을 췄다. 감아 줄 손이, 이제 없다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D126",
+   "name": "이끼 낀 톱니",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "기계도 오래 멈추면, 결국 숲이 데려간다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": false
+   }
+  },
+  {
+   "id": "D127",
+   "name": "네온 태엽등",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "감긴 만큼만, 빛난다. 풀리면 다시 어둠.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": true
+   }
+  },
+  {
+   "id": "D128",
+   "name": "강철 태엽 도끼",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "자르는 리듬마저, 태엽이 정한다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D129",
+   "name": "멈춘 가로 태엽시계",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "이 죽은 거리에, 시간을 다시 세워 둔다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true,
+    "glows": false
+   }
+  },
+  {
+   "id": "D130",
+   "name": "증기 가로등",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "주황빛 증기가, 발밑을 겨우 비춘다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": true
+   }
+  },
+  {
+   "id": "D131",
+   "name": "태엽 분수",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "물이 돈다. 갈 곳도 없이, 그저 돈다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true,
+    "glows": true
+   }
+  },
+  {
+   "id": "D132",
+   "name": "황동 톱니 문",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "여닫을 때마다, 도시가 앓는 소리를 낸다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true,
+    "glows": false
+   }
+  },
+  {
+   "id": "D133",
+   "name": "멈춘 로봇 좌상",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "마지막 명령을 기다리는 자세로, 태엽이 다 풀렸다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true,
+    "glows": false
+   }
+  },
+  {
+   "id": "D134",
+   "name": "연료 화로",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "온기가 필요했던 건, 도시가 아니라 나였을지도.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true,
+    "glows": true
+   }
+  },
+  {
+   "id": "D135",
+   "name": "태엽 간판",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "무슨 가게였을까. 이제는 태엽 소리만 남았다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": true
+   }
+  },
+  {
+   "id": "D136",
+   "name": "녹슨 태엽 훈장",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "누군가는 이걸 자랑스러워했다. 그 손도, 멈췄다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": false
+   }
+  },
+  {
+   "id": "D137",
+   "name": "말라붙은 기름병",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "마지막으로 무엇을 적으려 했을까.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": false
+   }
+  },
+  {
+   "id": "D138",
+   "name": "부서진 태엽 오르골",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "감아도, 이제 아무 곡도 나오지 않는다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": false
+   }
+  },
+  {
+   "id": "D139",
+   "name": "꺼진 신호 톱니",
+   "category": "craft",
+   "layer": 3,
+   "flavor": "돌아가긴 한다. 아무 신호도 없이.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": false
+   }
+  }
+ ]
 }

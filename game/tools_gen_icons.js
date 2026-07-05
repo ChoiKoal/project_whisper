@@ -153,6 +153,9 @@ const P = {
   neonD: '#7a2e6a', neon: '#c74aa8', neonL: '#f090d8',
   amber: '#d9a23a', amberL: '#f0cd80',
   ash: '#4a4650', ashL: '#6e6a74',
+  // ---- Layer-3 machine family (L3) — design Part C: copper/brass + orange steam glow.
+  copper: '#3a2c1e', brass: '#8a6a34', brassHi: '#c8a24a', brassSh: '#4a3820',
+  orange: '#ff9a3c', ember: '#e8842c',
 };
 const C = {};
 for (const k in P) C[k] = hexToRGB(P[k]);
@@ -1083,6 +1086,411 @@ icons.D102 = (cv) => { // 네온 간판 neon sign (framed board + glowing letter
 };
 
 // ============================================================================
+// LAYER-3 MACHINE FAMILY (L3). K1..K7 gather + D103..D139 craft. Shared cues
+// (design Part C): copper/brass silhouettes with a darker brass selout; powered /
+// glowing steam-tech items get an orange glowBehind; inert ruins stay matte metal.
+// ============================================================================
+
+// --- helper: orange ember dot cluster (steam-tech "still warm" accent) ---
+function emberSpark(cv, x, y) {
+  setPx(cv, x, y, C.orange); setPx(cv, x - 1, y, C.ember, 200); setPx(cv, x + 1, y, C.ember, 200);
+  setPx(cv, x, y - 1, C.ember, 200); setPx(cv, x, y + 1, C.ember, 200);
+}
+// --- helper: a single brass gear (teeth + hub) centred at cx,cy with radius r ---
+function gear(cv, cx, cy, r, lit, dark, teeth) {
+  teeth = teeth || 8;
+  for (let t = 0; t < teeth; t++) {
+    const a = t * Math.PI * 2 / teeth;
+    fillGearTooth(cv, cx, cy, r, a, lit, dark);
+  }
+  circle(cv, cx, cy, r, lit, dark);
+  disc(cv, cx, cy, Math.max(1, Math.round(r * 0.28)), C.copper); // hub hole
+}
+function fillGearTooth(cv, cx, cy, r, a, lit, dark) {
+  const ux = Math.cos(a), uy = Math.sin(a);
+  for (let d = r - 1; d <= r + 2; d++)
+    for (let w = -1.4; w <= 1.4; w += 0.5) {
+      const px = cx + ux * d - uy * w, py = cy + uy * d + ux * w;
+      setPx(cv, px, py, (ux - uy) > 0 ? lit : dark);
+    }
+}
+// --- helper: a coiled spring (concentric arcs) centred at cx,cy ---
+function coil(cv, cx, cy, rMax, lit, dark) {
+  for (let a = 0; a < Math.PI * 6; a += 0.12) {
+    const rr = rMax * (1 - a / (Math.PI * 6.5));
+    setPx(cv, cx + Math.cos(a) * rr, cy + Math.sin(a) * rr, ((a % (Math.PI)) < Math.PI / 2) ? lit : dark);
+  }
+}
+
+// ---------- K1..K7 (Layer-3 gather) ----------
+icons.K1 = (cv) => { // 태엽 coiled mainspring
+  coil(cv, 24, 24, 15, C.brassHi, C.brass);
+  disc(cv, 24, 24, 2, C.brassSh);
+  outline(cv, P.brassSh);
+};
+icons.K2 = (cv) => { // 톱니 single gear
+  gear(cv, 24, 24, 13, C.brassHi, C.brass, 8);
+  outline(cv, P.brassSh);
+};
+icons.K3 = (cv) => { // 황동 bright brass ingot/offcut
+  for (let y = 22; y < 34; y++) for (let x = 12; x < 36; x++) setPx(cv, x, y, x - y > 0 ? C.brassHi : C.brass);
+  // trapezoid ingot top bevel
+  for (let x = 14; x < 34; x++) { setPx(cv, x, 21, C.brassHi); }
+  fillRect(cv, 12, 22, 36, 24, C.brassHi); // lit top
+  fillRect(cv, 12, 32, 36, 34, C.brassSh); // shadow base
+  outline(cv, P.brassSh);
+};
+icons.K4 = (cv) => { // 증기응축수 water droplet + steam wisp
+  const cx = 24;
+  for (let y = 20; y < 30; y++) { const hw = Math.round((y - 20) / 10 * 7); for (let x = cx - hw; x <= cx + hw; x++) setPx(cv, x, y, x - cx > 1 ? C.brassHi : C.copper); }
+  ellipse(cv, cx, 34, 9, 8, C.orange, C.ember); // warm droplet body
+  disc(cv, cx + 3, 31, 2, C.brassHi); // sheen
+  // steam wisp rising
+  for (let i = 0; i < 8; i++) setPx(cv, cx + Math.round(Math.sin(i / 1.5) * 3), 18 - i, C.brassHi, 150);
+  outline(cv, P.brassSh);
+};
+icons.K5 = (cv) => { // 가죽 벨트 leather drive-belt loop
+  const lC = hexToRGB('#6a4326'), lD = hexToRGB('#3a2416');
+  for (let a = 0; a < 360; a += 4) { const r = a * Math.PI / 180; disc(cv, 24 + Math.cos(r) * 13, 26 + Math.sin(r) * 11, 3, (Math.sin(r) < 0) ? lC : lD); }
+  for (let a = 0; a < 360; a += 4) { const r = a * Math.PI / 180; disc(cv, 24 + Math.cos(r) * 13, 26 + Math.sin(r) * 11, 1, C.copper); }
+  // stitch dots
+  for (let a = 0; a < 360; a += 30) { const r = a * Math.PI / 180; setPx(cv, 24 + Math.cos(r) * 13, 26 + Math.sin(r) * 11, C.brassHi); }
+  outline(cv, '#2a190e');
+};
+icons.K6 = (cv) => { // 석탄 coal lump cluster
+  const cD = hexToRGB('#26232a'), cL = hexToRGB('#4a464f');
+  ellipse(cv, 20, 32, 9, 7, cL, cD);
+  ellipse(cv, 31, 30, 7, 6, cL, cD);
+  ellipse(cv, 26, 36, 6, 4, cL, cD);
+  disc(cv, 17, 29, 1, C.ashL); disc(cv, 29, 27, 1, C.ashL); // facet glints
+  outline(cv, '#16141a');
+};
+icons.K7 = (cv) => { // 기름때 유리 oily glass shard
+  for (let y = 10; y < 40; y++) { const hw = Math.round((40 - y) / 30 * 11); for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, (x < 24) ? C.brassHi : C.brass, 200); }
+  ellipse(cv, 22, 26, 6, 5, hexToRGB('#3a2c4a'), C.copper); // oily film
+  line(cv, 24, 10, 20, 38, C.brassHi, 1); // glint
+  outline(cv, P.brassSh);
+};
+
+// ---------- D103..D139 (Layer-3 craft) ----------
+icons.D103 = (cv) => { // 황동 톱니 원판 brass gear disc
+  gear(cv, 24, 24, 14, C.brassHi, C.brass, 10);
+  circle(cv, 24, 24, 7, C.brass, C.brassSh); // inner disc rim
+  outline(cv, P.brassSh);
+};
+icons.D104 = (cv) => { // 맞물림 톱니 two meshing gears (orange spark)
+  gear(cv, 17, 20, 9, C.brassHi, C.brass, 8);
+  gear(cv, 31, 30, 9, C.brassHi, C.brass, 8);
+  emberSpark(cv, 24, 25); // spark at mesh point
+  outline(cv, P.brassSh);
+};
+icons.D105 = (cv) => { // 압력 밸브 valve wheel
+  circle(cv, 24, 24, 14, C.brassHi, C.brass);
+  disc(cv, 24, 24, 9, C.copper);
+  for (let a = 0; a < 4; a++) { const r = a * Math.PI / 2 + Math.PI / 4; line(cv, 24, 24, 24 + Math.cos(r) * 13, 24 + Math.sin(r) * 13, C.brass, 2); }
+  circle(cv, 24, 24, 4, C.brassHi, C.brass); disc(cv, 24, 24, 2, C.brassSh); // hub
+  fillRect(cv, 22, 36, 26, 44, C.brass); // stem
+  outline(cv, P.brassSh);
+};
+icons.D106 = (cv) => { // 젖은 석탄 wet coal (droplet on coal)
+  const cD = hexToRGB('#26232a'), cL = hexToRGB('#4a464f');
+  ellipse(cv, 22, 32, 10, 8, cL, cD);
+  ellipse(cv, 32, 31, 7, 6, cL, cD);
+  ellipse(cv, 22, 28, 5, 3, hexToRGB('#5a5660'), cL); // wet sheen
+  for (let y = 12; y < 20; y++) { const hw = Math.round((y - 12) / 8 * 4); for (let x = 22 - hw; x <= 22 + hw; x++) setPx(cv, x, y, x - 22 > 0 ? C.blueL : C.blueM); }
+  ellipse(cv, 22, 22, 5, 5, C.blueM, C.blue); disc(cv, 24, 20, 1, C.white); // droplet
+  outline(cv, '#16141a');
+};
+icons.D107 = (cv) => { // 강철 케이블 twisted steel cable
+  for (let x = 8; x < 40; x++) {
+    const ph = x * 0.6;
+    setPx(cv, x, 24 + Math.round(Math.sin(ph) * 4), C.steelL);
+    setPx(cv, x, 24 + Math.round(Math.sin(ph + 2) * 4), C.steelM);
+    setPx(cv, x, 24 + Math.round(Math.sin(ph + 4) * 4), C.steel);
+  }
+  disc(cv, 8, 24, 3, C.steelD); disc(cv, 40, 24, 3, C.steelD); // clamped ends
+  outline(cv, P.steelD);
+};
+icons.D108 = (cv) => { // 평형추 counterweight on a cable
+  line(cv, 24, 4, 24, 22, C.steelM, 1); // cable
+  disc(cv, 24, 6, 3, C.steelD); // pulley eye
+  for (let y = 22; y < 40; y++) { const hw = 9 - Math.abs(y - 31) * 0.15; for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, x - 24 > 0 ? C.steelM : C.steel); }
+  fillRect(cv, 20, 20, 28, 24, C.steelL); // top cap
+  line(cv, 20, 30, 28, 30, C.steelD, 1); // cast seam
+  outline(cv, P.steelD);
+};
+icons.D109 = (cv) => { // 심장 뼈대 heart-shaped brass frame with spring
+  // brass heart outline frame
+  const HC = C.brassHi, HD = C.brass;
+  ellipse(cv, 18, 20, 7, 7, HC, HD); ellipse(cv, 30, 20, 7, 7, HC, HD);
+  for (let i = 0; i < 14; i++) { const hw = 12 - i; for (let w = -hw; w <= hw; w++) setPx(cv, 24 + w, 22 + i, (w > 0) ? HC : HD); }
+  disc(cv, 24, 24, 9, C.copper); // hollow interior
+  coil(cv, 24, 23, 6, C.brassHi, C.brass); // spring inside
+  outline(cv, P.brassSh);
+};
+icons.D110 = (cv) => { // 태엽 문자판 clock dial behind glass
+  circle(cv, 24, 24, 15, C.brassHi, C.brass);
+  circle(cv, 24, 24, 12, C.cream, C.brassSh);
+  for (let a = 0; a < 12; a++) { const r = a * Math.PI / 6; disc(cv, 24 + Math.cos(r) * 10, 24 + Math.sin(r) * 10, 1, C.copper); }
+  line(cv, 24, 24, 24, 15, C.copper, 1); line(cv, 24, 24, 30, 26, C.copper, 1); // hands
+  disc(cv, 24, 24, 2, C.brass);
+  disc(cv, 19, 19, 3, C.white, 120); // glass glint
+  outline(cv, P.brassSh);
+};
+icons.D111 = (cv) => { // 태엽심장 glowing orange clockwork heart (glow!)
+  glowBehind(cv, 24, 24, 18, C.orange);
+  ellipse(cv, 18, 20, 7, 7, C.ember, C.copper); ellipse(cv, 30, 20, 7, 7, C.ember, C.copper);
+  for (let i = 0; i < 14; i++) { const hw = 12 - i; for (let w = -hw; w <= hw; w++) setPx(cv, 24 + w, 22 + i, (w > 0) ? C.orange : C.ember); }
+  coil(cv, 24, 23, 7, C.brassHi, C.brass); // glowing clockwork spring
+  disc(cv, 24, 23, 2, C.white);
+  emberSpark(cv, 14, 14); emberSpark(cv, 34, 30);
+  outline(cv, P.ember);
+};
+icons.D112 = (cv) => { // 강철 톱니바퀴 two stacked gears
+  gear(cv, 22, 26, 11, C.steelL, C.steel, 9);
+  gear(cv, 30, 18, 8, C.steelH, C.steelM, 8);
+  outline(cv, P.steelD);
+};
+icons.D113 = (cv) => { // 연마 유리알 polished glass bead
+  circle(cv, 24, 24, 13, C.cyanL, C.steelL);
+  disc(cv, 24, 24, 9, C.brassHi, 90); // brassy inner refraction
+  disc(cv, 19, 19, 4, C.white); disc(cv, 29, 29, 2, C.white, 160); // polished glints
+  outline(cv, P.steel);
+};
+icons.D114 = (cv) => { // 황동관 brass tube
+  fillRect(cv, 10, 20, 38, 30, C.brass);
+  fillRect(cv, 10, 20, 38, 23, C.brassHi); // top-lit
+  fillRect(cv, 10, 28, 38, 30, C.brassSh);
+  ellipse(cv, 10, 25, 3, 5, C.copper, C.brassSh); // near-end bore
+  ellipse(cv, 10, 25, 2, 3, C.brassSh, C.copper);
+  outline(cv, P.brassSh);
+};
+icons.D115 = (cv) => { // 그을린 벨트 scorched belt
+  const lC = hexToRGB('#5a3820'), lD = hexToRGB('#2e1c10');
+  for (let a = 0; a < 360; a += 4) { const r = a * Math.PI / 180; disc(cv, 24 + Math.cos(r) * 13, 26 + Math.sin(r) * 11, 3, (Math.sin(r) < 0) ? lC : lD); }
+  for (let a = 0; a < 360; a += 4) { const r = a * Math.PI / 180; disc(cv, 24 + Math.cos(r) * 13, 26 + Math.sin(r) * 11, 1, C.copper); }
+  // scorch marks
+  for (const [x, y] of [[18, 16], [32, 22], [24, 39]]) disc(cv, x, y, 2, C.ash);
+  outline(cv, '#1e1109');
+};
+icons.D116 = (cv) => { // 기름 헝겊 oily rag
+  ellipse(cv, 24, 28, 16, 12, hexToRGB('#8a7a5a'), hexToRGB('#5a4a34'));
+  ellipse(cv, 22, 26, 8, 6, hexToRGB('#3a2c4a'), C.copper); // oil stain
+  line(cv, 12, 24, 36, 30, hexToRGB('#4a3c28'), 1); line(cv, 14, 32, 34, 24, hexToRGB('#4a3c28'), 1); // folds
+  disc(cv, 20, 26, 1, C.orange);
+  outline(cv, '#2a2018');
+};
+icons.D117 = (cv) => { // 태엽 감개 spring winder (key + coil)
+  fillRect(cv, 22, 20, 26, 42, C.brass); // shaft
+  fillRect(cv, 22, 20, 24, 42, C.brassHi);
+  // wing handle (butterfly key top)
+  ellipse(cv, 17, 16, 6, 4, C.brassHi, C.brass); ellipse(cv, 31, 16, 6, 4, C.brassHi, C.brass);
+  disc(cv, 24, 16, 3, C.brassSh);
+  coil(cv, 24, 34, 6, C.brassHi, C.brass); // wound spring at base
+  outline(cv, P.brassSh);
+};
+icons.D118 = (cv) => { // 황동 볼트 brass bolt
+  // hex head
+  const pts = [];
+  for (let a = 0; a < 6; a++) { const r = a * Math.PI / 3 - Math.PI / 2; pts.push([24 + Math.cos(r) * 10, 16 + Math.sin(r) * 10]); }
+  for (let y = 8; y < 24; y++) for (let x = 14; x < 34; x++) {
+    // simple hex fill via bounding + skip corners
+    if (Math.abs(x - 24) + Math.abs(y - 16) * 0.6 < 12) setPx(cv, x, y, x - 24 > 0 ? C.brassHi : C.brass);
+  }
+  disc(cv, 24, 16, 3, C.brassSh); // socket
+  fillRect(cv, 21, 24, 27, 42, C.brass); // shank
+  for (let y = 26; y < 42; y += 3) line(cv, 21, y, 27, y, C.brassSh, 1); // thread
+  outline(cv, P.brassSh);
+};
+icons.D119 = (cv) => { // 연료 벽돌 fuel brick
+  fillRect(cv, 10, 18, 38, 36, C.copper);
+  fillRect(cv, 10, 18, 38, 22, hexToRGB('#5a4630')); // top-lit
+  for (let y = 20; y < 36; y += 5) line(cv, 10, y, 38, y, C.brassSh, 1); // pressed grooves
+  for (let x = 16; x < 38; x += 7) line(cv, x, 18, x, 36, C.brassSh, 1);
+  disc(cv, 15, 21, 1, C.ember); disc(cv, 32, 33, 1, C.ember); // fleck
+  outline(cv, '#241a10');
+};
+icons.D120 = (cv) => { // 응결 렌즈 condensation lens (droplet-in-lens)
+  circle(cv, 24, 24, 14, C.brassHi, C.brass); // brass rim
+  disc(cv, 24, 24, 11, C.cyanL);
+  ellipse(cv, 24, 26, 6, 8, C.blueM, C.blue); // condensed droplet inside
+  disc(cv, 20, 20, 3, C.white); // glint
+  outline(cv, P.brassSh);
+};
+icons.D121 = (cv) => { // 벨트 도르래 belt pulley
+  circle(cv, 24, 24, 13, C.brassHi, C.brass); // wheel
+  circle(cv, 24, 24, 10, C.copper, C.brassSh); // groove channel
+  disc(cv, 24, 24, 4, C.brass); disc(cv, 24, 24, 2, C.brassSh); // hub
+  // belt over the top
+  const lC = hexToRGB('#6a4326');
+  for (let x = 8; x < 40; x++) { setPx(cv, x, 10, lC); setPx(cv, x, 11, C.copper); }
+  outline(cv, P.brassSh);
+};
+icons.D122 = (cv) => { // 구동 모듈 drive module (gear + cable)
+  fillRect(cv, 12, 14, 36, 38, C.copper); // housing
+  fillRect(cv, 12, 14, 36, 17, hexToRGB('#5a4630'));
+  gear(cv, 24, 26, 9, C.brassHi, C.brass, 8); // gear window
+  // cable exiting right
+  for (let x = 34; x < 44; x++) setPx(cv, x, 22 + Math.round(Math.sin(x * 0.6) * 2), C.steelL);
+  emberSpark(cv, 24, 26);
+  outline(cv, '#241a10');
+};
+icons.D123 = (cv) => { // 압력 계기 pressure gauge (needle in red)
+  circle(cv, 24, 24, 14, C.brassHi, C.brass); // bezel
+  circle(cv, 24, 24, 11, C.cream, C.brassSh); // face
+  // red danger arc top-right
+  for (let a = -Math.PI / 2; a < 0; a += 0.15) disc(cv, 24 + Math.cos(a) * 9, 24 + Math.sin(a) * 9, 1, C.red);
+  line(cv, 24, 24, 30, 18, C.red, 1); // needle in red zone
+  disc(cv, 24, 24, 2, C.brassSh);
+  outline(cv, P.brassSh);
+};
+icons.D124 = (cv) => { // 증기 파이프 steam pipe with wisp
+  fillRect(cv, 10, 26, 40, 34, C.brass);
+  fillRect(cv, 10, 26, 40, 28, C.brassHi);
+  fillRect(cv, 18, 22, 24, 38, C.brass); // vertical joint
+  fillRect(cv, 18, 22, 20, 38, C.brassHi);
+  fillRect(cv, 16, 20, 26, 24, C.brassSh); // flange
+  // steam wisp from top
+  for (let i = 0; i < 10; i++) setPx(cv, 21 + Math.round(Math.sin(i / 1.4) * 3), 18 - i, C.brassHi, 150);
+  outline(cv, P.brassSh);
+};
+icons.D125 = (cv) => { // 태엽 인형 windup doll
+  disc(cv, 24, 16, 6, C.brassHi); // head
+  disc(cv, 21, 15, 1, C.copper); disc(cv, 27, 15, 1, C.copper); // eyes
+  fillRect(cv, 19, 22, 29, 36, C.brass); // body
+  fillRect(cv, 19, 22, 22, 36, C.brassHi);
+  fillRect(cv, 15, 24, 19, 32, C.brass); fillRect(cv, 29, 24, 33, 32, C.brass); // arms
+  fillRect(cv, 20, 36, 23, 44, C.brass); fillRect(cv, 25, 36, 28, 44, C.brass); // legs
+  disc(cv, 33, 28, 3, C.brassSh); disc(cv, 33, 28, 1, C.copper); // windup key on back
+  outline(cv, P.brassSh);
+};
+icons.D126 = (cv) => { // 이끼 낀 톱니 mossy gear (green tinge on brass)
+  gear(cv, 24, 24, 13, C.brassHi, C.brass, 8);
+  // moss patches
+  for (const [x, y] of [[16, 18], [30, 20], [20, 30], [28, 30]]) disc(cv, x, y, 3, C.greenM);
+  disc(cv, 15, 17, 2, C.greenL); disc(cv, 29, 31, 2, C.greenL);
+  outline(cv, P.brassSh);
+};
+icons.D127 = (cv) => { // 네온 태엽등 neon+spring lamp (glow)
+  glowBehind(cv, 24, 24, 17, C.orange);
+  fillRect(cv, 20, 8, 28, 12, C.brass); // hanger
+  fillRect(cv, 16, 14, 32, 38, C.brass); // housing
+  fillRect(cv, 19, 17, 29, 35, C.orange); // glowing glass
+  coil(cv, 24, 26, 6, C.brassHi, C.ember); // spring filament inside
+  disc(cv, 24, 26, 2, C.white);
+  outline(cv, P.brassSh);
+};
+icons.D128 = (cv) => { // 강철 태엽 도끼 axe with brass spring
+  for (let y = 8; y < 42; y++) { setPx(cv, 26, y, C.brass); setPx(cv, 27, y, C.brassHi); setPx(cv, 25, y, C.brassSh); }
+  for (let y = 10; y < 26; y++) { const w = Math.round(Math.sin((y - 10) / 16 * Math.PI) * 8) + 2; for (let x = 26 - w; x < 26; x++) setPx(cv, x, y, x < 20 ? C.steelL : C.steelM); }
+  line(cv, 18, 12, 18, 24, C.steelH, 1); // edge glint
+  coil(cv, 26, 36, 5, C.brassHi, C.brass); // spring at haft base
+  outline(cv, P.steelD);
+};
+icons.D129 = (cv) => { // 멈춘 가로 태엽시계 street clock post
+  fillRect(cv, 22, 24, 26, 44, C.brass); // post
+  fillRect(cv, 22, 24, 24, 44, C.brassHi);
+  fillRect(cv, 18, 42, 30, 45, C.brassSh); // base
+  circle(cv, 24, 16, 11, C.brassHi, C.brass); // clock head
+  circle(cv, 24, 16, 8, C.cream, C.brassSh);
+  line(cv, 24, 16, 24, 10, C.copper, 1); line(cv, 24, 16, 29, 18, C.copper, 1); // frozen hands
+  disc(cv, 24, 16, 1, C.brassSh);
+  outline(cv, P.brassSh);
+};
+icons.D130 = (cv) => { // 증기 가로등 steam lamp (glow)
+  glowBehind(cv, 24, 14, 12, C.orange);
+  fillRect(cv, 22, 16, 26, 44, C.brass); // post
+  fillRect(cv, 22, 16, 24, 44, C.brassHi);
+  disc(cv, 24, 14, 6, C.ember); disc(cv, 24, 14, 4, C.orange); disc(cv, 23, 12, 1, C.white); // lamp
+  fillRect(cv, 20, 6, 28, 9, C.brassSh); // cap
+  // steam wisp
+  for (let i = 0; i < 6; i++) setPx(cv, 30 + Math.round(Math.sin(i) * 2), 12 - i, C.brassHi, 130);
+  outline(cv, P.brassSh);
+};
+icons.D131 = (cv) => { // 태엽 분수 clockwork fountain (glow)
+  glowBehind(cv, 24, 20, 15, C.orange);
+  ellipse(cv, 24, 38, 16, 6, C.brass, C.brassSh); // basin
+  ellipse(cv, 24, 36, 12, 4, C.copper, C.brassSh);
+  fillRect(cv, 22, 22, 26, 36, C.brass); // column
+  gear(cv, 24, 20, 6, C.brassHi, C.brass, 8); // clockwork top
+  // orange water arcs
+  for (let i = 0; i < 8; i++) { setPx(cv, 24 - i, 20 + i * 1.6, C.orange, 200); setPx(cv, 24 + i, 20 + i * 1.6, C.orange, 200); }
+  outline(cv, P.brassSh);
+};
+icons.D132 = (cv) => { // 황동 톱니 문 gear door
+  fillRect(cv, 12, 8, 36, 42, C.copper); // door frame
+  fillRect(cv, 12, 8, 36, 11, hexToRGB('#5a4630'));
+  gear(cv, 24, 24, 12, C.brassHi, C.brass, 10); // big gear set in door
+  disc(cv, 24, 24, 5, C.copper);
+  for (const [x, y] of [[16, 12], [32, 12], [16, 38], [32, 38]]) disc(cv, x, y, 2, C.brassSh); // corner rivets
+  outline(cv, '#241a10');
+};
+icons.D133 = (cv) => { // 멈춘 로봇 좌상 seated stopped robot
+  fillRect(cv, 16, 24, 32, 38, C.brass); // torso
+  fillRect(cv, 16, 24, 20, 38, C.brassHi);
+  fillRect(cv, 19, 12, 29, 24, C.brass); // head
+  disc(cv, 22, 17, 2, C.copper); disc(cv, 26, 17, 2, C.copper); // dead eyes
+  fillRect(cv, 12, 38, 22, 42, C.brass); fillRect(cv, 26, 38, 36, 42, C.brass); // folded legs
+  fillRect(cv, 12, 28, 16, 38, C.brassSh); // arm resting
+  disc(cv, 24, 30, 3, C.brassSh); disc(cv, 24, 30, 1, C.copper); // chest wound key
+  outline(cv, P.brassSh);
+};
+icons.D134 = (cv) => { // 연료 화로 brazier (glow)
+  glowBehind(cv, 24, 20, 15, C.orange);
+  for (let y = 22; y < 36; y++) { const hw = 13 - (y - 22) * 0.5; for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, x - 24 > 0 ? C.brass : C.copper); }
+  ellipse(cv, 24, 22, 13, 4, C.brassSh, C.copper); // bowl rim
+  // flames
+  for (const [fx, fh] of [[19, 8], [24, 12], [29, 9]]) for (let i = 0; i < fh; i++) setPx(cv, fx + Math.round(Math.sin(i / 2) * 2), 22 - i, i > fh * 0.6 ? C.orange : C.ember);
+  disc(cv, 24, 20, 2, C.white);
+  fillRect(cv, 20, 40, 24, 44, C.brassSh); fillRect(cv, 26, 40, 30, 44, C.brassSh); // legs
+  outline(cv, P.brassSh);
+};
+icons.D135 = (cv) => { // 태엽 간판 clockwork sign (glow)
+  glowBehind(cv, 24, 22, 16, C.orange);
+  fillRect(cv, 8, 12, 40, 32, C.copper); // board
+  fillRect(cv, 8, 12, 40, 15, hexToRGB('#5a4630'));
+  gear(cv, 14, 22, 5, C.brassHi, C.brass, 8); // little cog decoration
+  // glowing symbol
+  line(cv, 22, 18, 22, 27, C.orange, 2); line(cv, 22, 18, 28, 18, C.orange, 2); line(cv, 22, 22, 27, 22, C.orange, 2);
+  circle(cv, 33, 22, 4, C.ember, C.orange);
+  fillRect(cv, 22, 32, 26, 40, C.brass); // hanging post
+  outline(cv, '#241a10');
+};
+icons.D136 = (cv) => { // 녹슨 태엽 훈장 rusty spring medal
+  fillRect(cv, 19, 8, 23, 18, C.rust); fillRect(cv, 25, 8, 29, 18, C.rustD); // ribbon
+  circle(cv, 24, 28, 11, C.brass, C.brassSh); // medal disc (tarnished brass)
+  circle(cv, 24, 28, 7, C.rust, C.rustD); // rusted centre
+  coil(cv, 24, 28, 5, C.brassHi, C.brass); // spring emblem
+  for (const [x, y] of [[18, 24], [30, 32]]) disc(cv, x, y, 2, C.rustD); // rust spots
+  outline(cv, P.rustD);
+};
+icons.D137 = (cv) => { // 말라붙은 기름병 dried oil bottle
+  for (let y = 18; y < 40; y++) { const hw = (y < 22) ? 5 : 10; for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, C.brassHi, 150); }
+  fillRect(cv, 18, 30, 30, 40, hexToRGB('#3a2c14')); // dried oil crust at bottom
+  ellipse(cv, 24, 30, 9, 2, hexToRGB('#2a2010'), C.copper);
+  fillRect(cv, 20, 12, 28, 18, C.brassSh); // neck/cap
+  disc(cv, 21, 24, 1, C.white); // glass glint
+  outline(cv, P.brassSh);
+};
+icons.D138 = (cv) => { // 부서진 태엽 오르골 broken music box
+  fillRect(cv, 12, 22, 36, 40, C.copper); // box
+  fillRect(cv, 12, 22, 36, 25, hexToRGB('#5a4630'));
+  // broken open lid (tilted)
+  line(cv, 12, 22, 34, 14, C.brass, 2); line(cv, 12, 22, 34, 14, C.brassHi, 1);
+  gear(cv, 22, 32, 6, C.brassHi, C.brass, 8); // exposed cylinder gear
+  // scattered spring, broken
+  coil(cv, 31, 33, 4, C.brassHi, C.brass);
+  line(cv, 26, 30, 30, 28, C.brassSh, 1); // crack
+  outline(cv, '#241a10');
+};
+icons.D139 = (cv) => { // 꺼진 신호 톱니 dark signal gear (inert, no glow)
+  gear(cv, 24, 24, 13, C.brass, C.brassSh, 8); // dim brass
+  disc(cv, 24, 24, 6, C.copper);
+  disc(cv, 24, 24, 3, C.ash); disc(cv, 24, 24, 1, hexToRGB('#2a2830')); // dead signal lamp
+  outline(cv, P.brassSh);
+};
+
+// ============================================================================
 // Emit all icon files. Item catalog = 9 gatherables (I1..I9) + crafts D01..D61
 // minus the retired 석기 D11 (removed v0.3.1) + Layer-2 J1..J7 + D62..D102 (L2-4).
 // D06 is an alias of I4 → identical bytes to I4 (spec: "D06 alias resolves to I4's
@@ -1098,6 +1506,9 @@ for (let i = 1; i <= 61; i++) {
 // Layer-2 (L2-4): J1..J7 gather + D62..D102 craft.
 for (let i = 1; i <= 7; i++) ALL_IDS.push('J' + i);
 for (let i = 62; i <= 102; i++) ALL_IDS.push('D' + i);
+// Layer-3 (L3): K1..K7 gather + D103..D139 craft.
+for (let i = 1; i <= 7; i++) ALL_IDS.push('K' + i);
+for (let i = 103; i <= 139; i++) ALL_IDS.push('D' + i);
 
 let count = 0, total = 0;
 for (const id of ALL_IDS) {

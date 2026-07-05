@@ -192,6 +192,76 @@
       "count": 1,
       "next": "",
       "layer": 2
+    },
+    {
+      "id": "L3-Q1",
+      "whisper": "…도시가 통째로 멈췄어. 뭐든, 성한 부품부터 주워.",
+      "type": "gather",
+      "signal": "item_gathered",
+      "target": "any",
+      "count": 1,
+      "next": "L3-Q2",
+      "layer": 3
+    },
+    {
+      "id": "L3-Q2",
+      "whisper": "정비대에서 섞어 봐. 맞물릴 것을, 맞물리게.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "any",
+      "count": 1,
+      "next": "L3-Q3",
+      "layer": 3
+    },
+    {
+      "id": "L3-Q3",
+      "whisper": "관문 톱니 하나가 빠졌어. 맞물림 톱니를 조립대에 걸어.",
+      "type": "gate",
+      "signal": "power_node_energized",
+      "target": "gate_gear",
+      "count": 1,
+      "next": "L3-Q4",
+      "layer": 3
+    },
+    {
+      "id": "L3-Q4",
+      "whisper": "보일러가 식었어. 밸브와 젖은 석탄이면… 다시 김을 뿜어.",
+      "type": "gate",
+      "signal": "power_node_energized",
+      "target": "boiler",
+      "count": 1,
+      "next": "L3-Q5",
+      "layer": 3
+    },
+    {
+      "id": "L3-Q5",
+      "whisper": "승강기가 층 사이에 멈췄어. 평형추만 걸면 올라가.",
+      "type": "gate",
+      "signal": "power_node_energized",
+      "target": "elevator",
+      "count": 1,
+      "next": "L3-Q6",
+      "layer": 3
+    },
+    {
+      "id": "L3-Q6",
+      "whisper": "상부 플랫폼이야. 심장 뼈대부터 만들어 — 태엽과 황동을 겹겹이.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D109",
+      "count": 1,
+      "next": "L3-Q7",
+      "layer": 3
+    },
+    {
+      "id": "L3-Q7",
+      "whisper": "대시계의 심장이 비어 있어. 여기에 온기를 꽂으면, 도시가 마지막으로 한 번 째깍여.",
+      "type": "gate",
+      "signal": "power_node_energized",
+      "target": "clock_core",
+      "count": 1,
+      "next": "",
+      "layer": 3
     }
   ]
 }

@@ -32,6 +32,7 @@ const GROVE := "res://scenes/world/starting_grove.tscn"
 const HOME := "res://scenes/world/home_island.tscn"
 const OPENING := "res://scenes/ui/opening.tscn"
 const TERMINAL := "res://scenes/world/terminal_station.tscn"  # (L2-6) science world
+const CLOCKWORK := "res://scenes/world/clockwork_city.tscn"   # (L3-6) machine world
 
 var _fail := 0
 var _step := 0
@@ -77,6 +78,7 @@ func _run() -> void:
 	await _step6_plant_on_void()
 	await _stepR_return_and_ignition()      # CS-04 done → return home → CS-05 (portal ignition)
 	await _stepL2_science_journey()         # (L2-6) enter science portal → terminal_station → G1..G4 → 정화 → re-enter persist
+	await _stepL3_machine_journey()         # (L3-6) enter machine portal → clockwork_city → G1..G4 → 정화 → re-enter persist
 	await _step7_save_load_persist()
 	await _step8_ng_plus()
 	_cleanup()
@@ -1011,6 +1013,241 @@ func _stepL2_science_journey() -> void:
 	await _frames(2)
 
 
+# ==== STEP L3: machine portal → clockwork_city → G1..G4 → 정화 → persist ====
+##
+## The third layer 「태엽이 멈춘 도시」. Mirrors _stepL2_science_journey: boots the REAL
+## clockwork_city.tscn (machine destination), drives the four power gates through the SAME
+## item_used_on_object framework onto the L3 gate controller's use-targets, crafts the gate keys
+## with real Fusion (discovering L3 recipes into the same codex), earns the energy Whisper at G2
+## and spends it at G4 (whisper_cost), purifies, and asserts the portal propagation (machine OPEN
+## + magic FLICKERING). Then a save → clobber → re-enter roundtrip proves L3 state persists.
+func _stepL3_machine_journey() -> void:
+	_banner(93, "machine 포탈(flickering) → clockwork_city → G1..G4 → L3 정화 → re-enter persist")
+
+	# Precondition from the L2 journey: machine portal FLICKERING (next dead world awoke).
+	_check("machine 포탈 flickering (L2 정화 전파로 깨어남)",
+		GameState.portal_state("machine") == GameState.PORTAL_FLICKERING,
+		"machine=%s" % GameState.portal_state("machine"))
+
+	# Boot the REAL clockwork_city (machine destination). Its session activates the L3 line.
+	WorldContext.current_scene = WorldContext.SCENE_CLOCKWORK
+	WorldContext.travel_layer = "machine"
+	WorldContext.arrival_mode = "portal_arrival"
+	SaveManager.pending_load = false
+	_scene = load(CLOCKWORK).instantiate()
+	add_child(_scene)
+	await _frames(6)   # loader spawns objects; gate controller + session wire deferred
+
+	var c_loader := _scene.get_node("Ground") as MapLoader
+	var gates := _scene.get_node_or_null("L3GateController")
+	_check("clockwork_city booted (loader + L3GateController)", c_loader != null and gates != null)
+	if c_loader == null or gates == null:
+		return
+
+	var purified := [false]
+	var pur_cb := func(_l): purified[0] = true
+	GameState.layer3_purified.connect(pur_cb)
+
+	# L3 속삭임 라인 활성 (첫 진입) + L1/L2 라인 공존 (독립 포인터).
+	_check("첫 L3 진입 → L3-Q1 활성 (L3 라인 시작)", QuestManager.l3_active_id == "L3-Q1",
+		"l3_active=%s" % QuestManager.l3_active_id)
+	# All three whisper lines coexist on independent pointers: L1 (P2), L2 (mid-line from the
+	# science journey), L3 (freshly started at L3-Q1). None shares an active pointer.
+	_check("L1 + L2 + L3 라인 3중 공존 (독립 포인터)",
+		QuestManager.active_id == "P2" \
+		and QuestManager.l2_active_id.begins_with("L2-") \
+		and QuestManager.l3_active_id == "L3-Q1",
+		"L1=%s L2=%s L3=%s" % [QuestManager.active_id, QuestManager.l2_active_id, QuestManager.l3_active_id])
+
+	# ---- L3 속삭임 라인 진행 (SAME signals, independent pointer) --------------------------
+	GameState.item_gathered.emit("K1")
+	_check("L3-Q1(첫 채집) 완료 → L3-Q2 활성", QuestManager.l3_active_id == "L3-Q2",
+		"l3_active=%s" % QuestManager.l3_active_id)
+
+	# ---- G1 톱니 맞물림: 맞물림 톱니 D104 = 황동 톱니 원판(K2+K3, R01→D103) + 태엽(K1, R02) ----
+	Inventory.clear()
+	Inventory.add("K2", 1); Inventory.add("K3", 1)
+	var r_d103 := Fusion.fuse("K2", "K3")
+	Inventory.add("K1", 1)
+	var r_d104 := Fusion.fuse("D103", "K1")
+	_check("real L3 craft: 맞물림 톱니 D104 (원판→톱니 다단)",
+		r_d103.get("output","") == "D103" and r_d104.get("output","") == "D104" \
+		and Inventory.count("D104") >= 1)
+	GameState.item_crafted.emit("D103", "L3-R01")
+	_check("L3-Q2(첫 조합) 완료 → L3-Q3 활성", QuestManager.l3_active_id == "L3-Q3",
+		"l3_active=%s" % QuestManager.l3_active_id)
+
+	var g1: Dictionary = c_loader.legend_gates().get("G1", {})
+	var gear_cells := _l2_cells(g1.get("bridge_cells", []))
+	var gear_before := gear_cells.size() > 0 and c_loader.is_cell_walkable(gear_cells[0])
+	var assembly := _l2_use_target(c_loader, "gear_assembly")
+	_check("G1 기어 조립대 use-target wired", assembly != null)
+	if assembly != null:
+		Inventory.remove("D104", 1)
+		GameState.item_used_on_object.emit("D104", assembly)
+	await get_tree().create_timer(1.2).timeout   # staggered gear-mesh light timers use real time
+	var gear_walk := gear_cells.size() > 0
+	for c in gear_cells:
+		if not c_loader.is_cell_walkable(c):
+			gear_walk = false
+	_check("G1 맞물림 톱니 장착 → 기어열 회전 후 잔교 walkable (물리+AStar)",
+		gear_walk and not gear_before, "n=%d" % gear_cells.size())
+	_check("gate_gear power node energized", GameState.is_power_node_energized("gate_gear"))
+	_check("L3-Q3(관문 톱니) 완료", QuestManager.is_done("L3-Q3"))
+
+	# ---- G2 증기 보일러: 압력 밸브 D105(K3+K5) 사용 + 젖은 석탄 D106(K6+K4) 소지 → 에너지 +1 --
+	Inventory.add("K3", 1); Inventory.add("K5", 1)
+	var r_d105 := Fusion.fuse("K3", "K5")
+	Inventory.add("K6", 1); Inventory.add("K4", 1)
+	var r_d106 := Fusion.fuse("K6", "K4")
+	_check("real L3 craft: 압력 밸브 D105 + 젖은 석탄 D106",
+		r_d105.get("output","") == "D105" and r_d106.get("output","") == "D106" \
+		and Inventory.count("D105") >= 1 and Inventory.count("D106") >= 1)
+	var energy_before := WhisperCurrency.energy
+	var boiler := _l2_use_target(c_loader, "boiler")
+	_check("G2 보일러 use-target wired", boiler != null)
+	if boiler != null:
+		# valve used on boiler WHILE 젖은 석탄 D106 in hand → ignition.
+		Inventory.remove("D105", 1)
+		GameState.item_used_on_object.emit("D105", boiler)
+	for i in range(6):
+		await get_tree().process_frame
+	var g2: Dictionary = c_loader.legend_gates().get("G2", {})
+	var door_cells := _l2_cells(g2.get("door_cells", []))
+	var door_open := door_cells.size() > 0
+	for c in door_cells:
+		if not c_loader.is_cell_walkable(c):
+			door_open = false
+	_check("G2 보일러 점화 → 밸브문 개방 (walkable)", door_open)
+	_check("G2 보상: 에너지 Whisper +1 (§보완 필수)",
+		WhisperCurrency.energy == energy_before + 1, "energy=%d" % WhisperCurrency.energy)
+
+	# ---- G3 멈춘 승강기: 평형추 D108 = 강철 케이블(K5+K2, R05→D107) + 황동(K3, R06) -----------
+	Inventory.add("K5", 1); Inventory.add("K2", 1)
+	var r_d107 := Fusion.fuse("K5", "K2")
+	Inventory.add("K3", 1)
+	var r_d108 := Fusion.fuse("D107", "K3")
+	_check("real L3 craft: 평형추 D108 (케이블→평형추 다단)",
+		r_d107.get("output","") == "D107" and r_d108.get("output","") == "D108" \
+		and Inventory.count("D108") >= 1)
+	var g3: Dictionary = c_loader.legend_gates().get("G3", {})
+	var lift_cells := _l2_cells(g3.get("lift_cells", []))
+	var lift_before := lift_cells.size() > 0 and c_loader.is_cell_walkable(lift_cells[0])
+	var ctrl := _l2_use_target(c_loader, "elevator_ctrl")
+	_check("G3 승강기 제어반 use-target wired", ctrl != null)
+	if ctrl != null:
+		Inventory.remove("D108", 1)
+		GameState.item_used_on_object.emit("D108", ctrl)
+	for i in range(6):
+		await get_tree().process_frame
+	var lift_open := lift_cells.size() > 0
+	for c in lift_cells:
+		if not c_loader.is_cell_walkable(c):
+			lift_open = false
+	_check("G3 평형추 장착 → 승강기 상승 → 상부 플랫폼 walkable (고도 해금)",
+		lift_open and not lift_before, "n=%d" % lift_cells.size())
+	_check("elevator power node energized", GameState.is_power_node_energized("elevator"))
+
+	# ---- G4 대시계: 태엽심장 D111 = 심장 뼈대(K1+K3, R07→D109)² + 에너지(whisper_cost 1) --------
+	Inventory.add("K1", 1); Inventory.add("K3", 1)
+	var r_d109a := Fusion.fuse("K1", "K3")   # 심장 뼈대 #1
+	Inventory.add("K1", 1); Inventory.add("K3", 1)
+	Fusion.fuse("K1", "K3")                  # 심장 뼈대 #2
+	_check("real L3 craft: 심장 뼈대 D109 ×2 (상부 플랫폼 재료)",
+		r_d109a.get("output","") == "D109" and Inventory.count("D109") == 2,
+		"D109=%d" % Inventory.count("D109"))
+	# L3-Q6 (심장 뼈대 조합) → L3-Q7.
+	_check("L3-Q6(심장 뼈대) 완료 → L3-Q7 활성", QuestManager.l3_active_id == "L3-Q7",
+		"l3_active=%s" % QuestManager.l3_active_id)
+	var energy_at_core := WhisperCurrency.energy
+	var r_heart := Fusion.fuse("D109", "D109")   # 태엽심장 D111 (whisper_cost energy 1)
+	_check("real L3 craft: 태엽심장 D111 (whisper_cost 에너지 1 소모)",
+		r_heart.get("output","") == "D111" and Inventory.count("D111") >= 1 \
+		and WhisperCurrency.energy == energy_at_core - 1,
+		"energy %d→%d" % [energy_at_core, WhisperCurrency.energy])
+
+	# Install the 태엽심장 → clock_core energize → purification cutscene.
+	_check("정화 전 layer3_purified_flag = false", not GameState.layer3_purified_flag)
+	var mount := _l2_use_target(c_loader, "clock_mount")
+	_check("G4 대시계 배전반 use-target wired", mount != null)
+	if mount != null:
+		Inventory.remove("D111", 1)
+		GameState.item_used_on_object.emit("D111", mount)
+	for i in range(60):
+		await get_tree().create_timer(0.1).timeout
+		if GameState.layer3_purified_flag:
+			break
+	_check("G4 대시계 재가동 → Layer 3 정화 플래그 set", GameState.layer3_purified_flag)
+	_check("정화 컷신 → layer3_purified 시그널 발화", purified[0])
+	_check("정화 컷신 후 time_running 복구 (v0.6.1 페어링)", GameState.time_running)
+
+	# ---- 정화 → 포탈 전파: machine OPEN, magic(Layer 4) flickering ----------------------
+	_check("정화 후 machine 포탈 OPEN (자유 왕래)",
+		GameState.portal_state("machine") == GameState.PORTAL_OPEN,
+		"machine=%s" % GameState.portal_state("machine"))
+	_check("정화 후 magic(Layer 4) 포탈 flickering (다음 세계 깨어남)",
+		GameState.portal_state("magic") == GameState.PORTAL_FLICKERING,
+		"magic=%s" % GameState.portal_state("magic"))
+
+	GameState.layer3_purified.disconnect(pur_cb)
+
+	# ---- save → re-enter clockwork_city → assert L3 state persisted --------------------
+	WorldContext.current_scene = WorldContext.SCENE_CLOCKWORK
+	SaveManager.save_game()
+	var d := SaveManager.build_save_dict()
+	_check("세이브 dict = v2 (멀티씬) + L3 상태",
+		int(d.get("version", 0)) == 2 and d.has("powered_nodes") \
+		and (d["powered_nodes"] as Dictionary).has("gate_gear") \
+		and (d["powered_nodes"] as Dictionary).has("clock_core") \
+		and bool(d.get("layer3_purified", false)))
+	SaveManager.unregister_world()
+	_scene.queue_free()
+	_scene = null
+	await _frames(2)
+
+	# Clobber L3 state, re-enter, load → the powered nodes + 정화 플래그 restore.
+	GameState.reset_layer3()
+	GameState.powered_nodes.erase("gate_gear")
+	GameState.powered_nodes.erase("boiler")
+	GameState.powered_nodes.erase("elevator")
+	GameState.powered_nodes.erase("clock_core")
+	_check("클로버: reset_layer3 → 정화 플래그 clear", not GameState.layer3_purified_flag)
+	WorldContext.current_scene = WorldContext.SCENE_CLOCKWORK
+	WorldContext.arrival_mode = "portal_arrival"
+	SaveManager.pending_load = true
+	_scene = load(CLOCKWORK).instantiate()
+	add_child(_scene)
+	await _frames(6)
+	SaveManager.load_game()
+	await _frames(2)
+	_check("re-enter L3: 정화 플래그 지속", GameState.layer3_purified_flag)
+	_check("re-enter L3: gate_gear power node 지속", GameState.is_power_node_energized("gate_gear"))
+	_check("re-enter L3: clock_core power node 지속", GameState.is_power_node_energized("clock_core"))
+	_check("re-enter L3: machine 포탈 OPEN 지속",
+		GameState.portal_state("machine") == GameState.PORTAL_OPEN)
+
+	# Tear the city down; step 7 continues in the grove for the L1 save/load roundtrip.
+	SaveManager.unregister_world()
+	_scene.queue_free()
+	_scene = null
+	await _frames(2)
+	# Re-boot the grove so step 7 (which asserts grove facts) has its world back.
+	WorldContext.current_scene = WorldContext.SCENE_GROVE
+	WorldContext.arrival_mode = "portal_arrival"
+	SaveManager.pending_load = true
+	_scene = load(GROVE).instantiate()
+	add_child(_scene)
+	await _frames(4)
+	_loader = _scene.get_node("Ground") as MapLoader
+	_player = _scene.get_node("YSortLayer/Player") as Player
+	_interaction = _scene.get_node("Interaction") as InteractionController
+	_touch = _scene.get_node("TouchController") as TouchController
+	_respawn = _scene.get_node("ObjectRespawn") as ObjectRespawn
+	SaveManager.register_world(_loader, _player, _respawn)
+	SaveManager.load_game()
+	await _frames(2)
+
+
 # ---- L2 helpers -----------------------------------------------------------
 
 func _l2_cells(arr: Array) -> Array:
@@ -1116,12 +1353,15 @@ func _step8_ng_plus() -> void:
 		"discovered=%d" % discovered.size())
 	var has_l1 := ("R28" in discovered) or ("R36" in discovered) or ("R34" in discovered)
 	var has_l2 := false
+	var has_l3 := false
 	for rid in discovered:
 		if String(rid).begins_with("L2-"):
 			has_l2 = true
-			break
-	_check("NG+ pool = 두 레이어 union (L1 + L2 레시피 모두 discovered)",
-		has_l1 and has_l2, "L1=%s L2=%s discovered=%d" % [has_l1, has_l2, discovered.size()])
+		if String(rid).begins_with("L3-"):
+			has_l3 = true
+	_check("NG+ pool = 세 레이어 union (L1 + L2 + L3 레시피 모두 discovered)",
+		has_l1 and has_l2 and has_l3,
+		"L1=%s L2=%s L3=%s discovered=%d" % [has_l1, has_l2, has_l3, discovered.size()])
 	var prev_run := SaveManager.run_number
 	# Layer-2 state present pre-NG+ (so we can prove NG+ resets it).
 	var l2_before_ng := GameState.is_power_node_energized("bridge") \

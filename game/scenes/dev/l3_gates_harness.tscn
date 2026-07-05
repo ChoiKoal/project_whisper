@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bwhisperl3gateshrn"]
+
+[ext_resource type="Script" path="res://scenes/dev/l3_gates_harness.gd" id="1_l3gates"]
+
+[node name="L3GatesHarness" type="Node"]
+script = ExtResource("1_l3gates")
