@@ -11,9 +11,14 @@ class_name BushDry
 
 const DRY_TEX := "res://assets/objects/bush_dry.png"
 const BLOOM_TEX := "res://assets/objects/bush_bloom.png"
+## A small mystic-glow texture reused as the "something here" shimmer cue.
+const CUE_TEX := "res://assets/tiles/t5m_mystic_glow.png"
 
 var _bloomed: bool = false
 var _body: StaticBody2D
+## Faint periodic shimmer over the dry bush — a readability cue ("뭔가 있다") so the
+## player notices the gate object in the corridor gap. Removed once bloomed.
+var _cue: GlowSprite
 
 
 func _ready() -> void:
@@ -23,6 +28,7 @@ func _ready() -> void:
 		texture = load(DRY_TEX)
 	offset = Vector2(0, -80)
 	_add_block()
+	_add_shimmer_cue()
 	# Defensive autoload guard (ready-time; matches night_gate/glow_sprite). A
 	# missing GameState would null-deref .item_used_on_object during the flush.
 	if GameState == null:
@@ -42,6 +48,20 @@ func _add_block() -> void:
 	col.shape = shape
 	_body.add_child(col)
 	add_child(_body)
+
+
+## A small, faint shimmer positioned over the bush body (offset up to the tangle,
+## not the tile floor). Uses the shared GlowSprite mechanism (additive, breathing
+## pulse on the CanvasModulate-free glow layer) at a small scale + low alpha so it
+## reads as a subtle "something here" sparkle, not a bright halo. Cleared on bloom.
+func _add_shimmer_cue() -> void:
+	_cue = GlowSprite.new()
+	_cue.texture = load(CUE_TEX)
+	# small + faint: hug the tangle, hint rather than shout.
+	_cue.scale = Vector2(0.5, 0.5)
+	_cue.modulate = Color(1.0, 1.0, 1.0, 0.6)  # scales the phase alpha down
+	_cue.offset = Vector2(0, -84)  # sit over the bush body (bush offset is -80)
+	add_child(_cue)
 
 
 func is_bloomed() -> bool:
@@ -70,6 +90,10 @@ func bloom() -> void:
 	if is_instance_valid(_body):
 		_body.queue_free()
 		_body = null
+	# the shimmer cue was a "gate here" hint; the bloom is self-evidently done.
+	if is_instance_valid(_cue):
+		_cue.queue_free()
+		_cue = null
 	# celebratory little pulse
 	var tw := create_tween()
 	tw.tween_property(self, "scale", Vector2(1.15, 1.15), 0.15)

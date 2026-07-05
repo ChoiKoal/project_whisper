@@ -110,9 +110,11 @@ func _ready() -> void:
 	_ysort = get_node_or_null(ysort_layer_path) as Node2D
 	_feedback = get_node_or_null(feedback_layer_path)
 	_load_data()
+	_classify_void_cells()
 	_build_tiles()
 	_build_objects()
 	_scatter_objects()
+	_build_ridges()
 	_build_cliff_skirts()
 	_build_edge_overlays()
 	_build_brightness_jitter()
@@ -205,6 +207,148 @@ func _value_noise(c: int, r: int, cell_size: int, salt: int) -> float:
 	var nx0: float = lerp(n00, n10, fx)
 	var nx1: float = lerp(n01, n11, fx)
 	return lerp(nx0, nx1, fy)
+
+
+# ---- VOID classification (v0.4.0 A3) -------------------------------------
+
+## Authored VOID cells that are INTERIOR ridge walls (unreachable from the map
+## outside via 4-connected VOID) — as opposed to the outer border VOID that fringes
+## the island. Interior ridge V gets a raised rock-ridge sprite so it reads as
+## impassable TERRAIN ("바위 맵"); border V keeps the cliff-skirt treatment. Populated
+## by _classify_void_cells(); read by _build_ridges() and _build_cliff_skirts().
+var ridge_cells: Dictionary = {}   # Vector2i -> true (interior ridge V)
+
+## Classify every authored VOID cell as INTERIOR RIDGE or OUTER BORDER.
+##
+## The spec's first suggestion (flood-fill from outside → unreachable V = ridge) does NOT
+## discriminate on THIS map, because the interior wall bands touch the left/right border
+## void (row 7 spans full width; rows 14-16 likewise), so every V is reachable from
+## outside. We therefore use the spec's OTHER stated rule — robustly generalised to thick
+## bands: a V cell is an INTERIOR RIDGE if it sits between playable land on BOTH opposing
+## sides along either axis. "Opposing sides" is tested by walking outward across the
+## contiguous VOID band: if walking north AND south each first reaches playable LAND
+## (before leaving the map or hitting water), the cell is sandwiched inside the island →
+## it is an interior wall band, not the fringe. Same for east/west.
+##
+## This lights up exactly the two authored interior bands (G2 corridor walls rows 14-16,
+## G3 night-path wall row 7) and leaves the outer border fringe (which opens to off-map or
+## to water on one side) as cliff. Deterministic; authored-`_layout` only (a runtime
+## gathered HOLLOW is a different tile source and is never in `_layout`).
+func _classify_void_cells() -> void:
+	ridge_cells.clear()
+	if height == 0 or width == 0:
+		return
+	for r in range(height):
+		var row: String = _layout[r] if r < _layout.size() else ""
+		for c in range(min(width, row.length())):
+			if row[c] != "V":
+				continue
+			var cell := Vector2i(c, r)
+			var ns := _scan_reaches_land(cell, Vector2i(0, -1)) and _scan_reaches_land(cell, Vector2i(0, 1))
+			var ew := _scan_reaches_land(cell, Vector2i(-1, 0)) and _scan_reaches_land(cell, Vector2i(1, 0))
+			if ns or ew:
+				ridge_cells[cell] = true
+
+
+## Walk from `cell` in direction `dir` across contiguous authored VOID. Return true if the
+## first NON-void cell reached is playable LAND (not water, not off-map). Leaving the map
+## bounds → false (that side opens to the outside = a fringe, not an interior sandwich).
+func _scan_reaches_land(cell: Vector2i, dir: Vector2i) -> bool:
+	var p := cell + dir
+	# Bound the walk by the map span so a malformed layout can never loop forever.
+	var steps := width + height
+	while steps > 0:
+		steps -= 1
+		var sym := _sym_at(p)
+		if sym == "":
+			return false                       # left the map / no data → open to outside
+		if sym != "V":
+			# First non-void cell: land iff it is not water/mystic (island ground/obj).
+			return sym != "W" and sym != "w" and sym != "m"
+		p += dir
+	return false
+
+
+# ---- interior ridge walls (v0.4.0 A3) ------------------------------------
+
+## Node2D holding the ridge sprites (raised rock mounds on interior VOID bands).
+var _ridge_overlay: Node2D
+## Count of ridge sprites placed, for the harness.
+var ridge_sprite_count: int = 0
+## Node2D holding the worn-dirt trail-hint decals leading to the G2 corridor.
+var _trail_overlay: Node2D
+var trail_decal_count: int = 0
+
+## z of ridge sprites: they are TERRAIN, so they sit below the YSorted objects/player
+## (z5) but above the ground treatment. Children of the tilemap (z_as_relative), so
+## effective z = 0 + RIDGE_Z. A small positive value keeps them over the ground tiles
+## and edge overlays while staying under the y-sorted objects.
+const RIDGE_Z := 3
+
+## Lay a raised rock-ridge sprite on every interior ridge VOID cell so the authored wall
+## bands (G2 corridor walls rows ~14-16, G3 night-path wall row ~7) read as impassable
+## rock rather than flat black hollow-like tiles. Also drops a few worn-dirt trail decals
+## on the playable cells just south of the G2 corridor gap (subtle "the path is here" hint).
+## VISUAL ONLY — collision is unchanged (the authored-V border body already seals these
+## cells in _build_border_collision).
+func _build_ridges() -> void:
+	_ridge_overlay = Node2D.new()
+	_ridge_overlay.name = "Ridges"
+	_ridge_overlay.z_index = RIDGE_Z
+	add_child(_ridge_overlay)
+
+	var tex := load("res://assets/tiles/ridge_rock.png") as Texture2D
+	if tex == null:
+		push_warning("MapLoader: ridge_rock texture missing; skipping ridges")
+	else:
+		for cell in ridge_cells:
+			var s := Sprite2D.new()
+			s.texture = tex
+			s.centered = false
+			# The ridge PNG is 128 wide; align its top rim to the diamond's top vertex so
+			# the mound rises up out of the cell (raised rock), left edge at center.x-64.
+			var center: Vector2 = map_to_local(cell)
+			s.position = center + Vector2(-64.0, -RIDGE_RISE)
+			s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			_ridge_overlay.add_child(s)
+			ridge_sprite_count += 1
+
+	_build_corridor_trail()
+
+
+## How far (px) the ridge sprite's top sits above the cell center, so the mound reads as
+## rising above the ground plane (the 128×160 sprite's lower ~64 covers the diamond).
+const RIDGE_RISE := 96.0
+
+## Drop 2-3 worn-dirt patch decals on playable cells leading from the south toward the
+## G2 bush corridor gap, hinting the corridor is the way through. The gap is the single
+## non-ridge column in the G2 wall band (the authored bush cell `B`), so we trail up to it
+## from the meadow rows just below.
+func _build_corridor_trail() -> void:
+	_trail_overlay = Node2D.new()
+	_trail_overlay.name = "CorridorTrail"
+	_trail_overlay.z_index = EDGE_OVERLAY_Z  # sit with the ground treatment, below objects
+	add_child(_trail_overlay)
+	var tex := load("res://assets/tiles/worn_dirt_patch.png") as Texture2D
+	if tex == null:
+		return
+	# The corridor gap is at the bush cell (bush_cell); trail the 3 cells directly south.
+	if bush_cell == Vector2i(-1, -1):
+		return
+	for i in range(1, 4):  # 1,2,3 cells south of the bush
+		var cell := bush_cell + Vector2i(0, i)
+		if not is_cell_walkable(cell):
+			continue
+		var s := Sprite2D.new()
+		s.texture = tex
+		s.centered = true
+		s.position = map_to_local(cell)
+		# slight deterministic horizontal jitter so the trail doesn't look ruler-straight
+		var j := (int(_cell_hash(cell.x, cell.y, 313)) % 11) - 5
+		s.position += Vector2(float(j), 0.0)
+		s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_trail_overlay.add_child(s)
+		trail_decal_count += 1
 
 
 # ---- tiles ---------------------------------------------------------------
@@ -370,8 +514,11 @@ func _build_cliff_skirts() -> void:
 		for c in range(min(width, row.length())):
 			if not _is_island_cell(Vector2i(c, r)):
 				continue
-			var south_open := not _is_island_cell(Vector2i(c, r + 1))   # +row → screen SW
-			var east_open := not _is_island_cell(Vector2i(c + 1, r))    # +col → screen SE
+			# "Open" = the neighbour drops to the EXTERIOR void (or off-map), where a cliff
+			# edge belongs. An interior RIDGE neighbour is raised rock terrain, NOT a cliff
+			# drop, so it must not sprout a skirt (v0.4.0 A3: ridge ≠ cliff).
+			var south_open := _is_cliff_open(Vector2i(c, r + 1))   # +row → screen SW
+			var east_open := _is_cliff_open(Vector2i(c + 1, r))    # +col → screen SE
 			if not south_open and not east_open:
 				continue
 			# Place the wider corner piece only where BOTH lower edges are exposed;
@@ -396,6 +543,20 @@ func _is_island_cell(cell: Vector2i) -> bool:
 	if cell.x >= row.length():
 		return false
 	return row[cell.x] != "V"
+
+
+## True if `cell` is an EXTERIOR-void / off-map drop that a cliff skirt should hang under.
+## Out-of-bounds counts (the map fringe). An interior RIDGE cell does NOT — it is raised
+## rock terrain, not a cliff edge, so the island cell beside it stays skirt-free.
+func _is_cliff_open(cell: Vector2i) -> bool:
+	if cell.x < 0 or cell.y < 0 or cell.y >= _layout.size():
+		return true
+	var row: String = _layout[cell.y]
+	if cell.x >= row.length():
+		return true
+	if row[cell.x] != "V":
+		return false            # a playable island cell
+	return not ridge_cells.has(cell)   # exterior void = open; interior ridge = not
 
 
 ## Add one skirt sprite centered on the cell, hanging below its bottom rim. The PNG's

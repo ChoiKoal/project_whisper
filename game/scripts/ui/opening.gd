@@ -19,11 +19,14 @@ const CREAM := Color("#faf5e6")
 const VIOLET := Color("#9e7ad9")
 const MUTED := Color("#b8b4a8")
 
-## Timing (seconds).
-const FADE_IN := 0.7
-const HOLD := 2.5
-const FADE_OUT := 0.6
-const FINAL_FADE := 0.9
+## Timing (seconds). (v0.4.0-B B4) fades lengthened a touch for a softer, higher-quality
+## feel and to let the per-card background tint cross-fade breathe.
+const FADE_IN := 1.0
+const HOLD := 2.6
+const FADE_OUT := 0.9
+const FINAL_FADE := 1.1
+## (B4) how long the backdrop takes to drift to the next card's tint.
+const TINT_FADE := 1.4
 
 const CARDS := [
 	"어느 날 깨어나 보니, 새로운 세계 속에 있었다.",
@@ -32,9 +35,22 @@ const CARDS := [
 	"이 세계는 왜 멈춰 있을까. 손이 먼저 움직였다 — 무언가를 주워 담고 싶다.",
 ]
 
+## (B4) One deep, near-black tint per card — the backdrop drifts between them so the
+## mood shifts subtly as the prologue unfolds (waking dark → cool stillness → violet
+## self → a warmer stir of intent). Kept very dark so text legibility never suffers.
+const CARD_TINTS := [
+	Color(0.020, 0.020, 0.030, 1.0),   # waking — near-black
+	Color(0.022, 0.030, 0.044, 1.0),   # cool blue stillness
+	Color(0.038, 0.028, 0.052, 1.0),   # violet — "나는 컨스트럭터"
+	Color(0.044, 0.034, 0.036, 1.0),   # a faint warm stir of intent
+]
+
 var _label: Label
 var _skip_hint: Label
 var _fade: ColorRect
+var _bg: ColorRect
+## Running tint tween so an advance() mid-drift restarts cleanly.
+var _tint_tween: Tween
 var _index: int = -1
 var _card_tween: Tween
 var _finishing: bool = false
@@ -49,12 +65,12 @@ func _ready() -> void:
 
 
 func _build() -> void:
-	# Black backdrop.
-	var bg := ColorRect.new()
-	bg.color = Color(0.02, 0.02, 0.03, 1.0)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(bg)
+	# Backdrop — starts on the first card's deep tint and drifts per card (B4).
+	_bg = ColorRect.new()
+	_bg.color = CARD_TINTS[0]
+	_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_bg)
 
 	# Centered card text.
 	_label = Label.new()
@@ -109,6 +125,7 @@ func _show_card(i: int) -> void:
 	_busy = true
 	_label.text = CARDS[i]
 	_label.modulate.a = 0.0
+	_drift_tint(i)
 	if _card_tween != null and _card_tween.is_valid():
 		_card_tween.kill()
 	_card_tween = create_tween()
@@ -118,6 +135,18 @@ func _show_card(i: int) -> void:
 	_card_tween.tween_callback(func():
 		_busy = false
 		_show_card(_index + 1))
+
+
+## (B4) Cross-fade the backdrop to card `i`'s tint over TINT_FADE. Restarts cleanly if
+## a card advances mid-drift. Harmless if _bg is missing (defensive).
+func _drift_tint(i: int) -> void:
+	if _bg == null or i < 0 or i >= CARD_TINTS.size():
+		return
+	if _tint_tween != null and _tint_tween.is_valid():
+		_tint_tween.kill()
+	_tint_tween = create_tween()
+	_tint_tween.tween_property(_bg, "color", CARD_TINTS[i], TINT_FADE) \
+		.set_trans(Tween.TRANS_SINE)
 
 
 ## Public (also the m7 harness entrypoint): skip to the NEXT card immediately. If

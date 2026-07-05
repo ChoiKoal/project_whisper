@@ -371,20 +371,30 @@ function makeTree(name, trunkHex, canopyHex) {
 makeTree('tree_a.png', '#5c4433', '#2e5d3b');
 makeTree('tree_b.png', '#5c4433', '#4d8b4f');
 
-// ---- Character sheet ----
+// ---- Character sheet (v0.4.0-B: candidate A 「방랑자」 production build) ----
 // Frames 96x96. Layout: rows = directions [SE, SW, NE, NW],
 // cols = [idle, walk0, walk1]. Sheet = 3 cols x 4 rows = 288x384.
 //
-// v0.2.1: the cat protagonist is OUT (owner decision). New protagonist is a small
-// 망토 두른 컨스트럭터 — a hooded cloaked figure in a cream robe with violet trim,
-// holding a wooden staff topped with a glowing violet orb. Drawn on a 24×24 logical
-// grid (chunky 4px pixel blocks) then upscaled ×4 to fill the 96×96 frame, matching
-// the existing sheet's chunky look. selout outlines (面색보다 어두운 동색계 1블록,
-// 순수 검정 없음), top-right soft light, palette-strict (art guide §2–§4).
-// v0.3.1: BLACK cloak pass (owner directive). The robe is now a near-black charcoal
-// (NOT pure black per art-guide §2) — base #26262e, shade #16161c — keeping the
-// violet trim #9e7ad9 and adding cream face/hands accents so the figure still reads
-// against the dark diorama ground. Staff + orb unchanged.
+// v0.4.0-B: the owner-approved character design is candidate A 「방랑자」 (from
+// tools_char_design.js candA): a hooded floor-length cloak, a floating violet orb on a
+// wooden staff, violet eyes glowing in the hood void, a silver clasp + a violet chest
+// sigil. That design is drawn on a 36×48 native grid; here it is PRODUCTIONISED into the
+// four iso directions + walk frames at 36×48 native ×2 (=72×96) centred in the 96×96
+// frame, feet anchored ~y88 so the AnimatedSprite2D offset (0,-40) plants it on the tile.
+//
+// Native (36×48) → frame (96×96): scale ×2, x-offset = (96-72)/2 = 12, and the native
+// figure's feet (~y44) land at frame y88 (44*2 = 88) with y-offset 0. So px(nx,ny) fills
+// the 2×2 block at (12 + nx*2, ny*2).
+//
+// Directions: SE/SW are front (eyes, clasp, sigil, staff on the OUTER side — mirror
+// consistent); NE/NW are back (hood point, cloak back with a subtle violet sigil, staff
+// still visible). Walk: cloak-hem sway (hem silhouette ±1px alternating + bottom flare),
+// a slight body bob, and the orb bobs with a 1-frame-lag feel (offset alternates). Idle:
+// orb held gently high + static bright (the sheet has a single idle column, kept at 1).
+//
+// selout outlines (面색보다 2단계 어두운 동색계 1px, 순수 검정 없음), top-right soft light,
+// palette-strict (art guide §2–§4 — near-black charcoal cloak kept per the v0.3.1 owner
+// directive, violet ident colour, cream accents).
 const CHAR_PAL = {
   robe:      hexToRGB('#26262e'),  // near-black charcoal cloak (mid)
   robeLit:   hexToRGB('#33333d'),  // top-right lift (still dark, just readable)
@@ -400,140 +410,176 @@ const CHAR_PAL = {
   skin:      hexToRGB('#e8dfc8'),  // cream face (in hood cavity) / hands
   skinShade: hexToRGB('#ceccaa'),  // cream lower-left shade
   skinLine:  hexToRGB('#b8b4a8'),  // cream selout
+  silver:    hexToRGB('#b8b4a8'),  // silver clasp (candA)
+  silverLit: hexToRGB('#e8dfc8'),  // clasp highlight
+  wood:      hexToRGB('#8a6a4a'),  // staff wood (candA)
+  wood2:     hexToRGB('#5c4433'),  // staff wood shade
+  orbMid:    hexToRGB('#9e7ad9'),  // orb body (violet)
 };
 
-// The logical grid is 24×24; block size 4 → 96×96. Each "set" paints a 4×4 block.
-const CHAR_G = 24, CHAR_BLK = 4;
-function gBlock(cv, ox, oy, gx, gy, rgb, a = 255) {
-  if (gx < 0 || gy < 0 || gx >= CHAR_G || gy >= CHAR_G) return;
-  const px = ox + gx * CHAR_BLK, py = oy + gy * CHAR_BLK;
-  fillRect(cv, px, py, px + CHAR_BLK, py + CHAR_BLK, rgb, a);
+
+// ============================================================================
+// candidate A 「방랑자」 — production character drawer (v0.4.0-B).
+// Native 36×48 grid (matches tools_char_design.js candA), ×2 into the 96×96 frame.
+// nx∈[0,36), ny∈[0,48). Frame pixel = (FX0 + nx*2 + dx, ny*2 + dy) for dx,dy∈{0,1}.
+// FX0 = 12 centres the 72-wide figure; feet at native y44 → frame y88.
+// ============================================================================
+const CH_NW = 36, CH_NH = 48, CH_SCALE = 2, CH_FX0 = 12, CH_FY0 = 0;
+
+// Paint one NATIVE pixel (a CH_SCALE×CH_SCALE block) into the frame at (ox,oy).
+function nPx(cv, ox, oy, nx, ny, rgb, a = 255) {
+  if (nx < 0 || ny < 0 || nx >= CH_NW || ny >= CH_NH) return;
+  const px = ox + CH_FX0 + nx * CH_SCALE;
+  const py = oy + CH_FY0 + ny * CH_SCALE;
+  fillRect(cv, px, py, px + CH_SCALE, py + CH_SCALE, rgb, a);
 }
 
-// Draw the cloaked constructor into a 96×96 frame at (ox,oy).
-// dir: 0=SE, 1=SW, 2=NE, 3=NW (front-facing = SE/SW show face+eyes; back = NE/NW
-// show hood back + violet sigil). walkPhase 0/1/2 → idle / walk-down / walk-up.
-function drawConstructor(cv, ox, oy, dir, walkPhase) {
+// Draw candidate A into a 96×96 frame at (ox,oy).
+//   dir: 0=SE, 1=SW, 2=NE, 3=NW.  front = SE/SW (face/eyes/clasp/sigil); back = NE/NW.
+//   phase: 0=idle, 1=walk0, 2=walk1.
+// The native art is authored facing-right (staff on the figure's right = screen-right).
+// SW/NW mirror it to the left (staff on screen-left) by flipping nx around the grid.
+// Walk motion: body bob, cloak-hem sway (±1 alternating + bottom flare), orb bob w/ lag.
+function drawWanderer(cv, ox, oy, dir, phase) {
   const P = CHAR_PAL;
   const front = (dir === 0 || dir === 1);
-  // Mirror SW/NW to the left by flipping gx around the 24-wide grid center.
-  const flip = (dir === 1 || dir === 3);
-  const put = (gx, gy, rgb, a = 255) => gBlock(cv, ox, oy, flip ? (23 - gx) : gx, gy, rgb, a);
+  const flip = (dir === 1 || dir === 3);   // SW / NW mirror to the left
+  // native-grid put with optional horizontal flip around x=18 (grid centre 36/2).
+  const put = (nx, ny, rgb, a = 255) => nPx(cv, ox, oy, flip ? (35 - nx) : nx, ny, rgb, a);
 
-  // Walk motion: a slight vertical bob + a robe-hem sway + staff swing.
-  const bob = walkPhase === 2 ? -1 : 0;              // lift on the up-beat
-  const hemSway = walkPhase === 1 ? 1 : (walkPhase === 2 ? -1 : 0);
-  const staffSwing = walkPhase === 1 ? 1 : (walkPhase === 2 ? -1 : 0);
+  // --- walk kinematics ---
+  const bob = phase === 2 ? -1 : 0;                 // lift on the up-beat
+  const hemSway = phase === 1 ? 1 : (phase === 2 ? -1 : 0);  // hem shifts ±1 native px
+  const orbBob = phase === 1 ? 1 : (phase === 2 ? -1 : 0);   // orb lag: opposite-ish drift
+  const flare = phase !== 0;                        // walk frames flare the hem out
 
-  // Vertical layout (grid rows, before bob). Body ~15 blocks tall, grounded low so
-  // the AnimatedSprite2D offset (0,-40) plants it on the tile.
-  const topHood = 4 + bob;   // hood crown
-  const shoulder = 9 + bob;
-  const hemTop = 12 + bob;
-  const hemBot = 19 + bob;   // robe hem (ground contact area)
-
-  // ---- staff (behind the robe on the far side, drawn first) ----
-  // Held to one side (screen-right for the un-flipped SE/NE). A vertical shaft
-  // topped by a glowing orb. Swings slightly with the walk.
-  const staffX = 18 + staffSwing;
-  for (let gy = 3 + bob; gy <= hemBot; gy++) {
-    put(staffX, gy, P.staff);
-    if (gy === 3 + bob) put(staffX, gy, P.staffLine); // subtle top cap line
+  // ===== cloak body: flowing floor-length A-line (candA silhouette) =====
+  // half-width grows from shoulders (y14) to hem (y43); hem sways with the walk.
+  for (let y = 14; y < 44; y++) {
+    let half = 3 + (y - 14) * 4.2 / 30;
+    if (flare && y >= 40) half += 0.8;              // bottom flare on walk frames
+    const sway = (y >= 38) ? hemSway : 0;           // only the lower hem sways
+    const cxg = 18 + sway;
+    const lo = Math.round(cxg - half), hi = Math.round(cxg + half);
+    for (let x = lo; x <= hi; x++) {
+      // top-right soft light: lit right edge, shaded left edge, mid otherwise.
+      let c = P.robe;
+      if (x >= hi - 1) c = P.robeLit;
+      else if (x <= lo + 1) c = P.robeShade;
+      put(x, y, c);
+    }
+    // inner fold lines (subtle vertical creases)
+    if (y >= 20 && y < 42) {
+      put(Math.round(cxg - half * 0.5), y, P.robeShade);
+      put(Math.round(cxg + half * 0.55), y, P.robeLit);
+    }
   }
-  // staff selout on its lower-left
-  for (let gy = 4 + bob; gy <= hemBot; gy++) put(staffX - 1, gy, P.staffLine);
-  // orb: 2×2 glowing violet ball at the staff top, with a bright core + glow rim.
-  const orbY = 2 + bob;
-  put(staffX - 1, orbY, P.trim);      put(staffX, orbY, P.trimLit);
-  put(staffX - 1, orbY + 1, P.trimLit); put(staffX, orbY + 1, P.trim);
-  // baked additive-bright glow accent around the orb (bright pixels, no engine change)
-  put(staffX, orbY - 1, P.orbGlow, 150);
-  put(staffX + 1, orbY, P.orbGlow, 130);
+  // ragged hem bottom (selout) + a hair of bottom flare pixels
+  {
+    const cxg = 18 + hemSway;
+    for (let x = 12; x <= 24; x++) {
+      if (Math.abs(x - cxg) <= 7 && (x * 5) % 3 !== 0) put(x, 44, P.robeLine);
+    }
+  }
+  // silhouette selout down both sides of the cloak
+  for (let y = 15; y <= 43; y++) {
+    let half = 3 + (y - 14) * 4.2 / 30;
+    if (flare && y >= 40) half += 0.8;
+    const sway = (y >= 38) ? hemSway : 0;
+    const cxg = 18 + sway;
+    put(Math.round(cxg - half) - 1, y, P.robeLine);
+    put(Math.round(cxg + half) + 1, y, P.robeLine);
+  }
+
+  // ===== staff + floating orb (figure's right side = native x27..28) =====
+  // The staff and orb are on the OUTER side and mirror consistently with the body.
+  const staffX = 27;
+  const orbY = 8 + bob + orbBob;                    // orb bobs high, with walk lag
+  // shaft
+  for (let y = 12 + bob; y <= 40; y++) { put(staffX, y, P.wood); put(staffX + 1, y, P.wood2); }
+  put(staffX, 11 + bob, P.wood2);
+  put(staffX - 1, 12 + bob, P.wood2);               // shaft selout (inner)
+  // orb: a small violet ball with a bright core + glow specks
+  put(staffX - 1, orbY, P.orbMid);   put(staffX, orbY, P.trimLit);
+  put(staffX + 1, orbY, P.orbMid);
+  put(staffX - 1, orbY + 1, P.trimLit); put(staffX, orbY + 1, P.orbMid);
+  put(staffX + 1, orbY + 1, P.trim);
+  put(staffX, orbY - 1, P.orbGlow, 150);            // baked glow specks
+  put(staffX + 2, orbY, P.orbGlow, 120);
   put(staffX - 2, orbY + 1, P.orbGlow, 110);
-  put(staffX, orbY + 2, P.orbGlow, 120);
-  // cream hand gripping the staff (v0.3.1 accent) — a small 1×2 cream block at grip
-  // height, with a selout, so a warm point reads against the black cloak + on both
-  // front and back views the gauntleted hand shows on the staff side.
-  const gripY = 11 + bob;
-  put(staffX - 1, gripY, P.skin);
-  put(staffX, gripY, P.skinShade);
-  put(staffX - 1, gripY + 1, P.skinShade);
-  put(staffX - 2, gripY, P.skinLine);
+  put(staffX - 2, orbY - 1, P.trimLit, 130);        // candA sparkle
+  put(staffX + 3, orbY - 2, P.trimLit, 110);
 
-  // ---- robe body (a rounded trapezoid: narrow shoulders → wide hem) ----
-  for (let gy = shoulder; gy <= hemBot; gy++) {
-    const t = (gy - shoulder) / (hemBot - shoulder); // 0 at shoulder, 1 at hem
-    const halfW = Math.round(3 + t * 4);             // 3 → 7 blocks half-width
-    const sway = gy >= hemTop ? Math.round(hemSway * t) : 0;
-    const cxg = 11 + sway;
-    for (let gx = cxg - halfW; gx <= cxg + halfW; gx++) {
-      // top-right light: lit on the right/upper, shaded on the lower-left.
-      let col = P.robe;
-      if (gx - cxg >= halfW - 1 && gy <= hemTop) col = P.robeLit;
-      else if (gx - cxg <= -(halfW - 1) || gy >= hemBot - 1) col = P.robeShade;
-      put(gx, gy, col);
-    }
-    // selout on the robe silhouette edges
-    put(cxg - halfW - 1, gy, P.robeLine);
-    put(cxg + halfW + 1, gy, P.robeLine);
+  // sleeve/arm reaching toward the staff (front only shows the hand clearly)
+  for (let y = 18 + bob; y < 24 + bob; y++) {
+    for (let x = 21; x <= 26 - (y > 21 + bob ? 1 : 0); x++) put(x, y, P.robe);
   }
-  // hem bottom outline
-  for (let gx = 4; gx <= 18; gx++) {
-    const cxg = 11 + Math.round(hemSway);
-    if (Math.abs(gx - cxg) <= 7) put(gx, hemBot + 1, P.robeLine);
-  }
+  // cream hand gripping the staff (a warm point against the dark cloak)
+  put(26, 22 + bob, P.skin); put(26, 23 + bob, P.skinShade);
+  put(25, 23 + bob, P.skinLine);
 
-  // violet trim: a vertical band down the robe front (front views) or a sigil (back).
-  if (front) {
-    for (let gy = shoulder + 1; gy <= hemBot - 1; gy++) {
-      put(11, gy, (gy % 2 === 0) ? P.trim : P.trimLit);
+  // ===== hood: big, pointed toward the back =====
+  const hoodCy = 11 + bob;
+  // rounded hood cowl (ellipse-ish)
+  for (let y = hoodCy - 6; y <= hoodCy + 5; y++) {
+    const t = (y - (hoodCy - 6)) / 11;
+    const half = Math.round(2 + t * 4);
+    for (let x = 18 - half; x <= 18 + half; x++) {
+      let c = P.robe;
+      if (x >= 18 + half - 1) c = P.robeLit;
+      else if (x <= 18 - half + 1) c = P.robeShade;
+      put(x, y, c);
     }
-  } else {
-    // back sigil: a small diamond of violet on the cloak back.
-    put(11, 12 + bob, P.trimLit);
-    put(10, 13 + bob, P.trim); put(12, 13 + bob, P.trim);
-    put(11, 14 + bob, P.trimLit);
+    put(18 - half - 1, y, P.robeLine);
+    put(18 + half + 1, y, P.robeLine);
   }
-
-  // ---- hood (over the head, casting an inner shadow) ----
-  // A rounded hood shape from topHood down to the shoulders.
-  for (let gy = topHood; gy < shoulder; gy++) {
-    const t = (gy - topHood) / (shoulder - topHood);
-    const halfW = Math.round(2 + t * 3);   // 2 → 5 blocks
-    for (let gx = 11 - halfW; gx <= 11 + halfW; gx++) {
-      let col = P.robe;
-      if (gx - 11 >= halfW - 1) col = P.robeLit;         // top-right catch
-      else if (gx - 11 <= -(halfW - 1)) col = P.robeShade;
-      put(gx, gy, col);
-    }
-    put(11 - halfW - 1, gy, P.robeLine);
-    put(11 + halfW + 1, gy, P.robeLine);
-  }
-  // hood crown outline
-  for (let gx = 9; gx <= 13; gx++) put(gx, topHood - 1, P.robeLine);
+  // hood crown selout
+  for (let x = 15; x <= 21; x++) put(x, hoodCy - 7, P.robeLine);
+  // hood point tilting back-left (native art): a couple of pixels off the crown
+  put(12, hoodCy - 4, P.robe); put(13, hoodCy - 5, P.robe); put(13, hoodCy - 6, P.robeShade);
+  put(11, hoodCy - 3, P.robeLine);
 
   if (front) {
-    // Cream face inside the hood cavity (v0.3.1) so the figure reads against the
-    // dark ground, ringed by hood shadow, with two violet glowing eyes.
-    for (let gy = 7 + bob; gy <= 9 + bob; gy++) {
-      for (let gx = 9; gx <= 13; gx++) {
-        // shade the lower-left of the face, lit cream elsewhere.
-        put(gx, gy, (gx <= 9 || gy >= 9 + bob) ? P.skinShade : P.skin);
+    // ===== face void + glowing violet eyes (SE/SW) =====
+    for (let y = hoodCy - 1; y <= hoodCy + 3; y++) {
+      for (let x = 15; x <= 21; x++) {
+        const dx = (x - 18.5) / 3.4, dy = (y - (hoodCy + 1)) / 3.0;
+        if (dx * dx + dy * dy <= 1.0) put(x, y, P.hoodDark);
       }
     }
-    // hood shadow rim just above the brow keeps the face nestled in the cowl.
-    for (let gx = 9; gx <= 13; gx++) put(gx, 6 + bob, P.hoodDark);
-    // two violet eyes (SE looks slightly right of center; mirrored for SW).
-    put(10, 8 + bob, P.trim);
-    put(12, 8 + bob, P.trim);
-    // faint eye glow
-    put(10, 7 + bob, P.trimLit, 150);
-    put(12, 7 + bob, P.trimLit, 150);
+    // two violet eyes (with one bright shine), inner-hood violet rim glow
+    put(16, hoodCy + 1, P.trim);  put(20, hoodCy + 1, P.trim);
+    put(16, hoodCy, P.trimLit, 170); put(20, hoodCy, P.trimLit, 170);
+    put(15, hoodCy + 2, P.trim, 120); put(21, hoodCy + 2, P.trim, 120);
+
+    // ===== silver clasp at the throat =====
+    put(17, 16 + bob, P.silver); put(18, 16 + bob, P.silverLit); put(19, 16 + bob, P.silver);
+    put(18, 17 + bob, P.silverLit);
+    // ===== violet chest sigil (small vertical diamond stroke) =====
+    put(18, 20 + bob, P.trimLit);
+    put(17, 21 + bob, P.trim); put(19, 21 + bob, P.trim);
+    put(18, 22 + bob, P.trimLit); put(18, 23 + bob, P.trim);
   } else {
-    // back of hood: fill the interior with robe shade (no face).
-    for (let gy = 7 + bob; gy <= 9 + bob; gy++) {
-      for (let gx = 9; gx <= 13; gx++) put(gx, gy, P.robeShade);
+    // ===== back view (NE/NW): hood interior is cloak shade, no face =====
+    for (let y = hoodCy - 1; y <= hoodCy + 3; y++) {
+      for (let x = 15; x <= 21; x++) {
+        const dx = (x - 18.5) / 3.4, dy = (y - (hoodCy + 1)) / 3.0;
+        if (dx * dx + dy * dy <= 1.0) put(x, y, P.robeShade);
+      }
     }
+    // a subtle violet sigil on the cloak back (small diamond)
+    put(18, 24 + bob, P.trim);
+    put(17, 25 + bob, P.trim); put(19, 25 + bob, P.trim);
+    put(18, 26 + bob, P.trimLit);
+    // spine crease down the back
+    for (let y = 17 + bob; y < 40; y += 2) put(18, y, P.robeShade);
+  }
+
+  // ===== optional tiny dust hint under the trailing foot on walk frames =====
+  if (phase !== 0) {
+    const dustX = phase === 1 ? 14 : 22;
+    put(dustX, 45, P.skinLine, 90);
+    put(dustX + 1, 45, P.skinLine, 60);
   }
 }
 
@@ -541,22 +587,20 @@ function makeCharSheet() {
   const cols = 3, rows = 4, F = 96;
   const cv = makeCanvas(cols * F, rows * F);
   for (let r = 0; r < rows; r++) {
-    // col0 idle (phase 0), col1 walk0 (phase 1 = hem down), col2 walk1 (phase 2 = up).
-    drawConstructor(cv, 0 * F, r * F, r, 0);
-    drawConstructor(cv, 1 * F, r * F, r, 1);
-    drawConstructor(cv, 2 * F, r * F, r, 2);
+    // col0 idle (phase 0), col1 walk0 (phase 1), col2 walk1 (phase 2).
+    drawWanderer(cv, 0 * F, r * F, r, 0);
+    drawWanderer(cv, 1 * F, r * F, r, 1);
+    drawWanderer(cv, 2 * F, r * F, r, 2);
   }
   save(cv, 'character_sheet.png');
 }
 makeCharSheet();
 
-// ---- Character portrait (v0.3.0 B3) ----
-// A dedicated 192×192 bust portrait of the cloaked constructor for the character
-// window (C). Not a sheet-frame upscale — a nicer front-facing bust: hood + shoulders
-// filling the frame, dark hood interior with two glowing violet eyes, a violet trim V
-// on the chest, the staff orb glinting at the upper-right corner. Palette-strict
-// (art guide §2–§4), top-right soft light, selout outlines (no pure black), on a
-// subtle dark rounded backdrop so it reads inside the window's portrait pane.
+// ---- Character portrait (v0.4.0-B: candA SE-idle bust, extra detail) ----
+// A 192×192 front bust rebaked from the new SE idle: hood cowl + shoulders filling the
+// frame, a dark hood cavity with two glowing violet eyes + a soft face-shadow depth, the
+// silver clasp + violet chest sigil, and the staff orb glinting upper-right with a glow
+// halo. Palette-strict, top-right soft light, selout (no pure black), on a dark disc.
 function makeCharPortrait() {
   const S = 192;
   const cv = makeCanvas(S, S);
@@ -567,43 +611,28 @@ function makeCharPortrait() {
   // rounded dark backdrop disc
   for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
     const d = Math.hypot(x - cx, y - cx) / (S / 2);
-    if (d <= 1.0) {
-      const c = mix(bg, bgRim, Math.min(1, d * d * 0.9));
-      setPx(cv, x, y, c, 255);
-    }
+    if (d <= 1.0) setPx(cv, x, y, mix(bg, bgRim, Math.min(1, d * d * 0.9)), 255);
   }
-  // Bust geometry (pixel coords). Shoulders wide at the bottom, hood a rounded cowl.
+  // shoulders / cloak mantle (trapezoid)
   const shoulderY = 128, hemY = S - 2;
-  // shoulders / robe mantle (trapezoid)
   for (let y = shoulderY; y <= hemY; y++) {
     const t = (y - shoulderY) / (hemY - shoulderY);
     const half = Math.round(46 + t * 40);
     for (let x = cx - half; x <= cx + half; x++) {
       let col = P.robe;
-      if (x - cx > half - 10 && y < shoulderY + 40) col = P.robeLit;   // top-right lit
-      else if (x - cx < -(half - 10)) col = P.robeShade;              // lower-left shade
+      if (x - cx > half - 10 && y < shoulderY + 40) col = P.robeLit;
+      else if (x - cx < -(half - 10)) col = P.robeShade;
       setPx(cv, x, y, col, 255);
     }
     setPx(cv, cx - half - 1, y, P.robeLine, 255);
     setPx(cv, cx + half + 1, y, P.robeLine, 255);
   }
-  // violet trim "V" down the chest
-  for (let k = 0; k < 34; k++) {
-    const yy = shoulderY + 6 + k;
-    const dx = Math.round(k * 0.62);
-    const col = (k % 2 === 0) ? P.trim : P.trimLit;
-    for (let w = 0; w < 4; w++) {
-      setPx(cv, cx - dx + w, yy, col, 255);
-      setPx(cv, cx + dx - w, yy, col, 255);
-    }
-  }
-  // hood: a rounded cowl framing a dark face cavity.
+  // hood cowl framing a dark face cavity
   const hoodTop = 26, hoodBot = shoulderY + 10;
   for (let y = hoodTop; y <= hoodBot; y++) {
     const t = (y - hoodTop) / (hoodBot - hoodTop);
     const half = Math.round(20 + t * 58);
     for (let x = cx - half; x <= cx + half; x++) {
-      // outer hood shell
       let col = P.robe;
       if (x - cx > half - 12) col = P.robeLit;
       else if (x - cx < -(half - 12)) col = P.robeShade;
@@ -612,46 +641,58 @@ function makeCharPortrait() {
     setPx(cv, cx - half - 1, y, P.robeLine, 255);
     setPx(cv, cx + half + 1, y, P.robeLine, 255);
   }
-  // hood crown outline
   for (let x = cx - 22; x <= cx + 22; x++) setPx(cv, x, hoodTop - 1, P.robeLine, 255);
-  // face cavity — a cream face (v0.3.1) ringed by hood shadow so it reads against the
-  // dark cloak, with two violet eyes. An outer band of hood shadow, an inner cream oval.
-  const faceCx = cx, faceCy = 96;
-  for (let y = faceCy - 34; y <= faceCy + 30; y++) for (let x = faceCx - 30; x <= faceCx + 30; x++) {
-    const d = Math.hypot((x - faceCx) / 30, (y - faceCy) / 34);
+  // hood point tilting back (upper-left)
+  for (let k = 0; k < 10; k++) setPx(cv, cx - 20 - k, hoodTop + 6 + k, P.robeShade, 255);
+
+  // ===== face cavity: dark void with a soft face-shadow depth gradient =====
+  const faceCx = cx, faceCy = 92;
+  for (let y = faceCy - 36; y <= faceCy + 30; y++) for (let x = faceCx - 32; x <= faceCx + 32; x++) {
+    const d = Math.hypot((x - faceCx) / 32, (y - faceCy) / 36);
     if (d > 1.0) continue;
-    if (d > 0.72) {
-      setPx(cv, x, y, P.hoodDark, 255);           // shadow ring nestling the face in the cowl
-    } else {
-      // cream face, lower-left shaded for the top-right soft light.
-      const lit = (x - faceCx) - (y - faceCy) > 6;
-      const shade = (x - faceCx) < -10 || (y - faceCy) > 14;
-      setPx(cv, x, y, shade ? P.skinShade : (lit ? P.skin : P.skin), 255);
+    // radial depth: near-black centre → hood shadow rim (face-shadow depth, portrait extra).
+    const c = mix(hexToRGB('#0d0d12'), P.hoodDark, Math.min(1, d * 1.15));
+    setPx(cv, x, y, c, 255);
+  }
+  // ===== two glowing violet eyes + soft glow halo =====
+  const eyeY = faceCy;
+  for (const ex of [faceCx - 15, faceCx + 15]) {
+    for (let y = eyeY - 7; y <= eyeY + 7; y++) for (let x = ex - 7; x <= ex + 7; x++) {
+      const d = Math.hypot(x - ex, y - eyeY) / 7;
+      if (d <= 1.0) setPx(cv, x, y, P.trim, Math.round(110 * (1 - d)));
+    }
+    for (let y = eyeY - 3; y <= eyeY + 3; y++) for (let x = ex - 3; x <= ex + 3; x++) {
+      if (Math.hypot(x - ex, y - eyeY) <= 3.0) setPx(cv, x, y, P.trimLit, 255);
+    }
+    // top-right shine
+    setPx(cv, ex + 2, eyeY - 2, hexToRGB('#ffffff'), 220);
+  }
+  // ===== silver clasp at the throat =====
+  for (let y = shoulderY - 4; y <= shoulderY + 6; y++) for (let x = cx - 8; x <= cx + 8; x++) {
+    if (Math.hypot((x - cx) / 8, (y - (shoulderY + 1)) / 5) <= 1.0) {
+      setPx(cv, x, y, (x - cx) - (y - shoulderY) > 0 ? P.silverLit : P.silver, 255);
     }
   }
-  // two glowing violet eyes with a soft glow halo (baked bright).
-  const eyeY = faceCy - 2;
-  for (const ex of [faceCx - 13, faceCx + 13]) {
-    // glow halo
-    for (let y = eyeY - 5; y <= eyeY + 5; y++) for (let x = ex - 5; x <= ex + 5; x++) {
-      const d = Math.hypot(x - ex, y - eyeY) / 5;
-      if (d <= 1.0) setPx(cv, x, y, P.trim, Math.round(90 * (1 - d)));
-    }
-    // bright core
-    for (let y = eyeY - 2; y <= eyeY + 2; y++) for (let x = ex - 2; x <= ex + 2; x++) {
-      if (Math.hypot(x - ex, y - eyeY) <= 2.2) setPx(cv, x, y, P.trimLit, 255);
+  // ===== violet chest sigil (diamond) below the clasp =====
+  const sigCy = shoulderY + 34;
+  for (let k = -12; k <= 12; k++) {
+    const w = 12 - Math.abs(k);
+    for (let x = cx - w; x <= cx + w; x++) {
+      const edge = (x === cx - w || x === cx + w);
+      setPx(cv, x, sigCy + k, edge ? P.trimLit : P.trim, 255);
     }
   }
-  // staff orb glinting upper-right corner
-  const ox = S - 34, oy = 34;
-  for (let y = oy - 12; y <= oy + 12; y++) for (let x = ox - 12; x <= ox + 12; x++) {
-    const d = Math.hypot(x - ox, y - oy) / 12;
-    if (d <= 1.0) setPx(cv, x, y, mix(P.trimLit, P.trim, d), Math.round(255 * (1 - d * 0.6)));
+  // ===== staff orb glinting upper-right, with a glow halo =====
+  const oX = S - 32, oY = 34;
+  for (let y = oY - 14; y <= oY + 14; y++) for (let x = oX - 14; x <= oX + 14; x++) {
+    const d = Math.hypot(x - oX, y - oY) / 14;
+    if (d <= 1.0) setPx(cv, x, y, mix(P.trimLit, P.trim, d), Math.round(230 * (1 - d * 0.55)));
   }
-  // orb bright core
-  for (let y = oy - 4; y <= oy + 4; y++) for (let x = ox - 4; x <= ox + 4; x++) {
-    if (Math.hypot(x - ox, y - oy) <= 4) setPx(cv, x, y, P.robeLit, 255);
+  for (let y = oY - 5; y <= oY + 5; y++) for (let x = oX - 5; x <= oX + 5; x++) {
+    if (Math.hypot(x - oX, y - oY) <= 5) setPx(cv, x, y, hexToRGB('#f2eaff'), 255);
   }
+  // a hint of the wooden staff below the orb
+  for (let y = oY + 10; y < oY + 46; y++) { setPx(cv, oX, y, P.wood, 255); setPx(cv, oX + 1, y, P.wood2, 255); }
   save(cv, 'character_portrait.png');
 }
 makeCharPortrait();
@@ -811,79 +852,134 @@ makeCauldron('cauldron_bubble.png', true);
 // *_glow.png additive layer (kept out of CanvasModulate so night makes it pop).
 // ============================================================================
 
-// ---- Dry bush (G2, bush_dry). 128x128, dry brown/grey, thorny clumps. ----
-(function () {
+// ---- Dry / Bloomed gate bush (G2). v0.4.0-B readability rebuild. ------------
+// Owner: "덤불이 덤불같지 않아서 인지할 수가 없다" — the old bush read as a small tree.
+// New: an UNMISTAKABLE dry THORNBUSH — a round-ish dome WIDER THAN TALL (base ~96px
+// wide, ~64px tall, seated at the canvas bottom-center), built from TANGLED brown
+// branches (2-3 tone browns) crisscrossing from a low base, a few thorn spikes, and a
+// few WITHERED grey-green leaf clumps caught in the tangle. NOT tree-like: no single
+// trunk, no tall canopy — a squat thicket. bush_bloom.png reuses the exact same branch
+// tangle silhouette but bursting with pink/violet flowers + soft glow pixels.
+//
+// Canvas stays 128×128 (bush_dry.gd offset −80 + the diamond collision are unchanged);
+// the bush body simply occupies the lower band y≈60..120, wider than tall.
+function makeThornbush(name, mode) {  // mode: 'dry' | 'bloom'
   const W = 128, H = 128;
   const cv = makeCanvas(W, H);
-  // contact shadow
-  const sh = hexToRGB('#000000');
-  for (let y = -6; y <= 6; y++)
-    for (let x = -30; x <= 30; x++) {
-      const dx = x / 30, dy = y / 6;
-      if (dx * dx + dy * dy <= 1.0) setPx(cv, (W >> 1) + x, H - 10 + y, sh, 40);
-    }
-  const dry = hexToRGB('#8a6a4a');      // dry brown
-  const dryDark = hexToRGB('#5c4433');
-  const grey = hexToRGB('#6e6e7a');     // dead grey
-  // three overlapping dry blobs
-  const blobs = [[64, 78, 30, 26], [44, 88, 22, 18], [86, 90, 20, 16]];
-  for (const [bcx, bcy, brx, bry] of blobs) {
-    for (let y = 0; y < H; y++)
-      for (let x = 0; x < W; x++) {
-        const dx = (x - bcx) / brx, dy = (y - bcy) / bry;
-        if (dx * dx + dy * dy <= 1.0) {
-          const c = (dx - dy) > 0.2 ? dry : dryDark;
-          setPx(cv, x, y, c, 255);
-        }
-      }
-  }
-  // grey dead twigs sticking up
-  let seed = 99;
-  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
-  for (let t = 0; t < 14; t++) {
-    const bx = 40 + Math.floor(rnd() * 48);
-    const h = 14 + Math.floor(rnd() * 22);
-    for (let y = 0; y < h; y++) {
-      const lean = Math.floor((y / h) * (rnd() * 6 - 3));
-      setPx(cv, bx + lean, 70 - y, grey);
-    }
-  }
-  save(cv, 'bush_dry.png');
-})();
+  // deterministic per-name stream so re-runs are byte-identical.
+  let s = 0; for (let i = 0; i < name.length; i++) s = (s * 131 + name.charCodeAt(i)) & 0x7fffffff;
+  s = (s ^ 0x5bd1e995) & 0x7fffffff;
+  const rnd = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
 
-// ---- Bloomed bush (G2 after I7 water). Same silhouette, green + violet flowers. ----
-(function () {
-  const W = 128, H = 128;
-  const cv = makeCanvas(W, H);
+  // Palette (art guide §3).
+  const br1 = hexToRGB('#8a6a4a');  // dry brown (lit)
+  const br2 = hexToRGB('#5c4433');  // mid brown
+  const br3 = hexToRGB('#3a2a20');  // deep brown (shadow / selout)
+  const leafDry = hexToRGB('#6e6e7a');   // withered grey
+  const leafGrn = hexToRGB('#4d8b4f');   // grey-green leaf clump
+  const grnLit = hexToRGB('#7ab567');
+  const bloomV = hexToRGB('#9e7ad9');
+  const bloomVL = hexToRGB('#d9b8ff');
+  const bloomP = hexToRGB('#f0a8b8');
+
+  // ground contact shadow — WIDE ellipse (reads as a wide bush footprint).
   const sh = hexToRGB('#000000');
-  for (let y = -6; y <= 6; y++)
-    for (let x = -30; x <= 30; x++) {
-      const dx = x / 30, dy = y / 6;
-      if (dx * dx + dy * dy <= 1.0) setPx(cv, (W >> 1) + x, H - 10 + y, sh, 40);
+  for (let y = -7; y <= 7; y++)
+    for (let x = -46; x <= 46; x++) {
+      const dx = x / 46, dy = y / 7;
+      if (dx * dx + dy * dy <= 1.0) setPx(cv, (W >> 1) + x, H - 10 + y, sh, 42);
     }
-  const green = hexToRGB('#4d8b4f');
-  const greenLit = hexToRGB('#7ab567');
-  const bloom = hexToRGB('#d9b8ff');
-  const blobs = [[64, 78, 30, 26], [44, 88, 22, 18], [86, 90, 20, 16]];
-  for (const [bcx, bcy, brx, bry] of blobs) {
-    for (let y = 0; y < H; y++)
-      for (let x = 0; x < W; x++) {
-        const dx = (x - bcx) / brx, dy = (y - bcy) / bry;
-        if (dx * dx + dy * dy <= 1.0) {
-          const c = (dx - dy) > 0.2 ? greenLit : green;
-          setPx(cv, x, y, c, 255);
-        }
-      }
+
+  // Dome silhouette: centre (64, 92), half-width 46, half-height 32 → WIDER than TALL.
+  const cxg = 64, cyg = 92, rxg = 46, ryg = 32;
+  function inDome(x, y) {
+    const dx = (x - cxg) / rxg, dy = (y - cyg) / ryg;
+    // slightly flattened top, rounded — and only the upper hemisphere + a bit below.
+    return dx * dx + dy * dy <= 1.0 && y <= cyg + ryg && y >= cyg - ryg - 2;
   }
-  let seed = 7;
-  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
-  for (let f = 0; f < 20; f++) {
-    const x = 40 + Math.floor(rnd() * 48);
-    const y = 62 + Math.floor(rnd() * 34);
-    setPx(cv, x, y, bloom); setPx(cv, x + 1, y, bloom);
-    setPx(cv, x, y + 1, bloom); setPx(cv, x + 1, y + 1, bloom);
+
+  // ----- tangled branches: many short strokes radiating from a few low base nodes -----
+  const bases = [[50, 116], [64, 118], [80, 116], [40, 114], [90, 114]];
+  const nStrokes = 130;
+  for (let i = 0; i < nStrokes; i++) {
+    // pick a base node, shoot a branch up-and-out at a random-ish angle, staying in dome.
+    const [bx, by] = bases[Math.floor(rnd() * bases.length)];
+    const ang = -Math.PI * (0.15 + rnd() * 0.7);        // mostly upward, fanning out
+    const len = 16 + Math.floor(rnd() * 34);
+    const dirx = Math.cos(ang) * (rnd() < 0.5 ? 1 : -1);
+    const diry = Math.sin(ang);
+    let x = bx, y = by;
+    // pick branch tone (2-3 browns), lit on the up-right per top-right light.
+    let tone = rnd() < 0.4 ? br1 : (rnd() < 0.6 ? br2 : br3);
+    for (let k = 0; k < len; k++) {
+      // gentle wander so branches look tangled, not straight.
+      x += dirx + (rnd() - 0.5) * 1.4;
+      y += diry * 1.1 + (rnd() - 0.5) * 0.8;
+      const ix = Math.round(x), iy = Math.round(y);
+      if (!inDome(ix, iy)) break;
+      // top-right lift
+      const c = ((ix - cxg) - (iy - cyg) > 6) ? br1 : tone;
+      setPx(cv, ix, iy, c, 255);
+      // occasional 2px thickness for main branches
+      if (k < 8 && rnd() < 0.5) setPx(cv, ix + 1, iy, br2, 255);
+    }
   }
-  save(cv, 'bush_bloom.png');
+
+  if (mode === 'dry') {
+    // thorn spikes: short sharp specks poking out of the tangle silhouette edge.
+    for (let i = 0; i < 26; i++) {
+      const a = rnd() * Math.PI * 2;
+      const ex = Math.round(cxg + Math.cos(a) * rxg * (0.72 + rnd() * 0.26));
+      const ey = Math.round(cyg + Math.sin(a) * ryg * (0.6 + rnd() * 0.3)) - 2;
+      setPx(cv, ex, ey, br3, 255);
+      setPx(cv, ex + Math.sign(Math.cos(a)), ey - 1, br2, 220);
+    }
+    // withered grey-green leaf clumps: a FEW small 2×2 patches caught in the tangle.
+    for (let i = 0; i < 9; i++) {
+      const lx = 34 + Math.floor(rnd() * 60);
+      const ly = 66 + Math.floor(rnd() * 40);
+      if (!inDome(lx, ly)) continue;
+      const c = rnd() < 0.5 ? leafDry : leafGrn;
+      setPx(cv, lx, ly, c, 235); setPx(cv, lx + 1, ly, c, 235);
+      setPx(cv, lx, ly + 1, c, 210);
+    }
+  } else {
+    // bloom: the SAME tangle now bursting with pink/violet flowers + soft glow pixels.
+    for (let i = 0; i < 46; i++) {
+      const fx = 32 + Math.floor(rnd() * 64);
+      const fy = 62 + Math.floor(rnd() * 44);
+      if (!inDome(fx, fy)) continue;
+      const r = rnd();
+      const c = r < 0.4 ? bloomVL : (r < 0.72 ? bloomV : bloomP);
+      // 4-petal flower dab
+      setPx(cv, fx, fy, c); setPx(cv, fx + 1, fy, c);
+      setPx(cv, fx, fy + 1, c); setPx(cv, fx + 1, fy + 1, c);
+      setPx(cv, fx, fy - 1, bloomVL, 200);
+    }
+    // a few healthy green leaves peeking through
+    for (let i = 0; i < 12; i++) {
+      const lx = 34 + Math.floor(rnd() * 60);
+      const ly = 70 + Math.floor(rnd() * 38);
+      if (!inDome(lx, ly)) continue;
+      const c = rnd() < 0.5 ? leafGrn : grnLit;
+      setPx(cv, lx, ly, c, 235);
+    }
+    // soft glow pixels (baked, low alpha) scattered over the blossoms.
+    for (let i = 0; i < 22; i++) {
+      const gx = 36 + Math.floor(rnd() * 56);
+      const gy = 62 + Math.floor(rnd() * 40);
+      if (!inDome(gx, gy)) continue;
+      setPx(cv, gx, gy, bloomVL, 120);
+    }
+  }
+  save(cv, name);
+}
+makeThornbush('bush_dry.png', 'dry');
+makeThornbush('bush_bloom.png', 'bloom');
+
+// (legacy IIFE bodies below retired — replaced by makeThornbush above.)
+(function () {
+  return;
 })();
 
 // ---- Rest Stump (U). 128x128, brown stump with moss-green top. ----
@@ -1325,6 +1421,140 @@ function makeCliffSkirt(name, kind) {
 makeCliffSkirt('cliff_skirt_s.png', 's');
 makeCliffSkirt('cliff_skirt_e.png', 'e');
 makeCliffSkirt('cliff_skirt_se.png', 'se');
+
+// ---- A3 (v0.4.0): Interior ridge rock (raised rock mound cross-section) ------
+// Authored interior VOID bands (the G2 corridor walls + G3 night-path wall) used to
+// render as flat black hollow-like tiles — unreadable, confusable with gathered
+// hollows ("바위 맵 뚫을수가 없거든?"). The ridge sprite is a raised rocky mound that
+// clearly reads as impassable TERRAIN: a grey-brown rock cross-section (art guide §3
+// neutral greys + browns) rising above the tile's diamond, top-right lit, with a few
+// subtle moss hints. 128 wide (one tile) × 160 tall; the lower 64 px is the diamond
+// footprint band (so it seats on the cell) and the upper ~96 px is the mound crown that
+// rises above the ground plane. Deterministic (name-seeded speck placement).
+function makeRidge(name) {
+  const W = 128, H = 160;
+  const cv = makeCanvas(W, H);
+  // Rock ramp (neutral greys) + brown lowers + moss accents.
+  const rock    = hexToRGB('#6e6e7a');
+  const rockLit = hexToRGB('#b8b4a8');
+  const rockDk  = hexToRGB('#2a2a33');
+  const brown   = hexToRGB('#5c4433');
+  const brownLit= hexToRGB('#8a6a4a');
+  const brownDk = hexToRGB('#3a2a20');
+  const moss    = hexToRGB('#4d8b4f');
+  const mossDk  = hexToRGB('#2e5d3b');
+  // name-seeded deterministic stream (speck / moss placement)
+  let s = 0; for (let i = 0; i < name.length; i++) s = (s * 131 + name.charCodeAt(i)) & 0x7fffffff;
+  s = (s ^ 0x5bd1e995) & 0x7fffffff;
+  const rnd = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+
+  const cx = 64;
+  // The tile diamond occupies y in [H-64 .. H] (bottom band), centred at (64, H-32).
+  // Diamond membership for the seating band:
+  function inTileDiamond(x, y) {
+    const dyc = y - (H - 32);
+    return Math.abs(x - cx) / 64 + Math.abs(dyc) / 32 <= 1.0;
+  }
+  // The mound crown: a rounded rocky hump whose base spans most of the tile width and
+  // whose apex is up near the top. Silhouette = an ellipse-ish cap merged with the tile
+  // diamond's upper half so the whole thing reads as one raised rock.
+  const apexY = 20;            // top of the mound
+  const baseY = H - 20;        // where the mound meets the ground band
+  const halfW = 52;            // half-width of the mound base
+  function moundHalfWidthAt(y) {
+    // 0 at apex → halfW near base, with a rounded (sqrt-ish) profile.
+    if (y < apexY) return 0;
+    const t = Math.min(1, (y - apexY) / (baseY - apexY));
+    return halfW * Math.sqrt(t) * (0.72 + 0.28 * t);
+  }
+
+  for (let y = 0; y < H; y++) {
+    const hw = moundHalfWidthAt(y);
+    for (let x = 0; x < W; x++) {
+      const inMound = (y >= apexY && Math.abs(x - cx) <= hw);
+      const inBand = inTileDiamond(x, y);
+      if (!inMound && !inBand) continue;
+      const u = (x - cx) / 64;                       // -1..1 across
+      const depth = (y - apexY) / (H - apexY);        // 0 top → 1 bottom
+      let c;
+      // vertical zoning: crown rock (upper) → strata (mid) → brown earthen base (lower band)
+      if (y > H - 46) {
+        // earthen base band (the part seated on the tile) — browns, darker at the rim.
+        c = (u > 0.1) ? brownLit : brown;
+        if (Math.abs(u) > 0.72) c = brownDk;
+      } else {
+        // rock body: horizontal strata with a top-right lift.
+        const band = Math.floor(y / 11);
+        const seam = (y % 11) === 0;
+        let base = (band % 2 === 0) ? rock : mix(rock, rockDk, 0.32);
+        base = (u > 0.12) ? mix(base, rockLit, 0.30) : base;   // top-right lit
+        if (u < -0.4) base = mix(base, rockDk, 0.34);          // left in shadow
+        c = seam ? mix(base, rockDk, 0.5) : base;
+        // embedded pebble specks / cracks (deterministic)
+        if (smoothCell(x, y, 4, 0x9a1c) > 0.88) c = rockLit;
+        if (smoothCell(x, y, 5, 0xb2e7) < 0.07) c = brownDk;
+      }
+      // moss hints: cling to the upper-left crown + a few base tufts (shaded green).
+      const mn = smoothCell(x, y, 6, 0x3055);
+      if (y < H - 40 && depth < 0.55 && u < 0.15 && mn > 0.80) c = (mn > 0.9) ? moss : mossDk;
+      if (y > H - 52 && y < H - 30 && mn > 0.88) c = mossDk;
+      setPx(cv, x, y, c, 255);
+    }
+  }
+  // selout: darken the silhouette edge (1px) where a filled pixel borders transparency.
+  const rim = mix(rockDk, brownDk, 0.5);
+  const snap = cv.data.slice();
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      if (snap[i + 3] === 0) continue;
+      let edge = false;
+      for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= W || ny >= H) { edge = true; break; }
+        if (snap[(ny * W + nx) * 4 + 3] === 0) { edge = true; break; }
+      }
+      if (edge) setPx(cv, x, y, rim, 255);
+    }
+  }
+  save(cv, name);
+}
+makeRidge('ridge_rock.png');
+
+// ---- A3 (v0.4.0): Worn-dirt trail patch (corridor hint decal) ---------------
+// A subtle worn-earth patch laid on playable cells leading up to the G2 bush corridor,
+// hinting "the way through is here". Half-tile-ish soft brown blotch on the 128×64
+// diamond, low-contrast (it should read as trodden ground, not a hard tile swap).
+function makeWornDirt(name) {
+  const W = 128, H = 64;
+  const cv = makeCanvas(W, H);
+  const dirt   = hexToRGB('#8a6a4a');
+  const dirtDk = hexToRGB('#5c4433');
+  const speck  = hexToRGB('#3a2a20');
+  const cx = (W - 1) / 2, cy = (H - 1) / 2;
+  let s = 0; for (let i = 0; i < name.length; i++) s = (s * 131 + name.charCodeAt(i)) & 0x7fffffff;
+  s = (s ^ 0x5bd1e995) & 0x7fffffff;
+  const rnd = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (!inDiamond(x, y, W, H)) continue;
+      // soft irregular blotch: within an inset diamond radius, alpha fades to the edge.
+      const d = Math.abs(x - cx) / (W / 2) + Math.abs(y - cy) / (H / 2);
+      const n = smoothCell(x, y, 7, 0x77aa);
+      const rad = 0.58 + n * 0.20;      // wobbly edge
+      if (d > rad) continue;
+      const t = d / rad;                // 0 center → 1 edge
+      let c = (n > 0.55) ? dirt : dirtDk;
+      if (smoothCell(x, y, 3, 0x1234) < 0.10) c = speck;
+      // fade alpha toward the edge so it blends with the grass (trodden, not a hard tile).
+      const a = Math.round(150 * (1 - t) * (1 - t));
+      if (a <= 4) continue;
+      setPx(cv, x, y, c, a);
+    }
+  }
+  save(cv, name);
+}
+makeWornDirt('worn_dirt_patch.png');
 
 // ---- A3: Local light-pool decals (radial gradient PNGs, 256px) -------------
 // Soft additive glow decals the map loader lays UNDER/around light sources

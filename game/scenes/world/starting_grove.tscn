@@ -18,6 +18,7 @@
 [ext_resource type="Script" path="res://scripts/world/grove_session.gd" id="16_session"]
 [ext_resource type="Script" path="res://scripts/world/touch_controller.gd" id="17_touch"]
 [ext_resource type="Script" path="res://scripts/world/stepping_slot_hint.gd" id="18_slothint"]
+[ext_resource type="Script" path="res://scripts/world/tile_glow.gd" id="24_tileglow"]
 [ext_resource type="Script" path="res://scripts/world/backdrop.gd" id="19_backdrop"]
 [ext_resource type="Script" path="res://scripts/world/night_fireflies.gd" id="20_fireflies"]
 [ext_resource type="Script" path="res://scripts/ui/character_window.gd" id="21_charwin"]
@@ -57,6 +58,10 @@ script = ExtResource("5_highlight")
 [node name="SteppingSlotHint" type="Node2D" parent="."]
 script = ExtResource("18_slothint")
 
+[node name="TileGlow" type="Node2D" parent="."]
+z_index = 3
+script = ExtResource("24_tileglow")
+
 [node name="YSortLayer" type="Node2D" parent="."]
 y_sort_enabled = true
 z_index = 5
@@ -70,7 +75,7 @@ tilemap_path = NodePath("../../Ground")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="YSortLayer/Player"]
 position = Vector2(0, -40)
-scale = Vector2(1.25, 1.25)
+scale = Vector2(1.15, 1.15)
 sprite_frames = ExtResource("4_frames")
 animation = &"idle_SE"
 autoplay = "idle_SE"
@@ -89,6 +94,7 @@ tilemap_path = NodePath("../Ground")
 highlight_path = NodePath("../TileHighlight")
 feedback_layer_path = NodePath("../YSortLayer")
 slot_hint_path = NodePath("../SteppingSlotHint")
+tile_glow_path = NodePath("../TileGlow")
 
 [node name="ObjectRespawn" type="Node" parent="."]
 script = ExtResource("13_respawn")

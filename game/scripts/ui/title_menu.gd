@@ -1,6 +1,6 @@
 extends Control
 class_name TitleMenu
-## Title screen for Project Whisper (v0.1.2 visual rebuild).
+## Title screen for Project Whisper (v0.4.0-B 감성 rebuild).
 ##
 ## Flow / handlers are UNCHANGED (the m7 title-flow harness depends on them):
 ##   "새로 시작"        — always            → _on_new_game
@@ -8,19 +8,23 @@ class_name TitleMenu
 ##   "NG+ 시작"         — has_save() and save cleared     → _on_ng_plus
 ##   "종료"             — quit              → _on_quit
 ##
-## Visuals are composed entirely from EXISTING game assets + drawn primitives
-## (no new external art, no shaders):
-##   - dark vertical gradient sky (#1a1a20 → #2a2a3c)
-##   - a decorative isometric slice of the grove: grass diamonds, a small pond,
-##     trees, the World Tree with its violet glow on the right, and the cat sitting
-##     beside the cauldron — all Sprite2D on a scaled Node2D "diorama"
-##   - a soft vertical vignette (GradientTexture) to focus the center
-##   - "Project Whisper" logotype in violet with an additive glow duplicate,
-##     subtitle in cream with an outline
-##   - gentle motion: slow violet floating motes, a World-Tree glow pulse, and a
-##     title fade-in on load
-##   - styled button column (rounded #2a2a33 panels, violet border on hover/focus,
-##     ≥48px tall) anchored in the lower third; tiny "v0.1.2" bottom-right.
+## v0.4.0-B — the owner asked for a more 감성적 start screen. Rebuilt to the pixel-title
+## best-practice playbook (Hyper Light Drifter / Eastward): a flat deep navy-violet base
+## with large gradient + vignette overlays, layered LOW-CONTRAST silhouette bands drifting
+## at parallax depths, a soft-glow moon composited over sharp pixels, drifting fog streaks
+## and fireflies, a restrained 2-hue palette (deep navy-violet + warm cream), a
+## letter-spaced title that fades in, and a menu that slides up after a beat (0.8s).
+##
+## All composed from drawn primitives / gradients (no new external art, no shaders):
+##   - flat navy base + vertical navy→violet gradient sky
+##   - moon disc with a soft additive glow halo (upper-right)
+##   - 3 parallax silhouette bands (distant forest line / mid trees / near world-tree
+##     hill), each a low-contrast band drifting slowly at its own speed
+##   - a low-alpha horizontal fog band drifting sideways + rising fireflies/violet motes
+##   - a soft vertical vignette to focus the centre
+##   - "Project Whisper" letter-spaced logotype (violet + additive glow), cream subtitle
+##   - button column slides up + fades in after 0.8s; a key/click during the beat shows it
+##     instantly (skippable intro-beat). All menu logic/버튼 UNCHANGED.
 ##
 ## Everything is code-built so there is no fragile hand-authored .tscn to drift.
 
@@ -29,8 +33,19 @@ const CREAM := Color("#faf5e6")
 const VIOLET := Color("#9e7ad9")
 const VIOLET_SOFT := Color("#c8b0ec")
 const MUTED := Color("#b8b4a8")
-const SKY_TOP := Color("#1a1a20")
-const SKY_BOTTOM := Color("#2a2a3c")
+## Deep navy-violet base (restrained 2-hue palette per the pixel-title playbook).
+const SKY_TOP := Color("#14131f")     # deep navy-violet zenith
+const SKY_BOTTOM := Color("#241f38")  # warmer violet toward horizon
+## Silhouette band tones — LOW CONTRAST (only a touch darker than the sky), so the bands
+## read as depth layers rather than hard cutouts. Distant → near = progressively darker.
+const BAND_FAR := Color("#1c1a2c")
+const BAND_MID := Color("#171525")
+const BAND_NEAR := Color("#100e1c")
+const MOON := Color("#f2ead6")        # warm cream moon
+const FIREFLY := Color("#ffe6a8")     # warm firefly glow
+
+## Design canvas the parallax layout is authored against (project viewport).
+const CANVAS := Vector2(1600, 900)
 
 const GROVE_SCENE := "res://scenes/world/starting_grove.tscn"
 ## 새로 시작 routes through the opening cutscene (v0.2.1); 이어하기/NG+ skip it.
@@ -43,6 +58,13 @@ var _buttons: VBoxContainer
 var _glow_nodes: Array[CanvasItem] = []
 var _glow_t: float = 0.0
 var _fade_root: Control
+## (B4) Parallax silhouette bands: {node, base_x, speed} drifting horizontally.
+var _parallax: Array[Dictionary] = []
+## (B4) The drifting fog band.
+var _fog: CanvasItem
+var _fog_t: float = 0.0
+## (B4) Whether the menu has been revealed yet (guards the skippable intro-beat).
+var _menu_revealed: bool = false
 
 
 func _ready() -> void:
@@ -51,20 +73,37 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	# World-tree / title glow pulse (subtle breathing) — a plain sine so the title
-	# needs no world nodes or GameState.
+	# Moon / title glow pulse (subtle breathing) — a plain sine so the title needs no
+	# world nodes or GameState.
 	_glow_t += delta * 1.4
 	var pulse: float = 0.72 + 0.18 * sin(_glow_t)
 	for g in _glow_nodes:
 		if is_instance_valid(g):
 			g.modulate.a = pulse
 
+	# (B4) parallax drift: each band eases sideways at its own slow speed and wraps.
+	for layer in _parallax:
+		var node: CanvasItem = layer["node"]
+		if not is_instance_valid(node):
+			continue
+		var base_x: float = layer["base_x"]
+		var speed: float = layer["speed"]
+		var amp: float = layer["amp"]
+		(node as Node2D).position.x = base_x + sin(_glow_t * speed) * amp
+
+	# (B4) fog band slow horizontal streak drift.
+	_fog_t += delta
+	if is_instance_valid(_fog):
+		(_fog as Node2D).position.x = -60.0 + fmod(_fog_t * 14.0, 120.0)
+
 
 # ==== build ================================================================
 
 func _build() -> void:
 	_build_sky()
-	_build_iso_backdrop()
+	_build_moon()
+	_build_parallax_bands()
+	_build_fog()
 	_build_vignette()
 	_build_particles()
 
@@ -78,13 +117,40 @@ func _build() -> void:
 	_build_buttons()
 	_build_version()
 
+	# (B4) intro-beat: title fades in immediately; the menu slides up after 0.8s. A key
+	# or click during the beat reveals the menu instantly (see _unhandled_input).
 	_fade_root.modulate.a = 0.0
 	var tw := create_tween()
 	tw.tween_property(_fade_root, "modulate:a", 1.0, 0.9).set_ease(Tween.EASE_OUT)
+	get_tree().create_timer(0.8).timeout.connect(_reveal_menu)
+
+
+## Skippable intro-beat: any key / mouse click before the timer fires reveals the menu.
+func _unhandled_input(event: InputEvent) -> void:
+	if _menu_revealed:
+		return
+	if (event is InputEventKey and event.pressed) \
+			or (event is InputEventMouseButton and event.pressed) \
+			or (event is InputEventScreenTouch and event.pressed):
+		_reveal_menu()
+		get_viewport().set_input_as_handled()
+
+
+## Slide the button column up into place + fade it in (idempotent).
+func _reveal_menu() -> void:
+	if _menu_revealed or _buttons == null:
+		return
+	_menu_revealed = true
+	var target_y: float = _buttons.position.y
+	_buttons.position.y = target_y + 42
+	_buttons.modulate.a = 0.0
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(_buttons, "position:y", target_y, 0.5).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_buttons, "modulate:a", 1.0, 0.45)
 
 
 func _build_sky() -> void:
-	# Vertical gradient via a GradientTexture2D on a full-rect TextureRect.
+	# Flat navy base + vertical navy→violet gradient (large soft overlay).
 	var grad := Gradient.new()
 	grad.set_color(0, SKY_TOP)
 	grad.set_color(1, SKY_BOTTOM)
@@ -103,112 +169,218 @@ func _build_sky() -> void:
 	add_child(sky)
 
 
-## A decorative isometric arrangement of grove tiles + objects, built in a Node2D
-## "diorama" anchored toward the lower-right of the 1600×900 design canvas.
-func _build_iso_backdrop() -> void:
-	var world := Node2D.new()
-	world.name = "Diorama"
-	world.position = Vector2(1080, 300)
-	world.scale = Vector2(1.15, 1.15)
-	add_child(world)
-
-	# --- ground: a small diamond field of grass tiles + a pond corner ---
-	var grass := load("res://assets/tiles/t2a_grass.png") as Texture2D
-	var grass_b := load("res://assets/tiles/t2b_grass_flowers.png") as Texture2D
-	var grass_c := load("res://assets/tiles/t2c_grass_clover.png") as Texture2D
-	var water := load("res://assets/tiles/t5a_water.png") as Texture2D
-	var pond_cells := {Vector2i(1, 2): true, Vector2i(2, 2): true, Vector2i(2, 3): true}
-	for r in range(6):
-		for c in range(6):
-			var cell := Vector2i(c, r)
-			var tex := grass
-			if pond_cells.has(cell):
-				tex = water
-			elif (c + r) % 5 == 0:
-				tex = grass_b
-			elif (c * 2 + r) % 7 == 0:
-				tex = grass_c
-			if tex == null:
-				continue
-			var s := Sprite2D.new()
-			s.texture = tex
-			s.centered = true
-			s.position = _iso(cell)
-			world.add_child(s)
-
-	# --- world tree with its violet glow, on the right edge ---
-	var wt_pos := _iso(Vector2i(5, 0)) + Vector2(40, -160)
-	_add_object(world, "res://assets/objects/world_tree.png", wt_pos, 0.62)
-	var wt_glow := load("res://assets/objects/world_tree_glow.png") as Texture2D
-	if wt_glow != null:
-		var g := Sprite2D.new()
-		g.texture = wt_glow
-		g.centered = true
-		g.scale = Vector2(0.62, 0.62)
-		g.position = wt_pos
-		var mat := CanvasItemMaterial.new()
-		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-		g.material = mat
-		g.modulate.a = 0.8
-		world.add_child(g)
-		_glow_nodes.append(g)
-
-	# --- a couple of ordinary trees for depth ---
-	_add_object(world, "res://assets/objects/tree_a.png", _iso(Vector2i(0, 1)) + Vector2(-10, -84), 0.7)
-	_add_object(world, "res://assets/objects/tree_b.png", _iso(Vector2i(0, 4)) + Vector2(-30, -84), 0.62)
-
-	# --- cauldron + the cat sitting beside it, near the pond ---
-	var caul_pos := _iso(Vector2i(3, 4)) + Vector2(0, -30)
-	_add_object(world, "res://assets/objects/cauldron.png", caul_pos, 0.85)
-	_add_cat(world, caul_pos + Vector2(-70, -6))
-
-	# --- a scatter of violet flowers to catch the glow ---
-	_add_object(world, "res://assets/objects/flower_violet.png", _iso(Vector2i(4, 3)) + Vector2(6, -14), 0.8)
-	_add_object(world, "res://assets/objects/flower_violet.png", _iso(Vector2i(1, 4)) + Vector2(-8, -14), 0.7)
+## A warm cream moon disc upper-right with a soft additive glow halo composited over the
+## sharp scene. The halo node pulses gently (added to _glow_nodes).
+func _build_moon() -> void:
+	var moon_pos := Vector2(CANVAS.x * 0.76, CANVAS.y * 0.24)
+	# soft additive halo (a radial gradient disc, low alpha, large)
+	var halo := _radial_sprite(Color(MOON.r, MOON.g, MOON.b, 0.5), 220.0)
+	halo.position = moon_pos
+	var hm := CanvasItemMaterial.new()
+	hm.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	halo.material = hm
+	halo.modulate.a = 0.8
+	add_child(halo)
+	_glow_nodes.append(halo)
+	# crisp moon disc
+	var disc := _disc_sprite(MOON, 46.0)
+	disc.position = moon_pos
+	add_child(disc)
+	# a faint violet inner rim (2-hue palette accent)
+	var rim := _disc_sprite(Color(VIOLET.r, VIOLET.g, VIOLET.b, 0.18), 52.0)
+	rim.position = moon_pos
+	var rm := CanvasItemMaterial.new()
+	rm.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	rim.material = rm
+	add_child(rim)
 
 
-func _iso(cell: Vector2i) -> Vector2:
-	return Vector2((cell.x - cell.y) * ISO.x, (cell.x + cell.y) * ISO.y)
+## 3 low-contrast silhouette bands at parallax depths. Each is a Node2D of drawn hill /
+## tree-line polygons; the far band drifts least, the near band most (registered in
+## _parallax and driven from _process).
+func _build_parallax_bands() -> void:
+	# distant forest line — a low, gently undulating ridge high up the frame.
+	var far := _make_band(BAND_FAR, CANVAS.y * 0.60, 44.0, 7, 0.9)
+	_register_band(far, 0.9, 0.10, 18.0)   # slow speed, small amplitude
+	# mid tree line — taller jagged conifer silhouette, a bit lower.
+	var mid := _make_tree_band(BAND_MID, CANVAS.y * 0.66, 120.0, 11)
+	_register_band(mid, 0.66, 0.16, 30.0)
+	# near world-tree hill — a big rounded hill on the right with a single tall tree.
+	var near := _make_hill_band(BAND_NEAR, CANVAS.y * 0.74)
+	_register_band(near, 0.74, 0.22, 42.0)
 
 
-func _add_object(parent: Node2D, path: String, pos: Vector2, sc: float) -> void:
-	var tex := load(path) as Texture2D
-	if tex == null:
-		push_warning("TitleMenu: backdrop asset missing: %s" % path)
-		return
-	var s := Sprite2D.new()
-	s.texture = tex
-	s.centered = true
-	s.scale = Vector2(sc, sc)
-	s.position = pos
-	parent.add_child(s)
+## Register a parallax band node for drift in _process.
+func _register_band(node: Node2D, base_alpha: float, speed: float, amp: float) -> void:
+	add_child(node)
+	node.modulate.a = base_alpha
+	_parallax.append({
+		"node": node, "base_x": node.position.x, "speed": speed, "amp": amp,
+		"span": CANVAS.x,
+	})
 
 
-## The cat = the player idle_SE frame from the character sheet (96×96 top-left).
-func _add_cat(parent: Node2D, pos: Vector2) -> void:
-	var sheet := load("res://assets/character/character_sheet.png") as Texture2D
-	if sheet == null:
-		return
-	var atlas := AtlasTexture.new()
-	atlas.atlas = sheet
-	atlas.region = Rect2(0, 0, 96, 96)  # idle facing SE
-	var s := Sprite2D.new()
-	s.texture = atlas
-	s.centered = true
-	s.scale = Vector2(1.1, 1.1)
-	s.position = pos
-	parent.add_child(s)
+## An undulating filled ridge polygon spanning the full width, `crest_y` at the sky, with
+## `bumps` sine humps of `height`. Extended past both edges so parallax drift never reveals
+## a gap.
+func _make_band(col: Color, crest_y: float, height: float, bumps: int, _sharp: float) -> Node2D:
+	var n := Node2D.new()
+	var poly := Polygon2D.new()
+	poly.color = col
+	var pts: PackedVector2Array = []
+	var x0 := -200.0
+	var x1 := CANVAS.x + 200.0
+	var steps := 48
+	for i in range(steps + 1):
+		var t := float(i) / steps
+		var x: float = lerp(x0, x1, t)
+		var y := crest_y - sin(t * PI * bumps) * height * 0.5 - height * 0.5
+		pts.append(Vector2(x, y))
+	pts.append(Vector2(x1, CANVAS.y + 40))
+	pts.append(Vector2(x0, CANVAS.y + 40))
+	poly.polygon = pts
+	n.add_child(poly)
+	return n
 
 
-## A soft vertical wash darkening the top and bottom edges to focus the eye toward
-## the title/buttons. Drawn with a GradientTexture instead of a shader.
+## A jagged conifer tree-line silhouette band (triangular peaks along a baseline).
+func _make_tree_band(col: Color, base_y: float, peak_h: float, count: int) -> Node2D:
+	var n := Node2D.new()
+	var poly := Polygon2D.new()
+	poly.color = col
+	var pts: PackedVector2Array = []
+	var x0 := -200.0
+	var x1 := CANVAS.x + 200.0
+	pts.append(Vector2(x0, base_y))
+	var span := x1 - x0
+	for i in range(count):
+		var cx := x0 + span * (float(i) + 0.5) / count
+		var w := span / count * 0.5
+		var h: float = peak_h * (0.6 + 0.5 * absf(sin(i * 1.7)))
+		pts.append(Vector2(cx - w, base_y))
+		pts.append(Vector2(cx, base_y - h))
+		pts.append(Vector2(cx + w, base_y))
+	pts.append(Vector2(x1, base_y))
+	pts.append(Vector2(x1, CANVAS.y + 40))
+	pts.append(Vector2(x0, CANVAS.y + 40))
+	poly.polygon = pts
+	n.add_child(poly)
+	return n
+
+
+## The near hill: a large rounded hill filling the lower-right, with a single tall
+## world-tree silhouette rising from its crest + a faint violet glow above the tree.
+func _make_hill_band(col: Color, crest_y: float) -> Node2D:
+	var n := Node2D.new()
+	var poly := Polygon2D.new()
+	poly.color = col
+	var pts: PackedVector2Array = []
+	var x0 := -200.0
+	var x1 := CANVAS.x + 200.0
+	var steps := 40
+	var peak_x := CANVAS.x * 0.72
+	for i in range(steps + 1):
+		var t := float(i) / steps
+		var x: float = lerp(x0, x1, t)
+		# a broad rounded hump centred at peak_x
+		var d := (x - peak_x) / (CANVAS.x * 0.55)
+		var y := crest_y + 130.0 - exp(-d * d) * 150.0
+		pts.append(Vector2(x, y))
+	pts.append(Vector2(x1, CANVAS.y + 40))
+	pts.append(Vector2(x0, CANVAS.y + 40))
+	poly.polygon = pts
+	n.add_child(poly)
+	# a single tall tree silhouette on the crest
+	var trunk := Polygon2D.new()
+	trunk.color = col
+	var tx := peak_x
+	var ty := crest_y - 20.0
+	trunk.polygon = PackedVector2Array([
+		Vector2(tx - 10, ty), Vector2(tx - 4, ty - 150), Vector2(tx + 4, ty - 150), Vector2(tx + 10, ty),
+	])
+	n.add_child(trunk)
+	var crown := _disc_sprite(col, 62.0)
+	crown.position = Vector2(tx, ty - 168)
+	n.add_child(crown)
+	# faint violet glow above the world tree (2-hue accent), pulses with the moon.
+	var glow := _radial_sprite(Color(VIOLET.r, VIOLET.g, VIOLET.b, 0.35), 90.0)
+	glow.position = Vector2(tx, ty - 180)
+	var gm := CanvasItemMaterial.new()
+	gm.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	glow.material = gm
+	n.add_child(glow)
+	_glow_nodes.append(glow)
+	# (B4) the constructor: a tiny hooded figure on the hill crest, back to us, staff in
+	# hand, gazing up at the world tree. A hair lighter than the hill so the silhouette
+	# reads; the staff orb is a small violet glint (the same 2-hue accent as the tree glow).
+	var fig_x := peak_x - 132.0
+	var fig_y := crest_y + 6.0            # planted on the hill crest, just left of the tree
+	_add_constructor_figure(n, fig_x, fig_y, col)
+	return n
+
+
+## A small back-view hooded constructor silhouette planted at (fx, fy): floor-length
+## cloak (A-line), a rounded hood, and a staff on the right with a floating violet orb.
+## Kept low-contrast (a touch above the hill tone) so it reads as part of the diorama.
+func _add_constructor_figure(parent: Node2D, fx: float, fy: float, hill_col: Color) -> void:
+	# figure tone: nudge the hill colour up toward the deep-violet cloak so it separates
+	# from the hill without breaking the flat-silhouette look.
+	var body_col := hill_col.lerp(Color("#241f38"), 0.75)
+	var cloak := Polygon2D.new()
+	cloak.color = body_col
+	# A-line cloak: narrow shoulders → flared hem (≈22px tall, ≈16px hem).
+	cloak.polygon = PackedVector2Array([
+		Vector2(fx - 4, fy - 22), Vector2(fx + 4, fy - 22),
+		Vector2(fx + 8, fy), Vector2(fx - 8, fy),
+	])
+	parent.add_child(cloak)
+	# rounded hood (a small disc at the shoulders).
+	var hood := _disc_sprite(body_col, 6.0)
+	hood.position = Vector2(fx, fy - 24)
+	parent.add_child(hood)
+	# staff: a thin vertical bar on the figure's right side.
+	var staff := Polygon2D.new()
+	staff.color = body_col
+	staff.polygon = PackedVector2Array([
+		Vector2(fx + 9, fy - 26), Vector2(fx + 11, fy - 26),
+		Vector2(fx + 11, fy + 2), Vector2(fx + 9, fy + 2),
+	])
+	parent.add_child(staff)
+	# floating violet orb above the staff tip — a tiny additive glint (breathes w/ moon).
+	var orb := _radial_sprite(Color(VIOLET.r, VIOLET.g, VIOLET.b, 0.85), 9.0)
+	orb.position = Vector2(fx + 10, fy - 32)
+	var om := CanvasItemMaterial.new()
+	om.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	orb.material = om
+	parent.add_child(orb)
+	_glow_nodes.append(orb)
+
+
+## A low-alpha horizontal fog band (stacked soft streaks) that drifts sideways.
+func _build_fog() -> void:
+	var n := Node2D.new()
+	n.name = "FogBand"
+	n.position = Vector2(0, CANVAS.y * 0.62)
+	for i in range(4):
+		var streak := _radial_sprite(Color(VIOLET_SOFT.r, VIOLET_SOFT.g, VIOLET_SOFT.b, 0.06), 260.0)
+		streak.position = Vector2(200 + i * 420, sin(i * 1.3) * 26.0)
+		streak.scale = Vector2(2.4, 0.5)   # squashed → horizontal streak
+		var sm := CanvasItemMaterial.new()
+		sm.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		streak.material = sm
+		n.add_child(streak)
+	add_child(n)
+	_fog = n
+
+
+## A soft vertical vignette darkening top + bottom edges to focus the centre.
 func _build_vignette() -> void:
 	var grad := Gradient.new()
 	grad.offsets = PackedFloat32Array([0.0, 0.45, 1.0])
 	grad.colors = PackedColorArray([
-		Color(0.06, 0.05, 0.09, 0.55),
-		Color(0.06, 0.05, 0.09, 0.0),
-		Color(0.04, 0.03, 0.07, 0.75),
+		Color(0.05, 0.04, 0.08, 0.55),
+		Color(0.05, 0.04, 0.08, 0.0),
+		Color(0.03, 0.02, 0.06, 0.80),
 	])
 	var gtex := GradientTexture2D.new()
 	gtex.gradient = grad
@@ -224,37 +396,99 @@ func _build_vignette() -> void:
 	add_child(tr)
 
 
-## Slow, sparse violet floating motes (CPUParticles2D). Kept light: few particles,
-## gentle upward drift, additive so they read as ambient light.
+## Fireflies (warm) + a few violet motes, rising slowly, additive (soft glow over pixels).
 func _build_particles() -> void:
+	# warm fireflies drifting up from the tree-line band
+	var f := CPUParticles2D.new()
+	f.amount = 26
+	f.lifetime = 11.0
+	f.preprocess = 7.0
+	f.position = Vector2(CANVAS.x * 0.5, CANVAS.y * 0.72)
+	f.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	f.emission_rect_extents = Vector2(CANVAS.x * 0.5, 60)
+	f.direction = Vector2(0, -1)
+	f.spread = 24.0
+	f.gravity = Vector2(6, -5)
+	f.initial_velocity_min = 6.0
+	f.initial_velocity_max = 18.0
+	f.scale_amount_min = 1.5
+	f.scale_amount_max = 3.5
+	f.color = Color(FIREFLY.r, FIREFLY.g, FIREFLY.b, 0.85)
+	var fmat := CanvasItemMaterial.new()
+	fmat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	f.material = fmat
+	var framp := Gradient.new()
+	framp.offsets = PackedFloat32Array([0.0, 0.5, 1.0])
+	framp.colors = PackedColorArray([
+		Color(1, 1, 1, 0.0), Color(1, 1, 1, 0.9), Color(1, 1, 1, 0.0),
+	])
+	f.color_ramp = framp
+	f.emitting = true
+	add_child(f)
+
+	# sparse violet motes higher up (ambient depth)
 	var p := CPUParticles2D.new()
-	p.amount = 22
-	p.lifetime = 9.0
-	p.preprocess = 6.0
-	p.position = Vector2(800, 900)   # emit from the bottom band
+	p.amount = 16
+	p.lifetime = 12.0
+	p.preprocess = 8.0
+	p.position = Vector2(CANVAS.x * 0.5, CANVAS.y * 0.85)
 	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	p.emission_rect_extents = Vector2(820, 40)
+	p.emission_rect_extents = Vector2(CANVAS.x * 0.55, 40)
 	p.direction = Vector2(0, -1)
-	p.spread = 20.0
-	p.gravity = Vector2(0, -6)
-	p.initial_velocity_min = 8.0
-	p.initial_velocity_max = 24.0
+	p.spread = 18.0
+	p.gravity = Vector2(0, -4)
+	p.initial_velocity_min = 6.0
+	p.initial_velocity_max = 16.0
 	p.scale_amount_min = 1.5
-	p.scale_amount_max = 4.0
-	p.color = Color(VIOLET_SOFT.r, VIOLET_SOFT.g, VIOLET_SOFT.b, 0.5)
+	p.scale_amount_max = 3.5
+	p.color = Color(VIOLET_SOFT.r, VIOLET_SOFT.g, VIOLET_SOFT.b, 0.45)
 	var mat := CanvasItemMaterial.new()
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	p.material = mat
-	# Fade motes in/out over their life via an alpha ramp (CPUParticles2D takes a
-	# Gradient directly for color_ramp — no texture wrapper).
 	var ramp := Gradient.new()
 	ramp.offsets = PackedFloat32Array([0.0, 0.5, 1.0])
 	ramp.colors = PackedColorArray([
-		Color(1, 1, 1, 0.0), Color(1, 1, 1, 0.7), Color(1, 1, 1, 0.0),
+		Color(1, 1, 1, 0.0), Color(1, 1, 1, 0.65), Color(1, 1, 1, 0.0),
 	])
 	p.color_ramp = ramp
 	p.emitting = true
 	add_child(p)
+
+
+# ---- drawn-primitive sprite helpers (no external art) ---------------------
+
+## A crisp filled disc Sprite2D of `radius`, `col`, centred at its position.
+func _disc_sprite(col: Color, radius: float) -> Sprite2D:
+	var s := int(ceil(radius * 2.0))
+	var img := Image.create(s, s, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var c := Vector2(radius, radius)
+	for y in range(s):
+		for x in range(s):
+			if Vector2(x + 0.5, y + 0.5).distance_to(c) <= radius:
+				img.set_pixel(x, y, col)
+	var sp := Sprite2D.new()
+	sp.texture = ImageTexture.create_from_image(img)
+	sp.centered = true
+	return sp
+
+
+## A soft radial-gradient disc Sprite2D (alpha falls off to 0 at the edge) of `radius`.
+func _radial_sprite(col: Color, radius: float) -> Sprite2D:
+	var s := int(ceil(radius * 2.0))
+	var img := Image.create(s, s, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var c := Vector2(radius, radius)
+	for y in range(s):
+		for x in range(s):
+			var d := Vector2(x + 0.5, y + 0.5).distance_to(c) / radius
+			if d <= 1.0:
+				var a := col.a * (1.0 - d) * (1.0 - d)
+				img.set_pixel(x, y, Color(col.r, col.g, col.b, a))
+	var sp := Sprite2D.new()
+	sp.texture = ImageTexture.create_from_image(img)
+	sp.centered = true
+	return sp
 
 
 # ==== title logotype =======================================================
@@ -269,22 +503,24 @@ func _build_title() -> void:
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fade_root.add_child(col)
 
-	# Overlap a crisp title over an additive, scaled, low-alpha glow copy.
+	# (B4) letter-spaced logotype (tracked out with thin spaces for a calmer, more
+	# 감성적 title). Overlap a crisp title over an additive, scaled, low-alpha glow copy.
+	var spaced := _letter_space("Project Whisper")
 	var stack := Control.new()
-	stack.custom_minimum_size = Vector2(760, 120)
+	stack.custom_minimum_size = Vector2(820, 120)
 	stack.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	var glow := _title_label("Project Whisper", 96, VIOLET)
+	var glow := _title_label(spaced, 96, VIOLET)
 	glow.set_anchors_preset(Control.PRESET_FULL_RECT)
 	glow.scale = Vector2(1.04, 1.06)
-	glow.pivot_offset = Vector2(380, 60)
+	glow.pivot_offset = Vector2(410, 60)
 	glow.modulate = Color(VIOLET.r, VIOLET.g, VIOLET.b, 0.45)
 	var glow_mat := CanvasItemMaterial.new()
 	glow_mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	glow.material = glow_mat
 
-	var main := _title_label("Project Whisper", 96, VIOLET)
+	var main := _title_label(spaced, 96, VIOLET)
 	main.set_anchors_preset(Control.PRESET_FULL_RECT)
 
 	stack.add_child(glow)
@@ -307,6 +543,16 @@ func _title_label(txt: String, size: int, c: Color) -> Label:
 	l.add_theme_font_size_override("font_size", size)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return l
+
+
+## Track a string out with a thin space (U+2009) between characters for the logotype.
+func _letter_space(s: String) -> String:
+	var out := ""
+	for i in s.length():
+		if i > 0:
+			out += " "
+		out += s[i]
+	return out
 
 
 # ==== buttons ==============================================================

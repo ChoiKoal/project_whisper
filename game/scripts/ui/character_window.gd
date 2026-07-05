@@ -86,11 +86,18 @@ func _build_ui() -> void:
 	outer.add_theme_constant_override("separation", 14)
 	_root.add_child(outer)
 
+	# title row: title + close (X) top-right (B3.2).
+	var title_row := HBoxContainer.new()
+	title_row.add_theme_constant_override("separation", 8)
+	outer.add_child(title_row)
 	var title := Label.new()
 	title.text = "캐릭터"
 	title.add_theme_color_override("font_color", TEXT)
 	title.add_theme_font_size_override("font_size", 28)
-	outer.add_child(title)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	title_row.add_child(title)
+	title_row.add_child(WindowChrome.make_close_button(close))
 
 	var body := HBoxContainer.new()
 	body.add_theme_constant_override("separation", 22)
@@ -143,6 +150,9 @@ func _build_ui() -> void:
 	_stats = VBoxContainer.new()
 	_stats.add_theme_constant_override("separation", 4)
 	outer.add_child(_stats)
+
+	# (B3.2) close-affordance hint at the panel bottom.
+	outer.add_child(WindowChrome.make_esc_hint())
 
 
 ## A dimmed, locked equipment placeholder: a "?" glyph + tooltip "아직 잠겨 있다".
@@ -243,6 +253,12 @@ func is_open() -> bool:
 func _set_visible(v: bool) -> void:
 	_open = v
 	_root.visible = v
+	# (v0.4.0-B B3.1) freeze the world while the character window is up.
+	if GameState != null:
+		if v:
+			GameState.push_modal("character")
+		else:
+			GameState.pop_modal("character")
 	if v:
 		if _hub != null and _hub.has_method("request_focus"):
 			_hub.request_focus(_hub.Win.CHARACTER)

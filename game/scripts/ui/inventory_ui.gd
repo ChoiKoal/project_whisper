@@ -122,11 +122,17 @@ func _build_ui() -> void:
 	outer.add_theme_constant_override("separation", 12)
 	_panel.add_child(outer)
 
-	# title bar
+	# title bar — title on the left, a close (X) affordance top-right (B3.2).
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 8)
+	outer.add_child(header)
 	_title = Label.new()
 	_title.add_theme_color_override("font_color", TEXT)
 	_title.add_theme_font_size_override("font_size", 24)
-	outer.add_child(_title)
+	_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	header.add_child(_title)
+	header.add_child(WindowChrome.make_close_button(close))
 
 	var sep := HSeparator.new()
 	outer.add_child(sep)
@@ -192,6 +198,9 @@ func _build_ui() -> void:
 	_hold_btn.add_theme_stylebox_override("pressed", _btn_style(true))
 	_hold_btn.pressed.connect(_on_hold_button)
 	dcol.add_child(_hold_btn)
+
+	# (B3.2) close-affordance hint at the panel bottom.
+	outer.add_child(WindowChrome.make_esc_hint())
 
 	_build_held_hud()
 
@@ -423,6 +432,12 @@ func _unhandled_input(event: InputEvent) -> void:
 func _set_panel_visible(v: bool) -> void:
 	_open = v
 	_panel.visible = v
+	# (v0.4.0-B B3.1) freeze the world while the inventory window is up.
+	if GameState != null:
+		if v:
+			GameState.push_modal("inventory")
+		else:
+			GameState.pop_modal("inventory")
 	if v:
 		_clamp_to_viewport()
 		# Ensure the one-window rule holds even if opened directly (defensive).

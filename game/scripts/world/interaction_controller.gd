@@ -29,25 +29,31 @@ const HOLLOW_SOURCE := 11
 const STEPPING_STONE_SOURCE := 1
 const ATLAS := Vector2i(0, 0)
 
-## How close (px) a gatherable object must be to take priority over the faced tile.
-## v0.3.1 R3: raised from 140 so objects one iso-cell away in ANY direction — including
-## the NE/NW cells "above" the player (lower y-sort, ~1 tile diagonal ≈ 143px) that felt
-## unreachable — are targetable. One iso tile is 128×64, so a diagonal neighbour centre is
-## ~√(64²+32²)≈72px away at the tile grid, but object target_points sit at sprite base with
-## art offsets, so 180 covers the adjacent ring generously without reaching two cells out.
-const OBJECT_REACH := 180.0
+## (v0.4.0 A1) Direct-E interact is now ADJACENCY-based, not radius-based. The target
+## object/tile must sit on the player's own cell or one of the 8 neighbouring cells
+## ("먼곳에 있는 것도 채집되는게 말이 되냐"). The old 180px radius pick is gone for direct E;
+## a far object can still be gathered by CLICKING it (touch_controller walks there first).
+## Chebyshev distance ≤ ADJ_RANGE cells counts as adjacent.
+const ADJ_RANGE := 1
+
+## Mouse hover may PREVIEW-brighten an object anywhere under the cursor (desktop aid),
+## even when it is far — but pressing E on a far preview does nothing (see _do_interact).
+## The cursor pick radius (px) for the hover preview.
+const HOVER_PICK_PX := 72.0
 
 @export var player_path: NodePath
 @export var tilemap_path: NodePath
 @export var highlight_path: NodePath
 @export var feedback_layer_path: NodePath  ## where floating labels spawn (world space)
 @export var slot_hint_path: NodePath  ## optional SteppingSlotHint for D14 guidance
+@export var tile_glow_path: NodePath  ## optional TileGlow decal for tile-gather targets
 
 var _player: Player
 var _tilemap: TileMapLayer
 var _highlight: TileHighlight
 var _feedback_layer: Node
 var _slot_hint: SteppingSlotHint
+var _tile_glow: Node2D
 
 ## Floating "E …" prompt shown above the current target (world space). Created lazily.
 var _prompt: Label = null
@@ -74,6 +80,12 @@ var _has_hover_cell: bool = false
 ## Whether the last-seen input was touch (hover highlight is a desktop-only aid).
 var _touch_mode: bool = false
 
+## ---- v0.4.0 A2: object-brighten targeting state --------------------------
+## The gatherable object currently brightened (either the adjacent idle target OR the
+## hover-preview object). Tracked so we can clear its self_modulate when the target
+## changes/leaves. Any node in the gatherable group with a set_targeted() method.
+var _brightened: Node = null
+
 
 func _ready() -> void:
 	_player = get_node_or_null(player_path) as Player
@@ -83,6 +95,7 @@ func _ready() -> void:
 	if _feedback_layer == null:
 		_feedback_layer = self
 	_slot_hint = get_node_or_null(slot_hint_path) as SteppingSlotHint
+	_tile_glow = get_node_or_null(tile_glow_path) as Node2D
 
 
 func set_held_item(item_id: String) -> void:
@@ -108,11 +121,35 @@ func held_action_hint() -> String:
 
 
 func _process(_delta: float) -> void:
+	# (v0.4.0-B B3.1) With a window open the world is inert: clear all targeting so no
+	# highlight/glow/prompt lingers under the modal, and skip resolution entirely.
+	if GameState != null and GameState.ui_modal_open():
+		_clear_targeting_visuals()
+		return
 	_resolve_target()
 	_resolve_hover()
-	_update_highlight()
+	_update_targeting()
 	_update_slot_hint()
 	_update_prompt()
+
+
+## Clear every targeting affordance (object brighten, tile glow, diamond, prompt) so
+## nothing bleeds through while a modal window is open. Cheap; called each frame the
+## lock is active.
+func _clear_targeting_visuals() -> void:
+	_target_object = null
+	_has_tile_target = false
+	_hover_object = null
+	_has_hover_cell = false
+	if _brightened != null and is_instance_valid(_brightened) and _brightened.has_method("set_targeted"):
+		_brightened.set_targeted(false)
+	_brightened = null
+	if _tile_glow != null and _tile_glow.has_method("hide_glow"):
+		_tile_glow.hide_glow()
+	if _highlight != null:
+		_highlight.visible = false
+	if _prompt != null:
+		_prompt.visible = false
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -121,6 +158,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		_touch_mode = true
 	elif event is InputEventMouseMotion or event is InputEventMouseButton:
 		_touch_mode = false
+	# (v0.4.0-B B3.1) No world interaction while a window is open.
+	if GameState != null and GameState.ui_modal_open():
+		return
 	if event.is_action_pressed("interact"):
 		_do_interact()
 		get_viewport().set_input_as_handled()
@@ -134,24 +174,45 @@ func _resolve_target() -> void:
 	if _player == null or _tilemap == null:
 		return
 
-	# Prefer the nearest in-reach interactable object (Gatherable or Cauldron).
+	var player_cell := _player_cell()
+
+	# (v0.4.0 A1) Prefer the nearest ADJACENT interactable object (Gatherable or
+	# Cauldron) — its cell must be within the player's 8-neighbourhood. Far objects are
+	# NOT direct-E targets any more; among adjacent ones the nearest wins (tie-break for
+	# multiple neighbours). "먼곳에 있는 것도 채집되는게 말이 되냐" → adjacency, period.
 	var best: Node = null
-	var best_d := OBJECT_REACH
+	var best_d := INF
 	for node in get_tree().get_nodes_in_group(Gatherable.GROUP):
 		if not node.has_method("target_point"):
 			continue
+		if not _cell_adjacent(_object_cell(node), player_cell):
+			continue
 		var d: float = node.target_point().distance_to(_player.global_position)
-		if d <= best_d:
+		if d < best_d:
 			best_d = d
 			best = node
 	if best != null:
 		_target_object = best
 		return
 
-	# Otherwise the facing-adjacent tile.
-	var player_cell := _tilemap.local_to_map(_tilemap.to_local(_player.global_position))
+	# Otherwise the facing-adjacent tile (already adjacent by construction).
 	_target_cell = player_cell + _player.facing_cell_step()
 	_has_tile_target = _tilemap.get_cell_source_id(_target_cell) != -1
+
+
+## The tilemap cell the player currently stands on.
+func _player_cell() -> Vector2i:
+	return _tilemap.local_to_map(_tilemap.to_local(_player.global_position))
+
+
+## The tilemap cell an interactable node sits on (from its target_point).
+func _object_cell(node: Node) -> Vector2i:
+	return _tilemap.local_to_map(_tilemap.to_local(node.target_point()))
+
+
+## True if `cell` is on `origin` or within its 8-neighbourhood (Chebyshev ≤ ADJ_RANGE).
+func _cell_adjacent(cell: Vector2i, origin: Vector2i) -> bool:
+	return absi(cell.x - origin.x) <= ADJ_RANGE and absi(cell.y - origin.y) <= ADJ_RANGE
 
 
 ## (v0.3.1 Fix 3) Desktop mouse-hover targeting: find a gatherable object or gatherable
@@ -167,9 +228,11 @@ func _resolve_hover() -> void:
 		return
 	var mouse_screen := get_viewport().get_mouse_position()
 	var world: Vector2 = cam.get_canvas_transform().affine_inverse() * mouse_screen
-	# Nearest gatherable object within ~half a tile of the cursor.
+	# Nearest gatherable object within ~half a tile of the cursor. (v0.4.0: this is a
+	# PREVIEW brighten only — it may light up a far object under the pointer, but pressing
+	# E on a far preview does nothing; only a CLICK walk-then-gathers it.)
 	var best: Node = null
-	var best_d := 72.0
+	var best_d := HOVER_PICK_PX
 	for node in get_tree().get_nodes_in_group(Gatherable.GROUP):
 		if not node.has_method("target_point"):
 			continue
@@ -190,48 +253,74 @@ func _resolve_hover() -> void:
 		_has_hover_cell = true
 
 
-## True if the current facing tile is worth highlighting when IDLE: it is gatherable,
-## OR the held item can be placed on it (D14 water / D22 hollow). A plain walkable tile
-## the player merely faces gets no highlight — that was the "jumps around" annoyance.
-func _idle_tile_worth_showing() -> bool:
+## True if the current facing tile is a gatherable ground tile (dirt/water/grass with
+## an item_id and no object on it) — the case that gets a SOFT GLOW decal (not a diamond).
+func _idle_tile_gatherable() -> bool:
 	if not _has_tile_target:
 		return false
 	var data := _tilemap.get_cell_tile_data(_target_cell)
-	if data != null and bool(data.get_custom_data("gatherable")):
-		return true
-	if _held_item != "" and ItemDB.can_place_on_tile(_held_item, _logical_tile_id(_target_cell)):
-		return true
-	return false
+	return data != null and bool(data.get_custom_data("gatherable"))
 
 
-## v0.3.1 Fix 3 display rule:
-##   - Mouse hover over a gatherable object/tile → hover highlight (even while moving).
-##   - Else while MOVING → no highlight (stop the per-frame jitter).
-##   - Else (IDLE) → subtle highlight on the nearest interactable object, or the facing
-##     tile only if it is gatherable / a valid held-item placement target.
-func _update_highlight() -> void:
-	if _highlight == null:
-		return
-	# 1. Hover (desktop) wins and ignores movement.
+## True if the held item can be PLACED on the current facing tile (D14 water / D22
+## hollow). This is the placement-mode case that keeps the violet diamond.
+func _idle_tile_placeable() -> bool:
+	if not _has_tile_target or _held_item == "":
+		return false
+	return ItemDB.can_place_on_tile(_held_item, _logical_tile_id(_target_cell))
+
+
+## v0.4.0 A2 targeting display. Three visual channels, mutually exclusive per frame:
+##   • OBJECT BRIGHTEN — the target/hover gatherable object self-brightens (no floor
+##     cursor). Hover wins over the adjacent idle target and ignores movement.
+##   • SOFT TILE GLOW  — a gatherable ground tile (no object) gets a soft radial glow
+##     decal on its cell (idle only).
+##   • PLACEMENT DIAMOND — while a placeable item is held and the facing tile is a valid
+##     drop, the violet diamond stays (targeting UI where diamonds make sense). D14 stepping
+##     slots are handled separately by _update_slot_hint.
+## While MOVING (no hover) everything hides — preserve the v0.3.1 "no jitter" rule.
+func _update_targeting() -> void:
+	# --- resolve which object should be brightened this frame (hover > adjacent idle) ---
+	var moving: bool = _player != null and _player.is_moving()
+	var want_bright: Node = null
 	if _hover_object != null:
-		var hc := _tilemap.local_to_map(_tilemap.to_local(_hover_object.target_point()))
-		_highlight.show_cell(_cell_center_world(hc), true)
+		want_bright = _hover_object            # preview, ignores movement
+	elif not moving and _target_object != null and _target_object.has_method("can_gather"):
+		# Only brighten a genuinely gatherable adjacent object; a use-only bush / cauldron
+		# without a gather action still shows its E-prompt but no brighten pulse.
+		if _target_object.can_gather():
+			want_bright = _target_object
+	_set_brightened(want_bright)
+
+	# --- soft tile glow: a gatherable ground tile with no object, idle only ---
+	if _tile_glow != null:
+		var show_glow: bool = (not moving) and _hover_object == null \
+			and _target_object == null and (_idle_tile_gatherable() or _has_hover_cell)
+		if show_glow:
+			var gcell := _hover_cell if _has_hover_cell else _target_cell
+			_tile_glow.call("show_cell", _cell_center_world(gcell))
+		else:
+			_tile_glow.call("hide_glow")
+
+	# --- placement diamond: kept ONLY for held-item placement targeting ---
+	if _highlight != null:
+		if not moving and _hover_object == null and not _has_hover_cell \
+				and _target_object == null and _idle_tile_placeable():
+			_highlight.show_cell(_cell_center_world(_target_cell), false)
+		else:
+			_highlight.hide_highlight()
+
+
+## Brighten `node` (a gatherable with set_targeted), clearing any previously-brightened
+## object. Cauldron and other duck-typed interactables without set_targeted are skipped.
+func _set_brightened(node: Node) -> void:
+	if node == _brightened:
 		return
-	if _has_hover_cell:
-		_highlight.show_cell(_cell_center_world(_hover_cell), true)
-		return
-	# 2. Moving with no hover → hide entirely.
-	if _player != null and _player.is_moving():
-		_highlight.hide_highlight()
-		return
-	# 3. Idle: show subtle highlight on a real interactable only.
-	if _target_object != null:
-		var oc := _tilemap.local_to_map(_tilemap.to_local(_target_object.target_point()))
-		_highlight.show_cell(_cell_center_world(oc), false)
-	elif _idle_tile_worth_showing():
-		_highlight.show_cell(_cell_center_world(_target_cell), false)
-	else:
-		_highlight.hide_highlight()
+	if _brightened != null and is_instance_valid(_brightened) and _brightened.has_method("set_targeted"):
+		_brightened.set_targeted(false)
+	_brightened = node
+	if _brightened != null and _brightened.has_method("set_targeted"):
+		_brightened.set_targeted(true)
 
 
 func _cell_center_world(cell: Vector2i) -> Vector2:
@@ -341,12 +430,18 @@ func _is_water_cell(cell: Vector2i) -> bool:
 # ---- interaction ---------------------------------------------------------
 
 func _do_interact() -> void:
-	# v0.3.1 R3: when the mouse is hovering a gatherable object/tile, that target wins over
-	# the facing/nearest one — you act on what you point at. Falls back to the facing target
-	# (keyboard play / touch) when there is no hover.
-	var act_object: Node = _hover_object if _hover_object != null else _target_object
-	var act_has_tile := _has_hover_cell or _has_tile_target
-	var act_cell := _hover_cell if _has_hover_cell else _target_cell
+	# (v0.4.0 A1) Direct E acts on the ADJACENT target only. A hover object/cell wins over
+	# the facing one ONLY when it is itself adjacent — a far object under the cursor is a
+	# preview, not an E-target ("먼곳에 있는 것도 채집되는게 말이 되냐"). To gather something far,
+	# CLICK it: the touch controller walks the player adjacent, then calls interact_with_*.
+	var player_cell := _player_cell() if _player != null and _tilemap != null else Vector2i.ZERO
+	var hover_adjacent: bool = _hover_object != null \
+		and _cell_adjacent(_object_cell(_hover_object), player_cell)
+	var hover_cell_adjacent: bool = _has_hover_cell and _cell_adjacent(_hover_cell, player_cell)
+
+	var act_object: Node = _hover_object if hover_adjacent else _target_object
+	var act_has_tile := (_has_hover_cell and hover_cell_adjacent) or _has_tile_target
+	var act_cell := _hover_cell if (_has_hover_cell and hover_cell_adjacent) else _target_cell
 	var obj := act_object as Gatherable
 	# 1. Held item: try placement (tile) or use (object) first.
 	if _held_item != "":

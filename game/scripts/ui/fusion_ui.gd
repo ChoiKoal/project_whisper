@@ -29,6 +29,12 @@ var _result_flavor: Label
 var _status: Label
 var _dots: Array[ColorRect] = []
 var _fuse_btn: Button
+## (v0.4.0-B B3.4) Inline "힌트 보기" expander in the gauge area — a second surface
+## (besides the 도감 "힌트" chip) where gauge-revealed hints are findable, right where
+## they were earned. Toggle button + a collapsible VBox listing "? + [재료] = ?" rows.
+var _hint_toggle: Button
+var _hint_list: VBoxContainer
+var _hints_expanded: bool = false
 
 var _open: bool = false
 ## Two input slot ids ("" = empty).
@@ -42,9 +48,16 @@ var _cauldron_bubble: Texture2D
 ## Overlay layer (above the panel) hosting the flying icons, particles, flash,
 ## banner. Kept separate so it can be cleared each sequence without disturbing UI.
 var _fx: Control
-## Discovery banner ("✦ 새로운 발견! ✦") + codex counter, built lazily.
-var _banner: Label
-var _codex_counter: Label
+## (v0.4.0-B B3.3) SINGLE composed discovery banner (icon + "새로운 발견! — [name]" +
+## small "도감 N/M") that slides in ABOVE the panel. Built lazily. Replaces the old
+## two-node banner+counter that overlapped/garbled at the panel top.
+var _banner: PanelContainer
+var _banner_name_lbl: Label
+var _banner_count_lbl: Label
+var _banner_icon: TextureRect
+## Discoveries that arrived while a banner was still animating; shown one at a time.
+var _banner_queue: Array[String] = []
+var _banner_busy: bool = false
 ## Guards against re-entrant fuse presses while a juice sequence is running.
 var _animating: bool = false
 ## The currently running success sequence tween (so a click can skip it).
@@ -125,11 +138,19 @@ func _build_ui() -> void:
 	outer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_scroll_body.add_child(outer)
 
+	# title row: title (left) + close (X) top-right (B3.2/B3.5).
+	var title_row := HBoxContainer.new()
+	title_row.add_theme_constant_override("separation", 8)
+	outer.add_child(title_row)
 	var title := Label.new()
 	title.text = "솥단지 — 조합"
 	title.add_theme_color_override("font_color", TEXT)
 	title.add_theme_font_size_override("font_size", 24)
-	outer.add_child(title)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	title_row.add_child(title)
+	title_row.add_child(WindowChrome.make_close_button(func(): _set_visible(false)))
+	outer.add_child(_divider())
 
 	# --- slots row: [slot0] + [slot1] = [result] ---
 	var slots_row := HBoxContainer.new()
@@ -193,6 +214,7 @@ func _build_ui() -> void:
 	outer.add_child(_result_flavor)
 
 	# --- hint gauge (5 dots) ---
+	outer.add_child(_divider())
 	var gauge_row := HBoxContainer.new()
 	gauge_row.add_theme_constant_override("separation", 6)
 	gauge_row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -209,6 +231,26 @@ func _build_ui() -> void:
 		gauge_row.add_child(dot)
 		_dots.append(dot)
 
+	# (B3.4) "힌트 보기" toggle: expands an inline list of gauge-revealed hints right
+	# in the gauge area, so revealed hints are findable where they were earned (the
+	# owner's "도감 힌트도 안보인다" — surfaced here AND in the 도감 힌트 chip).
+	_hint_toggle = Button.new()
+	_hint_toggle.name = "HintToggle"
+	_hint_toggle.focus_mode = Control.FOCUS_NONE
+	_hint_toggle.flat = true
+	_hint_toggle.add_theme_color_override("font_color", ACCENT)
+	_hint_toggle.add_theme_color_override("font_hover_color", Color("#c8b0ec"))
+	_hint_toggle.add_theme_font_size_override("font_size", 14)
+	_hint_toggle.pressed.connect(_toggle_hints)
+	gauge_row.add_child(_hint_toggle)
+
+	# collapsible hint list (hidden until expanded / no hints)
+	_hint_list = VBoxContainer.new()
+	_hint_list.name = "FusionHintList"
+	_hint_list.add_theme_constant_override("separation", 3)
+	_hint_list.visible = false
+	outer.add_child(_hint_list)
+
 	# --- inventory strip ---
 	var strip_lbl := Label.new()
 	strip_lbl.text = "재료 선택"
@@ -224,6 +266,11 @@ func _build_ui() -> void:
 	_strip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_strip)
 
+	# (B3.2) close affordance hint at the panel bottom — pairs with the ✕ button so it
+	# reads as closeable ("닫을 수 있어 보이지도 않고").
+	outer.add_child(_divider())
+	outer.add_child(WindowChrome.make_esc_hint())
+
 	# FX overlay: full-rect, above the panel, ignores mouse. Flying icons, particle
 	# bursts, the success flash and the discovery banner all live here so they never
 	# reflow the panel layout.
@@ -231,6 +278,9 @@ func _build_ui() -> void:
 	_fx.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_fx)
+
+	# (B3.4) initialise the inline hint toggle caption ("▸ 힌트 보기 (0)" / disabled).
+	_refresh_hint_toggle()
 
 
 ## v0.3.1 R1: cap the panel height at min(700, viewport*0.85) so it never extends past
@@ -252,6 +302,17 @@ func _clamp_to_viewport(override_size: Vector2 = Vector2.ZERO) -> void:
 	_root.custom_minimum_size = Vector2(min(480.0, vp.x * 0.9), 0.0)
 	# Hard-cap the panel so a tall content tree can't push it past the cap.
 	_root.set("size", Vector2(_root.size.x, min(_root.size.y, cap_h)))
+
+
+## (B3.5) A thin violet-tinted section divider for consistent panel rhythm.
+func _divider() -> HSeparator:
+	var sep := HSeparator.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(ACCENT.r, ACCENT.g, ACCENT.b, 0.25)
+	sb.content_margin_top = 1
+	sb.content_margin_bottom = 1
+	sep.add_theme_stylebox_override("separator", sb)
+	return sep
 
 
 func _symbol(t: String) -> Label:
@@ -340,13 +401,43 @@ func open() -> void:
 	_result_flavor.text = ""
 	_rebuild_strip()
 	_refresh_dots()
+	# (B3.4) reflect any hints revealed while the panel was closed; keep it collapsed
+	# on open so the panel opens compact.
+	_hints_expanded = false
+	if _hint_list != null:
+		_hint_list.visible = false
+	_refresh_hint_toggle()
 	_set_visible(true)
 	_clamp_to_viewport()
+
+
+## Close the fusion panel. Consistent with the other windows' close() API.
+func close() -> void:
+	_set_visible(false)
+
+
+## (B3.4 harness) Programmatically expand the inline hint list; returns the number of
+## hint rows now shown.
+func expand_hints_for_test() -> int:
+	if not _hints_expanded:
+		_toggle_hints()
+	return _hint_list.get_child_count() if _hint_list != null else 0
+
+
+## (B3.4 harness) The child count of the inline fusion hint list.
+func fusion_hint_row_count() -> int:
+	return _hint_list.get_child_count() if _hint_list != null else 0
 
 
 func _set_visible(v: bool) -> void:
 	_open = v
 	_root.visible = v
+	# (v0.4.0-B B3.1) Freeze the world while the fusion panel is up.
+	if GameState != null:
+		if v:
+			GameState.push_modal("fusion")
+		else:
+			GameState.pop_modal("fusion")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -466,7 +557,8 @@ func _on_fuse_pressed() -> void:
 		_status.text = "…반응이 없다"
 		_result_flavor.text = ""
 		if res["hint_revealed"]:
-			_status.text = "…반응이 없다  (힌트가 도감에 나타났다)"
+			# (B3.4) point the player at where the hint went so it's findable.
+			_status.text = "…반응이 없다  ·  도감(R)에 힌트가 기록되었다"
 		_play_failure_feedback()
 
 
@@ -540,7 +632,7 @@ func _reveal_result() -> void:
 	_pop_result_slot()
 	_burst_particles(_center_global(_result_icon), Color("#d9b8ff"), 20)
 	if first:
-		_show_discovery_banner()
+		_queue_discovery_banner(out)
 
 
 func _pop_result_slot() -> void:
@@ -624,57 +716,93 @@ func _burst_particles(global_pos: Vector2, col: Color, amount: int) -> void:
 			p.queue_free())
 
 
-## Slide-in "✦ 새로운 발견! ✦" banner + a visible codex recipe counter tick.
-func _show_discovery_banner() -> void:
+## (B3.3) Queue a discovery. Multiple first-discoveries show ONE AT A TIME rather than
+## stacking overlapping banners. `output_id` is the newly-crafted item.
+func _queue_discovery_banner(output_id: String) -> void:
+	_banner_queue.append(output_id)
+	if not _banner_busy:
+		_show_next_discovery_banner()
+
+
+## The single composed discovery banner: [icon] "새로운 발견! — [item name]" + a small
+## "도감 N/M" line, all in ONE panel that slides in from just ABOVE the fusion panel's
+## top edge (never overlapping the "솥단지 — 조합" title). Auto-dismisses, then shows the
+## next queued discovery.
+func _show_next_discovery_banner() -> void:
+	if _banner_queue.is_empty():
+		_banner_busy = false
+		return
+	_banner_busy = true
+	var output_id: String = _banner_queue.pop_front()
+
 	if _banner == null:
-		_banner = Label.new()
-		_banner.add_theme_color_override("font_color", Color("#d9b8ff"))
-		_banner.add_theme_font_size_override("font_size", 22)
-		_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_banner = PanelContainer.new()
+		_banner.name = "DiscoveryBanner"
 		var sb := StyleBoxFlat.new()
-		sb.bg_color = Color(0.16, 0.12, 0.22, 0.92)
-		sb.set_corner_radius_all(8)
-		sb.set_content_margin_all(8)
+		sb.bg_color = Color(0.16, 0.12, 0.22, 0.95)
+		sb.set_corner_radius_all(10)
+		sb.set_content_margin_all(10)
 		sb.set_border_width_all(2)
 		sb.border_color = Color("#9e7ad9")
-		_banner.add_theme_stylebox_override("normal", sb)
+		sb.shadow_color = Color(0, 0, 0, 0.45)
+		sb.shadow_size = 6
+		_banner.add_theme_stylebox_override("panel", sb)
+		_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_fx.add_child(_banner)
 
-		_codex_counter = Label.new()
-		_codex_counter.add_theme_color_override("font_color", Color("#faf5e6"))
-		_codex_counter.add_theme_font_size_override("font_size", 16)
-		_codex_counter.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_fx.add_child(_codex_counter)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		_banner.add_child(row)
 
-	_banner.text = "✦ 새로운 발견! ✦"
+		_banner_icon = TextureRect.new()
+		_banner_icon.custom_minimum_size = Vector2(36, 36)
+		_banner_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		_banner_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		_banner_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_banner_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(_banner_icon)
+
+		var textcol := VBoxContainer.new()
+		textcol.add_theme_constant_override("separation", 1)
+		row.add_child(textcol)
+
+		_banner_name_lbl = Label.new()
+		_banner_name_lbl.add_theme_color_override("font_color", Color("#d9b8ff"))
+		_banner_name_lbl.add_theme_font_size_override("font_size", 20)
+		textcol.add_child(_banner_name_lbl)
+
+		_banner_count_lbl = Label.new()
+		_banner_count_lbl.add_theme_color_override("font_color", Color("#faf5e6"))
+		_banner_count_lbl.add_theme_font_size_override("font_size", 14)
+		textcol.add_child(_banner_count_lbl)
+
+	# Fill content for THIS discovery.
+	_banner_icon.texture = ItemDB.icon(output_id)
+	_banner_name_lbl.text = "✦ 새로운 발견! — %s" % ItemDB.item_name(output_id)
+	_banner_count_lbl.text = "도감 %d / %d 종" % [
+		Codex.discovered_recipe_count(), RecipeDB.all_ids().size()]
 	_banner.visible = true
+
+	# Position ABOVE the panel top, horizontally centered on the panel.
+	_banner.reset_size()
 	_banner.size = _banner.get_minimum_size()
 	var cx := _root.global_position.x + _root.size.x * 0.5 - _banner.size.x * 0.5
-	var top_y := _root.global_position.y - 6
-	_banner.global_position = Vector2(cx, top_y - 40)
+	var top_y := _root.global_position.y - _banner.size.y - 8   # fully above the panel edge
+	_banner.global_position = Vector2(cx, top_y - 28)
 	_banner.modulate.a = 0.0
-
-	_codex_counter.text = "도감 레시피 %d종" % Codex.discovered_recipe_count()
-	_codex_counter.visible = true
-	_codex_counter.size = _codex_counter.get_minimum_size()
-	_codex_counter.global_position = Vector2(
-		_root.global_position.x + _root.size.x * 0.5 - _codex_counter.size.x * 0.5,
-		top_y - 8)
-	_codex_counter.modulate = Color(1, 1, 1, 0)
 
 	var tw := create_tween()
 	tw.set_parallel(true)
-	tw.tween_property(_banner, "global_position:y", top_y - 8, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(_banner, "modulate:a", 1.0, 0.3)
-	tw.parallel().tween_property(_codex_counter, "modulate:a", 1.0, 0.4).set_delay(0.2)
-	# Tick pulse on the counter.
+	tw.tween_property(_banner, "global_position:y", top_y, 0.32).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_banner, "modulate:a", 1.0, 0.28)
+	# Hold, then fade out and advance the queue.
+	tw.chain().tween_interval(1.1)
+	tw.chain().tween_property(_banner, "modulate:a", 0.0, 0.3)
 	tw.chain().tween_callback(func():
-		if not is_instance_valid(_codex_counter):
-			return
-		_codex_counter.pivot_offset = _codex_counter.size * 0.5
-		var pt := create_tween()
-		pt.tween_property(_codex_counter, "scale", Vector2(1.3, 1.3), 0.12)
-		pt.tween_property(_codex_counter, "scale", Vector2.ONE, 0.15))
+		if is_instance_valid(_banner):
+			_banner.visible = false
+		_show_next_discovery_banner())
 
 
 func _clear_fx() -> void:
@@ -683,7 +811,11 @@ func _clear_fx() -> void:
 	for c in _fx.get_children():
 		c.queue_free()
 	_banner = null
-	_codex_counter = null
+	_banner_name_lbl = null
+	_banner_count_lbl = null
+	_banner_icon = null
+	_banner_queue.clear()
+	_banner_busy = false
 
 
 ## Global-space center of a Control.
@@ -696,6 +828,68 @@ func _center_global(c: Control) -> Vector2:
 func _on_gauge_changed(_value: int) -> void:
 	if _open:
 		_refresh_dots()
+		# A hint may have just been revealed (gauge reset to 0 after a reveal); keep the
+		# inline "힌트 보기" label count + expanded list current.
+		_refresh_hint_toggle()
+		if _hints_expanded:
+			_rebuild_hint_list()
+
+
+# ---- (B3.4) inline 힌트 보기 expander -------------------------------------
+
+## Toggle the inline hint list open/closed.
+func _toggle_hints() -> void:
+	_hints_expanded = not _hints_expanded
+	if _hints_expanded:
+		_rebuild_hint_list()
+	_hint_list.visible = _hints_expanded and _hint_list.get_child_count() > 0
+	_refresh_hint_toggle()
+
+
+## Update the toggle button caption with the current revealed-hint count + arrow.
+func _refresh_hint_toggle() -> void:
+	if _hint_toggle == null:
+		return
+	var n := Codex.revealed_hint_count()
+	var arrow := "▾" if _hints_expanded else "▸"
+	_hint_toggle.text = "%s 힌트 보기 (%d)" % [arrow, n]
+	_hint_toggle.disabled = (n == 0)
+	# collapse an emptied list so a stale open panel doesn't linger
+	if n == 0 and _hint_list != null:
+		_hint_list.visible = false
+
+
+## (Re)build the inline hint rows: one "? + [재료] = ?" line per revealed hint.
+func _rebuild_hint_list() -> void:
+	if _hint_list == null:
+		return
+	for c in _hint_list.get_children():
+		c.queue_free()
+	var hints: Dictionary = Codex.revealed_hints()
+	for rid: String in hints.keys():
+		var ingredient := String(hints[rid])
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		var icon := TextureRect.new()
+		icon.custom_minimum_size = Vector2(22, 22)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon.texture = ItemDB.icon(ingredient)
+		var pre := Label.new()
+		pre.text = "?  +"
+		pre.add_theme_color_override("font_color", ACCENT)
+		pre.add_theme_font_size_override("font_size", 14)
+		var post := Label.new()
+		post.text = "=  ?  (%s)" % ItemDB.item_name(ingredient)
+		post.add_theme_color_override("font_color", TEXT)
+		post.add_theme_font_size_override("font_size", 14)
+		row.add_child(pre)
+		row.add_child(icon)
+		row.add_child(post)
+		_hint_list.add_child(row)
+	_hint_list.visible = _hints_expanded and _hint_list.get_child_count() > 0
 
 
 func _refresh_dots() -> void:

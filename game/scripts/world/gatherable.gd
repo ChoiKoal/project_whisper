@@ -39,11 +39,56 @@ const TRUNK_RADIUS := 20.0
 ## Set true once a unique object has been gathered.
 var _spent: bool = false
 
+## ---- v0.4.0 A2: target-brighten (replaces the floor diamond) ---------------
+## When the interaction system marks this object as the current target (the adjacent
+## gatherable you'd interact with, or the one under the mouse cursor), the sprite
+## self-brightens with a gentle modulate pulse + a faint violet rim so the OBJECT
+## itself reads as "you can act on this" — no floor cursor. Driven each frame by
+## InteractionController via set_targeted(); the pulse animates in _process.
+const BRIGHT_PEAK := 1.25          ## self_modulate value multiplier at pulse peak
+const BRIGHT_BASE := 1.08          ## floor brightness while targeted (always >1)
+const BRIGHT_PULSE_SPEED := 3.4
+const RIM_COLOR := Color("#9e7ad9") ## subtle violet rim tint mixed into the lift
+var _targeted: bool = false
+var _bright_pulse: float = 0.0
+
 
 func _ready() -> void:
 	add_to_group(GROUP)
 	if blocks_movement:
 		_add_trunk_collision()
+	set_process(false)
+
+
+## (v0.4.0 A2) Mark/unmark this object as the interaction target. While targeted the
+## sprite pulses brighter (self_modulate) with a faint violet lift; clearing restores
+## the plain WHITE self_modulate so day/night CanvasModulate still tints it normally.
+func set_targeted(on: bool) -> void:
+	if on == _targeted:
+		return
+	_targeted = on
+	set_process(on)
+	if not on:
+		_bright_pulse = 0.0
+		self_modulate = Color.WHITE
+
+
+func is_targeted() -> bool:
+	return _targeted
+
+
+func _process(delta: float) -> void:
+	if not _targeted:
+		return
+	_bright_pulse += delta * BRIGHT_PULSE_SPEED
+	# Brightness lerps between BASE and PEAK on a sine; a hair of violet is mixed into
+	# the channels so the lift reads as a soft mystic rim rather than a flat white flash.
+	var t: float = 0.5 + 0.5 * sin(_bright_pulse)
+	var b: float = lerp(BRIGHT_BASE, BRIGHT_PEAK, t)
+	# Violet-biased brightening: scale each channel by b, then nudge toward the rim hue.
+	var c := Color(b, b, b, 1.0)
+	c = c.lerp(Color(RIM_COLOR.r * b, RIM_COLOR.g * b, RIM_COLOR.b * b, 1.0), 0.12 * t)
+	self_modulate = c
 
 
 ## Small circular StaticBody at the sprite base so the player can't walk through a tree

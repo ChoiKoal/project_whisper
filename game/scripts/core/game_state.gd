@@ -43,6 +43,34 @@ var game_time: float = 0.0
 ## Whether time should advance (paused menus / cutscenes can toggle this).
 var time_running: bool = true
 
+# ---- v0.4.0-B B3: modal UI input lock -------------------------------------
+## (B3.1) "조합 떠있을때 움직일수 있으면 이상하잖아" — while ANY window is open
+## (fusion / inventory / codex / character / pause), the player must not move or
+## interact with the world (keyboard AND click-to-move). Windows push/pop a stable
+## key here; the world reads `ui_modal_open()` before acting.
+var _modal_keys: Dictionary = {}
+## Emitted whenever the set of open modals transitions empty↔non-empty.
+signal ui_modal_changed(open: bool)
+
+## Register a modal window as open by a stable key (e.g. "fusion", "inventory").
+func push_modal(key: String) -> void:
+	var was := ui_modal_open()
+	_modal_keys[key] = true
+	if not was:
+		ui_modal_changed.emit(true)
+
+## Unregister a modal window (idempotent).
+func pop_modal(key: String) -> void:
+	if not _modal_keys.has(key):
+		return
+	_modal_keys.erase(key)
+	if not ui_modal_open():
+		ui_modal_changed.emit(false)
+
+## True while at least one modal window is open — the world input lock.
+func ui_modal_open() -> bool:
+	return not _modal_keys.is_empty()
+
 var _phase: String = "day"
 
 

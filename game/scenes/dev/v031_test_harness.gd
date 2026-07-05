@@ -122,16 +122,20 @@ func _test_ui_fit(map: Node, size: Vector2i) -> void:
 func _test_cursor_hidden_while_moving(map: Node) -> void:
 	var player := map.get_node("YSortLayer/Player") as Player
 	var hl := map.get_node("TileHighlight") as TileHighlight
+	var glow := map.get_node("TileGlow") as TileGlow
 	var interaction := map.get_node("Interaction")
 	# Force a deterministic "moving" state: queue a distant path waypoint (is_moving() is
 	# true whenever the path is non-empty, independent of the physics tick). Then drive one
-	# interaction-controller process tick and assert the highlight went hidden — with NO
-	# physics frame in between, so the path can't drain before we read it.
+	# interaction-controller process tick and assert every idle affordance went hidden —
+	# with NO physics frame in between, so the path can't drain before we read it.
+	# (v0.4.0: the gather cursor is now object-brighten + soft tile glow; the violet diamond
+	# survives only for held-item placement. All must be off while moving.)
 	var far: Array[Vector2] = [player.global_position + Vector2(2000, 0)]
 	player.set_path(far)
 	_check("player.is_moving() true while pathing", player.is_moving())
 	interaction._process(0.016)
-	_check("highlight hidden while moving", not hl.is_active())
+	_check("placement diamond hidden while moving", not hl.is_active())
+	_check("soft tile glow hidden while moving", not glow.is_active())
 	player.clear_path()
 	player.velocity = Vector2.ZERO
 

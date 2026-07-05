@@ -45,6 +45,16 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
+	# (v0.4.0-B B3.1) While any window (fusion/inventory/codex/character/pause) is open,
+	# the player is frozen — no keyboard walk, no queued click/tap path advance. This is
+	# the "조합 떠있을때 움직이면 이상하잖아" lock. Guard the singleton for headless safety.
+	if GameState != null and GameState.ui_modal_open():
+		_path.clear()
+		velocity = Vector2.ZERO
+		_update_animation(false)
+		move_and_slide()
+		return
+
 	var input_vec := Vector2(
 		Input.get_action_strength("move_right") - Input.get_action_strength("move_left"),
 		Input.get_action_strength("move_down") - Input.get_action_strength("move_up")

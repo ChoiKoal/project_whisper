@@ -91,6 +91,11 @@ func refresh_grid() -> void:
 # ---- input ---------------------------------------------------------------
 
 func _unhandled_input(event: InputEvent) -> void:
+	# (v0.4.0-B B3.1) Click-to-move is disabled while a window is open. The window's
+	# own controls still receive their clicks (they sit on higher CanvasLayers and
+	# consume the event before it reaches this world node's _unhandled_input).
+	if GameState != null and GameState.ui_modal_open():
+		return
 	var world_pos := Vector2.INF
 	if event is InputEventMouseButton and event.pressed \
 			and event.button_index == MOUSE_BUTTON_LEFT:
@@ -117,6 +122,9 @@ func _to_world(screen_pos: Vector2) -> Vector2:
 ## Resolve a world-space tap: interact with an object/tile if targeted, else move.
 func handle_tap(world_pos: Vector2) -> void:
 	if _loader == null or _player == null:
+		return
+	# (v0.4.0-B B3.1) No world taps while a modal window is open.
+	if GameState != null and GameState.ui_modal_open():
 		return
 	# 1. Object hit? (nearest gatherable/cauldron/stump within a tile of the tap)
 	var obj := _object_near(world_pos)

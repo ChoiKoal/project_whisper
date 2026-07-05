@@ -5,7 +5,7 @@ class_name SteppingSlotHint
 ## the crossing needs a stone on EACH slot — not just one. Reuses the tile-highlight
 ## visual (pulsing violet #9e7ad9 diamond, 128×64 iso footprint).
 ##
-## Driven by InteractionController._update_highlight() via show_cells()/hide_all():
+## Driven by InteractionController._update_slot_hint() via show_cells()/hide_all():
 ## it recomputes the un-filled slots each frame the player holds D14. Cheap: a
 ## handful of cells, one custom _draw.
 

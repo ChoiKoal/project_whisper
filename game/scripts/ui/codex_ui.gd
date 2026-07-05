@@ -49,6 +49,10 @@ var _slots: Array = []          # parallel to the currently-shown (filtered) ids
 var _shown_ids: Array = []
 var _selected_id: String = ""
 var _filter: String = ""
+## (B3.4) "힌트" filter chip + mode. When on, the grid area is replaced by a list of
+## gauge-revealed hint rows ("? + [재료] = ?").
+var _hint_chip: Button
+var _hint_mode: bool = false
 
 
 func set_hub(hub) -> void:
@@ -123,6 +127,21 @@ func _build_ui() -> void:
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	topbar.add_child(title)
 
+	# (B3.4) "힌트" filter chip: toggles a view listing gauge-revealed hints as
+	# "? + [재료] = ?" so the player can actually FIND them ("도감 힌트도 안보인다").
+	_hint_chip = Button.new()
+	_hint_chip.name = "HintChip"
+	_hint_chip.toggle_mode = true
+	_hint_chip.focus_mode = Control.FOCUS_NONE
+	_hint_chip.text = "힌트"
+	_hint_chip.add_theme_color_override("font_color", TEXT)
+	_hint_chip.add_theme_color_override("font_hover_color", VIOLET_SOFT)
+	_hint_chip.add_theme_stylebox_override("normal", _chip_style(false))
+	_hint_chip.add_theme_stylebox_override("hover", _chip_style(true))
+	_hint_chip.add_theme_stylebox_override("pressed", _chip_style(true))
+	_hint_chip.toggled.connect(_on_hint_chip_toggled)
+	topbar.add_child(_hint_chip)
+
 	var search_lbl := Label.new()
 	search_lbl.text = "검색"
 	search_lbl.add_theme_color_override("font_color", DIM)
@@ -135,6 +154,9 @@ func _build_ui() -> void:
 	_search.add_theme_color_override("font_color", TEXT)
 	_search.text_changed.connect(_on_search_changed)
 	topbar.add_child(_search)
+
+	# close (X) affordance, top-right (B3.2).
+	topbar.add_child(WindowChrome.make_close_button(close))
 
 	# --- discovery % header ---
 	_header = Label.new()
@@ -210,6 +232,9 @@ func _build_ui() -> void:
 	_recipe_box.add_theme_constant_override("separation", 6)
 	dcol.add_child(_recipe_box)
 
+	# (B3.2) close-affordance hint at the panel bottom.
+	outer.add_child(WindowChrome.make_esc_hint())
+
 
 # ---- toggle (hub-driven) -------------------------------------------------
 
@@ -226,11 +251,41 @@ func is_open() -> bool:
 func _set_visible(v: bool) -> void:
 	_open = v
 	_root.visible = v
+	# (v0.4.0-B B3.1) freeze the world while the codex window is up.
+	if GameState != null:
+		if v:
+			GameState.push_modal("codex")
+		else:
+			GameState.pop_modal("codex")
 	if v:
 		if _hub != null and _hub.has_method("request_focus"):
 			_hub.request_focus(_hub.Win.CODEX)
 		_rebuild()
 		_search.grab_focus()
+
+
+## Public (harness): toggle the "힌트" filter chip and re-render. Returns the number of
+## revealed-hint rows now shown (0 if none / not in hint mode).
+func set_hint_filter(on: bool) -> int:
+	if _hint_chip != null:
+		_hint_chip.button_pressed = on   # fires _on_hint_chip_toggled → _rebuild
+	else:
+		_hint_mode = on
+		if _open:
+			_rebuild()
+	return Codex.revealed_hint_count() if on else 0
+
+
+## Public (harness): the child count of the hint-list grid while the chip is active.
+func hint_row_count() -> int:
+	if not _hint_mode:
+		return 0
+	# Count only PanelContainer rows (skip the "none" Label placeholder).
+	var n := 0
+	for c in _grid.get_children():
+		if c is PanelContainer:
+			n += 1
+	return n
 
 
 ## Public (harness): set the search filter programmatically and re-filter the grid.
@@ -294,11 +349,73 @@ func _fill_grid() -> void:
 	for c in _grid.get_children():
 		c.queue_free()
 	_slots.clear()
+	if _hint_mode:
+		_fill_hint_grid()
+		return
 	_shown_ids = _filtered_ids()
 	for id: String in _shown_ids:
 		_grid.add_child(_make_cell(id))
 	if _selected_id == "" and _shown_ids.size() > 0:
 		_selected_id = _shown_ids[0]
+
+
+## (B3.4) Hint view: one row per gauge-revealed hint, "? + [재료icon] = ?". The revealed
+## ingredient is shown; the other input and the output stay hidden (that is the puzzle).
+## The grid switches to a single column of rows here.
+func _fill_hint_grid() -> void:
+	var hints: Dictionary = Codex.revealed_hints()
+	if hints.is_empty():
+		var none := Label.new()
+		none.text = "아직 드러난 힌트가 없다. 조합에 실패하며 힌트 게이지를 채워 보자."
+		none.add_theme_color_override("font_color", DIM)
+		none.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		none.custom_minimum_size = Vector2(360, 0)
+		_grid.add_child(none)
+		return
+	for rid: String in hints.keys():
+		var ingredient := String(hints[rid])
+		_grid.add_child(_hint_row(ingredient))
+
+
+## A single "? + [재료] = ?" hint row.
+func _hint_row(ingredient_id: String) -> Control:
+	var box := PanelContainer.new()
+	box.add_theme_stylebox_override("panel", _cell_style(false))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	box.add_child(row)
+	row.add_child(_op_label("?"))
+	row.add_child(_op_label("+"))
+	row.add_child(_mini_icon(ingredient_id))
+	row.add_child(_op_label("="))
+	row.add_child(_op_label("?"))
+	var name_lbl := Label.new()
+	name_lbl.text = "  (%s ?)" % ItemDB.item_name(ingredient_id)
+	name_lbl.add_theme_color_override("font_color", DIM)
+	name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(name_lbl)
+	return box
+
+
+func _chip_style(active: bool) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color("#3a3a46") if active else Color("#2f2f39")
+	sb.set_corner_radius_all(8)
+	sb.content_margin_left = 12
+	sb.content_margin_right = 12
+	sb.content_margin_top = 6
+	sb.content_margin_bottom = 6
+	sb.set_border_width_all(1)
+	sb.border_color = ACCENT if active else Color(ACCENT.r, ACCENT.g, ACCENT.b, 0.4)
+	return sb
+
+
+func _on_hint_chip_toggled(pressed: bool) -> void:
+	_hint_mode = pressed
+	# The detail pane + search are item-oriented; dim them out in hint mode.
+	if _search != null:
+		_search.editable = not pressed
+	_rebuild()
 
 
 func _make_cell(id: String) -> Control:

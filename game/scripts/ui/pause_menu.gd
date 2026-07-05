@@ -56,8 +56,15 @@ func _build() -> void:
 	_panel.add_theme_constant_override("separation", 14)
 	frame.add_child(_panel)
 
+	# header row: title + close (X) top-right (B3.2). "계속" already resumes, but the X
+	# gives the same consistent close affordance every other window has.
+	var head_row := HBoxContainer.new()
+	head_row.add_theme_constant_override("separation", 8)
+	_panel.add_child(head_row)
 	var head := _label("일시정지", 40, VIOLET)
-	_panel.add_child(head)
+	head.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head_row.add_child(head)
+	head_row.add_child(WindowChrome.make_close_button(_on_resume))
 
 	_add_button("계속", _on_resume)
 	_add_button("저장", _on_save)
@@ -66,6 +73,9 @@ func _build() -> void:
 	_toast = _label("", 20, CREAM)
 	_toast.modulate.a = 0.0
 	_panel.add_child(_toast)
+
+	# (B3.2) close-affordance hint at the panel bottom (ESC resumes).
+	_panel.add_child(WindowChrome.make_esc_hint())
 
 
 func _label(txt: String, size: int, col: Color) -> Label:
@@ -117,8 +127,10 @@ func _set_open(v: bool) -> void:
 	if v:
 		_time_was_running = GameState.time_running
 		GameState.time_running = false
+		GameState.push_modal("pause")   # (B3.1) also freeze the player while paused
 	else:
 		GameState.time_running = _time_was_running
+		GameState.pop_modal("pause")
 
 
 func _unhandled_input(event: InputEvent) -> void:

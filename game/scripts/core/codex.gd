@@ -96,6 +96,19 @@ func hint_for_recipe(recipe_id: String) -> String:
 	return _hints.get(recipe_id, "")
 
 
+## (v0.4.0-B B3.4) All ACTIVE gauge-revealed hints: recipe_id -> revealed ingredient id.
+## A recipe drops out of this map once it is discovered (see mark_recipe: _hints.erase).
+## The 도감 "힌트" filter chip lists these as "? + [재료] = ?" so revealed hints are findable
+## ("도감 힌트도 안보인다"). Returns a copy.
+func revealed_hints() -> Dictionary:
+	return _hints.duplicate()
+
+
+## Count of active revealed hints (for the chip badge).
+func revealed_hint_count() -> int:
+	return _hints.size()
+
+
 ## Order-independent key for an attempted pair (canonicalized + sorted), so
 ## "I5+I2" and "I2+I5" count as the same attempt.
 func _pair_key(a_id: String, b_id: String) -> String:
