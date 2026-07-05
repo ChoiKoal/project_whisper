@@ -13,7 +13,7 @@
 
 ---
 
-## 🔴 macOS 릴리스 크래시 — "새로 시작" 시 SIGSEGV (원인 후보 하드닝, macOS 검증 대기)
+## 🔴 macOS 릴리스 크래시 — "새로 시작" 시 SIGSEGV (진범 확정: export include_filter 누락(data/*.json,*.txt 미포함). v0.1.3에서 필터 추가+export 실빌드 검증 완료)
 
 **증상.** 오너 macOS(M1 Pro, macOS 26.5) 릴리스 익스포트(v0.1.1, gl_compatibility, universal)에서
 타이틀 → "새로 시작" 누르면 `SIGSEGV KERN_INVALID_ADDRESS at 0x0`. 콜스택(번역):
@@ -27,7 +27,7 @@
 m7_title_flow 하니스(타이틀→새로 시작→grove 90프레임→저장→타이틀로→이어하기→grove 60프레임)가
 모두 초록. 즉 null은 **실제 렌더링/맥OS 플랫폼 특이성**에서만 발생한다고 판단.
 
-**상태: 원인 후보 하드닝, macOS 검증 대기.** macOS 실기 없이 검증 불가하므로 grove ready-체인의
+**상태: 진범 확정: export include_filter 누락(data/*.json,*.txt 미포함). v0.1.3에서 필터 추가+export 실빌드 검증 완료.** macOS 실기 없이 검증 불가하므로 grove ready-체인의
 **null 엔진 객체 호출 가능 경로를 전수 감사 후 defense-in-depth로 전부 가드**했다. 하드닝 목록:
 
 - **[주 용의자·수정] `scripts/world/map_loader.gd:142-147` (구)** — `map_legend.json` 로드가 bare

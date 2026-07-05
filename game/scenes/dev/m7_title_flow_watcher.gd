@@ -70,6 +70,9 @@ func _tick_grove1() -> void:
 	_frames += 1
 	if _frames == 1:
 		_check("grove reached after 새로 시작", _grove_ok())
+		_check("map tiles present (export data intact)", _tiles_ok())
+		_check("ItemDB/RecipeDB loaded (export data intact)",
+			ItemDB.all_ids().size() >= 30 and RecipeDB.all_recipes().size() >= 50)
 	if _frames < GROVE1_FRAMES:
 		return
 	# Survived the crash window. Now open pause + save, then go to title.
@@ -141,6 +144,24 @@ func _grove_ok() -> bool:
 	if ground == null:
 		return false
 	return int(ground.get("height")) == 40 and int(ground.get("width")) == 40
+
+
+func _tiles_ok() -> bool:
+	var cs := _current()
+	if cs == null:
+		return false
+	var tm := _find_tilemap(cs)
+	return tm != null and tm.get_used_cells().size() >= 1600
+
+
+func _find_tilemap(n: Node) -> TileMapLayer:
+	if n is TileMapLayer:
+		return n
+	for c in n.get_children():
+		var r := _find_tilemap(c)
+		if r != null:
+			return r
+	return null
 
 
 func _find_method(n: Node, m: String) -> Node:
