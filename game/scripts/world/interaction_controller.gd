@@ -371,9 +371,30 @@ func _cell_center_world(cell: Vector2i) -> Vector2:
 
 ## Floating "E …" hint above the current target. Small dark pill, cream text
 ## (art guide §7). Text depends on what the `interact` action would do this frame.
+## v0.5b: the dry bush the player is currently hovering with water held (for its warm
+## glow affordance). Tracked so we can turn the glow OFF when they move away / drop the item.
+var _water_hover_bush: Node = null
+
+## Enable/disable the dry bush "holding water here" warm glow. Idempotent per bush.
+func _update_water_hover() -> void:
+	var bush: Node = null
+	if _held_item == "I7" and _target_object != null \
+			and _target_object.has_method("set_water_hover") \
+			and String(_target_object.get("object_id")) == "bush_dry":
+		bush = _target_object
+	if bush == _water_hover_bush:
+		return
+	if is_instance_valid(_water_hover_bush) and _water_hover_bush.has_method("set_water_hover"):
+		_water_hover_bush.call("set_water_hover", false)
+	if bush != null:
+		bush.call("set_water_hover", true)
+	_water_hover_bush = bush
+
+
 func _update_prompt() -> void:
 	# v0.3.1 Fix 3: hide the E-prompt entirely while the player is MOVING — it only
 	# appears when IDLE next to something you can act on.
+	_update_water_hover()
 	if _player != null and _player.is_moving():
 		_hide_prompt()
 		return
@@ -406,6 +427,10 @@ func _prompt_text() -> String:
 	if _held_item != "":
 		var obj := _target_object as Gatherable
 		if obj != null and obj.object_id != "" and ItemDB.can_use_on_object(_held_item, obj.object_id):
+			# v0.5b affordance: watering the dry bush reads as the concrete action, not a
+			# generic "사용" (owner: "물 줘야 된다는 느낌이 전혀 안 듦").
+			if obj.object_id == "bush_dry" and _held_item == "I7":
+				return "E 물 주기"
 			return "E 사용"
 		if _has_tile_target and ItemDB.can_place_expanded(_held_item, _logical_tile_id(_target_cell)):
 			return "E 배치"

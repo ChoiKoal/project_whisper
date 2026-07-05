@@ -13,17 +13,19 @@ const DRY_TEX := "res://assets/objects/bush_dry.png"
 const BLOOM_TEX := "res://assets/objects/bush_bloom.png"
 ## A small mystic-glow texture reused as the "something here" shimmer cue.
 const CUE_TEX := "res://assets/tiles/t5m_mystic_glow.png"
-## Pulsing water-drop affordance icon shown while quest Q4 (물 줘야 됨) is active —
-## owner feedback: "물 줘야 된다는 느낌 전혀 안 듦".
-const DROP_TEX := "res://assets/objects/water_drop_cue.png"
+const QUEST_MARKER := "res://scripts/world/quest_marker.gd"
+## Warm glow reused for the "holding water here" affordance.
+const WARM_TEX := "res://assets/objects/light_pool_cyan.png"
 
 var _bloomed: bool = false
 var _body: StaticBody2D
 ## Faint periodic shimmer over the dry bush — a readability cue ("뭔가 있다") so the
 ## player notices the gate object in the corridor gap. Removed once bloomed.
 var _cue: GlowSprite
-## The bobbing water-drop icon above the bush (visible only during Q4).
-var _drop: Sprite2D
+## v0.5b: the Q4 water-drop QuestMarker (bobbing drop + pulse ring, visible during Q4).
+var _marker: Node2D
+## Warm glow shown when the player hovers with water (I7) held near the bush.
+var _warm: Sprite2D
 
 
 func _ready() -> void:
@@ -34,7 +36,8 @@ func _ready() -> void:
 	offset = Vector2(0, -64)
 	_add_block()
 	_add_shimmer_cue()
-	_add_water_drop_cue()
+	_add_quest_marker()
+	_add_warm_glow()
 	# Defensive autoload guard (ready-time; matches night_gate/glow_sprite). A
 	# missing GameState would null-deref .item_used_on_object during the flush.
 	if GameState == null:
@@ -70,32 +73,46 @@ func _add_shimmer_cue() -> void:
 	add_child(_cue)
 
 
-## A bobbing, pulsing water-drop icon floating above the withered bush. It is only
-## visible while quest Q4 ("저 마른 것에게 물을") is the active whisper, making the
-## "물을 줘야 한다" affordance explicit. Polled cheaply in _process (the quest state is
-## a single autoload field). Freed on bloom.
-func _add_water_drop_cue() -> void:
-	_drop = Sprite2D.new()
-	_drop.texture = load(DROP_TEX)
-	_drop.offset = Vector2(0, -132)  # float above the bush silhouette
-	_drop.z_index = 2
-	_drop.visible = false
-	add_child(_drop)
-	# gentle looping bob + scale pulse
-	var tw := _drop.create_tween().set_loops()
-	tw.tween_property(_drop, "position:y", -6.0, 0.7).as_relative().set_trans(Tween.TRANS_SINE)
-	tw.tween_property(_drop, "position:y", 6.0, 0.7).as_relative().set_trans(Tween.TRANS_SINE)
-
-
-func _process(_dt: float) -> void:
-	if _bloomed or _drop == null:
+## v0.5b: the Q4 QuestMarker — a bobbing water-drop icon + a soft periodic pulse ring
+## above the withered bush, visible ONLY while quest Q4 ("저 마른 것에게 물을") is the
+## active whisper. Makes the "물을 줘야 한다" affordance explicit. Self-hides off-Q4 and
+## self-frees once Q4 is complete (handled inside quest_marker.gd).
+func _add_quest_marker() -> void:
+	var scr := load(QUEST_MARKER)
+	if scr == null:
 		return
-	# Show the drop only during Q4 (its whisper target is this bush).
-	var want := false
-	if typeof(QuestManager) != TYPE_NIL and QuestManager != null:
-		want = QuestManager.active_id == "Q4"
-	if _drop.visible != want:
-		_drop.visible = want
+	_marker = Node2D.new()
+	_marker.set_script(scr)
+	_marker.set("quest_id", "Q4")
+	_marker.set("variant", "drop")
+	_marker.set("icon_offset", Vector2(0, -132))
+	_marker.set("ring_offset", Vector2(0, -70))
+	add_child(_marker)
+
+
+## A warm cyan-violet glow under/around the bush, shown only while the player hovers
+## with water (I7) held — reinforces "여기다 물을" the instant before they press E.
+## Driven by the InteractionController via set_water_hover().
+func _add_warm_glow() -> void:
+	_warm = Sprite2D.new()
+	_warm.texture = load(WARM_TEX)
+	_warm.offset = Vector2(0, -70)
+	_warm.z_index = 1
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	_warm.material = mat
+	_warm.modulate = Color(1.0, 0.92, 0.7, 0.0)  # warm, starts invisible
+	add_child(_warm)
+
+
+## Public (called by InteractionController): the player is hovering this bush with water
+## held. Fades the warm glow in/out. No-op after bloom.
+func set_water_hover(active: bool) -> void:
+	if _bloomed or not is_instance_valid(_warm):
+		return
+	var target_a := 0.85 if active else 0.0
+	var tw := _warm.create_tween()
+	tw.tween_property(_warm, "modulate:a", target_a, 0.2)
 
 
 func is_bloomed() -> bool:
@@ -128,10 +145,13 @@ func bloom() -> void:
 	if is_instance_valid(_cue):
 		_cue.queue_free()
 		_cue = null
-	# the water-drop affordance has served its purpose.
-	if is_instance_valid(_drop):
-		_drop.queue_free()
-		_drop = null
+	# the water-drop affordance + warm glow have served their purpose.
+	if is_instance_valid(_marker):
+		_marker.queue_free()
+		_marker = null
+	if is_instance_valid(_warm):
+		_warm.queue_free()
+		_warm = null
 	# celebratory little pulse
 	var tw := create_tween()
 	tw.tween_property(self, "scale", Vector2(1.15, 1.15), 0.15)

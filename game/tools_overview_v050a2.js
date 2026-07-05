@@ -16,8 +16,11 @@ const fs = require("fs");
 const { PNG } = require("pngjs");
 
 const GAME = __dirname;
-const OUT = "/workspace/group/preview-v050a2.png";
-const OUT_CLOSE = "/workspace/group/preview-v050a2-closeup.png";
+// v0.5b: object-art pass — same elevation pipeline, refreshed object PNGs (natural
+// boulders, clustered flowers, deshadowed trees, repainted cauldron/stump). Output
+// renamed to the v050b review names the phase-B brief expects.
+const OUT = "/workspace/group/preview-v050b.png";
+const OUT_CLOSE = "/workspace/group/preview-v050b-closeup.png";
 
 const TW = 128, TH = 64, HW = 64, HH = 32, LIFT = 32;
 

@@ -1,12 +1,16 @@
 extends Node
-## AudioManager — global autoload. Plays procedural SFX one-shots, crossfades day/night BGM
-## on GameState.day_phase_changed, runs a day/night ambience layer, and exposes master/sfx/bgm
-## volumes (persisted to user://audio.cfg, surfaced as pause-menu sliders).
+## AudioManager — global autoload. Plays procedural SFX one-shots and crossfades the
+## day/night BGM on GameState.day_phase_changed. Exposes master/sfx/bgm volumes
+## (persisted to user://audio.cfg, surfaced as pause-menu sliders).
 ##
-## All streams are the WAVs synthesized by tools_gen_audio.py in res://assets/audio/. Godot
-## imports WAV natively; loop flags aren't set by the importer, so for the loop streams
-## (ambience + BGM + fuse_bubble) we set AudioStreamWAV.loop_mode = FORWARD in code after
-## loading — the simplest reliable path that needs no per-file .import overrides.
+## v0.5b AUDIO FINALIZE: the day/night BGM is now real CC0 .ogg ambient music
+## (bgm_day.ogg = "relaxing ambient" by isaiah658, bgm_night.ogg = "cathedral forest"
+## by congusbongus — both CC0, see CREDITS.md). These loop via the .ogg import `loop=true`
+## flag AND a defensive `stream.loop = true` set here. The old synth bgm_day/bgm_night.wav
+## and the separate synth day_amb/night_amb ambience WAVs were DELETED — the CC0 music
+## carries the whole day/night soundscape, so the redundant ambience layer is retired.
+## SFX remain the .wav one-shots synthesized by tools_gen_audio.py; loop SFX (fuse_bubble)
+## still get AudioStreamWAV.loop_mode = FORWARD set in code.
 ##
 ## Headless-safe: audio playback is silent under --headless but must not error. Every play
 ## call guards a missing stream and a missing player, so the harness can call play_sfx and
@@ -21,8 +25,8 @@ const SFX_NAMES := [
 	"fuse_fail", "ui_click", "ui_open", "ui_close", "quest_advance",
 	"footstep_grass1", "footstep_grass2", "bush_bloom", "clear_fanfare",
 ]
-## Streams that must loop.
-const LOOP_NAMES := ["fuse_bubble", "night_amb", "day_amb", "bgm_day", "bgm_night"]
+## Streams that must loop (the CC0 BGM oggs + the fuse-bubble SFX).
+const LOOP_NAMES := ["fuse_bubble", "bgm_day", "bgm_night"]
 
 ## Bus names (created at runtime so no .tres bus layout is required).
 const BUS_MASTER := "Master"
@@ -42,7 +46,8 @@ var _cur_amb_name := ""
 ## Linear volumes 0..1 (persisted).
 var volume_master := 0.9
 var volume_sfx := 1.0
-var volume_bgm := 0.7
+## v0.5b: BGM default kept modest so the CC0 music sits UNDER the SFX (~-8 dB).
+var volume_bgm := 0.4
 
 const SFX_POOL := 8
 
@@ -101,7 +106,7 @@ func _ensure_buses() -> void:
 
 
 func _load_streams() -> void:
-	for name_v in SFX_NAMES + ["night_amb", "day_amb", "bgm_day", "bgm_night"]:
+	for name_v in SFX_NAMES + ["bgm_day", "bgm_night"]:
 		var name := String(name_v)
 		# v0.5: BGM is now real CC0 .ogg (see CREDITS.md); everything else stays .wav.
 		# Prefer an .ogg if one exists for this name, else fall back to the .wav.
@@ -193,6 +198,9 @@ func _on_phase(phase: String) -> void:
 # ==== ambience =============================================================
 
 func _update_ambience(phase: String) -> void:
+	# v0.5b: the dedicated synth ambience layer (day_amb/night_amb) was retired — the CC0
+	# BGM oggs carry the day/night soundscape. This stays as a graceful no-op (no stream
+	# loaded), so callers (start_world_audio / _on_phase) need no changes.
 	var target := "night_amb" if phase in ["evening", "night"] else "day_amb"
 	if target == _cur_amb_name:
 		return

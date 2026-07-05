@@ -224,30 +224,35 @@ class _StubObj extends Node:
 
 func _test_audio() -> void:
 	print("--- audio ---")
-	var expected := [
+	# v0.5b AUDIO FINALIZE: BGM is now real CC0 .ogg (bgm_day/bgm_night); the old synth
+	# bgm_*.wav and the day_amb/night_amb ambience WAVs were DELETED (the CC0 music carries
+	# the day/night soundscape). SFX remain .wav one-shots.
+	var sfx_wavs := [
 		"gather_pop", "place_thud", "fuse_bubble", "fuse_success", "fuse_discovery",
 		"fuse_fail", "ui_click", "ui_open", "ui_close", "quest_advance",
 		"footstep_grass1", "footstep_grass2", "bush_bloom", "clear_fanfare",
-		"night_amb", "day_amb", "bgm_day", "bgm_night",
 	]
 	var missing := []
-	for name in expected:
+	for name in sfx_wavs:
 		if not ResourceLoader.exists(AUDIO_DIR + name + ".wav"):
 			missing.append(name)
-	_check("all %d WAV files exist" % expected.size(), missing.is_empty(), str(missing))
+	_check("all %d SFX WAV files exist" % sfx_wavs.size(), missing.is_empty(), str(missing))
 
-	# AudioManager loaded the streams.
+	# BGM ships as CC0 .ogg (not .wav); the synth WAVs are gone.
+	_check("bgm_day.ogg exists (CC0)", ResourceLoader.exists(AUDIO_DIR + "bgm_day.ogg"))
+	_check("bgm_night.ogg exists (CC0)", ResourceLoader.exists(AUDIO_DIR + "bgm_night.ogg"))
+	_check("old synth bgm_day.wav deleted", not ResourceLoader.exists(AUDIO_DIR + "bgm_day.wav"))
+	_check("old synth day_amb.wav deleted", not ResourceLoader.exists(AUDIO_DIR + "day_amb.wav"))
+
+	# AudioManager loaded the streams (SFX + both BGM oggs).
 	_check("AudioManager loaded gather_pop", AudioManager.has_stream("gather_pop"))
 	_check("AudioManager loaded bgm_day", AudioManager.has_stream("bgm_day"))
+	_check("AudioManager loaded bgm_night", AudioManager.has_stream("bgm_night"))
 
-	# Loop streams carry a forward loop.
-	var bgm = load(AUDIO_DIR + "bgm_day.wav")
-	_check("bgm_day loops forward", bgm is AudioStreamWAV
-		and bgm.loop_mode == AudioStreamWAV.LOOP_FORWARD)
-	var amb = load(AUDIO_DIR + "night_amb.wav")
-	# (loaded copy vs AudioManager copy differ; AudioManager sets loop on its copy —
-	# assert its stream loops.)
-	_check("ambience stream present", AudioManager.has_stream("night_amb"))
+	# bgm_day loops forward — the CC0 ogg loops via its import flag; AudioManager also sets
+	# stream.loop = true defensively. Assert the loaded ogg is an OggVorbis stream flagged to loop.
+	var bgm = load(AUDIO_DIR + "bgm_day.ogg")
+	_check("bgm_day loops forward", bgm is AudioStreamOggVorbis and bgm.loop == true)
 
 	# Play a SFX + a BGM crossfade without error (silent headless).
 	AudioManager.play_sfx("gather_pop")

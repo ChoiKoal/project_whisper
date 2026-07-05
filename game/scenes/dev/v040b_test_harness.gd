@@ -128,10 +128,16 @@ func _test_bush_node(map: Node) -> void:
 		var cue: Node = bush.get("_cue")
 		_check("gate bush has a shimmer readability cue (GlowSprite)",
 			cue != null and is_instance_valid(cue) and cue is GlowSprite)
-		# v0.5: the bush also carries a pulsing water-drop affordance icon (shown during Q4).
-		var drop: Node = bush.get("_drop")
-		_check("gate bush has a Q4 water-drop affordance icon",
-			drop != null and is_instance_valid(drop) and drop is Sprite2D)
+		# v0.5b: the bush carries a Q4 QuestMarker (bobbing water-drop icon + pulse ring,
+		# shown only while Q4 is the active whisper) and a warm hover-glow (shown when the
+		# player holds water near it). Assert both affordance nodes exist.
+		var marker: Node = bush.get("_marker")
+		_check("gate bush has a Q4 water-drop QuestMarker",
+			marker != null and is_instance_valid(marker) and marker.get("quest_id") == "Q4"
+			and marker.get("variant") == "drop")
+		var warm: Node = bush.get("_warm")
+		_check("gate bush has a water-hover warm glow (has set_water_hover)",
+			warm != null and is_instance_valid(warm) and bush.has_method("set_water_hover"))
 
 
 # ---- B3.2: every window has a ✕ close button + an ESC hint ------------------

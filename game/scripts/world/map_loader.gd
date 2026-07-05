@@ -1164,6 +1164,9 @@ func _spawn_object(sym: String, cell: Vector2i, spec: Dictionary) -> void:
 				_place(tree, centroid)
 				# A3: large violet light pool washing the world-tree base.
 				_add_light_pool(tree, "res://assets/objects/light_pool_violet_lg.png", Vector2(0, 0), 1.0)
+				# v0.5b: Q6 QuestMarker — a violet whisper-wisp bobbing at the world-tree /
+				# night-path entrance while Q6 ("위로… 빛나는 곳으로 와") is the active whisper.
+				_add_quest_marker(tree, "Q6", "wisp", Vector2(0, -200))
 		"m":
 			var mw := MysticWater.new()
 			_place(mw, world)
@@ -1356,6 +1359,22 @@ func _add_light_pool(parent: Node2D, tex_path: String, off: Vector2, scale_stren
 	pool.offset = off
 	pool.scale = Vector2(scale_strength, scale_strength)
 	parent.add_child(pool)
+
+
+## v0.5b: attach a QuestMarker (bobbing wisp/drop + pulse ring, gated on a quest id) to a
+## world object so the active quest's target is legible. quest_id e.g. "Q6"; variant
+## "wisp"/"drop"; icon_off is the marker's Y offset above the object anchor.
+func _add_quest_marker(parent: Node2D, quest_id: String, variant: String, icon_off: Vector2) -> void:
+	var scr := load("res://scripts/world/quest_marker.gd")
+	if scr == null:
+		return
+	var m := Node2D.new()
+	m.set_script(scr)
+	m.set("quest_id", quest_id)
+	m.set("variant", variant)
+	m.set("icon_offset", icon_off)
+	m.set("ring_offset", Vector2(0, -40))
+	parent.add_child(m)
 
 
 # ---- queries -------------------------------------------------------------
