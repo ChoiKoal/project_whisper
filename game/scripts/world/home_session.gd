@@ -83,9 +83,11 @@ func _setup() -> void:
 func _wire_portals() -> void:
 	_portals.clear()
 	for node in get_tree().get_nodes_in_group("gatherable"):
-		if node is Portal:
+		if node is Portal and is_instance_valid(node):
 			_portals.append(node)
-			(node as Portal).portal_interacted.connect(_on_portal_interacted)
+			var portal := node as Portal
+			if not portal.portal_interacted.is_connected(_on_portal_interacted):
+				portal.portal_interacted.connect(_on_portal_interacted)
 
 
 ## (v0.5.1 BUG3) Per-frame: track which gate's entry apron the player is in and show the

@@ -70,15 +70,19 @@ func _spawn_return_portal() -> void:
 	var scr := load("res://scripts/world/portal.gd")
 	if scr == null:
 		return
+	# Force it OPEN before add_child so Portal._ready adopts the OPEN state on build (the
+	# state must exist before the node reads GameState.portal_state("return") in its _ready).
+	GameState.set_portal_state("return", GameState.PORTAL_OPEN)
 	var p: Node2D = scr.new()
+	if p == null:
+		return
 	p.set("layer", "return")
 	p.set("object_id", "portal_return")
 	p.position = _loader.cell_center_world(cell)
 	p.y_sort_enabled = true
 	ysort.add_child(p)
-	# Force it OPEN regardless of GameState (it's not one of the 5 home portals).
-	GameState.set_portal_state("return", GameState.PORTAL_OPEN)
-	p.connect("portal_interacted", _on_return_portal)
+	if p.has_signal("portal_interacted"):
+		p.connect("portal_interacted", _on_return_portal)
 
 
 func _on_return_portal(_portal) -> void:

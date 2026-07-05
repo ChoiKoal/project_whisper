@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cwv052stress01"]
+
+[ext_resource type="Script" path="res://scenes/dev/v052_travel_stress.gd" id="1_stress"]
+
+[node name="V052TravelStress" type="Node"]
+script = ExtResource("1_stress")

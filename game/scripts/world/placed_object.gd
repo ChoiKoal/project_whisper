@@ -89,12 +89,20 @@ func _add_block_collision() -> void:
 
 
 ## A GlowSprite child (reused night-glow additive overlay) so 등불꽃/연꽃 light up at night.
+## (v0.5.2) GlowSprite `extends Sprite2D`, so it MUST be constructed as a GlowSprite —
+## the old `Node2D.new(); set_script(glow_sprite.gd)` assigned a Sprite2D-derived script to a
+## Node2D, which the engine REJECTS ("Script inherits from native type 'Sprite2D'…"). In the
+## editor that failed soft (glow silently dropped); in a RELEASE template the same rejected
+## assignment leaves a mis-typed node that the renderer/scene-restore path then trips over —
+## the grove→home return re-instantiates every saved placed object via
+## SaveManager._apply_placed_objects, so a glowing decor rebuilt mid-scene-change is exactly
+## the manual-return crash. Build it the same way world_tree.gd / mystic_water.gd do, with the
+## object's own icon as the additive overlay texture.
 func _add_glow() -> void:
-	var GlowScript := load("res://scripts/world/glow_sprite.gd")
-	if GlowScript == null:
-		return
-	_glow = Node2D.new()
-	_glow.set_script(GlowScript)
+	var glow := GlowSprite.new()
+	glow.texture = ItemDB.icon(item_id)
+	glow.offset = offset
+	_glow = glow
 	add_child(_glow)
 
 

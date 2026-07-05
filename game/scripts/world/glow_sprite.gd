@@ -56,8 +56,11 @@ func _reparent_to_glow_layer() -> void:
 		return
 	var layer := tree.get_first_node_in_group(GLOW_LAYER_GROUP)
 	# get_first_node_in_group may legitimately return null (test_map has no glow
-	# layer). Only reparent onto a real, different parent node.
-	if layer == null or layer == get_parent():
+	# layer). Only reparent onto a real, still-valid, different parent node. The
+	# is_instance_valid guard matters in RELEASE: this runs deferred, so between the
+	# _ready that queued it and now the spawner (and its whole scene) may have been
+	# freed by a portal scene-change — reparent onto a freed layer would SIGSEGV.
+	if layer == null or not is_instance_valid(layer) or layer == get_parent():
 		return
 	reparent(layer, true)  # keep_global_transform → glow stays over its object
 
