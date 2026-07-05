@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bwhisperl2flowhrn"]
+
+[ext_resource type="Script" path="res://scenes/dev/l2_flow_harness.gd" id="1_l2flow"]
+
+[node name="L2FlowHarness" type="Node"]
+script = ExtResource("1_l2flow")

@@ -170,7 +170,9 @@ func _travel_to_layer(layer: String) -> void:
 	WorldContext.arrival_mode = "portal_arrival"
 	# Snapshot the home world so returning restores placed objects etc.
 	SaveManager.save_game()
-	var dest := WorldContext.SCENE_GROVE  # v0.5: every enterable layer routes to the grove
+	# (L2-5) Route by layer: nature→grove, science→terminal_station (꺼진 관문 기지). Others still
+	# dormant/locked and never reach here.
+	var dest := WorldContext.layer_scene(layer)
 	if _portal_cutscene != null and _portal_cutscene.has_method("play_travel"):
 		_portal_cutscene.play_travel(func():
 			WorldContext.current_scene = dest

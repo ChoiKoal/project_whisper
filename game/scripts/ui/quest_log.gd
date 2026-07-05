@@ -100,9 +100,10 @@ func _rebuild_list() -> void:
 			row.text = "✓  「%s」" % QuestManager.whisper(id)
 			row.add_theme_color_override("font_color", DONE)
 			row.modulate = Color(1, 1, 1, 0.7)
-		elif id == QuestManager.active_id:
+		elif id == QuestManager.active_id or id == QuestManager.l2_active_id:
+			# (L2-5) two coexisting lines — the active row of either line reads as ▸.
 			var need := QuestManager.quest_count(id)
-			var prog := QuestManager.progress
+			var prog := QuestManager.l2_progress if id == QuestManager.l2_active_id else QuestManager.progress
 			var suffix := "  (%d/%d)" % [min(prog, need), need] if need > 1 else ""
 			row.text = "▸  「%s」%s" % [QuestManager.whisper(id), suffix]
 			row.add_theme_color_override("font_color", CREAM)

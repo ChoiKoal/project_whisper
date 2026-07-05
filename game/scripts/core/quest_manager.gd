@@ -44,6 +44,15 @@ var progress: int = 0
 ## Set of completed quest ids (id -> true) for the quest log.
 var _done: Dictionary = {}
 
+## (L2-5) The Layer-2 속삭임 line (L2-Q1…L2-Q7) runs as a SECOND, independent chain that
+## COEXISTS with the L1 line in the quest log. It stays dormant until the player first enters
+## Layer 2 (terminal_station calls activate_l2_line()), so the two lines never share one active
+## pointer. Events tick whichever of the two active quests they match.
+var l2_active_id: String = ""
+var l2_progress: int = 0
+## id of the L2 chain head (first "L2-" quest), resolved at load.
+var _l2_head_id: String = ""
+
 
 func _ready() -> void:
 	_load()
@@ -71,7 +80,14 @@ func _load() -> void:
 			continue
 		_order.append(q)
 		_by_id[String(q["id"])] = q
-	if not _order.is_empty():
+	# L1 head = first NON-L2 quest; L2 head = first "L2-" quest (the two coexisting lines).
+	for q in _order:
+		var qid := String(q["id"])
+		if _head_id == "" and not qid.begins_with("L2-"):
+			_head_id = qid
+		if _l2_head_id == "" and qid.begins_with("L2-"):
+			_l2_head_id = qid
+	if _head_id == "" and not _order.is_empty():
 		_head_id = String(_order[0]["id"])
 
 
@@ -104,22 +120,35 @@ func _object_id(obj: Node) -> String:
 
 # ==== event routing ========================================================
 
-## A gameplay signal fired. If it matches the active quest, tick progress.
+## A gameplay signal fired. Tick BOTH coexisting lines (L1 + L2) that match it — each has its
+## own active pointer, so a shared signal (e.g. item_gathered) advances whichever line is live.
 func _event(sig: String, payload: String) -> void:
-	if active_id == "":
+	_event_line(sig, payload, false)   # L1 line
+	_event_line(sig, payload, true)    # L2 line
+
+
+func _event_line(sig: String, payload: String, l2: bool) -> void:
+	var aid := l2_active_id if l2 else active_id
+	if aid == "":
 		return
-	var q: Dictionary = _by_id.get(active_id, {})
+	var q: Dictionary = _by_id.get(aid, {})
 	if q.is_empty():
 		return
 	if String(q.get("signal", "")) != sig:
 		return
 	if not _target_matches(String(q.get("target", "any")), payload):
 		return
-	progress += 1
 	var need := int(q.get("count", 1))
-	quest_progress.emit(active_id, min(progress, need), need)
-	if progress >= need:
-		_complete(active_id)
+	if l2:
+		l2_progress += 1
+		quest_progress.emit(aid, min(l2_progress, need), need)
+		if l2_progress >= need:
+			_complete(aid)
+	else:
+		progress += 1
+		quest_progress.emit(aid, min(progress, need), need)
+		if progress >= need:
+			_complete(aid)
 
 
 ## True if `payload` satisfies the quest's target filter. "any"/"" = anything.
@@ -140,12 +169,35 @@ func _looks_like_item(s: String) -> bool:
 # ==== progression ==========================================================
 
 func _start(id: String) -> void:
-	active_id = id
-	progress = 0
+	if id.begins_with("L2-"):
+		l2_active_id = id
+		l2_progress = 0
+	else:
+		active_id = id
+		progress = 0
 	if id != "":
 		quest_started.emit(id)
 		var need := quest_count(id)
 		quest_progress.emit(id, 0, need)
+
+
+## (L2-5) Activate the Layer-2 속삭임 line on first L2 entry. Idempotent: no-op if the line is
+## already active or already finished. The L1 line is untouched — the two coexist in the log.
+func activate_l2_line() -> void:
+	if _l2_head_id == "":
+		return
+	if l2_active_id != "":
+		return
+	# Already fully completed? (any L2 quest done means it was started before.)
+	for qid in _by_id.keys():
+		if String(qid).begins_with("L2-") and _done.has(qid):
+			return
+	_start(_l2_head_id)
+
+
+## (L2-5) The active L2 quest record ({} if the L2 line is dormant/finished).
+func l2_active_quest() -> Dictionary:
+	return _by_id.get(l2_active_id, {})
 
 
 func _complete(id: String) -> void:
@@ -153,10 +205,15 @@ func _complete(id: String) -> void:
 	quest_completed.emit(id)
 	var q: Dictionary = _by_id.get(id, {})
 	var nxt := String(q.get("next", ""))
-	var old := active_id
+	var l2 := id.begins_with("L2-")
+	var old := l2_active_id if l2 else active_id
 	if nxt == "":
-		active_id = ""
-		progress = 0
+		if l2:
+			l2_active_id = ""
+			l2_progress = 0
+		else:
+			active_id = ""
+			progress = 0
 		quest_advanced.emit(old, "")
 		all_quests_completed.emit()
 	else:
@@ -211,6 +268,9 @@ func to_dict() -> Dictionary:
 		"active_id": active_id,
 		"progress": progress,
 		"done": _done.keys(),
+		# (L2-5) the coexisting Layer-2 line pointer.
+		"l2_active_id": l2_active_id,
+		"l2_progress": l2_progress,
 	}
 
 
@@ -220,18 +280,27 @@ func from_dict(data: Dictionary) -> void:
 		_done[String(id)] = true
 	progress = int(data.get("progress", 0))
 	active_id = String(data.get("active_id", _head_id))
+	# (L2-5) restore the L2 line (dormant "" if the save predates it).
+	l2_active_id = String(data.get("l2_active_id", ""))
+	l2_progress = int(data.get("l2_progress", 0))
 	# Re-announce so a freshly-built HUD reflects restored state.
 	if active_id != "":
 		quest_started.emit(active_id)
 		quest_progress.emit(active_id, min(progress, quest_count(active_id)), quest_count(active_id))
 	elif all_completed():
 		all_quests_completed.emit()
+	if l2_active_id != "":
+		quest_started.emit(l2_active_id)
+		quest_progress.emit(l2_active_id, min(l2_progress, quest_count(l2_active_id)), quest_count(l2_active_id))
 
 
-## Reset to a fresh line head (P0) (NG+ / new game).
+## Reset to a fresh line head (P0) (NG+ / new game). Both lines reset; L2 line goes dormant
+## again (re-activated on the next first L2 entry).
 func reset() -> void:
 	_done.clear()
 	progress = 0
+	l2_active_id = ""
+	l2_progress = 0
 	_start(_head_id)
 
 

@@ -56,6 +56,9 @@ func _setup() -> void:
 	if typeof(GameState) != TYPE_NIL and GameState.has_signal("layer2_purified"):
 		if not GameState.layer2_purified.is_connected(_on_layer2_purified):
 			GameState.layer2_purified.connect(_on_layer2_purified)
+	# (L2-5) 첫 L2 진입 시 Layer-2 속삭임 라인(L2-Q1~Q7) 활성 — L1 라인과 퀘스트 로그에 공존.
+	if typeof(QuestManager) != TYPE_NIL and QuestManager.has_method("activate_l2_line"):
+		QuestManager.activate_l2_line()
 
 
 ## (L2-3) Called when the 관제탑 재가동 정화 컷신 completes. Advances the portal line (science
@@ -63,6 +66,9 @@ func _setup() -> void:
 ## opens on return home. Save the run so the purified flag + powered nodes persist.
 func _on_layer2_purified(_layer: String) -> void:
 	if typeof(GameState) != TYPE_NIL and GameState.has_method("set_portal_state"):
+		# (L2-5) science 포탈 = OPEN (자유 왕래) — 정화한 세계는 열린 채로 남는다(nature→open 패턴 계승).
+		GameState.set_portal_state("science", GameState.PORTAL_OPEN)
+		# 다음 죽은 세계(machine = Layer 3) flickering 전파 — 홈 귀환 시 뛰기 시작.
 		GameState.set_portal_state("machine", GameState.PORTAL_FLICKERING)
 	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("save_game"):
 		SaveManager.save_game()

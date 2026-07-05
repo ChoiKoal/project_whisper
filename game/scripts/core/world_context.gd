@@ -14,9 +14,12 @@ extends Node
 
 const SCENE_HOME := "home"
 const SCENE_GROVE := "grove"
+## (L2-5) Layer-2 「꺼진 관문 기지」 — the science portal destination.
+const SCENE_TERMINAL := "terminal_station"
 
 const HOME_SCENE_PATH := "res://scenes/world/home_island.tscn"
 const GROVE_SCENE_PATH := "res://scenes/world/starting_grove.tscn"
+const TERMINAL_SCENE_PATH := "res://scenes/world/terminal_station.tscn"
 
 ## The scene id the player is currently in ("home" at the start of a new game). Set by each
 ## world scene's session node on boot; read by SaveManager to key the world snapshot.
@@ -37,7 +40,16 @@ func scene_path(scene_id: String) -> String:
 	match scene_id:
 		SCENE_HOME: return HOME_SCENE_PATH
 		SCENE_GROVE: return GROVE_SCENE_PATH
+		SCENE_TERMINAL: return TERMINAL_SCENE_PATH
 	return GROVE_SCENE_PATH
+
+
+## (L2-5) Map a portal layer id to the world scene it opens. nature→grove, science→terminal.
+func layer_scene(layer: String) -> String:
+	match layer:
+		"science": return SCENE_TERMINAL
+		"nature": return SCENE_GROVE
+	return SCENE_GROVE
 
 
 ## Reset to the new-game baseline (start in the home world, default spawn).
