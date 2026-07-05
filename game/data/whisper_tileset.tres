@@ -1,4 +1,4 @@
-[gd_resource type="TileSet" load_steps=51 format=3 uid="uid://bwhisperts0001"]
+[gd_resource type="TileSet" load_steps=65 format=3 uid="uid://bwhisperts0001"]
 
 [ext_resource type="Texture2D" uid="uid://cna2wj7lr1xme" path="res://assets/tiles/t0_void.png" id="1_t0"]
 [ext_resource type="Texture2D" uid="uid://c0h0llow00t01" path="res://assets/tiles/t0_hollow.png" id="11_t0h"]
@@ -25,6 +25,13 @@
 [ext_resource type="Texture2D" path="res://assets/tiles/l3_platform.png" id="23_l3m"]
 [ext_resource type="Texture2D" path="res://assets/tiles/l3_plaza.png" id="24_l3o"]
 [ext_resource type="Texture2D" path="res://assets/tiles/l3_dark.png" id="25_l3d"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l4_amethyst.png" id="26_l4a"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l4_pipe.png" id="27_l4p"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l4_rune.png" id="28_l4r"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l4_platform.png" id="29_l4m"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l4_chamber.png" id="30_l4o"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l4_dark.png" id="31_l4d"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l4_crack.png" id="32_l4x"]
 
 [sub_resource type="TileSetAtlasSource" id="src_t0"]
 texture = ExtResource("1_t0")
@@ -272,6 +279,71 @@ texture_region_size = Vector2i(128, 64)
 0:0/0/custom_data_3 = 1.0
 0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(0, -32, 64, 0, 0, 32, -64, 0)
 
+[sub_resource type="TileSetAtlasSource" id="src_l4a"]
+texture = ExtResource("26_l4a")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l4p"]
+texture = ExtResource("27_l4p")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l4r"]
+texture = ExtResource("28_l4r")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l4m"]
+texture = ExtResource("29_l4m")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l4o"]
+texture = ExtResource("30_l4o")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l4d"]
+texture = ExtResource("31_l4d")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = false
+0:0/0/custom_data_3 = 1.0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(0, -32, 64, 0, 0, 32, -64, 0)
+
+[sub_resource type="TileSetAtlasSource" id="src_l4x"]
+texture = ExtResource("32_l4x")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = false
+0:0/0/custom_data_3 = 1.0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(0, -32, 64, 0, 0, 32, -64, 0)
+
 [resource]
 tile_shape = 1
 tile_layout = 0
@@ -311,3 +383,10 @@ sources/22 = SubResource("src_l3g")
 sources/23 = SubResource("src_l3m")
 sources/24 = SubResource("src_l3o")
 sources/25 = SubResource("src_l3d")
+sources/26 = SubResource("src_l4a")
+sources/27 = SubResource("src_l4p")
+sources/28 = SubResource("src_l4r")
+sources/29 = SubResource("src_l4m")
+sources/30 = SubResource("src_l4o")
+sources/31 = SubResource("src_l4d")
+sources/32 = SubResource("src_l4x")
