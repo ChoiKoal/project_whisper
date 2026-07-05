@@ -44,13 +44,68 @@ const TILE_BY_SRC = {
   0: tileArt("l3_dark"),
 };
 const RAMP = tileArt("l3_ramp");
-const CLIFF = tileArt("l3_cliff");
-const ORANGE_POOL = objArt("light_pool_orange"); // optional, may be null
 
-// warm copper/brass CanvasModulate mirror. Lifted hard so the metal reads bright & warm instead
-// of crushing to soot (the raw tiles are dark; the game's own lighting brightens them in-engine).
-const TONE = [0x6a / 255 * 2.15, 0x54 / 255 * 2.05, 0x3a / 255 * 1.85];
+// warm copper/brass CanvasModulate mirror, eased ~40%+ toward neutral vs the in-game night
+// tint (owner review: the full tint crushed the still image to brown mud — in-engine the
+// dynamic lights compensate, a static preview can't). Warm ratio kept (R>G>B).
+const TONE = [1.02, 0.86, 0.62];
 const GLOW_RGB = [0xff, 0x9a, 0x3c]; // 주황 발광
+
+// ---------------- CliffGen.make_apron mirror (brass palette, L3-1) -----------
+// Mirrors scripts/world/cliff_gen.gd make_apron(..., brass=true): the in-game map loader
+// runtime-generates copper/brass cliff aprons at every exposed elevation boundary so raised
+// districts CONNECT to the lower ground (owner reject on the old clipped-art approach:
+// "높이가 전혀 안 이어져 보임"). Same geometry: front rim of the raised diamond extruded down
+// `drop` levels, brass rivet bands every 20px, 주황 잔열 ember weeps, brass cap lip.
+const B_BASE = [90, 74, 52], B_DARK = [58, 44, 30], B_LIGHT = [200, 162, 74],
+      B_SHADOW = [36, 26, 16], B_LIP = [138, 106, 52], B_LIP_DK = [90, 68, 36],
+      B_EMBER = [232, 132, 44];
+function hash2(c, r, salt) {
+  let h = (((c * 73856093) ^ (r * 19349663) ^ (salt * 83492791) ^ 0x9E3779B9) >>> 0);
+  h = (Math.imul((h ^ (h >>> 13)) >>> 0, 1274126177) >>> 0);
+  return ((h ^ (h >>> 16)) >>> 0) & 0x7FFFFFFF;
+}
+function rockNoise(px, py, seed) { return (hash2(px, py, seed) & 0xFFFF) / 65535; }
+function lerpC(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+function brassCol(s) {
+  s = Math.min(Math.max(s, 0), 1.4);
+  if (s < 0.7) return lerpC(B_SHADOW, B_DARK, s / 0.7);
+  if (s < 1.0) return lerpC(B_DARK, B_BASE, (s - 0.7) / 0.3);
+  return lerpC(B_BASE, B_LIGHT, Math.min((s - 1.0) / 0.4, 1));
+}
+// draw one exposed front edge (se = +col/down-right, sw = +row/down-left) of the cell whose
+// LIFTED diamond centre is at (baseX, baseY). `drop` in levels (may be fractional for chasm
+// edges); `fade` melts the bottom of the wall into the void so district rims read as cliffs
+// over a deep chasm instead of razor-cut floating plates.
+function drawApron(baseX, baseY, drop, exposeSE, exposeSW, salt, fade) {
+  const wall = Math.round(LIFT * drop);
+  const x0 = Math.round(baseX - HW), y0 = Math.round(baseY - HH);
+  for (let x = 0; x < TW; x++) {
+    const isLeft = x < HW;
+    const exposed = isLeft ? exposeSW : exposeSE;
+    if (!exposed) continue;
+    const rimY = Math.round(isLeft ? (HH + x * 0.5) : ((TW - x) * 0.5 + HH));
+    const sideLight = isLeft ? 0.74 : 1.10;
+    for (let y = rimY; y < rimY + wall; y++) {
+      const t = (y - rimY) / Math.max(1, wall);
+      const vshade = 1.0 - 0.30 * t;
+      const strata = Math.floor(rockNoise((x / 6) | 0, (y / 5) | 0, salt) * 5.0) / 5.0;
+      const facet = (strata - 0.4) * 0.5;
+      const crack = (rockNoise((x / 3) | 0, (y / 7) | 0, salt + 5) < 0.14) ? -0.34 : 0.0;
+      const n = rockNoise(x, y, salt) * 0.12 - 0.06;
+      let col = brassCol(sideLight * vshade + facet + crack + n);
+      if ((y - rimY) % 20 < 1) col = lerpC(col, B_LIGHT, 0.4);            // brass rivet band
+      else if (!isLeft && rockNoise((x / 9) | 0, 0, salt + 3) < 0.06) col = lerpC(col, B_EMBER, 0.5); // 잔열 weep
+      const a = fade ? Math.min(1, Math.max(0, (1 - t) / 0.5)) : 1;
+      put(x0 + x, y0 + y, col, a);
+    }
+    const lipH = 5, jag = Math.floor(rockNoise(x, 7, salt) * 3.0);
+    for (let y = rimY; y < rimY + lipH - jag; y++) {
+      const g = ((x + y) % 3 !== 0) ? B_LIP : B_LIP_DK;
+      put(x0 + x, y0 + y, g, 1);
+    }
+  }
+}
 
 // ---------------- iso projection --------------------------------------------
 function cellLocal(c, r) { return [(c - r) * HW, (c + r) * HH]; }
@@ -62,17 +117,15 @@ function heightAt(c, r) {
 function isVoid(c, r) {
   return !(r >= 0 && r < H && c >= 0 && c < layout[r].length) || layout[r][c] === "V";
 }
-// ramp cells ('/') sit between a raised platform and the lower grate: lift them to the max
-// neighbouring elevation minus a half-step so they visually bridge the two levels.
+// ramp cells ('/') bridge two levels along the row axis: lift them to the average of their
+// N/S neighbours (flat if both sides are level, half-step if transitioning down).
 function isRamp(c, r) { return !isVoid(c, r) && layout[r][c] === "/"; }
 function liftAt(c, r) {
-  if (isRamp(c, r)) {
-    let m = 0;
-    for (const [dc, dr] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) m = Math.max(m, heightAt(c + dc, r + dr));
-    return Math.max(0, m - 0.5) * LIFT;
-  }
+  if (isRamp(c, r)) return (heightAt(c, r - 1) + heightAt(c, r + 1)) / 2 * LIFT;
   return heightAt(c, r) * LIFT;
 }
+// effective level (in LIFT units) for apron drop math — ramps included at their visual lift.
+function levelAt(c, r) { return liftAt(c, r) / LIFT; }
 
 // bounds over non-void cells (tile diamonds) AND authored objects (tall art like the grand
 // clock rises far above the cell baseline — include its full sprite rect so it isn't clipped).
@@ -104,13 +157,13 @@ const png = new PNG({ width: Math.ceil(worldW), height: Math.ceil(worldH) });
 // ---------------- background: warm soot void + amber wash + ember dust --------
 function bgAt(x, y) {
   const t = y / worldH;
-  // deep warm brown → near-black gradient (그을린 도시 하늘)
-  let r = 0x1c + (1 - t) * 0x10, g = 0x14 + (1 - t) * 0x0a, b = 0x10 + (1 - t) * 0x06;
+  // warm brown smog → darker toward the bottom (그을린 도시 하늘)
+  let r = 0x2e + (1 - t) * 0x16, g = 0x20 + (1 - t) * 0x0e, b = 0x16 + (1 - t) * 0x08;
   // amber wash toward the centre-top (the grand clock's residual glow bleeding into the smog)
   const cx = worldW * 0.5, cy = worldH * 0.24;
   const d = Math.hypot(x - cx, y - cy) / (worldW * 0.5);
-  const amber = Math.max(0, 1 - d) * 24;
-  r += amber * 0.9; g += amber * 0.5; b += amber * 0.18;
+  const amber = Math.max(0, 1 - d) * 34;
+  r += amber * 0.95; g += amber * 0.55; b += amber * 0.20;
   return [r, g, b];
 }
 function h32(a, b, s) { let h = (a * 374761393 + b * 668265263 + s * 2147483647) >>> 0; h = (h ^ (h >> 13)) * 1274126177; return (h >>> 0) / 4294967295; }
@@ -190,26 +243,35 @@ for (let r = 0; r < H; r++) for (let c = 0; c < layout[r].length; c++) {
   blit(src, sx, sy, { tone: true, srcW: Math.min(src.width, TW) });
 }
 
-// cliff aprons: a copper skirt below any raised cell whose S/E neighbour is lower.
+// cliff aprons (CliffGen mirror): every exposed S/E front edge gets a brass apron so the
+// elevation transitions CONNECT — raised platform → ground steps, and district rims → the
+// chasm void (drawn deeper, with a bottom fade, so the gaps between districts read as a
+// canyon with depth rather than floating plates or missing tiles).
+const CHASM_DROP = 2.4; // how far district rims plunge past their own level into the void
 for (let r = 0; r < H; r++) for (let c = 0; c < layout[r].length; c++) {
   if (isVoid(c, r)) continue;
-  const lv = heightAt(c, r); if (lv <= 0) continue;
-  const s = heightAt(c, r + 1), e = heightAt(c + 1, r);
-  const sVoid = isVoid(c, r + 1), eVoid = isVoid(c + 1, r);
-  // skirt if either forward neighbour is lower OR void (edge of a raised platform)
-  if ((s >= lv || sVoid ? 1 : 0) && (e >= lv || eVoid ? 1 : 0) && !sVoid && !eVoid) continue;
-  const [sx, sy] = tileScreen(c, r);
-  for (let dy = 0; dy < lv * LIFT + HH; dy++) {
-    for (let dx = 0; dx < TW; dx++) {
-      const rx = Math.abs(dx - HW), yy = HH + dy;
-      if (rx > HW - (yy - HH) * (HW / HH) && yy < TH) continue;
-      const shade = 0.6 - dy / (lv * LIFT + HH) * 0.32;
-      put(sx + dx, sy + HH + dy, [0x4a * 1.0, 0x36 * 1.0, 0x22 * 1.0], Math.max(0, shade) * 0.5);
+  const lv = levelAt(c, r);
+  const [lx, ly] = cellLocal(c, r);
+  const baseX = OX + lx, baseY = OY + ly - liftAt(c, r);
+  const salt = hash2(c, r, 733);
+  // per-edge drop: S (+row, screen down-left) and E (+col, screen down-right)
+  for (const [edge, nc, nr] of [["S", c, r + 1], ["E", c + 1, r]]) {
+    const se = edge === "E", sw = edge === "S";
+    if (isVoid(nc, nr)) {
+      drawApron(baseX, baseY, lv + CHASM_DROP, se, sw, salt, true);
+    } else if (levelAt(nc, nr) < lv) {
+      drawApron(baseX, baseY, lv - levelAt(nc, nr), se, sw, salt, false);
     }
   }
 }
 
 // ---------------- draw objects (with glow) ----------------------------------
+// preview-only glow boost: the legend's glow_scale drives a large in-engine PointLight2D;
+// a small additive blob at the same scale is invisible in a still, so the machines that ARE
+// lit in-game (condensate steam vents, the boiler fireboxes, the grand clock face) get halos
+// strong enough to read. 주황 발광 = the mood anchor.
+const GLOW_PREVIEW = { w: 0.8, E: 0.7, 2: 0.7, 1: 1.0, L: 0.45, 3: 0.45, C: 0.35, X: 0.4, K: 0.4 };
+const STEAM_SYMS = new Set(["E", "2", "w"]); // boilers + condensate: rising steam wisps
 // collect object draws with a depth key so they y-sort over tiles correctly.
 const draws = [];
 for (let r = 0; r < H; r++) for (let c = 0; c < layout[r].length; c++) {
@@ -220,18 +282,35 @@ for (let r = 0; r < H; r++) for (let c = 0; c < layout[r].length; c++) {
   const src = objArt(art);
   if (!src) continue;
   const off = objSpec.offset || [0, -8];
-  const glowStrength = objSpec.glow === "orange" ? (objSpec.glow_scale || 0.4) : 0;
+  const legendGlow = objSpec.glow === "orange" ? (objSpec.glow_scale || 0.4) : 0;
+  const glowStrength = Math.max(legendGlow, GLOW_PREVIEW[sym] || 0);
   const [lx, ly] = cellLocal(c, r);
   const baseX = OX + lx, baseY = OY + ly - liftAt(c, r);
   const sx = Math.round(baseX - src.width / 2 + off[0]);
   const sy = Math.round(baseY - src.height + HH + off[1]);
-  draws.push({ depth: c + r, sx, sy, src, glowStrength,
-    gx: baseX, gy: baseY - src.height * 0.4 + off[1] * 0.4 + HH });
+  draws.push({ depth: c + r, sx, sy, src, glowStrength, steam: STEAM_SYMS.has(sym),
+    gx: baseX, gy: baseY - src.height * 0.4 + off[1] * 0.4 + HH, seed: hash2(c, r, 41) });
 }
 draws.sort((a, b) => a.depth - b.depth);
 for (const d of draws) {
-  if (d.glowStrength > 0) glow(Math.round(d.gx), Math.round(d.gy), 40, d.glowStrength);
+  if (d.glowStrength > 0) {
+    const rad = Math.max(44, Math.round(d.src.width * 0.45));
+    glow(Math.round(d.gx), Math.round(d.gy), rad, d.glowStrength);
+  }
   blit(d.src, d.sx, d.sy, { tone: true });
+  if (d.steam) { // rising steam wisps, amber-lit from below (주황 증기)
+    const topY = d.sy + 6;
+    for (let k = 0; k < 5; k++) {
+      const t = k / 5;
+      const wx = d.gx + Math.sin(d.seed % 7 + k * 1.9) * (6 + 14 * t);
+      const wy = topY - 10 - k * 13;
+      const wr = 7 + k * 3, wa = 0.16 * (1 - t * 0.7);
+      for (let py = -wr; py <= wr; py++) for (let px = -wr; px <= wr; px++) {
+        const dd = Math.hypot(px, py) / wr; if (dd > 1) continue;
+        add(wx + px, wy + py, [255, 214, 170], (1 - dd) * (1 - dd) * wa);
+      }
+    }
+  }
 }
 
 // workbench (spawned by the session, not a layout symbol) at special.workbench_cell
