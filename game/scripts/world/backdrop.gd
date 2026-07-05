@@ -18,6 +18,10 @@ const CANVAS_SCRIPT := "res://scripts/world/backdrop_canvas.gd"
 ## (v0.5d) Home-island void mood: denser starfield + one large soft violet nebula glow patch
 ## behind the island. Off (grove) → the original sparse sky, unchanged.
 @export var home_mood: bool = false
+## (L2-2) Layer-2 「꺼진 관문 기지」 void mood: colder blue starfield + a cyan-tinted nebula, so
+## the science station floats in a colder void than the violet home island. Mutually exclusive
+## with home_mood (l2 wins if both set).
+@export var l2_mood: bool = false
 
 var _canvas: Control
 
@@ -32,6 +36,8 @@ func _ready() -> void:
 	if scr != null:
 		_canvas.set_script(scr)
 	add_child(_canvas)
-	if home_mood and _canvas.has_method("set_home_mood"):
+	if l2_mood and _canvas.has_method("set_l2_mood"):
+		_canvas.call("set_l2_mood", true)
+	elif home_mood and _canvas.has_method("set_home_mood"):
 		_canvas.call("set_home_mood", true)
 	_canvas.set_anchors_preset(Control.PRESET_FULL_RECT)

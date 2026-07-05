@@ -1,0 +1,65 @@
+{
+  "_comment": "Project Whisper Layer 2 (제2세계 과학의 세계) 「꺼진 관문 기지」 legend. Symbol -> (tileset source, l2obj scene spec). Parsed by MapLoader (same loader as grove/home, parameterized paths). Tile source ids: M=12 metal, m=13 broken-metal, C=14 concrete, c=15 cracked-concrete, G=16 waste, A=17 ash(gather J7), W=18 coolant(non-walkable), dark=19 sealed(non-walkable, used for STATIC-CLOSED gate cells B/D/N-gate/O so the map runs clean with gates closed — gate LOGIC = stage L2-3). J* = Layer-2 gather ids. l2obj = data-driven L2 object (art+glow+gatherable+blocks). 기획 수정 = 이 파일 + l2_map_layout.txt + l2_map_height.txt 수정.",
+  "tiles": {
+    "M": {"source": 12, "tile_id": "L2T-M"},
+    "m": {"source": 13, "tile_id": "L2T-m"},
+    "C": {"source": 14, "tile_id": "L2T-C"},
+    "c": {"source": 15, "tile_id": "L2T-c"},
+    "G": {"source": 16, "tile_id": "L2T-G"},
+    "A": {"source": 17, "tile_id": "L2T-A", "gather": "J7"},
+    "W": {"source": 18, "tile_id": "L2T-W", "walkable": false},
+    "V": {"source": 0, "tile_id": "T0", "walkable": false, "void": true},
+    "S": {"source": 14, "tile_id": "L2T-C", "spawn": true},
+    "1": {"source": 19, "tile_id": "L2T-dark", "walkable": false},
+    "2": {"source": 16, "tile_id": "L2T-G"},
+    "3": {"source": 16, "tile_id": "L2T-G"},
+    "4": {"source": 15, "tile_id": "L2T-c"},
+    "R": {"source": 16, "tile_id": "L2T-G"},
+    "s": {"source": 16, "tile_id": "L2T-G"},
+    "F": {"source": 16, "tile_id": "L2T-G"},
+    "N": {"source": 16, "tile_id": "L2T-G"},
+    "T": {"source": 12, "tile_id": "L2T-M"},
+    "e": {"source": 16, "tile_id": "L2T-G", "walkable": false},
+    "K": {"source": 19, "tile_id": "L2T-dark", "walkable": false},
+    "O": {"source": 19, "tile_id": "L2T-dark", "walkable": false},
+    "B": {"source": 19, "tile_id": "L2T-dark", "walkable": false},
+    "D": {"source": 19, "tile_id": "L2T-dark", "walkable": false}
+  },
+  "objects": {
+    "m": {"kind": "l2obj", "l2_id": "oil_leak", "art": "l2_debris_scrap", "offset": [0, -10], "gatherable": {"item_id": "J5"}, "blocks": false},
+    "R": {"kind": "l2obj", "l2_id": "debris", "art": "l2_scrap", "offset": [0, -34], "gatherable": {"item_id": "J1"}, "blocks": false},
+    "s": {"kind": "l2obj", "l2_id": "parts_box", "art": "l2_crate", "offset": [0, -30], "gatherable": {"item_id": "J2"}, "blocks": false},
+    "F": {"kind": "l2obj", "l2_id": "glass_dome", "art": "l2_dome", "offset": [0, -30], "gatherable": {"item_id": "J3"}, "blocks": false},
+    "N": {"kind": "l2obj", "l2_id": "neon", "role": "gather", "art": "l2_neon", "offset": [0, -44], "glow": "cyan", "glow_scale": 0.7, "gatherable": {"item_id": "J6"}, "blocks": false},
+    "T": {"kind": "l2obj", "l2_id": "lamp_off", "art": "l2_lamp", "offset": [0, -72], "blocks": true, "block_radius": 12},
+    "R2": {"_note": "reserved"},
+    "E": {"kind": "l2obj", "l2_id": "gen_main", "art": "l2_gen_main", "offset": [0, -52], "blocks": true, "block_radius": 34},
+    "e": {"kind": "l2obj", "l2_id": "gen_sub", "art": "l2_gen_sub", "offset": [0, -44], "blocks": true, "block_radius": 22},
+    "K": {"kind": "l2obj", "l2_id": "breaker", "art": "l2_breaker", "offset": [0, -34], "blocks": true, "block_radius": 16, "place_slot": "D64"},
+    "B": {"kind": "l2obj", "l2_id": "bridge_off", "art": "l2_bridge_off", "offset": [0, 0], "gate": "G1"},
+    "D": {"kind": "l2obj", "l2_id": "shield_door", "art": "l2_door_closed", "offset": [0, -48], "blocks": true, "block_radius": 30, "gate": "G2"},
+    "O": {"kind": "l2obj", "l2_id": "control_tower", "art": "l2_tower", "offset": [0, -150], "blocks": true, "block_radius": 60, "gate": "G4", "landmark": true},
+    "1": {"kind": "l2obj", "l2_id": "big_screen", "art": "l2_screen_off", "offset": [0, -70], "blocks": true, "block_radius": 40, "landmark": true},
+    "2": {"kind": "l2obj", "l2_id": "antenna", "art": "l2_antenna", "offset": [0, -78], "glow": "cyan", "glow_scale": 0.4, "blocks": true, "block_radius": 30, "landmark": true},
+    "4": {"kind": "l2obj", "l2_id": "parts_box_tut", "art": "l2_crate", "offset": [0, -30], "gatherable": {"item_id": "J2"}, "blocks": false, "landmark": true}
+  },
+  "landmarks": {
+    "1": "big_screen",
+    "2": "antenna",
+    "3": "gate_hint_G4",
+    "4": "tutorial_crate"
+  },
+  "_coord_note": "All cell coords below are (col,row) matching the ASCII layout AS TRANSCRIBED (byte-exact with doc §A-2). The doc §A-4 tables are ~1 col left of the ASCII spine; the ASCII is authoritative and these coords track it. The loader also DERIVES the G3 blackout cells straight from the layout N symbols (see _apply_l2_gate_closure) so they can never drift.",
+  "gates": {
+    "G1": {"type": "placement", "kind": "power_node", "node_id": "bridge", "bridge_cells": [[18,23],[19,23],[18,24],[19,24],[18,25],[19,25],[18,26],[19,26],[18,27],[19,27]], "breaker": [[18,28],[19,28]]},
+    "G2": {"type": "use", "target": "gen_sub", "gen_cell": [15,9], "door_cells": [[18,7],[19,7]]},
+    "G3": {"type": "held_item", "item": "D65", "cells": [[18,14],[19,14],[18,15],[19,15],[18,16],[19,16]]},
+    "G4": {"type": "chain", "kind": "power_node", "node_id": "control_core", "core_cell": [18,2], "tower_cells_row0": "row0-3 O block", "breaker": [[18,5],[19,5]]}
+  },
+  "special": {
+    "workbench_cell": [15, 32],
+    "_workbench_note": "정비대 (L2 crafting station = cauldron equivalent). Spawned by TerminalStation session ~west of spawn S(18,32) on cracked concrete. Not a layout symbol — placed by the session like the home dais. §A-7: '스폰 서 2칸'.",
+    "gather_neon_cells": [[11,17],[12,17],[26,17],[27,17],[11,18],[12,18],[26,18],[27,18]],
+    "sub_generator_cells": [[15,9],[23,32]]
+  }
+}

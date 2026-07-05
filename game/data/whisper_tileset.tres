@@ -1,4 +1,4 @@
-[gd_resource type="TileSet" load_steps=13 format=3 uid="uid://bwhisperts0001"]
+[gd_resource type="TileSet" load_steps=39 format=3 uid="uid://bwhisperts0001"]
 
 [ext_resource type="Texture2D" uid="uid://cna2wj7lr1xme" path="res://assets/tiles/t0_void.png" id="1_t0"]
 [ext_resource type="Texture2D" uid="uid://c0h0llow00t01" path="res://assets/tiles/t0_hollow.png" id="11_t0h"]
@@ -11,6 +11,14 @@
 [ext_resource type="Texture2D" uid="uid://768a8ma55n2g" path="res://assets/tiles/t4_mud.png" id="7_t4"]
 [ext_resource type="Texture2D" path="res://assets/tiles/t5a_water_anim.png" id="8_t5a"]
 [ext_resource type="Texture2D" path="res://assets/tiles/t5b_water2_anim.png" id="9_t5b"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l2_metal.png" id="12_l2m"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l2_metal_broken.png" id="13_l2mb"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l2_concrete.png" id="14_l2c"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l2_concrete_crack.png" id="15_l2cc"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l2_waste.png" id="16_l2g"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l2_ash.png" id="17_l2a"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l2_coolant_anim.png" id="18_l2w"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l2_dark.png" id="19_l2d"]
 
 [sub_resource type="TileSetAtlasSource" id="src_t0"]
 texture = ExtResource("1_t0")
@@ -124,6 +132,85 @@ texture_region_size = Vector2i(128, 64)
 0:0/0/custom_data_3 = 1.0
 0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(0, -32, 64, 0, 0, 32, -64, 0)
 
+[sub_resource type="TileSetAtlasSource" id="src_l2m"]
+texture = ExtResource("12_l2m")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l2mb"]
+texture = ExtResource("13_l2mb")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l2c"]
+texture = ExtResource("14_l2c")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l2cc"]
+texture = ExtResource("15_l2cc")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l2g"]
+texture = ExtResource("16_l2g")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l2a"]
+texture = ExtResource("17_l2a")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = true
+0:0/0/custom_data_1 = "J7"
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l2w"]
+texture = ExtResource("18_l2w")
+texture_region_size = Vector2i(128, 64)
+0:0/animation_columns = 2
+0:0/animation_frames_count = 2
+0:0/animation_frame_0/duration = 1.0
+0:0/animation_frame_1/duration = 1.0
+0:0/animation_speed = 0.8
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = false
+0:0/0/custom_data_3 = 1.0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(0, -32, 64, 0, 0, 32, -64, 0)
+
+[sub_resource type="TileSetAtlasSource" id="src_l2d"]
+texture = ExtResource("19_l2d")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = false
+0:0/0/custom_data_3 = 1.0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(0, -32, 64, 0, 0, 32, -64, 0)
+
 [resource]
 tile_shape = 1
 tile_layout = 0
@@ -149,3 +236,11 @@ sources/8 = SubResource("src_t5a")
 sources/9 = SubResource("src_t5b")
 sources/10 = SubResource("src_t5m")
 sources/11 = SubResource("src_t0h")
+sources/12 = SubResource("src_l2m")
+sources/13 = SubResource("src_l2mb")
+sources/14 = SubResource("src_l2c")
+sources/15 = SubResource("src_l2cc")
+sources/16 = SubResource("src_l2g")
+sources/17 = SubResource("src_l2a")
+sources/18 = SubResource("src_l2w")
+sources/19 = SubResource("src_l2d")

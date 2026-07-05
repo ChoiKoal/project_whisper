@@ -43,6 +43,10 @@ const HEIGHT_PATH := "res://data/map_height.txt"
 ## reads as a chunk torn out of the earth, hovering in the void. Off for the grove (its
 ## diorama skirt + real elevation already do this).
 @export var floating_shard: bool = false
+## (L2-2) When true, elevation cliff aprons + shard-border aprons use the metal-and-concrete
+## palette (CliffGen.make_apron metal=true) instead of the grove rock palette — for the Layer-2
+## science station. Off for grove/home (rock).
+@export var l2_cliff_palette: bool = false
 const ATLAS := Vector2i(0, 0)
 
 ## Deterministic global seed mixed into every procedural hash (map coords → value).
@@ -133,6 +137,11 @@ func _ready() -> void:
 	_load_height_data()
 	_classify_void_cells()
 	_build_tiles()
+	# (L2-2) Seal the G3 정전 병목 (blackout bottleneck) N cells to the non-walkable dark source
+	# so the gate is STATIC-CLOSED and unwalkable on import (gate LOGIC = stage L2-3). This runs
+	# before elevation/objects so the sealed cells are known when N objects are spawned (the gate
+	# N cells get a blackout overlay, the gather N cells get the neon cluster). No-op for grove.
+	_apply_l2_gate_closure()
 	# (v0.5 phase C) Classify elevation BEFORE spawning objects/scatter so the rim-cell
 	# exclusion (_is_rim_cell) and the authored-object height lift are known at spawn time.
 	_classify_elevation()
@@ -696,7 +705,7 @@ func _build_shard_aprons() -> void:
 			var east_open := not _is_island_cell(cell + Vector2i(1, 0))    # +col → screen SE
 			if south_open or east_open:
 				var salt := CliffGen.hash2(cell.x, cell.y, 733)
-				var img := CliffGen.make_apron(1, east_open, south_open, salt)
+				var img := CliffGen.make_apron(1, east_open, south_open, salt, l2_cliff_palette)
 				var s := Sprite2D.new()
 				s.texture = ImageTexture.create_from_image(img)
 				s.centered = false
@@ -1129,7 +1138,7 @@ func _build_cliff_faces() -> void:
 		if drop <= 0:
 			continue
 		var salt := CliffGen.hash2(cell.x, cell.y, 611)
-		var img := CliffGen.make_apron(drop, se_drop > 0, sw_drop > 0, salt)
+		var img := CliffGen.make_apron(drop, se_drop > 0, sw_drop > 0, salt, l2_cliff_palette)
 		var tex := ImageTexture.create_from_image(img)
 		var s := Sprite2D.new()
 		s.texture = tex
@@ -1305,7 +1314,11 @@ func _build_objects() -> void:
 			# Skip it (mark occupied so scatter doesn't refill), exactly like the scatter rule.
 			# Landmarks (cauldron/gate/world-tree/mystic/portal) are unaffected — they are
 			# authored on purpose and never sit on a rim.
-			if sym in ["T", "F", "R", "s", "t", "h"] and _is_rim_cell(cell):
+			# Grove small-scatter symbols on a cliff RIM are skipped (would render on the cliff
+			# face). L2 objects (kind:l2obj) are authored deliberately per the level design, so
+			# they are NOT rim-skipped — the map places them where it wants them.
+			var is_l2 := String((objects[sym] as Dictionary).get("kind", "")) == "l2obj"
+			if not is_l2 and sym in ["T", "F", "R", "s", "t", "h"] and _is_rim_cell(cell):
 				_occupied[cell] = true
 				continue
 			_occupied[cell] = true
@@ -1316,6 +1329,16 @@ func _build_objects() -> void:
 var portal_cells: Dictionary = {}   # layer(String) -> Vector2i
 ## The home cauldron / observation cells (parity with grove landmark bookkeeping).
 var observation_cell: Vector2i = Vector2i(-1, -1)
+
+## (L2-1) Spawned Layer-2 objects, keyed by l2_id → {cell, node, spec}. The L2-3 gate agent
+## reads this to attach power-node / held-item / use-on-object state to the right nodes. The
+## harness reads it to assert every object instantiated with a texture.
+var l2_object_nodes: Dictionary = {}   # l2_id(String) -> {cell, node, spec}
+## L2 workbench (정비대 = cauldron equivalent) cell, for session wiring.
+var l2_workbench_cell: Vector2i = Vector2i(-1, -1)
+## (L2-2) Cells sealed as the STATIC-CLOSED G3 정전 병목 (dark, non-walkable). Read by the
+## harness and by _spawn_l2_object (a gather-N spec on a sealed cell → blackout overlay).
+var l2_blackout_cells: Dictionary = {}   # Vector2i -> true
 
 
 func _spawn_object(sym: String, cell: Vector2i, spec: Dictionary) -> void:
@@ -1333,6 +1356,15 @@ func _spawn_object(sym: String, cell: Vector2i, spec: Dictionary) -> void:
 		# affordance ("look/skip"), no new system needed.
 		rest_stump = RestStump.new()
 		_place(rest_stump, world)
+		return
+	# (L2-1) Layer-2 science objects are fully data-driven via `kind:"l2obj"` so the grove's
+	# symbol match below stays untouched (no regression risk). The legend spec carries the
+	# art path, y-offset, glow, gatherable item, blocking, and an `l2_id` the L2-3 gate agent
+	# hooks state onto. Gate structural pieces (bridge/door/tower/blackout) are spawned here in
+	# their STATIC-CLOSED art; their walkability is data-visible but sealed (see the legend's
+	# non-walkable tile source under the cell). Multi-cell landmarks anchor on their first cell.
+	if kind == "l2obj":
+		_spawn_l2_object(sym, cell, spec, world)
 		return
 	match sym:
 		"C":
@@ -1414,6 +1446,140 @@ func _spawn_portal(cell: Vector2i, spec: Dictionary) -> void:
 	# (only the OPEN gate pools violet at its base; dormant gates stay cold stone).
 
 
+## (L2-2) Seal the STATIC-CLOSED G3 정전 병목 cells: override them to the dark non-walkable
+## source and remember them so the N gather-object spawn is suppressed there (a blackout overlay
+## goes down instead). Reads legend `special.blackout_gate_cells`. Const dark source id = 19.
+## No-op when the legend has no such block (grove/home).
+const L2_DARK_SOURCE := 19
+func _apply_l2_gate_closure() -> void:
+	l2_blackout_cells.clear()
+	# Only run when the legend declares the G3 gate (Layer-2). Derive the bottleneck N cells
+	# from the LAYOUT itself (the ASCII is authoritative): the central정전병목 N sit in the
+	# middle columns on the upper rows, while the gather N clusters are far off to the sides.
+	# This avoids depending on hand-typed coords that can drift from the ASCII.
+	var gates: Dictionary = _legend.get("gates", {})
+	if not gates.has("G3"):
+		return
+	var band := _l2_center_band()   # [min_col, max_col] around the vertical spine
+	for r in range(height):
+		var row: String = _layout[r] if r < _layout.size() else ""
+		for c in range(min(width, row.length())):
+			if row[c] != "N":
+				continue
+			# gate bottleneck = an N in the central spine, above the gather bands (rows < 17).
+			if r < 17 and c >= band[0] and c <= band[1]:
+				var cell := Vector2i(c, r)
+				l2_blackout_cells[cell] = true
+				set_cell(cell, L2_DARK_SOURCE, ATLAS)
+
+
+## Return [min_col, max_col] of the map's central spine (where the gates sit). Computed as the
+## columns of the D 차폐문 (unique 2-wide gate on row ~7) with a small pad, so the blackout N
+## detection tracks the ASCII spine no matter where it is authored.
+func _l2_center_band() -> Array:
+	var min_c := width
+	var max_c := -1
+	for r in range(_layout.size()):
+		var row: String = _layout[r]
+		for c in range(row.length()):
+			if row[c] == "D" or row[c] == "B":
+				min_c = mini(min_c, c)
+				max_c = maxi(max_c, c)
+	if max_c < 0:
+		# fallback: geometric centre ±2
+		var mid := width / 2
+		return [mid - 2, mid + 1]
+	return [min_c - 1, max_c + 1]
+
+
+## (L2-2) The legend `special.workbench_cell` (정비대 placement), or (-1,-1) if none. The
+## TerminalStation session reads this to drop the tech workbench near spawn.
+func l2_workbench_special_cell() -> Vector2i:
+	var special: Dictionary = _legend.get("special", {})
+	var wc: Array = special.get("workbench_cell", [])
+	if wc.size() >= 2:
+		return Vector2i(int(wc[0]), int(wc[1]))
+	return Vector2i(-1, -1)
+
+
+## (L2-1) Spawn a data-driven Layer-2 object. The legend spec fields:
+##   art:String (assets/objects/<art>.png), offset:[x,y] (sprite offset), glow:"cyan"|"",
+##   gatherable:{item_id}, blocks:bool, l2_id:String, multi:[..extra cells covered..].
+## Gatherable objects reuse the Gatherable class (same interaction pattern as the grove
+## rocks/flowers) and register into object_spawns for the respawn manager. Non-gatherable
+## structures (generator/breaker/tower/screen/antenna/lamp/workbench + gate pieces) are plain
+## Sprite2Ds; blocking ones get a StaticBody so the player can't walk through the machine.
+func _spawn_l2_object(sym: String, cell: Vector2i, spec: Dictionary, world: Vector2) -> void:
+	# (L2-2) A gather-N object authored on a sealed G3 병목 cell → drop the STATIC-CLOSED blackout
+	# overlay (dark, non-gatherable) instead of the neon cluster. The gather N clusters (rows
+	# 17-18) are NOT in blackout_cells, so they still spawn neon normally.
+	if l2_blackout_cells.has(cell):
+		var ov := Sprite2D.new()
+		ov.texture = load("res://assets/objects/l2_blackout.png")
+		ov.offset = Vector2(0, -8)
+		ov.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		ov.z_index = 1
+		ov.set_meta("object_id", "blackout_gate")
+		_place(ov, world)
+		l2_object_nodes["blackout_gate@" + str(cell)] = {"cell": cell, "node": ov, "spec": {"gate": "G3"}}
+		return
+	var art := String(spec.get("art", ""))
+	if art == "":
+		return
+	var tex := load("res://assets/objects/%s.png" % art) as Texture2D
+	if tex == null:
+		push_warning("MapLoader: L2 object art missing: %s" % art)
+		return
+	var off_arr: Array = spec.get("offset", [0, 0])
+	var off := Vector2(float(off_arr[0]), float(off_arr[1])) if off_arr.size() >= 2 else Vector2.ZERO
+	var l2_id := String(spec.get("l2_id", sym))
+	var gth: Dictionary = spec.get("gatherable", {})
+	var node: Node2D
+	if not gth.is_empty():
+		# gatherable science resource (scrap/crate/dome/neon) — reuse Gatherable
+		var g := Gatherable.new()
+		g.item_id = String(gth.get("item_id", ""))
+		g.unique = bool(gth.get("unique", false))
+		g.object_id = l2_id
+		g.texture = tex
+		g.offset = off
+		g.blocks_movement = bool(spec.get("blocks", false))
+		node = g
+		object_spawns.append({"cell": cell, "symbol": sym})
+	else:
+		var s := Sprite2D.new()
+		s.texture = tex
+		s.offset = off
+		s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		# Give structures a stable object_id so the L2-3 use/place framework can target them.
+		s.set_meta("object_id", l2_id)
+		node = s
+		if bool(spec.get("blocks", false)):
+			_add_object_body(node, float(spec.get("block_radius", 26.0)))
+	_place(node, world)
+	# cyan additive glow for lit/active objects (neon cluster, lit machines). Reuses the
+	# cyan light-pool decal (reparents onto the CanvasModulate-free glow layer at runtime).
+	if String(spec.get("glow", "")) == "cyan":
+		_add_light_pool(node, "res://assets/objects/light_pool_cyan.png", Vector2(off.x, off.y * 0.4), float(spec.get("glow_scale", 0.8)))
+	if l2_id == "workbench":
+		l2_workbench_cell = cell
+	l2_object_nodes[l2_id + "@" + str(cell)] = {"cell": cell, "node": node, "spec": spec}
+
+
+## Small circular blocking StaticBody at a spawned structure's base (so the player can't walk
+## through a generator/tower). Radius is the structure footprint on the ground.
+func _add_object_body(node: Node2D, radius: float) -> void:
+	var body := StaticBody2D.new()
+	body.collision_layer = 1
+	body.collision_mask = 0
+	var col := CollisionShape2D.new()
+	var shape := CircleShape2D.new()
+	shape.radius = radius
+	col.shape = shape
+	body.add_child(col)
+	node.add_child(body)
+
+
 ## Deterministic texture path + sprite offset for a scatter/authored gatherable
 ## symbol at a cell. Centralised so ObjectRespawn reproduces the exact same
 ## variant when it rebuilds (save/respawn determinism).
@@ -1452,6 +1618,17 @@ func _object_texture(sym: String, cell: Vector2i) -> Array:  # [path, offset]
 ## ObjectRespawn). Reads the item_id from the legend's object spec.
 func rebuild_gatherable(sym: String, cell: Vector2i) -> Gatherable:
 	var spec: Dictionary = _legend.get("objects", {}).get(sym, {})
+	# (L2-1) Layer-2 gatherable objects carry their art in the legend spec (kind:l2obj), not in
+	# the grove-only _object_texture table. Rebuild them from the spec so respawn reproduces the
+	# same science object (scrap/crate/dome/neon) rather than a grove rock fallback.
+	if String(spec.get("kind", "")) == "l2obj":
+		var art := String(spec.get("art", "rock"))
+		var off_arr: Array = spec.get("offset", [0, 0])
+		var off := Vector2(float(off_arr[0]), float(off_arr[1])) if off_arr.size() >= 2 else Vector2.ZERO
+		var g := _gatherable(spec, cell, "res://assets/objects/%s.png" % art, off)
+		g.object_id = String(spec.get("l2_id", sym))
+		g.blocks_movement = bool(spec.get("blocks", false))
+		return g
 	var tex_off := _object_texture(sym, cell)
 	return _gatherable(spec, cell, tex_off[0], tex_off[1])
 

@@ -29,6 +29,17 @@ const ROCK_SHADOW := Color8(46, 36, 30)
 const GRASS_LIP := Color8(86, 128, 60)
 const GRASS_LIP_DK := Color8(58, 92, 42)
 
+# (L2-2) Metal-and-concrete cliff palette for the Layer-2 station (파손 금속 단면). Same geometry
+# as the rock apron, recolored to the 남색 metal ramp + a concrete cap lip. Selected by the
+# `metal` flag on make_apron (default false → the grove rock palette, unchanged).
+const M_BASE := Color8(58, 68, 82)
+const M_DARK := Color8(34, 42, 56)
+const M_LIGHT := Color8(90, 100, 114)
+const M_SHADOW := Color8(20, 26, 38)
+const M_LIP := Color8(74, 78, 86)      # concrete cap
+const M_LIP_DK := Color8(48, 52, 58)
+const M_CYAN := Color8(74, 217, 200)   # conduit leak accent
+
 
 ## Deterministic value hash (mirrors MapLoader._cell_hash / the JS cellHash).
 static func hash2(c: int, r: int, salt: int = 0) -> int:
@@ -54,7 +65,7 @@ static func _rock_noise(px: int, py: int, seed: int) -> float:
 ## RAISED cell's diamond centre: blit at (center.x - 64, center.y - 32).
 ## The top 64px row contains the two front diamond edges; the wall hangs below; the last
 ## `TH/2` rows fold back into the lower diamond foot so the base seats on the ground.
-static func make_apron(drop: int, expose_se: bool, expose_sw: bool, salt: int) -> Image:
+static func make_apron(drop: int, expose_se: bool, expose_sw: bool, salt: int, metal: bool = false) -> Image:
 	var wall := LIFT * drop
 	var img_h := wall + TH
 	var img := Image.create(TW, img_h, false, Image.FORMAT_RGBA8)
@@ -94,18 +105,40 @@ static func make_apron(drop: int, expose_se: bool, expose_sw: bool, salt: int) -
 			var facet: float = (strata - 0.4) * 0.5
 			var crack: float = -0.34 if (_rock_noise(x / 3, y / 7, salt + 5) < 0.14) else 0.0
 			var n: float = _rock_noise(x, y, salt) * 0.12 - 0.06
-			var col: Color = _rock_col(side_light * vshade + facet + crack + n)
+			var shade := side_light * vshade + facet + crack + n
+			var col: Color = _metal_col(shade) if metal else _rock_col(shade)
+			# (L2-2) metal cliff: a riveted strata line + an occasional cyan conduit seam
+			if metal:
+				if (y - wall_top) % 20 < 1:
+					col = col.lerp(M_LIGHT, 0.4)                # rivet band
+				elif not is_left and (_rock_noise(x / 9, 0, salt + 3) < 0.06):
+					col = col.lerp(M_CYAN, 0.5)                 # leaking conduit
 			img.set_pixel(x, y, col)
-		# Grass lip: a 5px grass overhang hanging over the very top of the wall so the
-		# raised rim doesn't read as a razor cut.
+		# Cap lip: a 5px overhang so the raised rim doesn't read as a razor cut — grass for the
+		# grove, concrete for the metal (L2) cliff.
 		var lip_h := 5
 		for y in range(wall_top, mini(wall_top + lip_h, img_h)):
-			var g := GRASS_LIP if ((x + y) % 3 != 0) else GRASS_LIP_DK
+			var g: Color
+			if metal:
+				g = M_LIP if ((x + y) % 3 != 0) else M_LIP_DK
+			else:
+				g = GRASS_LIP if ((x + y) % 3 != 0) else GRASS_LIP_DK
 			# ragged bottom edge of the lip
 			var jag := int(_rock_noise(x, 7, salt) * 3.0)
 			if y < wall_top + lip_h - jag:
 				img.set_pixel(x, y, g)
 	return img
+
+
+## (L2-2) Map a shade scalar to a metal-and-concrete colour (parallel to _rock_col).
+static func _metal_col(s: float) -> Color:
+	s = clampf(s, 0.0, 1.4)
+	if s < 0.7:
+		return M_SHADOW.lerp(M_DARK, clampf(s / 0.7, 0.0, 1.0))
+	elif s < 1.0:
+		return M_DARK.lerp(M_BASE, clampf((s - 0.7) / 0.3, 0.0, 1.0))
+	else:
+		return M_BASE.lerp(M_LIGHT, clampf((s - 1.0) / 0.4, 0.0, 1.0))
 
 
 ## Map a shade scalar (~[0.4..1.2]) to a rock colour by lerping the palette.
