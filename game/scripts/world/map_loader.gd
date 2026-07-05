@@ -38,6 +38,11 @@ const HEIGHT_PATH := "res://data/map_height.txt"
 ## (v0.5.0 phase C) Whether the procedural density scatter runs. The home island (제0세계) is
 ## a deliberately BARREN "빈 세계", so its scene sets this false — only authored objects appear.
 @export var enable_scatter: bool = true
+## (v0.5d) Floating rock SHARD treatment: full-perimeter cliff aprons + a tapering rocky
+## underside narrowing to a point + a few drifting debris islets, so the (flat) home island
+## reads as a chunk torn out of the earth, hovering in the void. Off for the grove (its
+## diorama skirt + real elevation already do this).
+@export var floating_shard: bool = false
 const ATLAS := Vector2i(0, 0)
 
 ## Deterministic global seed mixed into every procedural hash (map coords → value).
@@ -141,6 +146,12 @@ func _ready() -> void:
 	# per-diamond texture variation, so the synthetic ±3% jitter is redundant.
 	# (_build_brightness_jitter kept in the file for reference / harness compat.)
 	_build_border_collision()
+	# (v0.5d) Floating rock-shard silhouette for the flat home island: full-perimeter cliff
+	# aprons (all four screen edges), a tapering rocky underside, and drifting debris islets.
+	if floating_shard:
+		_build_shard_aprons()
+		_build_shard_underside()
+		_build_debris_islets()
 	_lift_hill_objects()
 	_place_player()
 	_wire_stump_fade()
@@ -639,6 +650,139 @@ func _place_skirt(tex: Texture2D, cell: Vector2i) -> void:
 	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_cliff_overlay.add_child(s)
 	cliff_skirt_count += 1
+
+
+# ---- floating rock shard (v0.5d, home island) ----------------------------
+
+## Node holding the shard aprons (full perimeter) + underside + debris. Children of the
+## tilemap at CLIFF_SKIRT_Z so the whole rock mass draws BELOW the ground slab.
+var _shard_overlay: Node2D
+## Counts for the harness (prove the shard treatment actually ran).
+var shard_apron_count: int = 0
+var shard_underside_present: bool = false
+var debris_islet_count: int = 0
+
+## A cell is on the island PERIMETER if it's an island cell with at least one off-island
+## (VOID / off-map) 4-neighbour. Used to hang cliff aprons around the WHOLE island.
+func _is_perimeter_cell(cell: Vector2i) -> bool:
+	if not _is_island_cell(cell):
+		return false
+	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		if not _is_island_cell(cell + d):
+			return true
+	return false
+
+func _ensure_shard_overlay() -> void:
+	if _shard_overlay != null:
+		return
+	_shard_overlay = Node2D.new()
+	_shard_overlay.name = "FloatingShard"
+	_shard_overlay.z_index = CLIFF_SKIRT_Z
+	add_child(_shard_overlay)
+
+## Hang a cliff-face apron on EVERY exposed perimeter edge (all four screen directions), so
+## the flat home island has a continuous rock wall around its whole rim — not just the S/E
+## faces `_build_cliff_skirts` covers. Uses CliffGen.make_apron (drop=1) per exposed edge.
+func _build_shard_aprons() -> void:
+	_ensure_shard_overlay()
+	for r in range(height):
+		var row := _layout[r] if r < _layout.size() else ""
+		for c in range(min(width, row.length())):
+			var cell := Vector2i(c, r)
+			if not _is_perimeter_cell(cell):
+				continue
+			# Which of the two FRONT (screen S / E) edges face the void → drawn by make_apron.
+			var south_open := not _is_island_cell(cell + Vector2i(0, 1))   # +row → screen SW
+			var east_open := not _is_island_cell(cell + Vector2i(1, 0))    # +col → screen SE
+			if south_open or east_open:
+				var salt := CliffGen.hash2(cell.x, cell.y, 733)
+				var img := CliffGen.make_apron(1, east_open, south_open, salt)
+				var s := Sprite2D.new()
+				s.texture = ImageTexture.create_from_image(img)
+				s.centered = false
+				var center := map_to_local(cell)
+				s.position = center + Vector2(-TILE_HALF_W, -TILE_HALF_H)
+				s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+				_shard_overlay.add_child(s)
+				shard_apron_count += 1
+
+## Build one big tapering rock mass under the whole island, anchored at the island's bottom
+## screen vertex, so the shard reads as torn from the earth and hovering.
+func _build_shard_underside() -> void:
+	if width <= 0 or height <= 0:
+		return
+	_ensure_shard_overlay()
+	# Screen extents of the island slab (iso). Bottom vertex = max (c+r) island cell.
+	var minx := 1e9
+	var maxx := -1e9
+	var bottom_y := -1e9
+	var bottom_x := 0.0
+	for r in range(height):
+		var row := _layout[r] if r < _layout.size() else ""
+		for c in range(min(width, row.length())):
+			if not _is_island_cell(Vector2i(c, r)):
+				continue
+			var p := map_to_local(Vector2i(c, r))
+			minx = minf(minx, p.x - TILE_HALF_W)
+			maxx = maxf(maxx, p.x + TILE_HALF_W)
+			if p.y + TILE_HALF_H > bottom_y:
+				bottom_y = p.y + TILE_HALF_H
+				bottom_x = p.x
+	if maxx <= minx:
+		return
+	var span := int(maxx - minx)
+	var depth := int(span * 0.62)   # hangs down ~0.6× the island width to a point
+	var img := CliffGen.make_underside(span, depth, MAP_SEED & 0x7fffffff)
+	var s := Sprite2D.new()
+	s.texture = ImageTexture.create_from_image(img)
+	s.centered = false
+	# Top-centre of the underside sits a little ABOVE the island's bottom vertex so its wide
+	# top tucks up into the perimeter aprons (no seam), then it tapers down to the point.
+	var top_pad := TILE_HALF_H * 2.0
+	s.position = Vector2((minx + maxx) * 0.5 - span * 0.5, bottom_y - top_pad)
+	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	# Draw it below the aprons (further back) so the aprons overlap its top edge.
+	s.z_index = -1
+	_shard_overlay.add_child(s)
+	shard_underside_present = true
+
+## Scatter a few small floating rock chunks (debris islets) drifting near the island. They
+## bob slowly (a tiny script-free tween via a DriftBob node). Purely decorative.
+func _build_debris_islets() -> void:
+	if width <= 0 or height <= 0:
+		return
+	_ensure_shard_overlay()
+	var cx := map_to_local(Vector2i(width / 2, height / 2))
+	# Fixed offsets around the island (screen space), deterministic sizes.
+	var specs := [
+		[Vector2(-980.0, 120.0), 78, 0],
+		[Vector2(1020.0, 40.0), 64, 1],
+		[Vector2(-620.0, 560.0), 52, 2],
+		[Vector2(760.0, 600.0), 70, 3],
+		[Vector2(120.0, -560.0), 46, 4],
+	]
+	for spec in specs:
+		var off: Vector2 = spec[0]
+		var w: int = spec[1]
+		var salt: int = 900 + int(spec[2])
+		var img := CliffGen.make_debris(w, salt)
+		var s := Sprite2D.new()
+		s.texture = ImageTexture.create_from_image(img)
+		s.centered = true
+		s.position = cx + off
+		s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		s.z_index = -2   # behind everything (far debris in the void)
+		_shard_overlay.add_child(s)
+		# gentle bob via a looping tween (no per-frame script). Created after the sprite is
+		# in the tree so the SceneTree owns the tween.
+		var base_y := s.position.y
+		var amp := 6.0 + float(salt % 5)
+		var tw := s.create_tween().set_loops()
+		tw.tween_property(s, "position:y", base_y - amp, 2.6 + float(salt % 3) * 0.4) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		tw.tween_property(s, "position:y", base_y + amp, 2.6 + float(salt % 3) * 0.4) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		debris_islet_count += 1
 
 
 # ---- border collision (v0.2.1 bug-B fix) ---------------------------------
@@ -1254,19 +1398,20 @@ func _spawn_portal(cell: Vector2i, spec: Dictionary) -> void:
 	p.set("layer", String(spec.get("layer", "nature")))
 	p.set("object_id", String(spec.get("object_id", "portal")))
 	portal_cells[String(spec.get("layer", "nature"))] = cell
-	# Blocking body at the base so the arch legs are solid.
+	# Blocking body at the base so the monumental gate's stone pillars are solid (the
+	# player walks up to the gate, not through it). Wide enough to seat both pillars.
 	var body := StaticBody2D.new()
 	body.collision_layer = 1
 	body.collision_mask = 0
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
-	shape.size = Vector2(72, 24)
+	shape.size = Vector2(150, 30)
 	col.shape = shape
 	body.add_child(col)
 	p.add_child(body)
 	_place(p, cell_center_world(cell))
-	# A soft violet pool washing the portal base (matches the cauldron/world-tree treatment).
-	_add_light_pool(p, "res://assets/objects/light_pool_violet.png", Vector2(0, -6), 0.9)
+	# No unconditional light pool here — the Portal owns its own state-gated glow pool
+	# (only the OPEN gate pools violet at its base; dormant gates stay cold stone).
 
 
 ## Deterministic texture path + sprite offset for a scatter/authored gatherable
@@ -1481,6 +1626,17 @@ func _add_quest_marker(parent: Node2D, quest_id: String, variant: String, icon_o
 
 func cell_center_world(cell: Vector2i) -> Vector2:
 	return to_global(map_to_local(cell))
+
+## Collect every cell whose RAW layout symbol equals `sym` (as authored in the layout file).
+## Used by HomeSession to find the dead-grass patch cells (`g`) to decorate.
+func cells_with_symbol(sym: String) -> Array:
+	var out: Array = []
+	for r in range(_layout.size()):
+		var row := _layout[r]
+		for c in range(row.length()):
+			if row[c] == sym:
+				out.append(Vector2i(c, r))
+	return out
 
 func world_to_cell(world: Vector2) -> Vector2i:
 	return local_to_map(to_local(world))

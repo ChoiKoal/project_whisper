@@ -8,10 +8,14 @@ class_name Vignette
 ## never darkens panel text. Mouse-transparent; purely decorative. Follows the screen
 ## (anchored full-rect), independent of the world camera.
 
-## Peak corner darkness (0..1). ~0.15 = a gentle frame, not a heavy tunnel.
+## Peak corner darkness (0..1). ~0.15 = a gentle frame, not a heavy tunnel. Exposed so a
+## moodier scene (v0.5d home island) can push a stronger frame.
 const STRENGTH := 0.15
 ## Where the darkening starts (0 = center, 1 = corner). Higher = only the very corners.
 const INNER := 0.55
+## (v0.5d) Per-scene overrides. <0 → use the const default.
+@export var strength_override: float = -1.0
+@export var inner_override: float = -1.0
 
 var _rect: ColorRect
 
@@ -23,12 +27,14 @@ func _ready() -> void:
 	_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_rect.color = Color(0, 0, 0, 1)
 
+	var strength := strength_override if strength_override >= 0.0 else STRENGTH
+	var inner := inner_override if inner_override >= 0.0 else INNER
 	var shader := Shader.new()
 	shader.code = _SHADER
 	var mat := ShaderMaterial.new()
 	mat.shader = shader
-	mat.set_shader_parameter("strength", STRENGTH)
-	mat.set_shader_parameter("inner", INNER)
+	mat.set_shader_parameter("strength", strength)
+	mat.set_shader_parameter("inner", inner)
 	_rect.material = mat
 	add_child(_rect)
 

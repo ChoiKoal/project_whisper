@@ -19,8 +19,17 @@ const EVE_A := Color("#b59268")
 const EVE_B := Color("#6b4a9e")
 const NIGHT := Color("#3a2a5c")
 
+## (v0.5d) A scene may pin a FIXED tone instead of following the day/night clock — the home
+## island (제0세계) uses its own cool twilight violet-blue mood, slightly darker than grove day,
+## and never cycles. Empty string → follow the clock (grove behaviour, unchanged).
+@export var fixed_tone: String = ""
+
 
 func _ready() -> void:
+	if fixed_tone != "":
+		color = Color(fixed_tone)
+		set_process(false)   # a pinned mood never cycles
+		return
 	# Defensive: if the GameState autoload were ever missing/renamed, reading
 	# .day_fraction() during the grove ready-flush would null-deref in a release
 	# template (no debug error). Fall back to the day tint and skip.

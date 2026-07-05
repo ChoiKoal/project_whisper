@@ -1,30 +1,39 @@
 #!/usr/bin/env node
-// tools_overview_home.js — v0.5 phase-C 제0세계 (home island) overview render.
+// tools_overview_home.js — v0.5d 제0세계 (home island) overview render.
 //
-//   NODE_PATH=/workspace/group/tools/nodejs/node_modules node tools_overview_home.js
+//   NODE_PATH=/workspace/group/tools/nodejs/node_modules node tools_overview_home.js [--closeup]
 //
 // The in-engine SubViewport render can't run under --headless (dummy rendering driver has
 // no framebuffer to read back), so — as with the v050a2/v050b previews — this offline
-// pngjs compositor draws the home island the same way the game does:
-//   * reads the REAL data/home_layout.txt + data/home_legend.json (so the dais/portal/
-//     cauldron cells are exactly where the game spawns them),
-//   * starry void-sky background (the island floats in the void),
-//   * iso tiles (dirt D + grass patches g) for the island slab,
-//   * a small round stone dais under the spawn (mirrors HomeSession._draw_dais),
-//   * the CC0 cauldron + a stone observation marker,
-//   * 5 portal stone arches in the authored arc — nature (Layer 1) FLICKERING (violet
-//     glow), the other four DORMANT (dark, cold stone) — mirroring portal.gd geometry
-//     (two legs + a rounded lintel + a soft violet glow disc in the opening).
+// pngjs compositor draws the home island the same way the game does, mirroring the v0.5d
+// art rebuild:
+//   * a cool-twilight void: deep violet-black gradient + a large soft violet nebula wash +
+//     a DENSE starfield with a few large twinkling stars, and a soft vignette frame,
+//   * a FLOATING ROCK SHARD: full-perimeter cliff aprons + a tapering rocky underside +
+//     drifting debris islets,
+//   * the barren dirt slab, gently lit (mirrors the #8a86b8 CanvasModulate but LIFTED so the
+//     gates read as monumental, not murk),
+//   * ground traces: worn stone-path decals dais→each gate + a spiral whisper-sigil + cracks,
+//   * a raised ROUND stone DAIS (3 concentric weathered slabs + carved sigil ring + violet
+//     centre glow) + a cauldron stone pad + the observation stone,
+//   * dead/worn grass patches on the `g` cells (olive-tan dry mats, NOT green squares),
+//   * 5 MONUMENTAL stone GATES (portal.gd mirror): a stacked-slab stone base + two thick
+//     REAL-ROCK-TEXTURED pillars carrying carved violet runes + a heavy lintel + a floating
+//     carved SIGIL stone bearing the layer motif glyph (leaf/star/gear/rune/halo). nature
+//     (Layer 1) FLICKERING (veil + lit runes + lit sigil), the other four DORMANT.
 //
-// Output: /workspace/group/preview-home.png
+// --closeup renders a tight crop on the flickering nature gate → preview-portal-closeup.png.
+// Output (overview): /workspace/group/preview-home.png
 
 const fs = require("fs");
 const { PNG } = require("pngjs");
 
 const GAME = __dirname;
-const OUT = "/workspace/group/preview-home.png";
+const CLOSEUP = process.argv.includes("--closeup");
+const OUT = CLOSEUP ? "/workspace/group/preview-portal-closeup.png"
+                    : "/workspace/group/preview-home.png";
 
-const TW = 128, TH = 64, HW = 64, HH = 32;
+const TW = 128, TH = 64, HW = 64, HH = 32, LIFT = 32;
 
 const layout = read(`${GAME}/data/home_layout.txt`);
 const legend = JSON.parse(fs.readFileSync(`${GAME}/data/home_legend.json`, "utf8"));
@@ -35,71 +44,298 @@ function loadPng(p) { try { return PNG.sync.read(fs.readFileSync(p)); } catch (e
 const tile = (n) => loadPng(`${GAME}/assets/tiles/${n}.png`);
 const obj = (n) => loadPng(`${GAME}/assets/objects/${n}.png`);
 
-const SRC = {
-  0: tile("t0_void"), 1: tile("t1_dirt"), 2: tile("t2a_grass"),
-  3: tile("t2b_grass_flowers"), 4: tile("t2c_grass_clover"), 5: tile("t2d_flower_grass"),
-};
-const CAULDRON = obj("cauldron"), STONE = obj("stone"), TUFT = obj("grass_tuft");
+const SRC = { 1: tile("t1_dirt") };
+const CAULDRON = obj("cauldron"), STONE = obj("stone");
+const ROCK_TEX = tile("cliff_face_a");   // real rock material sampled into the gates
+
+// Home twilight tone — mirrors the #8a86b8 CanvasModulate but LIFTED (×1.28) so the barren
+// island + monumental gates READ; a pure ×0.54 multiply crushed the scene to murk (owner
+// reject). We keep the cool violet cast, brighter.
+const TONE = [0x8a / 255 * 1.28, 0x86 / 255 * 1.28, 0xb8 / 255 * 1.20];
 
 // ---------------- iso projection --------------------------------------------
 function cellLocal(c, r) { return [(c - r) * HW, (c + r) * HH]; }
+function isIsland(c, r) { return r >= 0 && r < H && c >= 0 && c < layout[r].length && layout[r][c] !== "V"; }
 
-// ---------------- portal.gd geometry mirror ---------------------------------
-const ARCH_W = 96, ARCH_H = 150, LEG_W = 20, OPENING_W = ARCH_W - LEG_W * 2, GLOW_R = 30;
-const ROCK_BASE = [120, 96, 78], ROCK_DARK = [72, 56, 44], ROCK_LIGHT = [150, 122, 102];
-const VIOLET = [158, 122, 217], VIOLET_BRIGHT = [200, 168, 242];
+// ---------------- hash / rock (cliff_gen.gd mirror) -------------------------
 function hash2(c, r, salt = 0) {
   let h = (Math.imul(c, 73856093) ^ Math.imul(r, 19349663) ^ Math.imul(salt, 83492791) ^ (0x9e3779b9 | 0)) | 0;
   h = Math.imul(h ^ (h >>> 13), 1274126177) | 0; h = h ^ (h >>> 16); return (h & 0x7fffffff);
 }
 function rockNoise(px, py, seed) { return (hash2(px, py, seed) & 0xffff) / 65535.0; }
 function lerpC(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+const ROCK_BASE = [120, 96, 78], ROCK_DARK = [72, 56, 44], ROCK_LIGHT = [150, 122, 102], ROCK_SHADOW = [46, 36, 30];
+const GRASS_LIP = [86, 128, 60], GRASS_LIP_DK = [58, 92, 42];
 function rockCol(s) {
-  s = Math.max(0, Math.min(1.4, s));
-  if (s < 1.0) return lerpC(ROCK_DARK, ROCK_BASE, Math.max(0, Math.min(1, s)));
-  return lerpC(ROCK_BASE, ROCK_LIGHT, Math.max(0, Math.min(1, (s - 1.0) / 0.4)));
+  s = clamp(s, 0, 1.4);
+  if (s < 0.7) return lerpC(ROCK_SHADOW, ROCK_DARK, Math.min(1, s / 0.7));
+  if (s < 1.0) return lerpC(ROCK_DARK, ROCK_BASE, Math.min(1, (s - 0.7) / 0.3));
+  return lerpC(ROCK_BASE, ROCK_LIGHT, Math.min(1, (s - 1.0) / 0.4));
 }
-// Build the stone-arch sprite exactly like portal._build_arch (base-centre anchored).
-function buildArch(state) {
-  const img = new PNG({ width: ARCH_W, height: ARCH_H });
-  img.data.fill(0);
-  const cx = ARCH_W >> 1, innerHalf = OPENING_W >> 1, archSpring = Math.floor(ARCH_H * 0.42);
-  // dormant portals read cold/dark; flickering reads a touch warmer (matches _apply_state modulate)
-  const mod = state === "flickering" ? [0.86, 0.84, 0.9] : [0.62, 0.60, 0.66];
-  for (let y = 0; y < ARCH_H; y++) {
-    for (let x = 0; x < ARCH_W; x++) {
-      let inside = false;
-      if (y >= archSpring) {
-        const leftLeg = x >= (cx - innerHalf - LEG_W) && x < (cx - innerHalf);
-        const rightLeg = x >= (cx + innerHalf) && x < (cx + innerHalf + LEG_W);
-        if (leftLeg || rightLeg) inside = true;
-      }
-      const dx = x - cx, dy = y - archSpring, outerR = innerHalf + LEG_W, innerR = innerHalf;
-      if (dy <= 0) { const d = Math.sqrt(dx * dx + dy * dy); if (d <= outerR && d >= innerR) inside = true; }
-      if (!inside) continue;
-      let lit = x < cx ? 0.82 : 1.06;
-      const strata = Math.floor(rockNoise((x / 5) | 0, (y / 6) | 0, 71) * 4.0) / 4.0;
-      const facet = (strata - 0.4) * 0.4;
-      const n = rockNoise(x, y, 71) * 0.10 - 0.05;
-      let col = rockCol(lit + facet + n);
-      col = [col[0] * mod[0], col[1] * mod[1], col[2] * mod[2]];
-      put(img, x, y, col[0], col[1], col[2], 255);
+// sample the real rock texture (portal.gd _rock_sample mirror): clean band x∈[8,120] y∈[12,150].
+function rockSample(u, v, lit) {
+  if (!ROCK_TEX) return rockCol(0.9 * lit);
+  const bx = 8, by = 12, bw = 112, bh = 138;
+  const sx = bx + (((u % bw) + bw) % bw), sy = by + (((v % bh) + bh) % bh);
+  const i = (ROCK_TEX.width * sy + sx) << 2;
+  lit = clamp(lit, 0.30, 1.55);
+  return [clamp(ROCK_TEX.data[i] * lit, 0, 255), clamp(ROCK_TEX.data[i + 1] * lit, 0, 255), clamp(ROCK_TEX.data[i + 2] * lit, 0, 255)];
+}
+function darken(c, t) { return [c[0] * (1 - t), c[1] * (1 - t), c[2] * (1 - t)]; }
+function lighten(c, t) { return [c[0] + (255 - c[0]) * t, c[1] + (255 - c[1]) * t, c[2] + (255 - c[2]) * t]; }
+
+// ---------------- CliffGen.make_apron mirror --------------------------------
+function makeApron(drop, exposeSE, exposeSW, salt) {
+  const wall = LIFT * drop, imgH = wall + TH;
+  const img = new PNG({ width: TW, height: imgH }); img.data.fill(0);
+  for (let x = 0; x < TW; x++) {
+    const isLeft = x < HW;
+    const rim = isLeft ? (HH + x * 0.5) : ((TW - x) * 0.5 + HH);
+    const exposed = isLeft ? exposeSW : exposeSE;
+    if (!exposed) continue;
+    const rimY = Math.round(rim), wallTop = rimY, wallBottom = rimY + wall;
+    const sideLight = isLeft ? 0.74 : 1.10;
+    for (let y = wallTop; y < wallBottom; y++) {
+      const t = (y - wallTop) / Math.max(1, wall);
+      const vshade = 1.0 - 0.30 * t;
+      const strata = Math.floor(rockNoise((x / 6) | 0, (y / 5) | 0, salt) * 5.0) / 5.0;
+      const facet = (strata - 0.4) * 0.5;
+      const crack = (rockNoise((x / 3) | 0, (y / 7) | 0, salt + 5) < 0.14) ? -0.34 : 0.0;
+      const n = rockNoise(x, y, salt) * 0.12 - 0.06;
+      const c = rockCol(sideLight * vshade + facet + crack + n);
+      put(img, x, y, c[0], c[1], c[2], 255);
+    }
+    const lipH = 5, jag = Math.floor(rockNoise(x, 7, salt) * 3.0);
+    for (let y = wallTop; y < Math.min(wallTop + lipH, imgH); y++) {
+      if (y < wallTop + lipH - jag) { const g = ((x + y) % 3 !== 0) ? GRASS_LIP : GRASS_LIP_DK; put(img, x, y, g[0], g[1], g[2], 255); }
+    }
+  }
+  return { img, h: imgH };
+}
+
+// ---------------- CliffGen.make_underside mirror ----------------------------
+function makeUnderside(span, depth, salt) {
+  const img = new PNG({ width: span, height: depth }); img.data.fill(0);
+  const cx = span * 0.5;
+  for (let y = 0; y < depth; y++) {
+    const ty = y / depth;
+    const baseHalf = (span * 0.5) * Math.pow(1 - ty, 1.35);
+    const wob = (rockNoise((y * 0.5) | 0, salt, salt + 3) - 0.5) * span * 0.06;
+    const half = Math.max(2, baseHalf + wob * (1 - ty));
+    for (let x = Math.max(0, (cx - half) | 0); x < Math.min(span, (cx + half) | 0); x++) {
+      const hx = Math.abs(x - cx) / Math.max(1, half);
+      const vshade = 0.72 - 0.44 * ty;
+      const strata = Math.floor(rockNoise((x / 7) | 0, (y / 6) | 0, salt) * 5.0) / 5.0;
+      const facet = (strata - 0.4) * 0.42;
+      const crack = (rockNoise((x / 3) | 0, (y / 5) | 0, salt + 5) < 0.12) ? -0.30 : 0.0;
+      const edge = -0.28 * hx * hx;
+      const n = rockNoise(x, y, salt) * 0.10 - 0.05;
+      let col = rockCol(vshade + facet + crack + edge + n);
+      col = lerpC(col, [40, 38, 56], 0.30 + 0.25 * ty);
+      let a = 1.0;
+      if (hx > 0.82) a = clamp((1 - hx) / 0.18, 0, 1);
+      if (ty > 0.9) a *= clamp((1 - ty) / 0.1, 0, 1);
+      put(img, x, y, col[0], col[1], col[2], Math.round(a * 255));
     }
   }
   return img;
 }
-// Additive violet glow disc (portal._build_glow) — only drawn for flickering/open portals.
-function buildGlow(alphaScale) {
-  const s = GLOW_R * 2, img = new PNG({ width: s, height: s });
-  img.data.fill(0);
+function makeDebris(w, salt) {
+  const topH = (w * 0.42) | 0, underH = (w * 0.7) | 0, h = topH + underH;
+  const img = new PNG({ width: w, height: h }); img.data.fill(0);
+  const cx = w * 0.5;
+  for (let y = 0; y < topH; y++) {
+    const ty = y / topH, half = (w * 0.5) * (0.55 + 0.45 * ty);
+    for (let x = (cx - half) | 0; x < (cx + half) | 0; x++) {
+      if (x < 0 || x >= w) continue;
+      const strata = Math.floor(rockNoise((x / 4) | 0, (y / 4) | 0, salt) * 4.0) / 4.0;
+      const facet = (strata - 0.4) * 0.4, n = rockNoise(x, y, salt) * 0.10 - 0.05;
+      let col = rockCol(0.9 + facet + n);
+      if (y < 4) col = ((x + y) % 3 !== 0) ? GRASS_LIP : GRASS_LIP_DK;
+      put(img, x, y, col[0], col[1], col[2], 255);
+    }
+  }
+  for (let y = 0; y < underH; y++) {
+    const ty2 = y / underH, half = (w * 0.5) * Math.pow(1 - ty2, 1.3);
+    for (let x = (cx - half) | 0; x < (cx + half) | 0; x++) {
+      if (x < 0 || x >= w) continue;
+      const vshade = 0.6 - 0.4 * ty2, n = rockNoise(x, topH + y, salt) * 0.10 - 0.05;
+      let col = lerpC(rockCol(vshade + n), [40, 38, 56], 0.35);
+      const a = ty2 < 0.85 ? 1.0 : clamp((1 - ty2) / 0.15, 0, 1);
+      put(img, x, topH + y, col[0], col[1], col[2], Math.round(a * 255));
+    }
+  }
+  return img;
+}
+
+// ---------------- portal.gd (monumental gate) mirror ------------------------
+const GATE_W = 206, GATE_H = 316, PILLAR_W = 50, OPENING_W = GATE_W - PILLAR_W * 2;
+const LINTEL_H = 52, LINTEL_OVERHANG = 14, SIGIL_CY = 40, SIGIL_R = 34;
+const LINTEL_TOP = 92, PILLAR_TOP = LINTEL_TOP + LINTEL_H, BASE_H = 40, PILLAR_BOTTOM = GATE_H - BASE_H;
+const VEIL_W = OPENING_W + 6;
+const MOSS = [78, 104, 58], VIOLET = [158, 122, 217], VIOLET_BRIGHT = [200, 168, 242], VIOLET_DEEP = [91, 63, 134];
+const RUNE_STONE = [64, 50, 84];
+const LAYER_GLYPH = { nature: "leaf", science: "star", machine: "gear", magic: "rune", divinity: "halo" };
+
+function buildGate(state) {
+  const img = new PNG({ width: GATE_W, height: GATE_H }); img.data.fill(0);
+  const cx = GATE_W >> 1, innerHalf = OPENING_W >> 1;
+  const leftOut = cx - innerHalf - PILLAR_W, leftIn = cx - innerHalf, rightIn = cx + innerHalf, rightOut = cx + innerHalf + PILLAR_W;
+  const lintelLeft = leftOut - LINTEL_OVERHANG, lintelRight = rightOut + LINTEL_OVERHANG;
+  const mod = state === "flickering" ? [0.92, 0.90, 0.96] : [0.74, 0.72, 0.80];
+  const slabs = [
+    [PILLAR_BOTTOM, PILLAR_BOTTOM + 14, lintelLeft - 10, lintelRight + 10],
+    [PILLAR_BOTTOM + 14, PILLAR_BOTTOM + 27, lintelLeft - 2, lintelRight + 2],
+    [PILLAR_BOTTOM + 27, GATE_H, leftOut - 6, rightOut + 6],
+  ];
+  for (let y = 0; y < GATE_H; y++) for (let x = 0; x < GATE_W; x++) {
+    let region = "", slabI = -1;
+    if (y >= PILLAR_TOP && y < PILLAR_BOTTOM) {
+      if (x >= leftOut && x < leftIn) region = "lp";
+      else if (x >= rightIn && x < rightOut) region = "rp";
+    }
+    if (y >= LINTEL_TOP && y < PILLAR_TOP && x >= lintelLeft && x < lintelRight) region = "li";
+    for (let i = 0; i < slabs.length; i++) { const s = slabs[i]; if (y >= s[0] && y < s[1] && x >= s[2] && x < s[3]) { region = "base"; slabI = i; break; } }
+    if (region === "") continue;
+    let lit = 1.0;
+    if (region === "lp") lit = 0.70 + ((x - leftOut) / PILLAR_W) * 0.46;
+    else if (region === "rp") lit = 0.80 + ((x - rightIn) / PILLAR_W) * 0.44;
+    else if (region === "li") lit = 1.10 - ((y - LINTEL_TOP) / LINTEL_H) * 0.40;
+    else lit = 0.92 - ((y - slabs[slabI][0]) / 14) * 0.30;
+    let uoff = 0, voff = 0;
+    if (region === "lp") { uoff = 3; voff = 11; }
+    else if (region === "rp") { uoff = 61; voff = 7; }
+    else if (region === "li") { uoff = 20; voff = 90; }
+    else { uoff = 40 + slabI * 17; voff = 150; }
+    let col = rockSample(x + uoff, y + voff, lit);
+    if ((region === "lp" || region === "rp") && (y % 40) < 2) col = darken(col, 0.42);
+    if (region === "li" && Math.abs(x - cx) < 2) col = darken(col, 0.34);
+    if (region === "base" && slabI >= 0 && Math.abs(y - slabs[slabI][0]) < 2) col = lighten(col, 0.18);
+    if ((region === "lp" || region === "rp") && y > PILLAR_BOTTOM - 70) {
+      const mv = rockNoise((x / 3) | 0, (y / 3) | 0, 133), low = (y - (PILLAR_BOTTOM - 70)) / 70.0;
+      if (mv < 0.16 * low) col = lerpC(col, MOSS, 0.5);
+    }
+    col = [col[0] * mod[0], col[1] * mod[1], col[2] * mod[2]];
+    put(img, x, y, col[0], col[1], col[2], 255);
+  }
+  // carved cracked runes down the inner face of each pillar.
+  carveRunes(img, leftIn - 16, leftOut + PILLAR_W);
+  carveRunes(img, rightIn + 2, rightOut);
+  return img;
+}
+function carveRunes(img, x0, x1) {
+  const cxr = (x0 + x1) >> 1;
+  let gi = 0;
+  for (let y = PILLAR_TOP + 22; y < PILLAR_BOTTOM - 18; y += 46, gi++) {
+    const flip = (gi % 2 === 0) ? 1 : -1;
+    for (let dy = -13; dy <= 13; dy++) {
+      const yy = y + dy; if (yy < 0 || yy >= GATE_H) continue;
+      for (let dx = -1; dx <= 1; dx++) { const xx = cxr + dx; if (xx >= x0 && xx < x1) { const b = getPx(img, xx, yy); put(img, xx, yy, ...lerpC(darken(b, 0.5), VIOLET_DEEP, 0.36), 255); } }
+    }
+    for (let t = 0; t < 7; t++) { const xx = cxr + flip * t, yy = y - 8 + t; if (xx >= x0 && xx < x1 && yy >= 0 && yy < GATE_H) { const b = getPx(img, xx, yy); put(img, xx, yy, ...lerpC(darken(b, 0.46), VIOLET_DEEP, 0.32), 255); } }
+    for (let t = 0; t < 6; t++) { const xx = cxr - flip * t, yy = y + 3 + t; if (xx >= x0 && xx < x1 && yy >= 0 && yy < GATE_H) { const b = getPx(img, xx, yy); put(img, xx, yy, ...lerpC(darken(b, 0.44), VIOLET_DEEP, 0.3), 255); } }
+    for (let dd = 1; dd < 5; dd++) { const xx = cxr + flip * dd, yy = y + 12 + dd; if (xx >= x0 && xx < x1 && yy < GATE_H) { const b = getPx(img, xx, yy); put(img, xx, yy, ...darken(b, 0.4), 255); } }
+  }
+}
+function getPx(img, x, y) { const i = (img.width * y + x) << 2; return [img.data[i], img.data[i + 1], img.data[i + 2]]; }
+
+// additive glow over the pillar rune channels (state-lit).
+function buildRuneGlow(alphaScale) {
+  const img = new PNG({ width: GATE_W, height: GATE_H }); img.data.fill(0);
+  const cx = GATE_W >> 1, innerHalf = OPENING_W >> 1;
+  const bands = [[cx - innerHalf - 16, cx - innerHalf - 6], [cx + innerHalf + 6, cx + innerHalf + 16]];
+  for (const band of bands) {
+    const bcx = (band[0] + band[1]) >> 1;
+    let gi = 0;
+    for (let yy = PILLAR_TOP + 22; yy < PILLAR_BOTTOM - 18; yy += 46, gi++) {
+      const flip = (gi % 2 === 0) ? 1 : -1;
+      for (let dy = -14; dy <= 14; dy++) {
+        const y = yy + dy; if (y < 0 || y >= GATE_H) continue;
+        for (let dx = -6; dx <= 6; dx++) {
+          const x = bcx + dx; if (x < 0 || x >= GATE_W) continue;
+          const vbar = (1 - clamp(Math.abs(dx) / 6, 0, 1)) * (Math.abs(dx) < 2 ? 1 : 0.30);
+          let tick = 0;
+          const uy = dy + 8; if (uy >= 0 && uy <= 6) tick = Math.max(tick, 1 - clamp(Math.abs(dx - flip * uy) / 3, 0, 1));
+          const ly = dy - 3; if (ly >= 0 && ly <= 5) tick = Math.max(tick, 1 - clamp(Math.abs(dx + flip * ly) / 3, 0, 1));
+          const a = Math.max(vbar, tick * 0.85) * 0.9 * alphaScale;
+          if (a <= 0.02) continue;
+          const i = (GATE_W * y + x) << 2; if (a * 255 > img.data[i + 3]) { img.data[i] = VIOLET_BRIGHT[0]; img.data[i + 1] = VIOLET_BRIGHT[1]; img.data[i + 2] = VIOLET_BRIGHT[2]; img.data[i + 3] = Math.round(a * 255); }
+        }
+      }
+    }
+  }
+  return img;
+}
+
+// the floating carved sigil stone (bobs). state → sigil tint. Optional glyph glow.
+function buildSigil(state, layer) {
+  const s = SIGIL_R * 2 + 10, img = new PNG({ width: s, height: s }); img.data.fill(0);
+  const c = s / 2.0;
+  const mod = state === "flickering" ? [1.12, 1.04, 1.22] : [0.62, 0.58, 0.70];
   for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
-    const d = Math.hypot(x + 0.5 - GLOW_R, y + 0.5 - GLOW_R) / GLOW_R;
-    if (d <= 1.0) { const a = (1 - d) * (1 - d) * alphaScale; put(img, x, y, VIOLET_BRIGHT[0], VIOLET_BRIGHT[1], VIOLET_BRIGHT[2], Math.round(a * 255)); }
+    const dx = Math.abs(x - c) / SIGIL_R, dy = Math.abs(y - c) / (SIGIL_R * 0.9), d = dx * 1.02 + dy;
+    if (d > 1.0) continue;
+    const lit = 0.66 + (1 - dx) * 0.32 + (1 - dy) * 0.30;
+    let col = lerpC(RUNE_STONE, [96, 84, 118], clamp(lit - 0.6, 0, 0.6));
+    if (d > 0.82) col = darken(col, 0.34);
+    col = [col[0] * mod[0], col[1] * mod[1], col[2] * mod[2]];
+    put(img, x, y, col[0], col[1], col[2], 255);
+  }
+  drawGlyph(img, c, LAYER_GLYPH[layer] || "rune", false);
+  return img;
+}
+function buildSigilGlow(layer, alphaScale) {
+  const s = SIGIL_R * 2 + 10, img = new PNG({ width: s, height: s }); img.data.fill(0);
+  drawGlyph(img, s / 2.0, LAYER_GLYPH[layer] || "rune", true, alphaScale);
+  return img;
+}
+function drawGlyph(img, c, kind, glow, alphaScale = 1) {
+  const col = glow ? VIOLET : VIOLET_BRIGHT;
+  const R = SIGIL_R * 0.56;
+  const dotR = glow ? 5 : 3, aa = (glow ? 0.5 : 1.0) * alphaScale;
+  const stamp = (px, py, rad) => {
+    for (let yy = (py - rad) | 0; yy <= py + rad; yy++) for (let xx = (px - rad) | 0; xx <= px + rad; xx++) {
+      if (xx < 0 || yy < 0 || xx >= img.width || yy >= img.height) continue;
+      const dd = Math.hypot(xx - px, yy - py) / rad; if (dd > 1) continue;
+      const a = (1 - dd) * aa; const i = (img.width * yy + xx) << 2;
+      if (a * 255 > img.data[i + 3]) { img.data[i] = col[0]; img.data[i + 1] = col[1]; img.data[i + 2] = col[2]; img.data[i + 3] = Math.round(a * 255); }
+    }
+  };
+  if (kind === "leaf") {
+    for (let i = 0; i < 24; i++) { const t = i / 23, ang = -1.4 + 2.8 * t, rr = R * (1 - Math.abs(ang) / 1.6);
+      stamp(c + Math.sin(ang) * rr, c - Math.cos(ang) * R * 0.4 - R * 0.1, dotR);
+      stamp(c + Math.sin(ang) * rr, c + Math.cos(ang) * R * 0.4 - R * 0.1, dotR); }
+    for (let i = 0; i < 12; i++) stamp(c, c - R * 0.5 + i / 11 * R, dotR * 0.8);
+  } else if (kind === "star") {
+    for (let k = 0; k < 5; k++) { const a0 = -Math.PI / 2 + k * Math.PI * 2 / 5;
+      for (let i = 0; i < 12; i++) { const t = i / 11; stamp(c + Math.cos(a0) * R * t, c + Math.sin(a0) * R * t, dotR * (1.1 - 0.4 * t)); } }
+  } else if (kind === "gear") {
+    for (let i = 0; i < 28; i++) { const a1 = i / 28 * Math.PI * 2; stamp(c + Math.cos(a1) * R * 0.7, c + Math.sin(a1) * R * 0.7, dotR); }
+    for (let k = 0; k < 8; k++) { const a2 = k * Math.PI * 2 / 8; stamp(c + Math.cos(a2) * R, c + Math.sin(a2) * R, dotR * 1.1); }
+    stamp(c, c, dotR * 1.4);
+  } else if (kind === "rune") {
+    for (let i = 0; i < 12; i++) { const t = i / 11; stamp(c, c - R + t * R * 0.9, dotR); stamp(c - t * R * 0.7, c - R * 0.1 + t * R * 0.7, dotR); stamp(c + t * R * 0.7, c - R * 0.1 + t * R * 0.7, dotR); }
+  } else {
+    for (let i = 0; i < 30; i++) { const a3 = i / 30 * Math.PI * 2; stamp(c + Math.cos(a3) * R, c + Math.sin(a3) * R, dotR); stamp(c + Math.cos(a3) * R * 0.45, c + Math.sin(a3) * R * 0.45, dotR * 0.8); }
+  }
+}
+// additive swirl veil (flickering/open).
+function buildVeil(alphaScale) {
+  const w = VEIL_W, h = PILLAR_BOTTOM - PILLAR_TOP, img = new PNG({ width: w, height: h }); img.data.fill(0);
+  const cx = w / 2.0, cy = h / 2.0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const dx = (x - cx) / (w * 0.5), dy = (y - cy) / (h * 0.5), r = Math.hypot(dx, dy);
+    if (r > 1.0) continue;
+    const ang = Math.atan2(dy, dx), swirl = 0.5 + 0.5 * Math.sin(ang * 3.0 + r * 7.0);
+    const a = (1 - r) * (0.40 + 0.60 * swirl) * 0.95 * alphaScale;
+    put(img, x, y, VIOLET_BRIGHT[0], VIOLET_BRIGHT[1], VIOLET_BRIGHT[2], Math.round(a * 255));
   }
   return img;
 }
 
 function put(png, x, y, r, g, b, a) {
+  x = x | 0; y = y | 0;
   if (x < 0 || y < 0 || x >= png.width || y >= png.height) return;
   const i = (png.width * y + x) << 2;
   png.data[i] = r; png.data[i + 1] = g; png.data[i + 2] = b; png.data[i + 3] = a;
@@ -110,27 +346,51 @@ let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
 for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
   const [x, y] = cellLocal(c, r);
   minX = Math.min(minX, x - HW); maxX = Math.max(maxX, x + HW);
-  minY = Math.min(minY, y - HH - ARCH_H - 40); maxY = Math.max(maxY, y + HH + 60);
+  minY = Math.min(minY, y - HH - GATE_H - 60); maxY = Math.max(maxY, y + HH + 60);
 }
-const PAD = 60;
+minX -= 1120; maxX += 1120; minY -= 620; maxY += 900;
+const PAD = 40;
 const CW = Math.ceil(maxX - minX) + PAD * 2, CH = Math.ceil(maxY - minY) + PAD * 2;
 const OX = -minX + PAD, OY = -minY + PAD;
 const canvas = new PNG({ width: CW, height: CH });
 
-// Starry void-sky background: a deep violet-black gradient + scattered stars/motes.
+// ---- void sky: deep violet-black gradient ----------------------------------
 for (let y = 0; y < CH; y++) {
   const t = y / CH;
-  const br = 8 + t * 6, bg = 6 + t * 5, bb = 16 + t * 12;
+  const br = 14 + t * 10, bg = 11 + t * 8, bb = 26 + t * 20;
   for (let x = 0; x < CW; x++) { const i = (CW * y + x) << 2; canvas.data[i] = br; canvas.data[i + 1] = bg; canvas.data[i + 2] = bb; canvas.data[i + 3] = 255; }
 }
-for (let s = 0; s < 900; s++) {
+// two soft violet-blue nebula washes so the sky isn't uniform.
+function nebula(cxf, cyf, radf, tintCol, strength) {
+  const nc = [CW * cxf, CH * cyf], nmax = Math.max(CW, CH) * radf;
+  for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) {
+    const d = Math.hypot(x - nc[0], y - nc[1]) / nmax; if (d >= 1.0) continue;
+    const a = (1 - d) * (1 - d) * strength; const i = (CW * y + x) << 2;
+    canvas.data[i] = Math.min(255, canvas.data[i] + tintCol[0] * a);
+    canvas.data[i + 1] = Math.min(255, canvas.data[i + 1] + tintCol[1] * a);
+    canvas.data[i + 2] = Math.min(255, canvas.data[i + 2] + tintCol[2] * a);
+  }
+}
+nebula(0.44, 0.46, 0.44, [90, 60, 140], 0.28);
+nebula(0.72, 0.28, 0.30, [56, 66, 130], 0.22);
+nebula(0.24, 0.66, 0.26, [80, 52, 120], 0.18);
+// dense starfield.
+for (let s = 0; s < 2200; s++) {
   const sx = hash2(s, 3, 7) % CW, sy = hash2(s, 11, 19) % CH;
-  const b = 90 + (hash2(s, 5, 23) % 130);
-  const violet = (hash2(s, 9, 31) % 5) === 0;
-  put(canvas, sx, sy, violet ? b : b, violet ? Math.round(b * 0.7) : b, violet ? Math.round(b * 1.1) : Math.round(b * 0.95), 255);
-  if ((hash2(s, 2, 41) % 7) === 0) { put(canvas, sx + 1, sy, b >> 1, b >> 1, b >> 1, 255); put(canvas, sx, sy + 1, b >> 1, b >> 1, b >> 1, 255); }
+  const b = 90 + (hash2(s, 5, 23) % 140);
+  const violet = (hash2(s, 9, 31) % 4) === 0;
+  put(canvas, sx, sy, b, violet ? Math.round(b * 0.7) : b, violet ? Math.round(b * 1.15) : Math.round(b * 0.95), 255);
+  if ((hash2(s, 2, 41) % 9) === 0) put(canvas, sx + 1, sy, b >> 1, b >> 1, b >> 1, 255);
+}
+// a few larger twinkling stars (cross-glint).
+const bigStars = [[0.20, 0.22], [0.78, 0.16], [0.62, 0.72], [0.30, 0.78], [0.88, 0.52]];
+for (const [fx, fy] of bigStars) {
+  const sx = (CW * fx) | 0, sy = (CH * fy) | 0;
+  for (let rr = 0; rr <= 6; rr++) { const a = (1 - rr / 6); put(canvas, sx + rr, sy, 255, 250, 255, 255 * a); put(canvas, sx - rr, sy, 255, 250, 255, 255 * a); put(canvas, sx, sy + rr, 255, 250, 255, 255 * a); put(canvas, sx, sy - rr, 255, 250, 255, 255 * a); }
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (Math.hypot(dx, dy) <= 2) put(canvas, sx + dx, sy + dy, 255, 252, 255, 255);
 }
 
+// ---- blit helpers -----------------------------------------------------------
 function blit(src, dx, dy, tint, aScale) {
   if (!src) return;
   const sw = src.width, sh = src.height;
@@ -150,88 +410,275 @@ function blit(src, dx, dy, tint, aScale) {
     }
   }
 }
-// Additive blit for glows (violet blooms over dark stone, like BLEND_MODE_ADD).
-function blitAdd(src, dx, dy) {
+function blitAdd(src, dx, dy, aScale) {
   if (!src) return;
   for (let y = 0; y < src.height; y++) { const cy = Math.round(dy) + y; if (cy < 0 || cy >= CH) continue;
     for (let x = 0; x < src.width; x++) { const cx = Math.round(dx) + x; if (cx < 0 || cx >= CW) continue;
-      const si = (src.width * y + x) << 2, a = src.data[si + 3]; if (a === 0) continue;
+      const si = (src.width * y + x) << 2; let a = src.data[si + 3]; if (a === 0) continue;
+      if (aScale != null) a = a * aScale;
       const di = (CW * cy + cx) << 2, af = a / 255;
       canvas.data[di] = Math.min(255, canvas.data[di] + src.data[si] * af);
       canvas.data[di + 1] = Math.min(255, canvas.data[di + 1] + src.data[si + 1] * af);
       canvas.data[di + 2] = Math.min(255, canvas.data[di + 2] + src.data[si + 2] * af);
     } }
 }
-
-// A round stone dais (mirror HomeSession._draw_dais): iso-squashed disc, r=42.
-function drawDais(c, r) {
-  const [lx, ly] = cellLocal(c, r), R = 42;
-  const px = OX + lx, py = OY + ly;
-  for (let y = -Math.round(R * 0.5); y <= Math.round(R * 0.5); y++)
-    for (let x = -R; x <= R; x++) {
-      const dx = x / R, dy = y / (R * 0.5), d2 = dx * dx + dy * dy;
-      if (d2 <= 1.0) { const shade = 0.62 + 0.14 * (1 - d2); put(canvas, px + x, py + y, 0.46 * 255 * shade, 0.44 * 255 * shade, 0.42 * 255 * shade, 255); }
+function line(x0, y0, x1, y1, col, wdt, alpha) {
+  const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy), steps = Math.max(1, Math.ceil(len));
+  const hw = wdt / 2;
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps, px = x0 + dx * t, py = y0 + dy * t;
+    for (let oy = -hw; oy <= hw; oy++) for (let ox = -hw; ox <= hw; ox++) {
+      const xx = Math.round(px + ox), yy = Math.round(py + oy);
+      if (xx < 0 || yy < 0 || xx >= CW || yy >= CH) continue;
+      const di = (CW * yy + xx) << 2, af = alpha;
+      canvas.data[di] = col[0] * af + canvas.data[di] * (1 - af);
+      canvas.data[di + 1] = col[1] * af + canvas.data[di + 1] * (1 - af);
+      canvas.data[di + 2] = col[2] * af + canvas.data[di + 2] * (1 - af);
     }
+  }
 }
-
-// ---------------- render passes (back-to-front by c+r) ----------------------
-const order = [];
-for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) order.push([c, r]);
-order.sort((a, b) => (a[0] + a[1]) - (b[0] + b[1]));
-
-function srcFor(sym) {
-  const spec = legend.tiles[sym]; if (!spec) return null;
-  // grass 'g' picks a variant deterministically for texture; portals/cauldron/spawn are dirt.
-  if (spec.variant_random) { const v = 2 + (hash2(sym.charCodeAt(0), 0, 3) % 4); return v; }
-  return spec.source != null ? spec.source : 2;
-}
-
-// Pass A: island ground (skip pure void so the slab reads as floating).
-for (const [c, r] of order) {
-  const sym = layout[r][c]; if (sym === "V") continue;
-  const [lx, ly] = cellLocal(c, r);
-  // grass variant per-cell for a little texture
-  let src = 1;
-  if (sym === "g" || sym === "G") src = 2 + ((hash2(c, r, 3) & 3));
-  const tex = SRC[src] || SRC[1];
-  blit(tex, OX + lx - HW, OY + ly - HH);
-}
-
-// Pass B: dais under the spawn cell.
-const spawnCell = findSym("S");
-if (spawnCell) drawDais(spawnCell[0], spawnCell[1]);
-
-// Pass C: objects (cauldron, observation stone, portals) back-to-front.
-for (const [c, r] of order) {
-  const sym = layout[r][c];
-  const [lx, ly] = cellLocal(c, r);
-  const px = OX + lx, py = OY + ly;   // cell centre (object base sits here)
-  if (sym === "C" && CAULDRON) { blit(CAULDRON, px - CAULDRON.width / 2, py - CAULDRON.height + 16); }
-  else if (sym === "Y" && STONE) { blit(STONE, px - STONE.width / 2, py - STONE.height + 12); }
-  else if ("12345".includes(sym)) {
-    const objSpec = legend.objects[sym];
-    const isNature = objSpec && objSpec.layer === "nature";
-    const state = isNature ? "flickering" : "dormant";
-    // violet light pool at the base for the awake portal
-    if (isNature) { const pool = buildGlow(0.5); blitAdd(pool, px - GLOW_R, py - GLOW_R * 0.5); }
-    const arch = buildArch(state);
-    blit(arch, px - ARCH_W / 2, py - ARCH_H);   // base-centre anchored
-    if (isNature) { const glow = buildGlow(0.6); blitAdd(glow, px - GLOW_R, py - ARCH_H * 0.52 - GLOW_R); }
+function filledCircle(cx0, cy0, rad, col, alpha, squashY) {
+  for (let oy = -rad; oy <= rad; oy++) for (let ox = -rad; ox <= rad; ox++) {
+    if (Math.hypot(ox, oy / (squashY || 1)) > rad) continue;
+    const xx = Math.round(cx0 + ox), yy = Math.round(cy0 + oy);
+    if (xx < 0 || yy < 0 || xx >= CW || yy >= CH) continue;
+    const di = (CW * yy + xx) << 2, af = alpha;
+    canvas.data[di] = col[0] * af + canvas.data[di] * (1 - af);
+    canvas.data[di + 1] = col[1] * af + canvas.data[di + 1] * (1 - af);
+    canvas.data[di + 2] = col[2] * af + canvas.data[di + 2] * (1 - af);
   }
 }
 
+// ---------------- draw order -------------------------------------------------
+const order = [];
+for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) order.push([c, r]);
+order.sort((a, b) => (a[0] + a[1]) - (b[0] + b[1]));
 function findSym(s) { for (let r = 0; r < H; r++) { const c = layout[r].indexOf(s); if (c >= 0) return [c, r]; } return null; }
+function allSym(s) { const out = []; for (let r = 0; r < H; r++) for (let c = 0; c < layout[r].length; c++) if (layout[r][c] === s) out.push([c, r]); return out; }
+
+// island screen extents.
+let ismnx = 1e9, ismxx = -1e9, botY = -1e9;
+for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+  if (!isIsland(c, r)) continue;
+  const [lx, ly] = cellLocal(c, r);
+  ismnx = Math.min(ismnx, OX + lx - HW); ismxx = Math.max(ismxx, OX + lx + HW);
+  if (OY + ly + HH > botY) botY = OY + ly + HH;
+}
+
+// Pass -2: debris islets.
+const centerLX = OX + (W / 2 - H / 2) * HW, centerLY = OY + (W / 2 + H / 2) * HH;
+const debris = [[-980, 120, 78, 0], [1020, 40, 64, 1], [-620, 560, 52, 2], [760, 600, 70, 3], [120, -560, 46, 4]];
+for (const [ox, oy, w, k] of debris) { const d = makeDebris(w, 900 + k); blit(d, centerLX + ox - w / 2, centerLY + oy - d.height / 2); }
+
+// Pass -1: tapering underside.
+{
+  const span = Math.round(ismxx - ismnx), depth = Math.round(span * 0.62);
+  const u = makeUnderside(span, depth, 0x9e3779b9 & 0x7fffffff);
+  blit(u, (ismnx + ismxx) / 2 - span / 2, botY - TH);
+}
+
+// Pass A: full-perimeter cliff aprons.
+for (const [c, r] of order) {
+  if (!isIsland(c, r)) continue;
+  let perim = false;
+  for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!isIsland(c + dc, r + dr)) perim = true;
+  if (!perim) continue;
+  const southOpen = !isIsland(c, r + 1), eastOpen = !isIsland(c + 1, r);
+  if (!southOpen && !eastOpen) continue;
+  const { img } = makeApron(1, eastOpen, southOpen, hash2(c, r, 733));
+  const [lx, ly] = cellLocal(c, r);
+  blit(img, OX + lx - HW, OY + ly - HH);
+}
+
+// Pass B: island ground slab (dirt), TONE-lifted.
+for (const [c, r] of order) {
+  if (!isIsland(c, r)) continue;
+  const [lx, ly] = cellLocal(c, r);
+  blit(SRC[1], OX + lx - HW, OY + ly - HH, TONE);
+}
+
+// Pass B2: dead/worn grass patches on `g` cells (olive-tan dry mats, NOT green squares).
+const DEAD_MAT = [96, 92, 58], DEAD_MAT_DK = [70, 66, 40], DEAD_BLADE = [122, 116, 72], DEAD_BLADE_DK = [84, 78, 46];
+for (const [c, r] of allSym("g")) {
+  const [lx, ly] = cellLocal(c, r), px = OX + lx, py = OY + ly;
+  const seed = (Math.abs(px) * 3 + Math.abs(py) * 7) | 0;
+  for (let i = 0; i < 70; i++) {
+    const h = (seed * 1103515245 + i * 12345 + 7) & 0x7fffffff;
+    const a = (h % 628) / 100.0, rr = 0.30 + ((h >> 8) % 100) / 100.0 * 0.70;
+    const dx = Math.cos(a) * rr * (HW * 0.78), dy = Math.sin(a) * rr * (HH * 0.78);
+    const col = ((h >> 3) % 3 !== 0) ? DEAD_MAT : DEAD_MAT_DK;
+    filledCircle(px + dx, py + dy, 3, col, 0.42, 1);
+  }
+  for (let j = 0; j < 14; j++) {
+    const h2 = (seed * 22695477 + j * 6971 + 13) & 0x7fffffff;
+    const a2 = (h2 % 628) / 100.0, rr2 = ((h2 >> 6) % 100) / 100.0 * 0.72;
+    const bx = px + Math.cos(a2) * rr2 * (HW * 0.66), by = py + Math.sin(a2) * rr2 * (HH * 0.66);
+    const blade = (j % 2 === 0) ? DEAD_BLADE : DEAD_BLADE_DK, lean = (h2 & 1) ? -2 : 2, hgt = 5 + ((h2 >> 4) % 5);
+    line(bx, by, bx + lean, by - hgt, blade, 1.5, 0.85);
+  }
+}
+
+// Pass C: ground traces (worn stone-slab path decals dais→gates + spiral sigil + cracks).
+const spawn = findSym("S");
+if (spawn) {
+  const [sx, sy] = cellLocal(spawn[0], spawn[1]); const dais = [OX + sx, OY + sy];
+  for (const sym of ["1", "2", "3", "4", "5"]) {
+    const g = findSym(sym); if (!g) continue;
+    const [gx, gy] = cellLocal(g[0], g[1]); const gp = [OX + gx, OY + gy];
+    const vx = gp[0] - dais[0], vy = gp[1] - dais[1], n = Math.hypot(vx, vy);
+    if (n < 1) continue;
+    const startf = 150 / n, endf = (n - 70) / n;
+    // worn path underlay (darker dirt).
+    line(dais[0] + vx * startf, dais[1] + vy * startf, dais[0] + vx * endf, dais[1] + vy * endf, [66, 54, 44], 20, 0.30);
+    // stone-slab decals stepping along the path.
+    const slabs = Math.max(2, Math.floor((endf - startf) * n / 44));
+    for (let s = 0; s <= slabs; s++) {
+      const t = startf + (endf - startf) * (s / slabs);
+      const cxs = dais[0] + vx * t, cys = dais[1] + vy * t;
+      // small iso stone slab.
+      for (let oy = -9; oy <= 9; oy++) for (let ox = -18; ox <= 18; ox++) {
+        if (Math.abs(ox) / 18 + Math.abs(oy) / 9 > 1) continue;
+        const shade = 0.9 + 0.14 * (1 - (Math.abs(ox) / 18 + Math.abs(oy) / 9));
+        const edge = Math.abs((Math.abs(ox) / 18 + Math.abs(oy) / 9) - 0.9) < 0.08;
+        let col = edge ? [70, 66, 62] : [118 * shade, 112 * shade, 106 * shade];
+        col = [col[0] * TONE[0], col[1] * TONE[1], col[2] * TONE[2]];
+        const xx = Math.round(cxs + ox), yy = Math.round(cys + oy);
+        if (xx < 0 || yy < 0 || xx >= CW || yy >= CH) continue;
+        const di = (CW * yy + xx) << 2, af = 0.9;
+        canvas.data[di] = col[0] * af + canvas.data[di] * (1 - af);
+        canvas.data[di + 1] = col[1] * af + canvas.data[di + 1] * (1 - af);
+        canvas.data[di + 2] = col[2] * af + canvas.data[di + 2] * (1 - af);
+      }
+    }
+  }
+  // spiral whisper-sigil.
+  let prev = null;
+  for (let i = 0; i <= 90; i++) { const t = i / 90, ang = t * 2.4 * Math.PI * 2, rad = 70 + t * 100; const p = [dais[0] + Math.cos(ang) * rad, dais[1] + Math.sin(ang) * rad * 0.5]; if (prev) line(prev[0], prev[1], p[0], p[1], [96, 78, 122], 2, 0.5); prev = p; }
+  // cracked earth patches.
+  for (const [dcx, dcy] of [[3, 2], [-4, 1], [2, -3], [-2, 4], [5, -1], [-5, -2], [1, 5], [4, 3]]) {
+    const cc = spawn[0] + dcx, cr = spawn[1] + dcy; if (!isIsland(cc, cr)) continue;
+    const [px2, py2] = cellLocal(cc, cr), c0 = [OX + px2, OY + py2];
+    for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2 + (c0[0] + c0[1]) * 0.01, len = 10 + ((c0[0] * 7 + c0[1] * 3 + k * 13) % 12); line(c0[0], c0[1], c0[0] + Math.cos(a) * len, c0[1] + Math.sin(a) * len * 0.5, [51, 38, 31], 1.5, 0.5); }
+  }
+}
+
+// Pass D: raised ROUND stone dais (3 concentric weathered slabs + sigil ring + violet glow).
+if (spawn) drawDais(spawn[0], spawn[1]);
+function drawDais(c, r) {
+  const [lx, ly] = cellLocal(c, r), px = OX + lx, py = OY + ly;
+  const rise = 16, halfW = HW * 2.0, halfH = HH * 2.0;
+  const rings = [[1.00, 0.80, 0.0], [0.74, 0.92, 3.0], [0.46, 1.04, 6.0]];
+  // front wall (stepped bands).
+  for (let x = -halfW; x <= halfW; x++) {
+    const dxn = Math.abs(x) / halfW; if (dxn > 1) continue;
+    const rim = (1 - dxn) * halfH;
+    for (let yy = rim; yy < rim + rise; yy++) {
+      const t = (yy - rim) / rise, lit = x < 0 ? 0.66 : 0.84, band = 1 - 0.12 * ((t * 3) | 0);
+      let col = lerpC([78, 74, 72], [122, 116, 112], lit * band);
+      col = [col[0] * TONE[0], col[1] * TONE[1], col[2] * TONE[2]];
+      put(canvas, px + x, py + yy, col[0], col[1], col[2], 255);
+    }
+  }
+  // top surface (paint outer→inner via ring lookup).
+  for (let y = -halfH; y <= halfH; y++) for (let x = -halfW; x <= halfW; x++) {
+    const dx = Math.abs(x) / halfW, dy = Math.abs(y) / halfH, d = dx + dy; if (d > 1) continue;
+    let tone = 0.80, lift = 0, edge = false;
+    for (const [rr, tn, lf] of rings) { if (d <= rr) { tone = tn; lift = lf; } if (Math.abs(d - rr) < 0.03) edge = true; }
+    let col = [140 * (tone * (0.94 + 0.10 * (1 - d))), 134 * (tone * (0.94 + 0.10 * (1 - d))), 130 * (tone * (0.94 + 0.10 * (1 - d)))];
+    if (edge) col = [78, 74, 72];
+    if (Math.abs(d - 0.60) < 0.02 && !edge) col = lerpC(col, [92, 72, 118], 0.5);
+    col = [col[0] * TONE[0], col[1] * TONE[1], col[2] * TONE[2]];
+    put(canvas, px + x, py + Math.round(y - lift), col[0], col[1], col[2], 255);
+  }
+  // violet centre glow (additive pool).
+  for (let oy = -22; oy <= 22; oy++) for (let ox = -40; ox <= 40; ox++) {
+    const d = Math.hypot(ox / 40, oy / 22); if (d > 1) continue;
+    const a = (1 - d) * (1 - d) * 0.5; const xx = px + ox, yy = py + oy - 4;
+    if (xx < 0 || yy < 0 || xx >= CW || yy >= CH) continue;
+    const di = (CW * yy + xx) << 2;
+    canvas.data[di] = Math.min(255, canvas.data[di] + 150 * a);
+    canvas.data[di + 1] = Math.min(255, canvas.data[di + 1] + 110 * a);
+    canvas.data[di + 2] = Math.min(255, canvas.data[di + 2] + 200 * a);
+  }
+}
+
+// Pass E: cauldron stone pad.
+const caulCell = findSym("C");
+if (caulCell) {
+  const [lx, ly] = cellLocal(caulCell[0], caulCell[1]), px = OX + lx, py = OY + ly;
+  const halfW = HW * 0.78, halfH = HH * 0.78;
+  for (let y = -halfH; y <= halfH; y++) for (let x = -halfW; x <= halfW; x++) {
+    const dx = Math.abs(x) / halfW, dy = Math.abs(y) / halfH; if (dx + dy > 1) continue;
+    let col = Math.abs((dx + dy) - 0.86) < 0.05 ? [78, 74, 72] : [122 * (0.82 + 0.16 * (1 - (dx + dy))), 116 * (0.82 + 0.16 * (1 - (dx + dy))), 112 * (0.82 + 0.16 * (1 - (dx + dy)))];
+    col = [col[0] * TONE[0], col[1] * TONE[1], col[2] * TONE[2]];
+    put(canvas, px + x, py + y, col[0], col[1], col[2], 255);
+  }
+}
+
+// Pass F: objects (cauldron, observation stone, gates) back-to-front.
+for (const [c, r] of order) {
+  const sym = layout[r][c];
+  const [lx, ly] = cellLocal(c, r), px = OX + lx, py = OY + ly;
+  if (sym === "C" && CAULDRON) blit(CAULDRON, px - CAULDRON.width / 2, py - CAULDRON.height + 16, TONE);
+  else if (sym === "Y" && STONE) blit(STONE, px - STONE.width / 2, py - STONE.height + 12, TONE);
+  else if ("12345".includes(sym)) {
+    const spec = legend.objects[sym];
+    const isNature = spec && spec.layer === "nature";
+    const state = isNature ? "flickering" : "dormant";
+    const layer = spec.layer;
+    // glow pool at base — open only (nature is flickering → none).
+    const gate = buildGate(state);
+    blit(gate, px - GATE_W / 2, py - GATE_H, TONE);
+    if (isNature) {
+      // lit pillar runes (flickering).
+      const rg = buildRuneGlow(0.7);
+      blitAdd(rg, px - GATE_W / 2, py - GATE_H);
+      // flickering violet swirl veil, centred in the opening.
+      const veil = buildVeil(0.5);
+      const openingMid = (PILLAR_BOTTOM + PILLAR_TOP) / 2;   // centre y (from gate top)
+      blitAdd(veil, px - veil.width / 2, py - GATE_H + openingMid - veil.height / 2);
+    }
+    // floating sigil stone above the lintel.
+    const sig = buildSigil(state, layer);
+    const sy = py - GATE_H + SIGIL_CY;
+    blit(sig, px - sig.width / 2, sy - sig.height / 2, TONE);
+    if (isNature) { const sg = buildSigilGlow(layer, 0.5); blitAdd(sg, px - sg.width / 2, sy - sg.height / 2); }
+  }
+}
+
+// ---- soft vignette frame ----------------------------------------------------
+for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) {
+  const dxu = x / CW - 0.5, dyu = y / CH - 0.5, dist = Math.hypot(dxu, dyu) / 0.7071;
+  let a = 0;
+  if (dist > 0.46) { const t = Math.min(1, (dist - 0.46) / (1 - 0.46)); a = t * t * (3 - 2 * t) * 0.30; }
+  if (a <= 0) continue;
+  const di = (CW * y + x) << 2;
+  canvas.data[di] *= (1 - a); canvas.data[di + 1] *= (1 - a); canvas.data[di + 2] *= (1 - a);
+}
 
 // ---------------- write ------------------------------------------------------
-writeScaled(canvas, CW, CH, OUT, 1500);
-
+if (CLOSEUP) {
+  // Tight crop on the flickering nature gate (symbol "1").
+  const g = findSym("1");
+  const [gx, gy] = cellLocal(g[0], g[1]); const px = OX + gx, py = OY + gy;
+  const cw = 620, ch = 720;
+  const x0 = Math.max(0, Math.round(px - cw / 2)), y0 = Math.max(0, Math.round(py - GATE_H - 90));
+  const crop = new PNG({ width: cw, height: ch });
+  for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
+    const si = (CW * Math.min(CH - 1, y0 + y) + Math.min(CW - 1, x0 + x)) << 2, di = (cw * y + x) << 2;
+    crop.data[di] = canvas.data[si]; crop.data[di + 1] = canvas.data[si + 1]; crop.data[di + 2] = canvas.data[si + 2]; crop.data[di + 3] = 255;
+  }
+  writeScaled(crop, cw, ch, OUT, 900);
+} else {
+  writeScaled(canvas, CW, CH, OUT, 1600);
+}
 function writeScaled(src, sw, sh, out, targetW) {
   const scale = Math.min(1, targetW / sw);
   const oW = Math.max(1, Math.round(sw * scale)), oH = Math.max(1, Math.round(sh * scale));
   const o = new PNG({ width: oW, height: oH });
-  for (let y = 0; y < oH; y++) { const sy = Math.min(sh - 1, Math.floor(y / scale));
-    for (let x = 0; x < oW; x++) { const sx = Math.min(sw - 1, Math.floor(x / scale));
-      const si = (sw * sy + sx) << 2, di = (oW * y + x) << 2;
+  for (let y = 0; y < oH; y++) { const syv = Math.min(sh - 1, Math.floor(y / scale));
+    for (let x = 0; x < oW; x++) { const sxv = Math.min(sw - 1, Math.floor(x / scale));
+      const si = (sw * syv + sxv) << 2, di = (oW * y + x) << 2;
       o.data[di] = src.data[si]; o.data[di + 1] = src.data[si + 1]; o.data[di + 2] = src.data[si + 2]; o.data[di + 3] = 255; } }
   fs.writeFileSync(out, PNG.sync.write(o));
   console.log(`wrote ${out}  (${oW}×${oH})`);

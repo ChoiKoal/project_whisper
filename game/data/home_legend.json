@@ -1,8 +1,8 @@
 {
-  "_comment": "Project Whisper 제0세계 (home island) legend. v0.5.0. Symbol -> (tileset source, object). Parsed by MapLoader (same as the grove). Barren dark-earth = D (T1 dirt, walkable + placeable), grass patches = g (variant grass). Portals 1-5 = PortalObject (kind:portal, layer accent). Y = observation stone (kind:observation, time-skip). C = home cauldron. S = spawn.",
+  "_comment": "Project Whisper 제0세계 (home island) legend. v0.5.0 (art v0.5d). Symbol -> (tileset source, object). Parsed by MapLoader (same as the grove). Barren dark-earth = D (T1 dirt, walkable + placeable). g = a DEAD/WORN grass patch (dirt base + an authored dry-grass decal drawn by HomeSession — NOT a bright green grass tile). Portals 1-5 = PortalObject (kind:portal, layer accent). Y = observation stone (kind:observation, time-skip). C = home cauldron. S = spawn.",
   "tiles": {
     "D": {"source": 1, "tile_id": "T1"},
-    "g": {"source": 2, "tile_id": "T2A", "variants": ["T2B", "T2C", "T2D"], "variant_random": true},
+    "g": {"source": 1, "tile_id": "T1", "dead_grass": true},
     "G": {"source": 2, "tile_id": "T2A"},
     "V": {"source": 0, "tile_id": "T0", "walkable": false, "void": true},
     "S": {"source": 1, "tile_id": "T1", "spawn": true},

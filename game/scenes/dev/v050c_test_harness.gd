@@ -72,6 +72,17 @@ func _teardown() -> void:
 	await _frames(2)
 
 
+## True if the portal's floating SIGIL stone glyph is LIT (v0.5d: the monumental gate carries a
+## carved layer-motif sigil stone above the lintel; its glyph glow ignites only when the gate
+## is non-dormant). The stone itself is always present; only the glow is state-driven.
+func _portal_sigil_lit(portal: Node) -> bool:
+	if portal == null:
+		return false
+	if portal.has_method("is_sigil_lit"):
+		return portal.is_sigil_lit()
+	return false
+
+
 func _find(node: Node, cls) -> Node:
 	if is_instance_of(node, cls):
 		return node
@@ -156,6 +167,29 @@ func _b_home() -> void:
 	# Barren: no procedural scatter (only the authored portals/cauldron).
 	_check("home is barren (no scatter objects)", loader.object_spawns.is_empty(),
 		"scatter=%d" % loader.object_spawns.size())
+
+	# (v0.5d) Floating rock-shard silhouette: full-perimeter aprons + tapering underside +
+	# drifting debris islets all built on the (flat) home island.
+	_check("home built full-perimeter cliff aprons (floating shard)", loader.shard_apron_count > 0,
+		"aprons=%d" % loader.shard_apron_count)
+	_check("home built a tapering rocky underside", loader.shard_underside_present)
+	_check("home built drifting debris islets", loader.debris_islet_count >= 3,
+		"debris=%d" % loader.debris_islet_count)
+
+	# (v0.5d) The monumental gate carries a carved layer-motif SIGIL stone above the lintel; its
+	# glyph glow ignites only when non-dormant. The nature gate is flickering at start, so its
+	# sigil is lit; a dormant gate's sigil is unlit.
+	var nature_gate: Portal = null
+	var dormant_gate: Portal = null
+	for p in portals:
+		if (p as Portal).layer == "nature":
+			nature_gate = p
+		elif (p as Portal).layer == "science":
+			dormant_gate = p
+	var nature_sigil_lit := _portal_sigil_lit(nature_gate)
+	var dormant_sigil_lit := _portal_sigil_lit(dormant_gate)
+	_check("flickering gate lights its layer-motif sigil", nature_sigil_lit)
+	_check("dormant gate keeps its sigil unlit", not dormant_sigil_lit)
 
 	# Layer-1 (nature) flickering; the rest dormant.
 	_check("nature portal flickering at start", GameState.portal_state("nature") == GameState.PORTAL_FLICKERING)

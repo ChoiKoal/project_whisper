@@ -16,12 +16,37 @@ const ZOOM_STEP := 0.1
 ## skirt is visible rather than clipped hard at the outermost tile.
 const BOUND_MARGIN := 220.0
 
+## True while the awakening reveal tween is running (suppresses manual zoom input then).
+var _revealing: bool = false
+
 func _ready() -> void:
 	zoom = Vector2(DEFAULT_ZOOM, DEFAULT_ZOOM)
 	# Clamp the camera to the map bounds after the loader has laid its tiles.
 	call_deferred("_apply_bounds")
 
+
+## (v0.5d) The new-game awakening beat: start slightly zoomed IN on the dais (the player
+## spawns there) with a small upward drift toward the portal arc, then ease OUT to the default
+## framing so the ring of gates is revealed. Called by HomeSession on a fresh awakening only.
+func play_awakening_reveal() -> void:
+	_revealing = true
+	# Start tight on the dais, nudged up toward the northern arc so the reveal pans across it.
+	zoom = Vector2(2.4, 2.4)
+	offset = Vector2(0, -70)
+	var prev_smooth := position_smoothing_enabled
+	position_smoothing_enabled = false
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(self, "zoom", Vector2(DEFAULT_ZOOM, DEFAULT_ZOOM), 3.2) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT).set_delay(0.9)
+	tw.tween_property(self, "offset", Vector2.ZERO, 3.2) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT).set_delay(0.9)
+	tw.chain().tween_callback(func():
+		_revealing = false
+		position_smoothing_enabled = prev_smooth)
+
 func _unhandled_input(event: InputEvent) -> void:
+	if _revealing:
+		return
 	if event is InputEventMouseButton and event.pressed:
 		var mb := event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_WHEEL_UP:

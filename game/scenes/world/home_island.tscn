@@ -34,9 +34,11 @@ radius = 20.0
 
 [node name="Backdrop" type="CanvasLayer" parent="." groups=["backdrop"]]
 script = ExtResource("19_backdrop")
+home_mood = true
 
 [node name="DayNight" type="CanvasModulate" parent="."]
 script = ExtResource("10_daynight")
+fixed_tone = "#8a86b8"
 
 [node name="GlowLayer" type="CanvasLayer" parent="." groups=["glow_layer"]]
 layer = 1
@@ -49,6 +51,7 @@ layout_path_override = "res://data/home_layout.txt"
 legend_path_override = "res://data/home_legend.json"
 height_path_override = "none"
 enable_scatter = false
+floating_shard = true
 ysort_layer_path = NodePath("../YSortLayer")
 feedback_layer_path = NodePath("../YSortLayer")
 player_path = NodePath("../YSortLayer/Player")
@@ -131,6 +134,8 @@ script = ExtResource("21_charwin")
 
 [node name="Vignette" type="CanvasLayer" parent="." groups=["vignette"]]
 script = ExtResource("23_vignette")
+strength_override = 0.32
+inner_override = 0.42
 
 [node name="TimeHUD" type="CanvasLayer" parent="."]
 script = ExtResource("11_timehud")

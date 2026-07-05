@@ -12,6 +12,21 @@ const DUST_COUNT := 140
 const MOTE_COUNT := 7
 const STAR_SEED := 0x5151a7
 
+## (v0.5d) Home-island void mood: a denser starfield + one large soft violet nebula patch.
+var _home_mood: bool = false
+## Nebula centre (fraction of screen) + radii; painted as concentric soft violet rings.
+const NEBULA_COL := Color(0.42, 0.28, 0.62, 1.0)
+
+func set_home_mood(on: bool) -> void:
+	_home_mood = on
+	_seed_field()
+	queue_redraw()
+
+func _star_count() -> int:
+	return 180 if _home_mood else STAR_COUNT
+func _dust_count() -> int:
+	return 220 if _home_mood else DUST_COUNT
+
 ## Star tint ramp (neutral cream → faint violet), art-guide neutral/violet families.
 const STAR_TINTS := [
 	Color("#e8dfc8"), Color("#b8b4a8"), Color("#d9b8ff"), Color("#9e7ad9"),
@@ -51,7 +66,7 @@ func _seed_field() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = STAR_SEED
 	_stars.clear()
-	for _i in range(STAR_COUNT):
+	for _i in range(_star_count()):
 		_stars.append({
 			"pos": Vector2(rng.randf() * _size.x, rng.randf() * _size.y),
 			"size": 1.0 if rng.randf() < 0.72 else 2.0,
@@ -59,7 +74,7 @@ func _seed_field() -> void:
 			"tw": rng.randf() * TAU,
 		})
 	_dust.clear()
-	for _i in range(DUST_COUNT):
+	for _i in range(_dust_count()):
 		_dust.append({
 			"pos": Vector2(rng.randf() * _size.x, rng.randf() * _size.y),
 			"tint": Color(0.55, 0.5, 0.62, 0.10 + rng.randf() * 0.10),
@@ -94,6 +109,19 @@ func _draw() -> void:
 		var col := TOP.lerp(BOTTOM, t)
 		var y := t * h
 		draw_rect(Rect2(0, y, w, h / float(bands) + 1.0), col)
+	# (v0.5d) one large soft violet nebula glow patch behind the island (home mood only),
+	# painted as concentric feathered rings so it reads as a diffuse cloud, not a hard disc.
+	if _home_mood:
+		var nc := Vector2(w * 0.46, h * 0.5)
+		var maxr := maxf(w, h) * 0.42
+		var rings := 26
+		for i in range(rings):
+			var t := float(i) / float(rings - 1)     # 0 centre .. 1 edge
+			var rr := maxr * t
+			var a := (1.0 - t) * (1.0 - t) * 0.05     # very soft
+			var col := NEBULA_COL
+			col.a = a
+			draw_circle(nc, maxf(1.0, maxr - rr), col)
 	# static faint dust specks
 	for d in _dust:
 		draw_rect(Rect2(d["pos"], Vector2(1, 1)), d["tint"])
