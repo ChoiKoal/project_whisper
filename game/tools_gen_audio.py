@@ -341,6 +341,51 @@ def bgm_night():
     return _bgm(dark=True)
 
 
+# ==== v0.5.0 phase C: portal SFX ==========================================
+
+def portal_hum():
+    # A short (~1.2s) low violet drone with a slow beat — the flickering-portal hum.
+    dur = 1.2
+    b = buf(dur)
+    add_tone(b, note("D3"), 0.0, dur, 0.30, wave_fn=sine, attack=0.2, decay=dur,
+             vibrato=0.03, vib_rate=2.2)
+    add_tone(b, note("A3"), 0.0, dur, 0.16, wave_fn=sine, attack=0.3, decay=dur,
+             vibrato=0.04, vib_rate=3.1)
+    add_tone(b, note("D4") * 1.005, 0.0, dur, 0.10, wave_fn=sine, attack=0.4, decay=dur)
+    normalize(b, 0.5); fade_edges(b, 40); return b, False
+
+
+def travel_whoosh():
+    # Rising filtered-noise swell + an upward tone glide — entering the portal.
+    dur = 1.1
+    b = buf(dur)
+    prev = 0.0
+    for i in range(len(b)):
+        tt = i / SR
+        swell = (tt / dur)              # rise 0→1
+        w = rng.uniform(-1, 1)
+        prev = prev + 0.10 * (w - prev)  # lowpass noise
+        b[i] += 0.5 * swell * swell * prev
+    # upward glide (pitch bend) using vibrato-free tones stepping up
+    for i, nm in enumerate(["D4", "F4", "A4", "D5", "A5"]):
+        add_tone(b, note(nm), 0.15 + i * 0.16, 0.5, 0.20, wave_fn=triangle,
+                 attack=0.02, decay=0.28)
+    normalize(b, 0.7); fade_edges(b, 20); return b, False
+
+
+def portal_ignite():
+    # A bright ignition chime — the portal opens (CS-05). Rising sparkle + warm swell.
+    dur = 1.4
+    b = buf(dur)
+    for i, nm in enumerate(["D5", "A5", "D6", "F#6", "A6"]):
+        add_tone(b, note(nm), i * 0.06, 0.7, 0.30, wave_fn=triangle,
+                 attack=0.004, decay=0.4, vibrato=0.02, vib_rate=8)
+    for i, nm in enumerate(["D3", "A3", "D4"]):
+        add_tone(b, note(nm), 0.0, dur, 0.16, wave_fn=sine, attack=0.15, decay=dur)
+    add_noise(b, 0.0, 0.5, 0.06, decay=0.3, lp=0.9)
+    normalize(b, 0.8); fade_edges(b, 24); return b, False
+
+
 # ==== driver ===============================================================
 
 SPECS = [
@@ -362,16 +407,28 @@ SPECS = [
     ("day_amb", day_amb),
     ("bgm_day", bgm_day),
     ("bgm_night", bgm_night),
+    # v0.5.0 phase C portal SFX.
+    ("portal_hum", portal_hum),
+    ("travel_whoosh", travel_whoosh),
+    ("portal_ignite", portal_ignite),
 ]
 
 
 def main():
+    # Optional args = generate ONLY those names (v0.5.0: add the portal SFX without
+    # clobbering the CC0 BGM / retired synth ambience). No args = regenerate everything.
+    import sys
+    wanted = set(sys.argv[1:])
     print("=== Project Whisper audio synth (22050Hz 16-bit mono) ===")
     total = 0
+    count = 0
     for name, fn in SPECS:
+        if wanted and name not in wanted:
+            continue
         b, loop = fn()
         total += write_wav(name, b, loop)
-    print("--- %d files, %.2f MB total ---" % (len(SPECS), total / (1024.0 * 1024.0)))
+        count += 1
+    print("--- %d files, %.2f MB total ---" % (count, total / (1024.0 * 1024.0)))
 
 
 if __name__ == "__main__":

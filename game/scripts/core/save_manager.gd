@@ -24,7 +24,10 @@ extends Node
 
 const SAVE_PATH := "user://save1.json"
 ## Bump when the schema changes in a backwards-incompatible way.
-const SAVE_VERSION := 1
+## v2 (v0.5.0 phase C): multi-scene world snapshots (worlds keyed by scene id: "home"/
+## "grove"), portal_states, WorldContext (current scene + arrival). BREAKING — a v1 save
+## has no `worlds` map, so it is treated as 구버전 and rejected (fresh start).
+const SAVE_VERSION := 2
 
 ## Source id a gathered tile becomes (T0 VOID) — mirrors InteractionController.
 const VOID_SOURCE := 0
@@ -59,9 +62,31 @@ var _loader: MapLoader = null
 var _player: Node2D = null
 var _respawn: ObjectRespawn = null
 
-## When true, the next grove scene to register should load save data into itself
+## When true, the next world scene to register should load save data into itself
 ## (set by the title's "이어하기"). Cleared after the load is applied.
 var pending_load: bool = false
+
+# ---- v0.5.0 phase C: multi-scene world snapshots --------------------------
+## In-memory per-scene world state, keyed by scene id ("home"/"grove"). Each value is the
+## map/object/gate dict produced by _map_dict(). Persisted under `worlds` in the save. On
+## save we refresh the CURRENT scene's entry from the live world; the other scenes' entries
+## are carried forward untouched so travelling back and forth preserves both worlds.
+var _worlds: Dictionary = {}
+
+## When true, the next home-island load should play the CS-05 return-ignition cutscene
+## (queued by GroveSession after the clear). Persisted so a mid-return quit still fires it.
+var pending_return_ignition: bool = false
+
+
+## (v0.5.0 phase C) Queue the CS-05 return ignition for the next home-island boot.
+func queue_return_ignition() -> void:
+	pending_return_ignition = true
+
+## Consume the return-ignition flag (returns true once, then clears it).
+func consume_pending_return_ignition() -> bool:
+	var v := pending_return_ignition
+	pending_return_ignition = false
+	return v
 
 
 func _ready() -> void:
@@ -115,10 +140,17 @@ func delete_save() -> void:
 
 ## Build the full save dictionary from current autoload + live-world state.
 func build_save_dict() -> Dictionary:
+	# Refresh the CURRENT scene's world snapshot from the live world (if one is registered),
+	# leaving the other scene(s) in `_worlds` untouched → both worlds persist across travel.
+	if _loader != null:
+		var w := _map_dict()
+		if _player != null:
+			w["player"] = {"x": _player.global_position.x, "y": _player.global_position.y}
+		w["held_item"] = _held_item()
+		_worlds[WorldContext.current_scene] = w
 	var data := {
 		"version": SAVE_VERSION,
 		"inventory": _inventory_dict(),
-		"held_item": _held_item(),
 		"codex": Codex.to_dict(),
 		"time": {
 			"game_time": GameState.game_time,
@@ -131,11 +163,12 @@ func build_save_dict() -> Dictionary:
 			"cleared": cleared,
 		},
 		"quests": QuestManager.to_dict(),
+		# v0.5.0 phase C multi-scene state.
+		"worlds": _worlds.duplicate(true),
+		"portal_states": GameState.portal_states.duplicate(),
+		"world_context": WorldContext.to_dict(),
+		"pending_return_ignition": pending_return_ignition,
 	}
-	if _loader != null:
-		data["map"] = _map_dict()
-	if _player != null:
-		data["player"] = {"x": _player.global_position.x, "y": _player.global_position.y}
 	return data
 
 
@@ -293,8 +326,15 @@ func load_game() -> Dictionary:
 	var data := _read_save()
 	if data.is_empty():
 		return {}
+	# (v0.5.0 phase C) The DESTINATION scene the world is being loaded INTO is authoritative —
+	# the live session set WorldContext.current_scene before calling us. _apply_core_state would
+	# otherwise overwrite it with the SAVED scene, so a load into the grove would restore the
+	# home world's objects into the grove. Preserve the live scene across the core restore when
+	# a world is registered.
+	var live_scene := WorldContext.current_scene if _loader != null else ""
 	_apply_core_state(data)
 	if _loader != null:
+		WorldContext.current_scene = live_scene
 		apply_world_state(data)
 	game_loaded.emit()
 	return data
@@ -315,13 +355,17 @@ func _read_save() -> Dictionary:
 	return _migrate(parsed)
 
 
-## Version migration hook. v1 is current; older/unknown versions pass through
-## best-effort. Returns the (possibly upgraded) dict.
+## Version migration hook. v2 is current. v0.5.0 phase C is a BREAKING bump: a v1 (single-
+## world) save has no per-scene `worlds` map, so it can't be restored into the new home/grove
+## split. Such saves are rejected → the title shows "구버전 세이브" and the player starts fresh
+## (spec: breaking OK). Returns {} for a rejected save, else the dict.
 func _migrate(data: Dictionary) -> Dictionary:
 	var v := int(data.get("version", 0))
 	if v > SAVE_VERSION:
 		push_warning("SaveManager: save version %d newer than supported %d" % [v, SAVE_VERSION])
-	# No breaking migrations yet.
+	if v < SAVE_VERSION:
+		push_warning("SaveManager: 구버전 세이브 (v%d < v%d) — starting fresh" % [v, SAVE_VERSION])
+		return {}
 	return data
 
 
@@ -348,6 +392,13 @@ func _apply_core_state(data: Dictionary) -> void:
 	# (v0.4.0-C) Quest line state.
 	if data.has("quests"):
 		QuestManager.from_dict(data["quests"])
+	# (v0.5.0 phase C) multi-scene state: worlds cache, portal states, world context.
+	_worlds = (data.get("worlds", {}) as Dictionary).duplicate(true)
+	if data.has("portal_states"):
+		GameState.portal_states = (data["portal_states"] as Dictionary).duplicate()
+	if data.has("world_context"):
+		WorldContext.from_dict(data["world_context"])
+	pending_return_ignition = bool(data.get("pending_return_ignition", false))
 	# Held item is applied in apply_world_state (needs the InteractionController).
 
 
@@ -356,7 +407,12 @@ func _apply_core_state(data: Dictionary) -> void:
 func apply_world_state(data: Dictionary) -> void:
 	if _loader == null:
 		return
-	var m: Dictionary = data.get("map", {})
+	# (v0.5.0 phase C) restore the CURRENT scene's world snapshot (home/grove), not a single
+	# global "map" — the player may be loading into either world.
+	var m: Dictionary = _worlds.get(WorldContext.current_scene, {})
+	if m.is_empty():
+		# Fallback to a legacy single-map save shape (defensive; v1 saves are rejected earlier).
+		m = data.get("map", {})
 	# Gathered tiles reload as the walkable HOLLOW (빈 자국). The key is still
 	# "void_cells" (no schema change); older saves with true-VOID gathered cells also
 	# come back as HOLLOW so the emptied spots are walkable per the v0.3.1 decision.
@@ -379,14 +435,14 @@ func apply_world_state(data: Dictionary) -> void:
 		var wt := _search_class(_scene_root(), WorldTree)
 		if wt != null:
 			wt.set("_spent", true)
-	# Player position
-	if _player != null and data.has("player"):
-		var p: Dictionary = data["player"]
+	# Player position (now stored inside the per-scene world dict).
+	if _player != null and m.has("player"):
+		var p: Dictionary = m["player"]
 		_player.global_position = Vector2(float(p.get("x", 0.0)), float(p.get("y", 0.0)))
-	# Held item
+	# Held item (per-scene).
 	var ic := _find_interaction()
 	if ic != null:
-		ic.set_held_item(String(data.get("held_item", "")))
+		ic.set_held_item(String(m.get("held_item", "")))
 
 
 ## (v0.4.0-C) Rebuild persistent PlacedObjects from the save. Parents them under the
@@ -487,8 +543,12 @@ func start_ng_plus(finished_run_recipes: Array = []) -> Array:
 	# Reset the world.
 	Inventory.clear()
 	GameState.set_game_time(0.0)
+	GameState.reset_portals()          # (v0.5.0-C) fresh portal line (nature flickering)
 	Codex.reset()
-	QuestManager.reset()   # (v0.4.0-C) fresh 속삭임 line on NG+
+	QuestManager.reset()   # (v0.4.0-C) fresh 속삭임 line on NG+ (from P0)
+	WorldContext.reset()               # (v0.5.0-C) start back in the home world
+	_worlds.clear()
+	pending_return_ignition = false
 	cleared = false
 	run_number += 1
 	carried_recipes = carry.duplicate()
@@ -525,8 +585,12 @@ func is_lifetime_recipe(recipe_id: String) -> bool:
 func new_game() -> void:
 	Inventory.clear()
 	GameState.set_game_time(0.0)
+	GameState.reset_portals()          # (v0.5.0-C) nature flickering, rest dormant
 	Codex.reset()
-	QuestManager.reset()   # (v0.4.0-C) fresh 속삭임 line on 새로 시작
+	QuestManager.reset()   # (v0.4.0-C) fresh 속삭임 line on 새로 시작 (from P0)
+	WorldContext.reset()               # (v0.5.0-C) start in the home world
+	_worlds.clear()
+	pending_return_ignition = false
 	run_number = 1
 	carried_recipes = []
 	lifetime_recipes.clear()

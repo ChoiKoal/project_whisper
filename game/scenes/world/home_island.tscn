@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3 uid="uid://bwhispergrove01"]
+[gd_scene load_steps=30 format=3 uid="uid://bwhisperhome01"]
 
 [ext_resource type="TileSet" uid="uid://bwhisperts0001" path="res://data/whisper_tileset.tres" id="1_tileset"]
 [ext_resource type="Script" path="res://scripts/world/map_loader.gd" id="2_maploader"]
@@ -11,17 +11,13 @@
 [ext_resource type="Script" path="res://scripts/ui/codex_ui.gd" id="9_codex_ui"]
 [ext_resource type="Script" path="res://scripts/world/day_night.gd" id="10_daynight"]
 [ext_resource type="Script" path="res://scripts/ui/time_hud.gd" id="11_timehud"]
-[ext_resource type="Script" path="res://scripts/world/clear_sequence.gd" id="12_clear"]
 [ext_resource type="Script" path="res://scripts/world/object_respawn.gd" id="13_respawn"]
-[ext_resource type="Script" path="res://scripts/world/night_gate_guard.gd" id="14_guard"]
 [ext_resource type="Script" path="res://scripts/ui/pause_menu.gd" id="15_pause"]
-[ext_resource type="Script" path="res://scripts/world/grove_session.gd" id="16_session"]
+[ext_resource type="Script" path="res://scripts/world/home_session.gd" id="16_session"]
 [ext_resource type="Script" path="res://scripts/world/touch_controller.gd" id="17_touch"]
-[ext_resource type="Script" path="res://scripts/world/stepping_slot_hint.gd" id="18_slothint"]
 [ext_resource type="Script" path="res://scripts/world/tile_glow.gd" id="24_tileglow"]
 [ext_resource type="Script" path="res://scripts/world/placement_ghost.gd" id="25_ghost"]
 [ext_resource type="Script" path="res://scripts/world/backdrop.gd" id="19_backdrop"]
-[ext_resource type="Script" path="res://scripts/world/night_fireflies.gd" id="20_fireflies"]
 [ext_resource type="Script" path="res://scripts/ui/character_window.gd" id="21_charwin"]
 [ext_resource type="Script" path="res://scripts/ui/ui_hub.gd" id="22_uihub"]
 [ext_resource type="Script" path="res://scripts/world/vignette.gd" id="23_vignette"]
@@ -29,11 +25,12 @@
 [ext_resource type="Script" path="res://scripts/ui/quest_log.gd" id="27_questlog"]
 [ext_resource type="Script" path="res://scripts/world/quest_area_watcher.gd" id="28_questarea"]
 [ext_resource type="Script" path="res://scripts/world/camera_zoom.gd" id="29_camzoom"]
+[ext_resource type="Script" path="res://scripts/world/portal_cutscene.gd" id="30_portalcs"]
 
 [sub_resource type="CircleShape2D" id="col_player"]
 radius = 20.0
 
-[node name="StartingGrove" type="Node2D"]
+[node name="HomeIsland" type="Node2D"]
 
 [node name="Backdrop" type="CanvasLayer" parent="." groups=["backdrop"]]
 script = ExtResource("19_backdrop")
@@ -45,13 +42,13 @@ script = ExtResource("10_daynight")
 layer = 1
 follow_viewport_enabled = true
 
-[node name="NightFireflies" type="Node2D" parent="."]
-script = ExtResource("20_fireflies")
-map_loader_path = NodePath("../Ground")
-
 [node name="Ground" type="TileMapLayer" parent="."]
 tile_set = ExtResource("1_tileset")
 script = ExtResource("2_maploader")
+layout_path_override = "res://data/home_layout.txt"
+legend_path_override = "res://data/home_legend.json"
+height_path_override = "none"
+enable_scatter = false
 ysort_layer_path = NodePath("../YSortLayer")
 feedback_layer_path = NodePath("../YSortLayer")
 player_path = NodePath("../YSortLayer/Player")
@@ -59,9 +56,6 @@ fade_rect_path = NodePath("../FadeLayer/Fade")
 
 [node name="TileHighlight" type="Node2D" parent="."]
 script = ExtResource("5_highlight")
-
-[node name="SteppingSlotHint" type="Node2D" parent="."]
-script = ExtResource("18_slothint")
 
 [node name="TileGlow" type="Node2D" parent="."]
 z_index = 3
@@ -104,7 +98,6 @@ player_path = NodePath("../YSortLayer/Player")
 tilemap_path = NodePath("../Ground")
 highlight_path = NodePath("../TileHighlight")
 feedback_layer_path = NodePath("../YSortLayer")
-slot_hint_path = NodePath("../SteppingSlotHint")
 tile_glow_path = NodePath("../TileGlow")
 ysort_layer_path = NodePath("../YSortLayer")
 placement_ghost_path = NodePath("../PlacementGhost")
@@ -119,11 +112,6 @@ script = ExtResource("17_touch")
 map_loader_path = NodePath("../Ground")
 player_path = NodePath("../YSortLayer/Player")
 interaction_path = NodePath("../Interaction")
-
-[node name="NightGateGuard" type="Node2D" parent="."]
-script = ExtResource("14_guard")
-player_path = NodePath("../YSortLayer/Player")
-feedback_layer_path = NodePath("../YSortLayer")
 
 [node name="InventoryUI" type="CanvasLayer" parent="."]
 script = ExtResource("7_inv_ui")
@@ -155,12 +143,13 @@ script = ExtResource("27_questlog")
 
 [node name="QuestAreaWatcher" type="Node" parent="."]
 script = ExtResource("28_questarea")
+area_id = "dais_edge"
+mode = "leave_spawn"
 map_loader_path = NodePath("../Ground")
 player_path = NodePath("../YSortLayer/Player")
 
-[node name="ClearSequence" type="CanvasLayer" parent="."]
-script = ExtResource("12_clear")
-map_loader_path = NodePath("../Ground")
+[node name="PortalCutscene" type="CanvasLayer" parent="."]
+script = ExtResource("30_portalcs")
 
 [node name="FadeLayer" type="CanvasLayer" parent="."]
 layer = 8
@@ -180,9 +169,9 @@ script = ExtResource("15_pause")
 script = ExtResource("22_uihub")
 pause_menu_path = NodePath("../PauseMenu")
 
-[node name="GroveSession" type="Node" parent="."]
+[node name="HomeSession" type="Node" parent="."]
 script = ExtResource("16_session")
 map_loader_path = NodePath("../Ground")
 player_path = NodePath("../YSortLayer/Player")
 respawn_path = NodePath("../ObjectRespawn")
-clear_sequence_path = NodePath("../ClearSequence")
+portal_cutscene_path = NodePath("../PortalCutscene")

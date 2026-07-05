@@ -13,7 +13,9 @@ class_name Opening
 ## per card, so the flow is deterministic and the m7 harness can drive it headlessly
 ## via advance() / skip_all().
 
-const GROVE_SCENE := "res://scenes/world/starting_grove.tscn"
+## CS-01 (v0.5.0) fades into the HOME island (제0세계) — the player awakens on their own
+## empty world, not the grove.
+const HOME_SCENE := "res://scenes/world/home_island.tscn"
 
 const CREAM := Color("#faf5e6")
 const VIOLET := Color("#9e7ad9")
@@ -28,11 +30,12 @@ const FINAL_FADE := 1.1
 ## (B4) how long the backdrop takes to drift to the next card's tint.
 const TINT_FADE := 1.4
 
+## CS-01 「각성」 (v0.5 개정판 — 제0세계에서 시작). Per docs/project-whisper-cutscenes-v2.md.
 const CARDS := [
-	"어느 날 깨어나 보니, 새로운 세계 속에 있었다.",
-	"새소리는 반복되고, 꽃은 지지 않고, 물에는 아무도 살지 않는 곳.",
-	"나는 컨스트럭터. …방금 태어난 것 같지만.",
-	"이 세계는 왜 멈춰 있을까. 손이 먼저 움직였다 — 무언가를 주워 담고 싶다.",
+	"어둠 속에서, 누군가 나를 불렀다.",
+	"…아니. 부른 게 아니라, 속삭였다.",
+	"여기가 나의 세계라고 했다. …아무것도 없는데.",
+	"문 하나가, 숨을 쉬고 있었다.",
 ]
 
 ## (B4) One deep, near-black tint per card — the backdrop drifts between them so the
@@ -173,7 +176,9 @@ func _finish() -> void:
 		_card_tween.kill()
 	var tw := create_tween()
 	tw.tween_property(_fade, "color:a", 1.0, FINAL_FADE)
-	tw.tween_callback(func(): get_tree().change_scene_to_file(GROVE_SCENE))
+	tw.tween_callback(func():
+		WorldContext.current_scene = WorldContext.SCENE_HOME
+		get_tree().change_scene_to_file(HOME_SCENE))
 
 
 func _unhandled_input(event: InputEvent) -> void:

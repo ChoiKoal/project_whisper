@@ -95,6 +95,10 @@ func _respawn(entry: Dictionary) -> void:
 		node.position = _loader.cell_center_world(cell)
 		node.y_sort_enabled = true
 		_ysort.add_child(node)
+		# (v0.5 phase C PRE-FIX) a respawned object on a raised cell must get the same
+		# height lift as the initial spawn, or it would sit at the un-lifted cell centre
+		# (embedded in the plateau's cliff face). Single shared code path.
+		_loader.apply_height_lift(node)
 	entry["node"] = node
 	entry["respawn_at"] = -1.0
 

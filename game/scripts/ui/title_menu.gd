@@ -47,8 +47,9 @@ const FIREFLY := Color("#ffe6a8")     # warm firefly glow
 ## Design canvas the parallax layout is authored against (project viewport).
 const CANVAS := Vector2(1600, 900)
 
-const GROVE_SCENE := "res://scenes/world/starting_grove.tscn"
-## 새로 시작 routes through the opening cutscene (v0.2.1); 이어하기/NG+ skip it.
+const HOME_SCENE := "res://scenes/world/home_island.tscn"
+## 새로 시작 routes through the opening cutscene (CS-01), which fades into the home island;
+## 이어하기 loads into whichever world the save was in; NG+ starts fresh in the home world.
 const OPENING_SCENE := "res://scenes/ui/opening.tscn"
 
 ## Iso tile footprint (matches the in-game 128×64 diamonds): half-width, half-height.
@@ -650,10 +651,17 @@ func _on_new_game() -> void:
 
 
 func _on_continue() -> void:
-	# Defer the load until the grove scene has built its map + player: the grove
-	# session calls SaveManager.load_game() from its _ready when pending_load.
+	# Defer the load until the destination world scene has built its map + player: that
+	# scene's session calls SaveManager.load_game() from its _ready when pending_load. The
+	# save records which world the player was in (home/grove) via WorldContext; peek it to
+	# route to the correct scene. A rejected 구버전 save falls back to a fresh home start.
+	var data := SaveManager._read_save()
+	if data.is_empty():
+		_on_new_game()
+		return
 	SaveManager.pending_load = true
-	get_tree().change_scene_to_file(GROVE_SCENE)
+	var dest := String(data.get("world_context", {}).get("current_scene", WorldContext.SCENE_HOME))
+	get_tree().change_scene_to_file(WorldContext.scene_path(dest))
 
 
 func _on_ng_plus() -> void:
@@ -663,7 +671,7 @@ func _on_ng_plus() -> void:
 	SaveManager._apply_core_state(data)
 	SaveManager.start_ng_plus()
 	SaveManager.pending_load = false
-	get_tree().change_scene_to_file(GROVE_SCENE)
+	get_tree().change_scene_to_file(HOME_SCENE)
 
 
 func _on_quit() -> void:

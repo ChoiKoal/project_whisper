@@ -83,6 +83,9 @@ func _connect_signals() -> void:
 	GameState.day_phase_changed.connect(func(phase): _event("day_phase_changed", phase))
 	GameState.player_entered_area.connect(func(area_id): _event("player_entered_area", area_id))
 	GameState.world_tree_planted.connect(func(_cell): _event("world_tree_planted", "any"))
+	# (v0.5.0 phase C) home-island quests.
+	GameState.portal_reached.connect(func(layer): _event("portal_reached", layer))
+	GameState.placed_object_placed.connect(func(_id, _cell): _event("placed_object_placed", "any"))
 
 
 ## Best-effort object id for a used-on target (bush_dry etc.).
@@ -222,8 +225,33 @@ func from_dict(data: Dictionary) -> void:
 		all_quests_completed.emit()
 
 
-## Reset to a fresh Q1 line (NG+ / new game).
+## Reset to a fresh line head (P0) (NG+ / new game).
 func reset() -> void:
 	_done.clear()
 	progress = 0
 	_start(_head_id)
+
+
+## (v0.5.0 phase C) Jump the active quest directly to `id`, marking the current active quest
+## (and any skipped intermediates up to `id`) done. Used by CS-05 to open P2 after the clear
+## chain (Q9 finishes with next="" → all_quests_completed; the cutscene then calls this to
+## resume the line at P2). Idempotent if already on `id`.
+func advance_to(id: String) -> void:
+	if id == active_id:
+		return
+	if not _by_id.has(id):
+		push_warning("QuestManager: advance_to unknown quest '%s'" % id)
+		return
+	# Mark everything before `id` in the authored order as done (so the log reads complete).
+	var reached := false
+	for q in _order:
+		var qid := String(q["id"])
+		if qid == id:
+			reached = true
+			break
+		_done[qid] = true
+	if active_id != "":
+		_done[active_id] = true
+	var old := active_id
+	_start(id)
+	quest_advanced.emit(old, id)

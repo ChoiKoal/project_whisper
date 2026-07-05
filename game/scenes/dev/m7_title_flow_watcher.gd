@@ -2,13 +2,13 @@ extends Node
 ## Drives the M7 title-flow state machine across scene changes. Lives on the tree
 ## root (PROCESS_MODE_ALWAYS) so it survives change_scene_to_file swaps.
 ##
-## States:
+## States (v0.5.0 phase C: 새로 시작 / 이어하기 now land on the HOME island, not the grove):
 ##   BOOT      → switch to title.tscn
 ##   AT_TITLE1 → find title menu, press 새로 시작
-##   AT_OPENING→ (v0.2.1) 새로 시작 now enters the opening cutscene; traverse it by
-##               calling advance() a few times then skip_all() → grove
-##   IN_GROVE1 → survive GROVE1_FRAMES, then open pause + 저장, then 타이틀로
-##   AT_TITLE2 → find title menu, press 이어하기 (continues skip the opening)
+##   AT_OPENING→ 새로 시작 enters the opening cutscene (CS-01); traverse it by
+##               calling advance() a few times then skip_all() → HOME island
+##   IN_GROVE1 → survive GROVE1_FRAMES on the home island, then open pause + 저장, then 타이틀로
+##   AT_TITLE2 → find title menu, press 이어하기 (continues skip the opening → the saved world)
 ##   IN_GROVE2 → survive GROVE2_FRAMES, then report + quit
 ##
 ## Assertions are collected and printed PASS/FAIL; exit code = failure count.
@@ -169,16 +169,18 @@ func _current() -> Node:
 	return get_tree().current_scene
 
 
-## The grove is healthy if the current scene is StartingGrove and its MapLoader
-## built the 40×40 map.
+## (v0.5.0 phase C) A world is healthy if the current scene is the HOME island (or grove)
+## and its MapLoader built a non-empty map. New game / continue now land on the home island
+## (제0세계, 22×22); the check accepts either world so the flow harness stays a scene-change
+## survival test regardless of which world the save was in.
 func _grove_ok() -> bool:
 	var cs := _current()
-	if cs == null or cs.name != "StartingGrove":
+	if cs == null or (cs.name != "HomeIsland" and cs.name != "StartingGrove"):
 		return false
 	var ground := cs.get_node_or_null("Ground")
 	if ground == null:
 		return false
-	return int(ground.get("height")) == 40 and int(ground.get("width")) == 40
+	return int(ground.get("width")) >= 20 and int(ground.get("height")) >= 20
 
 
 func _tiles_ok() -> bool:
@@ -186,7 +188,8 @@ func _tiles_ok() -> bool:
 	if cs == null:
 		return false
 	var tm := _find_tilemap(cs)
-	return tm != null and tm.get_used_cells().size() >= 1600
+	# Home island is 22×22 (~300 island cells); grove is 40×40. Either has ≥ 300 used cells.
+	return tm != null and tm.get_used_cells().size() >= 300
 
 
 func _find_tilemap(n: Node) -> TileMapLayer:

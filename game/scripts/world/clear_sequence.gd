@@ -1,29 +1,40 @@
 extends CanvasLayer
 class_name ClearSequence
-## G4 clear cutscene. Listens for GameState.world_tree_planted (emitted when D22
-## 어린 세계수 is placed on a T0 VOID cell). Plays:
-##   1. screen slow fade to dark
-##   2. text "…들려? 방금, 세계가 대답했어."
-##   3. "Project Whisper — 계속됩니다" + 발견률 stats (from Codex)
-##   4. ESC / interact returns to game (free play; time resumes)
+## CS-04 「정화」 (v0.5.0 phase C — replaces the old G4 clear cutscene). Listens for
+## GameState.world_tree_planted (emitted when D22 어린 세계수 is placed on a T0 VOID/HOLLOW
+## cell). Plays the purification per docs/project-whisper-cutscenes-v2.md CS-04:
+##   1. one-frame WHITE flash
+##   2. a light ripple RING expands from the planted cell; VOID/HOLLOW cells it passes tint
+##      faintly green (the world remembers being emptied, now healing)
+##   3. text cards: "세계가, 숨을 뱉었어." / "…들려? 방금, 세계가 대답했어." /
+##      "돌아갈 시간이야. 나의 세계로."
+##   4. emits `cleared` → GroveSession auto-returns to the home island (CS-05 queued)
 ##
-## Layered above everything (layer 10). Pauses GameState time during the fade so
-## the world holds still for the beat.
+## Layered above everything (layer 10). Pauses GameState time during the beat.
 
-const LINE1 := "…들려? 방금, 세계가 대답했어."
-const TITLE := "Project Whisper — 계속됩니다"
 const BG := Color("#1a1420")
 const CREAM := Color("#faf5e6")
 const VIOLET := Color("#9e7ad9")
+const HEAL_GREEN := Color(0.42, 0.72, 0.36, 1.0)
+const HOLLOW_SOURCE := 11
+const ATLAS := Vector2i(0, 0)
 
+const CARDS := [
+	"세계가, 숨을 뱉었다.",
+	"…들려? 방금, 세계가 대답했어.",
+	"돌아갈 시간이야. 나의 세계로.",
+]
+
+var _flash: ColorRect
+var _ring: Sprite2D
 var _dim: ColorRect
-var _center: VBoxContainer
-var _line1: Label
-var _title: Label
-var _stats: Label
-var _hint: Label
+var _line: Label
 var _active: bool = false
 var _planted_cell: Vector2i = Vector2i(-999, -999)
+
+## Optional map loader (set by the scene) so the ring can green-tint hollow cells.
+@export var map_loader_path: NodePath
+var _loader: MapLoader
 
 signal cleared
 
@@ -31,47 +42,39 @@ signal cleared
 func _ready() -> void:
 	layer = 10
 	_build()
+	_loader = get_node_or_null(map_loader_path) as MapLoader
 	GameState.world_tree_planted.connect(_on_planted)
 
 
 func _build() -> void:
+	# Full-screen white flash (1-frame bloom).
+	_flash = ColorRect.new()
+	_flash.color = Color(1, 1, 1, 0.0)
+	_flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_flash)
+
+	# A soft dim so the text reads over the world.
 	_dim = ColorRect.new()
-	_dim.color = BG
+	_dim.color = Color(BG.r, BG.g, BG.b, 0.0)
 	_dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_dim.modulate.a = 0.0
-	_dim.visible = false
-	_dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	_dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_dim)
 
-	_center = VBoxContainer.new()
-	_center.set_anchors_preset(Control.PRESET_CENTER)
-	_center.alignment = BoxContainer.ALIGNMENT_CENTER
-	_center.add_theme_constant_override("separation", 24)
-	_center.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_center.grow_vertical = Control.GROW_DIRECTION_BOTH
-	_dim.add_child(_center)
-
-	_line1 = _mk_label(LINE1, 30, CREAM)
-	_title = _mk_label(TITLE, 40, VIOLET)
-	_stats = _mk_label("", 22, CREAM)
-	_hint = _mk_label("[ESC / 상호작용] 돌아가기", 18, Color("#b8b4a8"))
-	_line1.modulate.a = 0.0
-	_title.modulate.a = 0.0
-	_stats.modulate.a = 0.0
-	_hint.modulate.a = 0.0
-	_center.add_child(_line1)
-	_center.add_child(_title)
-	_center.add_child(_stats)
-	_center.add_child(_hint)
-
-
-func _mk_label(txt: String, size: int, col: Color) -> Label:
-	var l := Label.new()
-	l.text = txt
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.add_theme_color_override("font_color", col)
-	l.add_theme_font_size_override("font_size", size)
-	return l
+	var center := VBoxContainer.new()
+	center.set_anchors_preset(Control.PRESET_CENTER)
+	center.alignment = BoxContainer.ALIGNMENT_CENTER
+	center.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	center.grow_vertical = Control.GROW_DIRECTION_BOTH
+	add_child(center)
+	_line = Label.new()
+	_line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_line.add_theme_color_override("font_color", CREAM)
+	_line.add_theme_font_size_override("font_size", 30)
+	_line.add_theme_color_override("font_outline_color", Color(0.05, 0.04, 0.08, 0.9))
+	_line.add_theme_constant_override("outline_size", 5)
+	_line.modulate.a = 0.0
+	center.add_child(_line)
 
 
 func is_active() -> bool:
@@ -85,52 +88,110 @@ func _on_planted(cell: Vector2i) -> void:
 	play()
 
 
+## Public entry (also the harness hook). Plays the purification then emits `cleared`.
 func play() -> void:
 	_active = true
 	GameState.time_running = false
-	_dim.visible = true
-	_stats.text = _stats_text()
+	if AudioManager != null and AudioManager.has_method("play_sfx"):
+		AudioManager.play_sfx("clear_fanfare")
+	_run()
+
+
+func _run() -> void:
+	# 1. white flash.
 	var tw := create_tween()
-	tw.tween_property(_dim, "modulate:a", 1.0, 2.0)   # slow fade
-	tw.tween_property(_line1, "modulate:a", 1.0, 1.2)
-	tw.tween_interval(0.8)
-	tw.tween_property(_title, "modulate:a", 1.0, 1.0)
-	tw.tween_property(_stats, "modulate:a", 1.0, 0.8)
-	tw.tween_property(_hint, "modulate:a", 1.0, 0.6)
-	tw.tween_callback(func(): cleared.emit())
+	tw.tween_property(_flash, "color:a", 0.9, 0.08)
+	tw.tween_property(_flash, "color:a", 0.0, 0.8)
+	await tw.finished
+
+	# 2. expanding ripple ring + green-tint the hollow cells (visual, best-effort).
+	_spawn_ring()
+	_heal_hollow_cells()
+
+	# 3. text cards over a soft dim.
+	var dtw := create_tween()
+	dtw.tween_property(_dim, "color:a", 0.55, 1.0)
+	await dtw.finished
+	for card in CARDS:
+		await _card(card)
+
+	# 4. hand off to the auto-return.
+	_active = false
+	cleared.emit()
 
 
-func _stats_text() -> String:
-	var di := Codex.discovered_item_count()
-	var dr := Codex.discovered_recipe_count()
-	var ti := ItemDB.all_ids().size()
-	var tr := RecipeDB.all_ids().size()
-	var total_disc := di + dr
-	var total := ti + tr
-	var pct := 0.0
-	if total > 0:
-		pct = 100.0 * float(total_disc) / float(total)
-	return "발견률 %.0f%%   (아이템 %d/%d · 레시피 %d/%d)" % [pct, di, ti, dr, tr]
-
-
-func _unhandled_input(event: InputEvent) -> void:
-	if not _active:
-		return
-	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("interact"):
-		_dismiss()
-		get_viewport().set_input_as_handled()
-
-
-func _dismiss() -> void:
-	if not _active:
-		return
+func _card(text: String) -> void:
+	_line.text = text
 	var tw := create_tween()
-	tw.tween_property(_dim, "modulate:a", 0.0, 0.6)
-	tw.tween_callback(func():
-		_dim.visible = false
-		_active = false
-		GameState.time_running = true  # free play resumes
-		# reset labels for potential replays
-		for l in [_line1, _title, _stats, _hint]:
-			l.modulate.a = 0.0
-	)
+	tw.tween_property(_line, "modulate:a", 1.0, 0.7)
+	tw.tween_interval(1.1)
+	tw.tween_property(_line, "modulate:a", 0.0, 0.5)
+	await tw.finished
+
+
+## A light ripple ring expanding from the planted cell (world space, on a glow layer feel).
+func _spawn_ring() -> void:
+	if _loader == null:
+		return
+	var ysort := _loader.get_node_or_null(_loader.ysort_layer_path) as Node2D
+	if ysort == null:
+		return
+	# Build a thin bright ring texture once.
+	var s := 128
+	var img := Image.create(s, s, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var c := Vector2(s / 2.0, s / 2.0)
+	for y in range(s):
+		for x in range(s):
+			var d := Vector2(x + 0.5, y + 0.5).distance_to(c) / (s / 2.0)
+			# a soft ring peaking near the rim
+			var ring := clampf(1.0 - absf(d - 0.85) / 0.15, 0.0, 1.0)
+			if ring > 0.0:
+				img.set_pixel(x, y, Color(0.8, 1.0, 0.85, ring * 0.9))
+	_ring = Sprite2D.new()
+	_ring.texture = ImageTexture.create_from_image(img)
+	_ring.centered = true
+	_ring.position = _loader.cell_center_world(_planted_cell)
+	_ring.z_index = 50
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	_ring.material = mat
+	ysort.add_child(_ring)
+	var rtw := create_tween().set_parallel(true)
+	rtw.tween_property(_ring, "scale", Vector2(16, 16), 1.6).set_trans(Tween.TRANS_SINE)
+	rtw.tween_property(_ring, "modulate:a", 0.0, 1.6)
+	rtw.chain().tween_callback(func():
+		if is_instance_valid(_ring):
+			_ring.queue_free())
+
+
+## Faintly green-tint every HOLLOW (빈 자국) cell — the world healing as the ripple passes.
+func _heal_hollow_cells() -> void:
+	if _loader == null:
+		return
+	for r in range(_loader.height):
+		var row: String = _loader._layout[r] if r < _loader._layout.size() else ""
+		for c in range(min(_loader.width, row.length())):
+			var cell := Vector2i(c, r)
+			if _loader.get_cell_source_id(cell) == HOLLOW_SOURCE:
+				# A green modulate overlay diamond on the healed spot (visual only).
+				var s := Sprite2D.new()
+				var img := CliffGen.make_ao_diamond(0.0)  # placeholder shape reuse
+				# Recolour: a soft green diamond.
+				var gi := Image.create(128, 64, false, Image.FORMAT_RGBA8)
+				gi.fill(Color(0, 0, 0, 0))
+				for yy in range(64):
+					for xx in range(128):
+						var dx := absf(float(xx - 64)) / 64.0
+						var dy := absf(float(yy - 32)) / 32.0
+						if dx + dy <= 1.0:
+							var a := clampf((1.0 - (dx + dy)) / 0.8, 0.0, 1.0)
+							gi.set_pixel(xx, yy, Color(HEAL_GREEN.r, HEAL_GREEN.g, HEAL_GREEN.b, a * 0.35))
+				s.texture = ImageTexture.create_from_image(gi)
+				s.centered = false
+				s.position = _loader.cell_center_world(cell) + Vector2(-64, -32)
+				s.z_index = 2
+				var mat := CanvasItemMaterial.new()
+				mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+				s.material = mat
+				_loader.add_child(s)

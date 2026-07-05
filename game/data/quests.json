@@ -1,6 +1,24 @@
 {
-  "_comment": "v0.4.0-C 속삭임 퀘스트 (Q1-Q9). Each quest listens to an EXISTING GameState/Codex signal via QuestManager. `type` documents intent; `signal` is the concrete hook; `target` filters the payload (\"\" or \"any\" = no filter); `count` = required occurrences; `next` = id advanced to on completion (\"\" = final → clear).",
+  "_comment": "v0.5.0-C 속삭임 퀘스트. P0/P1 run on the HOME island (제0세계) before the player enters Layer 1; Q1-Q9 run INSIDE the grove (Layer 1) as before; Q9 completion fires the clear→CS-04→auto-return→CS-05 chain, after which CS-05 advances the line to P2 (place on home) then P3 (v0.6 hook). Each quest listens to an EXISTING GameState/QuestManager signal; `type` documents intent; `signal` is the concrete hook; `target` filters the payload (\"\" or \"any\" = no filter); `count` = required occurrences; `next` = id advanced to on completion (\"\" = final / handoff to a cutscene).",
   "quests": [
+    {
+      "id": "P0",
+      "whisper": "여기가… 나의 세계. 아직 비어 있어.",
+      "type": "reach",
+      "signal": "player_entered_area",
+      "target": "dais_edge",
+      "count": 1,
+      "next": "P1"
+    },
+    {
+      "id": "P1",
+      "whisper": "저 문 하나만 희미하게 뛰고 있어. 들어가 봐.",
+      "type": "reach",
+      "signal": "portal_reached",
+      "target": "nature",
+      "count": 1,
+      "next": "Q1"
+    },
     {
       "id": "Q1",
       "whisper": "…뭐든, 주워봐.",
@@ -79,6 +97,24 @@
       "whisper": "비워낸 자리에… 다시 심어줘.",
       "type": "place",
       "signal": "world_tree_planted",
+      "target": "any",
+      "count": 1,
+      "next": ""
+    },
+    {
+      "id": "P2",
+      "whisper": "이 섬에… 네가 만든 것을 보여줘.",
+      "type": "place",
+      "signal": "placed_object_placed",
+      "target": "any",
+      "count": 3,
+      "next": "P3"
+    },
+    {
+      "id": "P3",
+      "whisper": "다음 문이 깨어나길 기다린다…",
+      "type": "event",
+      "signal": "never",
       "target": "any",
       "count": 1,
       "next": ""

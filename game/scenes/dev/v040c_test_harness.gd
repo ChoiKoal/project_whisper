@@ -128,7 +128,9 @@ func _test_placement_world() -> void:
 	SaveManager.register_world(loader, player, respawn)
 	SaveManager.save_game()
 	var saved := SaveManager.build_save_dict()
-	var placed_arr: Array = saved.get("map", {}).get("placed_objects", [])
+	# (v0.5.0 phase C) world state is now keyed per scene under `worlds[current_scene]`.
+	var world_dict: Dictionary = saved.get("worlds", {}).get(WorldContext.current_scene, {})
+	var placed_arr: Array = world_dict.get("placed_objects", [])
 	var pot_saved := false
 	for e in placed_arr:
 		if String(e.get("item_id", "")) == "D29":
@@ -156,7 +158,12 @@ func _test_placement_world() -> void:
 func _test_quest_chain() -> void:
 	print("--- quest chain Q1→Q9 (signal-driven) ---")
 	QuestManager.reset()
-	_check("starts at Q1", QuestManager.active_id == "Q1",
+	# (v0.5.0 phase C) the line now begins with the HOME quests P0→P1; advance past them to
+	# test the Layer-1 grove chain Q1→Q9 as before.
+	_check("line starts at P0 (home)", QuestManager.active_id == "P0",
+		"active=%s" % QuestManager.active_id)
+	QuestManager.advance_to("Q1")
+	_check("advanced to Q1 (grove chain head)", QuestManager.active_id == "Q1",
 		"active=%s" % QuestManager.active_id)
 
 	# Q1 gather any×1

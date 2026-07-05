@@ -24,6 +24,8 @@ const SFX_NAMES := [
 	"gather_pop", "place_thud", "fuse_bubble", "fuse_success", "fuse_discovery",
 	"fuse_fail", "ui_click", "ui_open", "ui_close", "quest_advance",
 	"footstep_grass1", "footstep_grass2", "bush_bloom", "clear_fanfare",
+	# v0.5.0 phase C: portal SFX (synth WAVs).
+	"portal_hum", "travel_whoosh", "portal_ignite",
 ]
 ## Streams that must loop (the CC0 BGM oggs + the fuse-bubble SFX).
 const LOOP_NAMES := ["fuse_bubble", "bgm_day", "bgm_night"]
@@ -218,6 +220,24 @@ func start_world_audio() -> void:
 	var phase := GameState.phase() if GameState != null else "day"
 	crossfade_bgm_for_phase(phase)
 	_update_ambience(phase)
+
+
+## (v0.5.0 phase C) Home island = quieter, sparser ambience. On the home world we drop the
+## BGM bus an extra ~6 dB so the 제0세계 reads as a hushed, near-empty place; the grove
+## restores full BGM. Implemented as an extra multiplier on the BGM bus (leaves the user's
+## saved volume_bgm untouched).
+var _home_ambience := false
+const HOME_BGM_SCALE := 0.5   # ≈ −6 dB under the normal BGM level
+
+func set_home_ambience(on: bool) -> void:
+	if on == _home_ambience:
+		return
+	_home_ambience = on
+	var idx := AudioServer.get_bus_index(BUS_BGM)
+	if idx == -1:
+		return
+	var lin := volume_bgm * (HOME_BGM_SCALE if on else 1.0)
+	AudioServer.set_bus_volume_db(idx, linear_to_db(max(0.0001, lin)))
 
 
 func stop_all() -> void:

@@ -15,6 +15,9 @@ signal item_crafted(output_id: String, recipe_id: String)
 ## (v0.4.0-C) Fired when the player enters a tagged Area2D region (Q6 world-tree area).
 ## `area_id` identifies the region.
 signal player_entered_area(area_id: String)
+## (v0.5.0 phase C) Fired when the player reaches/interacts a portal on the home island.
+## `layer` = the portal's world layer. Quest P1 ("들어가 봐") advances on this.
+signal portal_reached(layer: String)
 
 ## M2 placement/use framework signals.
 ## Emitted when D22 (어린 세계수) is placed on a T0 VOID tile — the MVP clear
@@ -86,9 +89,43 @@ func ui_modal_open() -> bool:
 
 var _phase: String = "day"
 
+# ---- v0.5.0 phase C: portal states (제0세계 문 다섯) ------------------------
+## Per-layer portal state, keyed by layer id ("nature"/"science"/"machine"/"magic"/
+## "divinity") → one of "dormant" / "flickering" / "open". Saved by SaveManager.
+## Layer 1 (nature) starts flickering; the rest dormant. CS-05 opens nature and sets
+## science flickering. Portal world objects poll this dict + listen to portal_state_changed.
+signal portal_state_changed(layer: String, state: String)
+const PORTAL_DORMANT := "dormant"
+const PORTAL_FLICKERING := "flickering"
+const PORTAL_OPEN := "open"
+var portal_states: Dictionary = {}
+
+## Reset the portal line to its NEW-GAME baseline (nature flickering, rest dormant).
+func reset_portals() -> void:
+	portal_states = {
+		"nature": PORTAL_FLICKERING,
+		"science": PORTAL_DORMANT,
+		"machine": PORTAL_DORMANT,
+		"magic": PORTAL_DORMANT,
+		"divinity": PORTAL_DORMANT,
+	}
+
+## Set a portal's state and announce it (idempotent — no signal if unchanged).
+func set_portal_state(layer: String, state: String) -> void:
+	if portal_states.get(layer, "") == state:
+		return
+	portal_states[layer] = state
+	portal_state_changed.emit(layer, state)
+
+## Current state of a portal layer ("dormant" if unknown).
+func portal_state(layer: String) -> String:
+	return String(portal_states.get(layer, PORTAL_DORMANT))
+
 
 func _ready() -> void:
 	_phase = _phase_for(game_time)
+	if portal_states.is_empty():
+		reset_portals()
 
 
 func _process(delta: float) -> void:

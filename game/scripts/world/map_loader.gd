@@ -31,7 +31,13 @@ const HEIGHT_PATH := "res://data/map_height.txt"
 ## (v0.5.0) Per-scene overrides. Empty → use the LAYOUT_PATH / LEGEND_PATH defaults.
 @export var layout_path_override: String = ""
 @export var legend_path_override: String = ""
+## height_path_override: empty → default grove HEIGHT_PATH; "none" → a FLAT world (skip the
+## height file entirely — the home island is flat, and applying the grove's 40×40 height map
+## to a smaller world would be wrong).
 @export var height_path_override: String = ""
+## (v0.5.0 phase C) Whether the procedural density scatter runs. The home island (제0세계) is
+## a deliberately BARREN "빈 세계", so its scene sets this false — only authored objects appear.
+@export var enable_scatter: bool = true
 const ATLAS := Vector2i(0, 0)
 
 ## Deterministic global seed mixed into every procedural hash (map coords → value).
@@ -122,11 +128,13 @@ func _ready() -> void:
 	_load_height_data()
 	_classify_void_cells()
 	_build_tiles()
+	# (v0.5 phase C) Classify elevation BEFORE spawning objects/scatter so the rim-cell
+	# exclusion (_is_rim_cell) and the authored-object height lift are known at spawn time.
+	_classify_elevation()
 	_build_objects()
 	_scatter_objects()
 	_build_ridges()
 	_build_cliff_skirts()
-	_classify_elevation()
 	_build_elevation()
 	_build_edge_overlays()
 	# v0.5: brightness jitter retired — the real CC0 grass tiles carry their own
@@ -200,6 +208,9 @@ func _load_data() -> void:
 ## leaves the map flat (every cell height 0) — the elevation build then no-ops.
 func _load_height_data() -> void:
 	_height_rows.clear()
+	# "none" → an explicitly FLAT world (home island): skip the height file entirely.
+	if height_path_override == "none":
+		return
 	var hp := height_path_override if height_path_override != "" else HEIGHT_PATH
 	var hf := FileAccess.open(hp, FileAccess.READ)
 	if hf == null:
@@ -881,6 +892,14 @@ func _downhill_faces(cell: Vector2i) -> Array:  # of ["s"|"e", drop_levels]
 		out.append(["e", lv - east])
 	return out
 
+## (v0.5 phase C PRE-FIX) True if `cell` is a cliff-RIM cell — a raised, non-ramp cell
+## with a visible downhill face (its screen-S +row or screen-E +col neighbour is lower).
+## Scatter is excluded from these so no object lands on the exposed cliff-face band.
+## Cheap; called during scatter eligibility (elevation is classified first, see _ready).
+func _is_rim_cell(cell: Vector2i) -> bool:
+	return not _downhill_faces(cell).is_empty()
+
+
 ## Build the raised surface layers, cliff faces on transitions, ramp slopes, and the
 ## ledge collision. No-op on a flat map.
 func _build_elevation() -> void:
@@ -1098,10 +1117,27 @@ func _lift_hill_objects() -> void:
 	for child in _ysort.get_children():
 		if not (child is Node2D):
 			continue
-		var cell := world_to_cell((child as Node2D).global_position)
-		var off := height_offset(cell)
-		if off != 0.0:
-			(child as Node2D).position.y += off
+		apply_height_lift(child as Node2D)
+
+
+## (v0.5 phase C PRE-FIX) Public: lift a single object node so it sits ON its cell's
+## plateau. Idempotent per node via a meta flag — the initial _lift_hill_objects pass and
+## the later ObjectRespawn rebuild both call this, but a node is only lifted once. The
+## node's `position` must be its (un-lifted) cell centre when first called (all spawns
+## set it that way). Objects on flat ground (offset 0) are a no-op. This is the single
+## code path that guarantees "every object node's y matches its cell height offset".
+func apply_height_lift(node: Node2D) -> void:
+	if node.get_meta("_height_lifted", false):
+		return
+	var cell := world_to_cell(node.global_position)
+	var off := height_offset(cell)
+	if off != 0.0:
+		node.position.y += off
+	node.set_meta("_height_lifted", true)
+	# Record the cell the lift was computed for + the applied offset, so a harness can verify
+	# the invariant without re-deriving the cell from the (now shifted) position.
+	node.set_meta("_lift_cell", cell)
+	node.set_meta("_lift_offset", off)
 
 
 # ---- objects -------------------------------------------------------------
@@ -1120,12 +1156,40 @@ func _build_objects() -> void:
 				"N": night_gate_cells.append(cell)
 			if not objects.has(sym):
 				continue
+			# (v0.5 phase C PRE-FIX) An AUTHORED small gatherable (tree/flower/rock/stone/tuft/
+			# bush) that lands on a cliff-RIM cell would render on the exposed cliff-face band.
+			# Skip it (mark occupied so scatter doesn't refill), exactly like the scatter rule.
+			# Landmarks (cauldron/gate/world-tree/mystic/portal) are unaffected — they are
+			# authored on purpose and never sit on a rim.
+			if sym in ["T", "F", "R", "s", "t", "h"] and _is_rim_cell(cell):
+				_occupied[cell] = true
+				continue
 			_occupied[cell] = true
 			_spawn_object(sym, cell, objects[sym])
 
 
+## (v0.5.0 phase C) Cells carrying a spawned Portal, keyed by layer id (home island).
+var portal_cells: Dictionary = {}   # layer(String) -> Vector2i
+## The home cauldron / observation cells (parity with grove landmark bookkeeping).
+var observation_cell: Vector2i = Vector2i(-1, -1)
+
+
 func _spawn_object(sym: String, cell: Vector2i, spec: Dictionary) -> void:
 	var world := cell_center_world(cell)
+	# (v0.5.0 phase C) Home-island objects are dispatched by the legend's `kind` field so
+	# the loader stays data-driven (no home-only symbol hardcoding). Grove objects keep the
+	# symbol match below.
+	var kind := String(spec.get("kind", ""))
+	if kind == "portal":
+		_spawn_portal(cell, spec)
+		return
+	if kind == "observation":
+		observation_cell = cell
+		# Reuse the RestStump (time-skip to next evening) as the observation stone — same
+		# affordance ("look/skip"), no new system needed.
+		rest_stump = RestStump.new()
+		_place(rest_stump, world)
+		return
 	match sym:
 		"C":
 			cauldron_cell = cell
@@ -1175,6 +1239,34 @@ func _spawn_object(sym: String, cell: Vector2i, spec: Dictionary) -> void:
 		"T", "F", "R", "s", "t", "h":
 			_place(rebuild_gatherable(sym, cell), world)
 			object_spawns.append({"cell": cell, "symbol": sym})
+
+
+## (v0.5.0 phase C) Spawn a Portal on the home island. Composed programmatically
+## (portal.gd), a blocking StaticBody so the player can't walk through the stone legs, a
+## violet light pool at its base, and a record in `portal_cells`. Its state follows
+## GameState.portal_states[layer]. The home-island session connects portal_interacted.
+func _spawn_portal(cell: Vector2i, spec: Dictionary) -> void:
+	var scr := load("res://scripts/world/portal.gd")
+	if scr == null:
+		push_warning("MapLoader: portal.gd failed to load")
+		return
+	var p: Node2D = scr.new()
+	p.set("layer", String(spec.get("layer", "nature")))
+	p.set("object_id", String(spec.get("object_id", "portal")))
+	portal_cells[String(spec.get("layer", "nature"))] = cell
+	# Blocking body at the base so the arch legs are solid.
+	var body := StaticBody2D.new()
+	body.collision_layer = 1
+	body.collision_mask = 0
+	var col := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(72, 24)
+	col.shape = shape
+	body.add_child(col)
+	p.add_child(body)
+	_place(p, cell_center_world(cell))
+	# A soft violet pool washing the portal base (matches the cauldron/world-tree treatment).
+	_add_light_pool(p, "res://assets/objects/light_pool_violet.png", Vector2(0, -6), 0.9)
 
 
 ## Deterministic texture path + sprite offset for a scatter/authored gatherable
@@ -1241,6 +1333,8 @@ func _gatherable(spec: Dictionary, cell: Vector2i, tex_path: String, off: Vector
 ## and not already occupied. Three zone bands weight the flavour (approach zone
 ## = more flowers, hills = more trees, mid = reeds/tufts). Fully deterministic.
 func _scatter_objects() -> void:
+	if not enable_scatter:
+		return  # barren world (home island) — authored objects only
 	var eligible: Array[Vector2i] = []
 	for r in range(height):
 		var row := _layout[r]
@@ -1279,6 +1373,12 @@ func _is_scatter_eligible(cell: Vector2i) -> bool:
 	# Keep the spawn 3×3 clear so the player never wakes up boxed-in.
 	if spawn_cell != Vector2i(-1, -1) \
 			and absi(cell.x - spawn_cell.x) <= 1 and absi(cell.y - spawn_cell.y) <= 1:
+		return false
+	# (v0.5 phase C PRE-FIX) Never scatter on a cliff-RIM cell — a raised cell whose
+	# screen-S/E downhill neighbour is lower. Objects there sat visually on the exposed
+	# cliff-face band ("dry bush + flowers render ON the cliff wall face"). Excluding the
+	# rim keeps scatter on the flat plateau top / flat ground only.
+	if _is_rim_cell(cell):
 		return false
 	# ≥1 cell away from any D path tile, gate cell, or key landmark object so gate
 	# topology / choke points are never blocked.
