@@ -70,6 +70,14 @@ func get_recipe(recipe_id: String) -> Dictionary:
 	return _recipes.get(recipe_id, {})
 
 
+## (L2-3) Whisper 재화 cost of a recipe as {kind:amount} (e.g. {"energy":1}), or {} if the
+## recipe carries no `whisper_cost` field. Fusion reads this to gate the fuse on WhisperCurrency
+## (L2-R08 파워 코어 = 코어 조각 + 에너지). Data-driven: any recipe may declare a cost.
+func whisper_cost(recipe: Dictionary) -> Dictionary:
+	var c: Variant = recipe.get("whisper_cost", {})
+	return c if typeof(c) == TYPE_DICTIONARY else {}
+
+
 ## All recipe records (order not guaranteed).
 func all_recipes() -> Array:
 	return _recipes.values()

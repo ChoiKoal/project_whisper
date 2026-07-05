@@ -86,6 +86,9 @@ func _connect_signals() -> void:
 	# (v0.5.0 phase C) home-island quests.
 	GameState.portal_reached.connect(func(layer): _event("portal_reached", layer))
 	GameState.placed_object_placed.connect(func(_id, _cell): _event("placed_object_placed", "any"))
+	# (L2-3) Layer-2 전력 노드 급전 quests (L2-Q3 브리지 / L2-Q7 관제탑). node_id = target.
+	if GameState.has_signal("power_node_energized"):
+		GameState.power_node_energized.connect(func(node_id): _event("power_node_energized", node_id))
 
 
 ## Best-effort object id for a used-on target (bush_dry etc.).

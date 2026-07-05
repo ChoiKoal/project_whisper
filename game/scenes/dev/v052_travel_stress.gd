@@ -65,6 +65,15 @@ func _run() -> void:
 		await _play_in_grove(cycle)
 		await _return_grove_to_home(cycle)
 
+	# (v0.6.0) Extra hops exercising the REWORKED return portal object end-to-end:
+	#   (A) enter via the entry APRON (walk the player into the front zone → is_player_in_entry_zone
+	#       true → the portal's own on_interact, the real click-walk-then-enter target), after
+	#       placing a glowing decor — the exact object class that crashed the old return.
+	#   (B) return with an OPEN FUSION UI that is closed mid-transition (a modal open across the
+	#       scene teardown must not wedge input or crash the rebuild).
+	await _extra_entry_apron_hop()
+	await _extra_open_fusion_hop()
+
 	# NOTE: engine/script errors can't be captured from GDScript; the run is separately
 	# grepped for "SCRIPT ERROR" / "ERROR:" / "inherits from native type" by the runner
 	# (the release-only Sprite2D-script rejection printed exactly there before the fix).
@@ -152,6 +161,89 @@ func _return_grove_to_home(cycle: int) -> void:
 			rp.on_interact()
 			await _wait(0.5)
 			await _frames(12)
+
+# ---- (v0.6.0) extra hops via the reworked return portal -------------------
+
+## (A) Travel home by ENTERING THE APRON: hop to the grove, place a glowing decor, then teleport
+## the player onto the return portal's entry_stand_point (the apron centre — the same spot the
+## click-walk-then-enter lands on), assert the entry zone reports the player inside, then fire the
+## portal's on_interact (what the entry-zone E / tap resolves to). Must land home cleanly.
+func _extra_entry_apron_hop() -> void:
+	print("--- extra hop A: enter via apron ---")
+	var nature := _find_portal_layer("nature")
+	if nature == null:
+		_check("extra A: nature portal present", false)
+		return
+	nature.on_interact()
+	await _wait(2.0)
+	await _frames(10)
+	_check("extra A: arrived in grove", _scene_name() == "StartingGrove", _scene_name())
+	# place a glowing decor first (the crash-class object present across the transition).
+	var ic := _find_by_class("InteractionController")
+	var loader := _find_by_class("MapLoader")
+	var player := _find_by_class("Player")
+	var portal := _find_return_portal()
+	if ic == null or loader == null or player == null or portal == null:
+		_check("extra A: grove wired (ic/loader/player/portal)", false)
+		return
+	var sc: Vector2i = loader.spawn_cell
+	Inventory.add(GLOW_DECOR, 1)
+	ic.set_held_item(GLOW_DECOR)
+	for off in [Vector2i(0, -1), Vector2i(-1, 0), Vector2i(1, 1), Vector2i(2, 0)]:
+		ic.interact_with_cell(sc + off)
+		if ic.get_held_item() == "":
+			break
+	# Teleport the player into the return portal's front apron (what tap-walk resolves to).
+	if portal.has_method("entry_stand_point"):
+		player.global_position = portal.entry_stand_point()
+		player.force_update_transform()
+	# The Area2D re-evaluates overlaps on the PHYSICS tick — wait physics frames, not idle frames.
+	for _i in range(6):
+		await _tree.physics_frame
+	var in_zone: bool = portal.has_method("is_player_in_entry_zone") and portal.is_player_in_entry_zone()
+	_check("extra A: player inside return-portal entry apron", in_zone)
+	_check("extra A: apron prompt = 홈으로 돌아가기",
+		portal.has_method("entry_prompt_text") and String(portal.entry_prompt_text()).findn("홈으로") >= 0)
+	# Enter (what the apron-E / tap resolves to).
+	portal.on_interact()
+	await _wait(0.6)
+	await _frames(12)
+	_check("extra A: returned home via apron (no crash)", _scene_name() == "HomeIsland", _scene_name())
+
+## (B) Travel home with an OPEN FUSION MODAL closed mid-transition: hop to the grove, open the
+## FusionUI (push a "fusion" modal + open()), then return via the portal. The session's travel
+## first closes any open modal, then changes scene. Assert we land home with no wedged modal.
+func _extra_open_fusion_hop() -> void:
+	print("--- extra hop B: open fusion closed mid-transition ---")
+	var nature := _find_portal_layer("nature")
+	if nature == null:
+		_check("extra B: nature portal present", false)
+		return
+	nature.on_interact()
+	await _wait(2.0)
+	await _frames(10)
+	_check("extra B: arrived in grove", _scene_name() == "StartingGrove", _scene_name())
+	# Open the fusion UI (modal). If the scene has one, open it; also push the modal key so
+	# ui_modal_open() is true across the transition (the state the session must clear).
+	var fusion_ui := _find_by_class("FusionUI")
+	if fusion_ui != null and fusion_ui.has_method("open"):
+		fusion_ui.open()
+	if GameState != null:
+		GameState.push_modal("fusion")
+	await _frames(3)
+	_check("extra B: fusion modal open before return", GameState != null and GameState.ui_modal_open())
+	# Close the modal mid-transition (what the E-to-return / a close button would do), then return.
+	if fusion_ui != null and fusion_ui.has_method("close"):
+		fusion_ui.close()
+	if GameState != null:
+		GameState.pop_modal("fusion")
+	var portal := _find_return_portal()
+	if portal != null:
+		portal.on_interact()
+	await _wait(0.6)
+	await _frames(12)
+	_check("extra B: returned home with fusion closed (no crash)", _scene_name() == "HomeIsland", _scene_name())
+	_check("extra B: no modal wedged after return", GameState == null or not GameState.ui_modal_open())
 
 # ---- fusion helper --------------------------------------------------------
 

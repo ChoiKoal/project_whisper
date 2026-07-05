@@ -29,8 +29,11 @@ func _ready() -> void:
 	var records := _load_records()
 	_check("items.json loaded (>=69 records)", records.size() >= 69)
 
-	# Split canonical vs alias.
-	var canonical_ids: Array[String] = []
+	# Split canonical vs alias. (L2-3) Layer-2 items (layer:2) have no bespoke icons yet — their
+	# art lands in L2-4 (they render via ItemDB's category fallback square meanwhile). The
+	# icon-coverage contract below applies to the LAYER-1 canonical set (the 68 painted icons).
+	var canonical_ids: Array[String] = []       # Layer-1 canonical (icon-covered)
+	var l2_ids: Array[String] = []              # Layer-2 canonical (icons deferred to L2-4)
 	var alias_ids: Array[String] = []
 	for rec: Dictionary in records:
 		var id := String(rec.get("id", ""))
@@ -38,16 +41,18 @@ func _ready() -> void:
 			continue
 		if rec.has("alias_of"):
 			alias_ids.append(id)
+		elif int(rec.get("layer", 1)) == 2:
+			l2_ids.append(id)
 		else:
 			canonical_ids.append(id)
-	_check("68 canonical + 1 alias split", canonical_ids.size() == 68 and alias_ids.size() == 1)
+	_check("68 Layer-1 canonical + 1 alias split", canonical_ids.size() == 68 and alias_ids.size() == 1)
 
-	# 1. every canonical id has a real icon FILE (present on disk).
+	# 1. every LAYER-1 canonical id has a real icon FILE (present on disk). (Layer-2 icons = L2-4.)
 	var missing: Array[String] = []
 	for id in canonical_ids:
 		if not ResourceLoader.exists(ICON_DIR + id + ".png"):
 			missing.append(id)
-	_check("every canonical id has an icon PNG (missing=%s)" % [missing], missing.is_empty())
+	_check("every Layer-1 canonical id has an icon PNG (missing=%s)" % [missing], missing.is_empty())
 
 	# 2. ItemDB.icon(id) non-null for every id (canonical + alias).
 	var null_ids: Array[String] = []

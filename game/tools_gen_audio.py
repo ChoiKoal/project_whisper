@@ -386,6 +386,41 @@ def portal_ignite():
     normalize(b, 0.8); fade_edges(b, 24); return b, False
 
 
+# ==== L2-3: power / gate SFX ==============================================
+
+def power_hum():
+    # (L2-3) A machine coming to life: a low electric 60Hz-ish hum with a rising
+    # harmonic swell — plays when a 배전반/발전기 energizes (시안 발광 점등의 소리).
+    dur = 1.3
+    b = buf(dur)
+    # low mains hum (steady) + its octave, both with a slow tremolo (AM) beat.
+    for i in range(len(b)):
+        tt = i / SR
+        env = min(1.0, tt / 0.25)              # 0.25s power-up ramp
+        trem = 0.85 + 0.15 * math.sin(2 * math.pi * 5.0 * tt)  # 5Hz AM flicker
+        val = 0.30 * math.sin(2 * math.pi * 60.0 * tt)
+        val += 0.16 * math.sin(2 * math.pi * 120.0 * tt)
+        val += 0.10 * math.sin(2 * math.pi * 180.0 * tt)
+        b[i] += env * trem * val
+    # a rising cyan "power settles" tone glide at the end.
+    for i, nm in enumerate(["A3", "E4", "A4"]):
+        add_tone(b, note(nm), 0.5 + i * 0.14, 0.5, 0.14, wave_fn=triangle,
+                 attack=0.02, decay=0.4)
+    normalize(b, 0.6); fade_edges(b, 30); return b, False
+
+
+def power_spark():
+    # (L2-3) A short electric spark/zap — the socket sparks as the item is mounted
+    # (전지/퓨즈/코어 장착 순간). Bright crackle noise + a quick high ping.
+    dur = 0.35
+    b = buf(dur)
+    add_noise(b, 0.0, 0.12, 0.5, decay=0.06, lp=0.6)   # sharp crackle
+    add_noise(b, 0.02, 0.18, 0.22, decay=0.12, lp=0.9)  # airy tail
+    add_tone(b, note("E6"), 0.0, 0.14, 0.28, wave_fn=triangle, attack=0.002, decay=0.1)
+    add_tone(b, note("B6"), 0.01, 0.10, 0.18, wave_fn=triangle, attack=0.002, decay=0.07)
+    normalize(b, 0.85); fade_edges(b, 6); return b, False
+
+
 # ==== driver ===============================================================
 
 SPECS = [
@@ -411,6 +446,9 @@ SPECS = [
     ("portal_hum", portal_hum),
     ("travel_whoosh", travel_whoosh),
     ("portal_ignite", portal_ignite),
+    # L2-3 power / gate SFX.
+    ("power_hum", power_hum),
+    ("power_spark", power_spark),
 ]
 
 

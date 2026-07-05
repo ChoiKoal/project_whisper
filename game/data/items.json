@@ -1,6 +1,69 @@
 {
   "items": [
     {
+      "id": "J1",
+      "name": "고철",
+      "category": "gather",
+      "layer": 2,
+      "flavor": "누군가의 도구였을 것이다. 이제는 그냥, 무거운 침묵.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "J2",
+      "name": "전선",
+      "category": "gather",
+      "layer": 2,
+      "flavor": "아직 어딘가로 이어지고 싶은 듯 꿈틀거린다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "J3",
+      "name": "유리",
+      "category": "gather",
+      "layer": 2,
+      "flavor": "깨진 뒤에도, 빛을 담으려 애쓴다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "J4",
+      "name": "회로",
+      "category": "gather",
+      "layer": 2,
+      "flavor": "생각을 하던 조각. 마지막으로 무슨 계산을 하다 멈췄을까.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "J5",
+      "name": "기름",
+      "category": "gather",
+      "layer": 2,
+      "flavor": "고이지 못하고 번진다. 흐를 곳을 잃은 채.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "J6",
+      "name": "네온 결정",
+      "category": "gather",
+      "layer": 2,
+      "flavor": "죽은 도시에서 유일하게 아직 숨 쉬는 빛.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "J7",
+      "name": "재",
+      "category": "gather",
+      "layer": 2,
+      "flavor": "무엇이 여기서 탔는지는, 이제 아무도 모른다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
       "id": "I1",
       "name": "흙",
       "category": "gather",
@@ -851,6 +914,83 @@
       "flavor": "돌 위에 바위 — 산의 첫 글자.",
       "placeable_on": [],
       "usable_on": []
+    },
+    {
+      "id": "D62",
+      "name": "구리 도선",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "쓸 만한 부분만 살려낸다. 폐허에서 배우는 첫 기술.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D63",
+      "name": "정류 회로",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "굳은 관절에 기름을. 계산이 천천히 깨어난다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D64",
+      "name": "전지",
+      "category": "craft",
+      "layer": 2,
+      "key_item": true,
+      "flavor": "작지만, 이 죽은 땅에서 처음으로 '차오르는' 것.",
+      "placeable_on": [],
+      "usable_on": ["breaker"]
+    },
+    {
+      "id": "D65",
+      "name": "네온 랜턴",
+      "category": "craft",
+      "layer": 2,
+      "key_item": true,
+      "unique": true,
+      "flavor": "손안의 작은 새벽. 들고 있는 동안만, 어둠이 물러선다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D66",
+      "name": "절연 퓨즈",
+      "category": "craft",
+      "layer": 2,
+      "key_item": true,
+      "flavor": "끊어질 것을 대신 끊어 주는 것. 희생하려고 태어났다.",
+      "placeable_on": [],
+      "usable_on": ["gen_sub"]
+    },
+    {
+      "id": "D67",
+      "name": "코어 골격",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "심장이 될 뼈대. 아직은 차갑다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D68",
+      "name": "코어 조각",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "온기를 기다리는 조각. 하나만 더.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D69",
+      "name": "파워 코어",
+      "category": "craft",
+      "layer": 2,
+      "key_item": true,
+      "flavor": "죽은 문명의 마지막 심장. 여기에 온기를 꽂는다.",
+      "placeable_on": [],
+      "usable_on": ["breaker"]
     }
   ]
 }

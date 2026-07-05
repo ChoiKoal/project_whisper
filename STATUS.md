@@ -19,7 +19,7 @@
 | M6 폴리시+패키징 | done | E2E 59/59 + 전 하네스 그린 | win/mac/linux 빌드 산출 |
 | L2-1 과학 타일셋+오브젝트 | done | l2_map_harness 26/26 | M/m/C/c/G/A/W 타일 + 금속 절벽 + 오브젝트 12종 아트/씬 |
 | L2-2 터미널 스테이션 맵 | done | l2_map_harness 26/26 | l2_map 데이터 3종(§A-2 byte-identical) + terminal_station.tscn + 프리뷰 |
-| L2-3 게이트+전력계 | wip | — | PowerNode/브리지/차폐문/정전/관제탑 + WhisperCurrency (진행중) |
+| L2-3 게이트+전력계 (+귀환 포탈 리워크) | done | l2_gates_harness 41/41 + v052 stress 32/32 + 전 하네스 그린 | PowerNode(power_node_energized)/G1 브리지 순차점등/G2 차폐문+에너지Whisper/G3 정전 소지형/G4 관제탑 정화컷신 + WhisperCurrency(에너지) HUD·세이브·조합 재화소모 + J1-J7 채집 스텁 + 게이트체인 레시피 L2-R01~R08 + 귀환 포탈 리워크(grove+L2, 진입존 프롬프트/E/클릭워크) |
 
 ## 로그
 - 2026-07-05 02:36 — 루프 시작. Godot 4.5 arm64 확보, M0+M1 서브에이전트 착수.
@@ -34,3 +34,4 @@
 - 2026-07-05 13:3X — v0.3.1 완성: UX 5건 + KOAL 조합식 CSV 통합(69아이템/62레시피, 디딤돌=암석+자갈 재배선, 석기 은퇴) + 남쪽 바위 스캐터 상향(G1 노가다 방지). 12/12 하네스 + export 실빌드 검증.
 - 2026-07-05 15:2X — v0.4.0 완성: (a)인접채집/오브젝트발광커서/능선 (b)A안 캐릭터/가시덤불/모달UI/감성타이틀 (c)속삭임 퀘스트 Q1-Q9/배치 시스템 25종/프로시저럴 오디오 18종+BGM. 15하네스 그린.
 - 2026-07-05 23:0X — v0.6.0-wip L2-1/L2-2 완료: 제2세계(과학) 「꺼진 관문 기지」 40×40. 과학 타일셋(금속/콘크리트/황무지/재/냉각수 + 금속 절벽 리컬러) + 데이터 드리븐 L2 오브젝트(관제탑/스크린/안테나/발전기/배전반/브리지/차폐문/네온/잔해/부품상자/유리돔/가로등/정비대). l2_map_layout.txt는 설계 §A-2와 byte-identical. terminal_station.tscn 클린 부팅(L2 오브젝트 115개 전부 텍스처, 게이트 STATIC-CLOSED, 고도 +2관제탑/+1플랫폼). l2_map_harness 26/26. 프리뷰 preview-l2.png(+협곡 클로즈업) — 남색/시안 무드·냉각수 협곡 확인. 게이트 로직 = L2-3.
+- 2026-07-05 23:5X — v0.6.0-wip L2-3 완료 (+귀환 포탈 리워크): (A) 전력 게이트 4종 — GameState.power_node_energized 시그널(디딤돌 패턴 대응) + 배전반 장착. G1 전지→브리지 순차점등+walkable(AStar 갱신), G2 퓨즈→발전기 수리→차폐문 개방 + **에너지 Whisper +1**(WhisperCurrency 오토로드, 좌상단 HUD 보유시만, 획득 연출, 세이브), G3 네온랜턴 소지형(정전 병목 Area2D+국소암전), G4 파워코어(에너지 1 소모)→관제탑 정화컷신→machine 포탈 flickering 전파+귀환. RecipeDB.whisper_cost 필드 + Fusion 재화 게이트. J1-J7 채집 스텁(items.json, L2-2 오브젝트 wired, s상자 J2/J4 셀패리티) + 게이트체인 레시피 L2-R01~R08(전지/랜턴/퓨즈/코어골격/조각/파워코어). (B) 귀환 포탈 리워크 — ReturnPortalController 공용 클래스(진입존 프롬프트 루프+E+클릭워크), grove/L2 양측 홈 포탈과 동일 패턴("E 홈으로 돌아가기"). l2_gates_harness 41/41(gather→craft→mount 풀체인), v052 stress 32/32(신 포탈 진입존 + 발광데코 + 오픈 fusion 닫힘 hop 추가), 전 21 하네스 그린, import 0 에러. 릴리스 없음.

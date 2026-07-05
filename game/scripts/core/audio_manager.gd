@@ -26,6 +26,8 @@ const SFX_NAMES := [
 	"footstep_grass1", "footstep_grass2", "bush_bloom", "clear_fanfare",
 	# v0.5.0 phase C: portal SFX (synth WAVs).
 	"portal_hum", "travel_whoosh", "portal_ignite",
+	# L2-3: power / gate SFX (전력 hum + 스파크).
+	"power_hum", "power_spark",
 ]
 ## Streams that must loop (the CC0 BGM oggs + the fuse-bubble SFX).
 const LOOP_NAMES := ["fuse_bubble", "bgm_day", "bgm_night"]

@@ -1492,6 +1492,24 @@ func _l2_center_band() -> Array:
 	return [min_c - 1, max_c + 1]
 
 
+## (L2-3) Swap a Layer-2 gate cell (bridge B / door D) between its STATIC-CLOSED dark source
+## (19, non-walkable) and a LIT walkable source (12 metal M for a bridge, walkable), then emit
+## tile_walkable_changed so the AStar grid rebuilds (same mechanism as the stepping-stone swap).
+## `walkable=true` lights it (metal deck), false re-seals it dark. The L2 gate controller calls
+## this per bridge tile with a 0.1s stagger for the 순차 점등 쾌감.
+const L2_BRIDGE_LIT_SOURCE := 12   # metal floor (walkable)
+func l2_set_gate_cell_walkable(cell: Vector2i, walkable: bool) -> void:
+	set_cell(cell, L2_BRIDGE_LIT_SOURCE if walkable else L2_DARK_SOURCE, ATLAS)
+	if GameState != null:
+		GameState.tile_walkable_changed.emit(cell)
+
+
+## (L2-3) The legend `gates` block ({} on non-L2 maps). The L2 gate controller reads gate cell
+## lists (bridge/door/breaker/gen/core) from here so gate topology stays data-driven.
+func legend_gates() -> Dictionary:
+	return _legend.get("gates", {})
+
+
 ## (L2-2) The legend `special.workbench_cell` (정비대 placement), or (-1,-1) if none. The
 ## TerminalStation session reads this to drop the tech workbench near spawn.
 func l2_workbench_special_cell() -> Vector2i:
@@ -1538,7 +1556,7 @@ func _spawn_l2_object(sym: String, cell: Vector2i, spec: Dictionary, world: Vect
 	if not gth.is_empty():
 		# gatherable science resource (scrap/crate/dome/neon) — reuse Gatherable
 		var g := Gatherable.new()
-		g.item_id = String(gth.get("item_id", ""))
+		g.item_id = _l2_gather_item_id(l2_id, String(gth.get("item_id", "")), cell)
 		g.unique = bool(gth.get("unique", false))
 		g.object_id = l2_id
 		g.texture = tex
@@ -1616,6 +1634,18 @@ func _object_texture(sym: String, cell: Vector2i) -> Array:  # [path, offset]
 
 ## Build a Gatherable for a symbol at a cell (used by initial spawn, scatter, and
 ## ObjectRespawn). Reads the item_id from the legend's object spec.
+## (L2-3) The gather item id for a Layer-2 object at a cell, applying the parts_box J2/J4
+## deterministic split (§B-1 "s = 랜덤 J2/J4"). Shared by the INITIAL spawn (_spawn_l2_object)
+## AND the RESPAWN rebuild (rebuild_gatherable) so a gathered J4 box respawns as J4, not J2 —
+## otherwise the day-cycle respawn would erase every J4 source and softlock L2-R02 (J4+J5).
+## Deterministic by cell parity: both parities are present among the authored `s` cells, so both
+## 전선(J2) and 회로(J4) are always obtainable.
+func _l2_gather_item_id(l2_id: String, base_item: String, cell: Vector2i) -> String:
+	if l2_id == "parts_box" or l2_id == "parts_box_tut":
+		return "J4" if ((cell.x + cell.y) % 2 == 1) else "J2"
+	return base_item
+
+
 func rebuild_gatherable(sym: String, cell: Vector2i) -> Gatherable:
 	var spec: Dictionary = _legend.get("objects", {}).get(sym, {})
 	# (L2-1) Layer-2 gatherable objects carry their art in the legend spec (kind:l2obj), not in
@@ -1627,6 +1657,8 @@ func rebuild_gatherable(sym: String, cell: Vector2i) -> Gatherable:
 		var off := Vector2(float(off_arr[0]), float(off_arr[1])) if off_arr.size() >= 2 else Vector2.ZERO
 		var g := _gatherable(spec, cell, "res://assets/objects/%s.png" % art, off)
 		g.object_id = String(spec.get("l2_id", sym))
+		# Re-apply the parts_box J2/J4 split on respawn so J4 sources survive the day cycle.
+		g.item_id = _l2_gather_item_id(g.object_id, g.item_id, cell)
 		g.blocks_movement = bool(spec.get("blocks", false))
 		return g
 	var tex_off := _object_texture(sym, cell)

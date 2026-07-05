@@ -7,13 +7,14 @@ config_version=5
 [application]
 
 config/name="Project Whisper"
-config/version="0.5.2"
+config/version="0.6.0"
 run/main_scene="res://scenes/ui/title.tscn"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 
 [autoload]
 
 GameState="*res://scripts/core/game_state.gd"
+WhisperCurrency="*res://scripts/core/whisper_currency.gd"
 WorldContext="*res://scripts/core/world_context.gd"
 ItemDB="*res://scripts/core/item_db.gd"
 Inventory="*res://scripts/core/inventory.gd"

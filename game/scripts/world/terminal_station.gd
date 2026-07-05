@@ -18,6 +18,9 @@ class_name TerminalStation
 
 var _loader: MapLoader
 var _player: Node2D
+## (v0.6.0) The L2 return portal at the terminal-station spawn — same reworked entry-zone pattern
+## as the grove/home gates (real Portal, apron prompt, E + click-walk-then-enter).
+var _return_portal: ReturnPortalController = null
 
 ## Debris scatter tuning: sparse — this is a dead base, not a meadow. Deterministic by cell hash.
 const DEBRIS_TARGET := 42
@@ -39,6 +42,7 @@ func _setup() -> void:
 		return
 	_spawn_workbench()
 	_scatter_debris()
+	_spawn_return_portal()
 	# Register the live world so the station snapshots/restores like the other scenes.
 	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("register_world"):
 		SaveManager.register_world(_loader, _player, respawn)
@@ -48,6 +52,51 @@ func _setup() -> void:
 			AudioManager.start_world_audio()
 		if AudioManager.has_method("set_home_ambience"):
 			AudioManager.set_home_ambience(true)
+	# (L2-3) Layer 2 정화 완료 → 다음 포탈(machine) flickering + 홈 귀환 유도 (§C-4 포탈 전파).
+	if typeof(GameState) != TYPE_NIL and GameState.has_signal("layer2_purified"):
+		if not GameState.layer2_purified.is_connected(_on_layer2_purified):
+			GameState.layer2_purified.connect(_on_layer2_purified)
+
+
+## (L2-3) Called when the 관제탑 재가동 정화 컷신 completes. Advances the portal line (science
+## → machine flickering, mirroring the Layer-1 nature→science hand-off) so the next dead world
+## opens on return home. Save the run so the purified flag + powered nodes persist.
+func _on_layer2_purified(_layer: String) -> void:
+	if typeof(GameState) != TYPE_NIL and GameState.has_method("set_portal_state"):
+		GameState.set_portal_state("machine", GameState.PORTAL_FLICKERING)
+	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("save_game"):
+		SaveManager.save_game()
+
+
+## (v0.6.0) Spawn the L2 return portal at/near the terminal-station spawn, using the shared
+## ReturnPortalController (same entry-zone prompt + E + click-walk-then-enter as the home gates).
+## Prominent placement near spawn so it's visible on arrival — the way back to the home island.
+func _spawn_return_portal() -> void:
+	if _loader == null or _loader.spawn_cell == Vector2i(-1, -1):
+		return
+	_return_portal = ReturnPortalController.new()
+	add_child(_return_portal)
+	# Spawn S is (18,32) on cracked concrete; drop the gate a couple cells SOUTH/beside it.
+	var candidates := [
+		_loader.spawn_cell + Vector2i(0, 2),
+		_loader.spawn_cell + Vector2i(2, 0),
+		_loader.spawn_cell + Vector2i(-2, 0),
+		_loader.spawn_cell + Vector2i(0, -2),
+	]
+	_return_portal.setup(_loader, _player, candidates, "E 홈으로 돌아가기")
+	_return_portal.entered.connect(_on_return_portal)
+
+
+## Travel back to the home island from Layer 2 (mirrors GroveSession._return_home, no ignition —
+## the L2 purification cutscene already handled the portal-line advance + save).
+func _on_return_portal() -> void:
+	if typeof(WorldContext) == TYPE_NIL:
+		return
+	WorldContext.arrival_mode = "portal_arrival"
+	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("save_game"):
+		SaveManager.save_game()   # snapshot the station so re-entry restores it
+	WorldContext.current_scene = WorldContext.SCENE_HOME
+	get_tree().change_scene_to_file(WorldContext.scene_path(WorldContext.SCENE_HOME))
 
 
 ## Spawn the 정비대 (tech workbench). Reuses the L2 workbench art + a violet-cyan glow pool. Sits

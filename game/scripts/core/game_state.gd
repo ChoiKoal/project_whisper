@@ -29,6 +29,42 @@ signal item_used_on_object(item_id: String, object: Node)
 ## Emitted when D14 (디딤돌) makes a water tile walkable, for later SFX / audit.
 signal stepping_stone_placed(cell: Vector2i)
 
+## (L2-3) Emitted when a 전력 노드 (배전반 K / 발전기 e / 관제탑 코어) is energized — the
+## Layer-2 SF counterpart to `stepping_stone_placed`. `node_id` ∈ {"bridge","gen_sub",
+## "control_core", …}. G1 브리지 walkable-swap and G4 정화 컷신 listen here; QuestManager
+## routes L2-Q3/Q7 off it. The energized set is mirrored into `powered_nodes` (saved).
+signal power_node_energized(node_id: String)
+## (L2-3) Set of energized power-node ids (node_id -> true). Saved by SaveManager the same
+## way `portal_states` is, so a re-entered/restored station keeps its bridge lit / door open.
+var powered_nodes: Dictionary = {}
+## (L2-3) Emitted when the 관제탑 재가동 (G4) completes the Layer-2 정화 컷신. Carries the
+## purified layer id ("science"). The session hooks return-to-home; the flag persists.
+signal layer2_purified(layer: String)
+## (L2-3) True once Layer 2 (science) is 정화된 (관제탑 재가동 완료). Saved; drives the next
+## portal (machine) opening in later layers, mirroring the Layer-1 `cleared` flag.
+var layer2_purified_flag: bool = false
+
+
+## (L2-3) Mark a power node energized (idempotent). Records it in `powered_nodes` and announces
+## it so gate listeners (bridge swap / clear cutscene) and quests react. No signal if already on.
+func energize_power_node(node_id: String) -> void:
+	if powered_nodes.get(node_id, false):
+		return
+	powered_nodes[node_id] = true
+	power_node_energized.emit(node_id)
+
+
+## (L2-3) True if a given power node has been energized.
+func is_power_node_energized(node_id: String) -> bool:
+	return bool(powered_nodes.get(node_id, false))
+
+
+## (L2-3) Reset Layer-2 power/purification state to the new-game baseline (nothing energized,
+## not purified). Called by new game / NG+ alongside reset_portals.
+func reset_layer2() -> void:
+	powered_nodes.clear()
+	layer2_purified_flag = false
+
 ## (v0.4.0-C) Emitted when a structure/decor item is PLACED into the world (persistent
 ## PlacedObject). `item_id` = the placed item, `cell` = its tile. Quests/audio hook here.
 signal placed_object_placed(item_id: String, cell: Vector2i)

@@ -59,8 +59,14 @@ bad_struct = [r["id"] for r in recipes if len(r.get("inputs", [])) != 2 or not r
 check("every recipe has 2 inputs + 1 output", not bad_struct, "bad=%s" % bad_struct)
 ids = [r["id"] for r in recipes]
 check("recipe ids are unique", len(ids) == len(set(ids)))
-check("recipe ids sequential R01..R%02d" % len(recipes),
-      ids == ["R%02d" % n for n in range(1, len(recipes) + 1)])
+# Layer-1 recipes are R01..RNN sequential; Layer-2 recipes use the L2-R** namespace
+# (added v0.6.0). Check the L1 block stays contiguous R01.. and L2 ids are unique/well-formed.
+l1_ids = [i for i in ids if i.startswith("R")]
+l2_ids = [i for i in ids if i.startswith("L2-R")]
+check("L1 recipe ids sequential R01..R%02d" % len(l1_ids),
+      l1_ids == ["R%02d" % n for n in range(1, len(l1_ids) + 1)])
+check("L2 recipe ids well-formed (L2-R**) + unique",
+      all(i[4:].isdigit() for i in l2_ids) and len(l2_ids) == len(set(l2_ids)))
 
 # 2. no duplicate unordered pairs
 seen = {}

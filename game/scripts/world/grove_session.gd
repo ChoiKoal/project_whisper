@@ -19,6 +19,9 @@ class_name GroveSession
 
 var _loader: MapLoader
 var _player: Node2D
+## (v0.6.0) The reworked return portal (entry-zone prompt + E + click-walk-then-enter). Replaces
+## the old bare Portal that only connected portal_interacted (the "weak interaction" owner report).
+var _return_portal: ReturnPortalController = null
 
 
 func _ready() -> void:
@@ -55,37 +58,28 @@ func _setup() -> void:
 		AudioManager.set_home_ambience(false)  # full BGM in the grove (Layer 1)
 
 
-## Build a return portal (always open) a couple cells from the grove spawn, wired to travel
-## back to the home island. Uses the same Portal node; its layer is "return".
+## (v0.6.0 rework) Build the return portal near the grove spawn using the shared
+## ReturnPortalController, so it matches the home gates EXACTLY: real monumental Portal (state
+## OPEN), generous front entry apron, "E 홈으로 돌아가기" prompt, keyboard-E + click-walk-then-enter,
+## state glow. Placed prominently just south/beside the spawn so it's visible on arrival.
 func _spawn_return_portal() -> void:
 	if _loader == null or _loader.spawn_cell == Vector2i(-1, -1):
 		return
-	var ysort := _loader.get_node_or_null(_loader.ysort_layer_path) as Node2D
-	if ysort == null:
-		return
-	# A walkable cell near the spawn to stand the arch on (prefer just west of spawn).
-	var cell := _loader.spawn_cell + Vector2i(-2, 0)
-	if not _loader.is_cell_walkable(cell):
-		cell = _loader.spawn_cell + Vector2i(0, -2)
-	var scr := load("res://scripts/world/portal.gd")
-	if scr == null:
-		return
-	# Force it OPEN before add_child so Portal._ready adopts the OPEN state on build (the
-	# state must exist before the node reads GameState.portal_state("return") in its _ready).
-	GameState.set_portal_state("return", GameState.PORTAL_OPEN)
-	var p: Node2D = scr.new()
-	if p == null:
-		return
-	p.set("layer", "return")
-	p.set("object_id", "portal_return")
-	p.position = _loader.cell_center_world(cell)
-	p.y_sort_enabled = true
-	ysort.add_child(p)
-	if p.has_signal("portal_interacted"):
-		p.connect("portal_interacted", _on_return_portal)
+	_return_portal = ReturnPortalController.new()
+	add_child(_return_portal)
+	# Prominent, walkable cell near the spawn; the controller picks the first walkable candidate.
+	# Prefer just SOUTH of spawn (in front of the player on arrival), then west, then north.
+	var candidates := [
+		_loader.spawn_cell + Vector2i(0, 2),
+		_loader.spawn_cell + Vector2i(-2, 0),
+		_loader.spawn_cell + Vector2i(2, 0),
+		_loader.spawn_cell + Vector2i(0, -2),
+	]
+	_return_portal.setup(_loader, _player, candidates, "E 홈으로 돌아가기")
+	_return_portal.entered.connect(_on_return_portal)
 
 
-func _on_return_portal(_portal) -> void:
+func _on_return_portal() -> void:
 	_return_home(false)
 
 

@@ -16,12 +16,15 @@ extends Node
 ##   recipe_id: String   ("" if no match)
 ##   output: String      (canonical output id, "" if no match)
 ##   hint_revealed: bool (true if a failed fuse tripped a gauge reveal)
+##   failure_reason: String ((L2-3) set when a MATCHED recipe couldn't fuse — currently
+##                           "에너지가 부족하다" when whisper_cost.energy exceeds WhisperCurrency)
 func fuse(a_id: String, b_id: String) -> Dictionary:
 	var result := {
 		"matched": false,
 		"recipe_id": "",
 		"output": "",
 		"hint_revealed": false,
+		"failure_reason": "",
 	}
 	if a_id == "" or b_id == "":
 		return result
@@ -32,11 +35,25 @@ func fuse(a_id: String, b_id: String) -> Dictionary:
 		result["hint_revealed"] = Codex.register_failed_fusion(a_id, b_id)
 		return result
 
+	# (L2-3) Whisper 재화 gate: a recipe may cost 에너지 (L2-R08 파워 코어 = 코어 조각 +
+	# 에너지). Check affordability BEFORE consuming any material input so a shortfall is a
+	# clean no-op with a reason. Currently only the `energy` digit exists (§보완).
+	var cost := RecipeDB.whisper_cost(recipe)
+	var energy_cost := int(cost.get("energy", 0))
+	if energy_cost > 0 and not WhisperCurrency.has_energy(energy_cost):
+		result["failure_reason"] = "에너지가 부족하다"
+		return result
+
 	# Consume the two inputs. For a same-ingredient recipe (e.g. R10 풀+풀) we
 	# need two of that stack; otherwise one of each canonical stack.
 	if not _consume_inputs(a_id, b_id):
 		# Not enough materials — treat as a no-op, not a failed attempt.
 		return result
+
+	# Materials consumed → now spend the Whisper cost (affordability re-checked defensively;
+	# has_energy passed above and nothing between could have drained it).
+	if energy_cost > 0:
+		WhisperCurrency.spend_energy(energy_cost)
 
 	var output: String = recipe["output"]
 	Inventory.add(output, 1)

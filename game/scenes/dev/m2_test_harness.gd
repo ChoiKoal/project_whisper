@@ -38,12 +38,12 @@ func _check(label: String, cond: bool) -> void:
 
 
 func _test_item_db() -> void:
-	# items.json = N canonical + 1 alias (D06 -> I4). Catalog grew to 68 canonical
-	# in recipes-v0.3.1 (base-pair canonicalization: +D50~D61, -석기 D11); assert
-	# canonical == records-minus-alias rather than a magic number so this survives
-	# future catalog growth.
+	# items.json = N canonical + 1 alias (D06 -> I4). Assert canonical == records-minus-alias
+	# rather than a magic number so this survives catalog growth (v0.3.1 +D50~D61 −D11;
+	# L2-3 +D64~D69 Layer-2 gate items). Compute the expected count straight from the JSON.
+	var expect_canonical := _count_canonical_records()
 	_check("ItemDB loaded all canonical items (no alias in all_ids)",
-		ItemDB.all_ids().size() == 68 and not ItemDB.all_ids().has("D06"))
+		ItemDB.all_ids().size() == expect_canonical and not ItemDB.all_ids().has("D06"))
 	_check("ItemDB resolves the 1 alias (D06)", ItemDB.resolve_id("D06") == "I4" and not ItemDB.all_ids().has("D06"))
 	_check("ItemDB I2 name = 풀", ItemDB.item_name("I2") == "풀")
 	_check("ItemDB D14 placeable_on T5A/T5B",
@@ -141,3 +141,19 @@ func _test_use_on_object() -> void:
 	_check("water consumed on use", Inventory.count("I7") == 0)
 	GameState.item_used_on_object.disconnect(cb)
 	bush.queue_free()
+
+
+## (L2-3) Expected canonical item count = records with no `alias_of` (survives catalog growth).
+func _count_canonical_records() -> int:
+	var f := FileAccess.open("res://data/items.json", FileAccess.READ)
+	if f == null:
+		return 0
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	f.close()
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return 0
+	var n := 0
+	for rec in parsed.get("items", []):
+		if rec is Dictionary and not rec.has("alias_of"):
+			n += 1
+	return n

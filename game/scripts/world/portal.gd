@@ -30,6 +30,10 @@ const GROUP := "gatherable"
 @export var object_id: String = "portal"
 ## Which world layer this portal opens (nature/science/machine/magic/divinity).
 @export var layer: String = "nature"
+## (v0.6.0) Optional entry-prompt override. When non-empty, entry_prompt_text() returns this
+## verbatim while the gate is enterable (used by the RETURN portal → "E 홈으로 돌아가기" instead
+## of the generic "E 들어가기"). Dormant still shows the sleeping whisper.
+@export var prompt_override: String = ""
 
 ## Emitted when the player interacts. The world scene decides: travel (flickering/open) or
 ## show the locked hint (dormant). Carries this portal so the scene can read its layer/state.
@@ -294,9 +298,9 @@ func entry_stand_point() -> Vector2:
 func entry_prompt_text() -> String:
 	match _state:
 		GameState.PORTAL_OPEN:
-			return "E 들어가기"
+			return prompt_override if prompt_override != "" else "E 들어가기"
 		GameState.PORTAL_FLICKERING:
-			return "E 다가가기"
+			return prompt_override if prompt_override != "" else "E 다가가기"
 		_:
 			return "…아직 잠들어 있다"
 

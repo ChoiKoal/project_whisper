@@ -166,6 +166,10 @@ func build_save_dict() -> Dictionary:
 		# v0.5.0 phase C multi-scene state.
 		"worlds": _worlds.duplicate(true),
 		"portal_states": GameState.portal_states.duplicate(),
+		# (L2-3) Layer-2 power/purification state + Whisper 재화.
+		"powered_nodes": GameState.powered_nodes.duplicate(),
+		"layer2_purified": GameState.layer2_purified_flag,
+		"whisper": WhisperCurrency.to_dict(),
 		"world_context": WorldContext.to_dict(),
 		"pending_return_ignition": pending_return_ignition,
 	}
@@ -396,6 +400,13 @@ func _apply_core_state(data: Dictionary) -> void:
 	_worlds = (data.get("worlds", {}) as Dictionary).duplicate(true)
 	if data.has("portal_states"):
 		GameState.portal_states = (data["portal_states"] as Dictionary).duplicate()
+	# (L2-3) Layer-2 power/purification state + Whisper 재화.
+	GameState.powered_nodes = (data.get("powered_nodes", {}) as Dictionary).duplicate()
+	GameState.layer2_purified_flag = bool(data.get("layer2_purified", false))
+	if data.has("whisper"):
+		WhisperCurrency.from_dict(data["whisper"])
+	else:
+		WhisperCurrency.reset()
 	if data.has("world_context"):
 		WorldContext.from_dict(data["world_context"])
 	pending_return_ignition = bool(data.get("pending_return_ignition", false))
@@ -544,6 +555,8 @@ func start_ng_plus(finished_run_recipes: Array = []) -> Array:
 	Inventory.clear()
 	GameState.set_game_time(0.0)
 	GameState.reset_portals()          # (v0.5.0-C) fresh portal line (nature flickering)
+	GameState.reset_layer2()           # (L2-3) no power nodes energized, not purified
+	WhisperCurrency.reset()            # (L2-3) no 에너지 Whisper held
 	Codex.reset()
 	QuestManager.reset()   # (v0.4.0-C) fresh 속삭임 line on NG+ (from P0)
 	WorldContext.reset()               # (v0.5.0-C) start back in the home world
@@ -586,6 +599,8 @@ func new_game() -> void:
 	Inventory.clear()
 	GameState.set_game_time(0.0)
 	GameState.reset_portals()          # (v0.5.0-C) nature flickering, rest dormant
+	GameState.reset_layer2()           # (L2-3) no power nodes energized, not purified
+	WhisperCurrency.reset()            # (L2-3) no 에너지 Whisper held
 	Codex.reset()
 	QuestManager.reset()   # (v0.4.0-C) fresh 속삭임 line on 새로 시작 (from P0)
 	WorldContext.reset()               # (v0.5.0-C) start in the home world

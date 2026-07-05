@@ -556,7 +556,12 @@ func _on_fuse_pressed() -> void:
 	else:
 		_status.text = "…반응이 없다"
 		_result_flavor.text = ""
-		if res["hint_revealed"]:
+		# (L2-3) A MATCHED recipe that couldn't fuse for a Whisper-cost shortfall reports its
+		# reason ("에너지가 부족하다") instead of the generic no-reaction line. Inputs untouched.
+		var reason := String(res.get("failure_reason", ""))
+		if reason != "":
+			_status.text = "…%s" % reason
+		elif res["hint_revealed"]:
 			# (B3.4) point the player at where the hint went so it's findable.
 			_status.text = "…반응이 없다  ·  도감(R)에 힌트가 기록되었다"
 		_play_failure_feedback()
