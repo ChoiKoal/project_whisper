@@ -13,12 +13,17 @@ const DRY_TEX := "res://assets/objects/bush_dry.png"
 const BLOOM_TEX := "res://assets/objects/bush_bloom.png"
 ## A small mystic-glow texture reused as the "something here" shimmer cue.
 const CUE_TEX := "res://assets/tiles/t5m_mystic_glow.png"
+## Pulsing water-drop affordance icon shown while quest Q4 (물 줘야 됨) is active —
+## owner feedback: "물 줘야 된다는 느낌 전혀 안 듦".
+const DROP_TEX := "res://assets/objects/water_drop_cue.png"
 
 var _bloomed: bool = false
 var _body: StaticBody2D
 ## Faint periodic shimmer over the dry bush — a readability cue ("뭔가 있다") so the
 ## player notices the gate object in the corridor gap. Removed once bloomed.
 var _cue: GlowSprite
+## The bobbing water-drop icon above the bush (visible only during Q4).
+var _drop: Sprite2D
 
 
 func _ready() -> void:
@@ -26,9 +31,10 @@ func _ready() -> void:
 	object_id = "bush_dry"  # ensure targetable even if not set in scene
 	if texture == null:
 		texture = load(DRY_TEX)
-	offset = Vector2(0, -80)
+	offset = Vector2(0, -64)
 	_add_block()
 	_add_shimmer_cue()
+	_add_water_drop_cue()
 	# Defensive autoload guard (ready-time; matches night_gate/glow_sprite). A
 	# missing GameState would null-deref .item_used_on_object during the flush.
 	if GameState == null:
@@ -64,6 +70,34 @@ func _add_shimmer_cue() -> void:
 	add_child(_cue)
 
 
+## A bobbing, pulsing water-drop icon floating above the withered bush. It is only
+## visible while quest Q4 ("저 마른 것에게 물을") is the active whisper, making the
+## "물을 줘야 한다" affordance explicit. Polled cheaply in _process (the quest state is
+## a single autoload field). Freed on bloom.
+func _add_water_drop_cue() -> void:
+	_drop = Sprite2D.new()
+	_drop.texture = load(DROP_TEX)
+	_drop.offset = Vector2(0, -132)  # float above the bush silhouette
+	_drop.z_index = 2
+	_drop.visible = false
+	add_child(_drop)
+	# gentle looping bob + scale pulse
+	var tw := _drop.create_tween().set_loops()
+	tw.tween_property(_drop, "position:y", -6.0, 0.7).as_relative().set_trans(Tween.TRANS_SINE)
+	tw.tween_property(_drop, "position:y", 6.0, 0.7).as_relative().set_trans(Tween.TRANS_SINE)
+
+
+func _process(_dt: float) -> void:
+	if _bloomed or _drop == null:
+		return
+	# Show the drop only during Q4 (its whisper target is this bush).
+	var want := false
+	if typeof(QuestManager) != TYPE_NIL and QuestManager != null:
+		want = QuestManager.active_id == "Q4"
+	if _drop.visible != want:
+		_drop.visible = want
+
+
 func is_bloomed() -> bool:
 	return _bloomed
 
@@ -94,6 +128,10 @@ func bloom() -> void:
 	if is_instance_valid(_cue):
 		_cue.queue_free()
 		_cue = null
+	# the water-drop affordance has served its purpose.
+	if is_instance_valid(_drop):
+		_drop.queue_free()
+		_drop = null
 	# celebratory little pulse
 	var tw := create_tween()
 	tw.tween_property(self, "scale", Vector2(1.15, 1.15), 0.15)

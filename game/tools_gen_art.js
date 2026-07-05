@@ -7,7 +7,7 @@ const zlib = require('zlib');
 const fs = require('fs');
 const path = require('path');
 
-const OUT = __dirname;
+const OUT = process.env.ART_OUT_DIR || __dirname;
 
 // ---- PNG encoder ----
 function crc32(buf) {
@@ -518,26 +518,33 @@ function drawWanderer(cv, ox, oy, dir, phase) {
   put(26, 22 + bob, P.skin); put(26, 23 + bob, P.skinShade);
   put(25, 23 + bob, P.skinLine);
 
-  // ===== hood: big, pointed toward the back =====
-  const hoodCy = 11 + bob;
-  // rounded hood cowl (ellipse-ish)
-  for (let y = hoodCy - 6; y <= hoodCy + 5; y++) {
-    const t = (y - (hoodCy - 6)) / 11;
-    const half = Math.round(2 + t * 4);
-    for (let x = 18 - half; x <= 18 + half; x++) {
+  // ===== hood: BIG ROUND dome (v0.5 owner: "머리만 둥글둥글하게") =====
+  // A smooth circle-ish cowl — NO pointed crown, NO back-point. The hood is a large
+  // rounded ball sitting on the shoulders, tapering gently into the cloak collar.
+  const hoodCx = 18;             // grid centre
+  const hoodCy = 12 + bob;       // dome centre (kept low so the ball reads big)
+  const hoodR = 7.2;            // generous radius → big round head silhouette
+  for (let y = Math.floor(hoodCy - hoodR) - 1; y <= Math.ceil(hoodCy + hoodR); y++) {
+    const dyr = (y - hoodCy) / hoodR;
+    if (dyr > 1.02) continue;
+    let half = hoodR * Math.sqrt(Math.max(0, 1 - dyr * dyr));
+    // widen the lower cowl a touch so it merges smoothly into the shoulders.
+    if (y > hoodCy) half = Math.max(half, hoodR * (0.6 - dyr * 0.15));
+    const lo = Math.round(hoodCx - half), hi = Math.round(hoodCx + half);
+    for (let x = lo; x <= hi; x++) {
       let c = P.robe;
-      if (x >= 18 + half - 1) c = P.robeLit;
-      else if (x <= 18 - half + 1) c = P.robeShade;
+      if (x >= hi - 1) c = P.robeLit;        // top-right rim light
+      else if (x <= lo + 1) c = P.robeShade; // left shade
       put(x, y, c);
     }
-    put(18 - half - 1, y, P.robeLine);
-    put(18 + half + 1, y, P.robeLine);
+    // rounded selout following the circle (1px outside)
+    put(lo - 1, y, P.robeLine);
+    put(hi + 1, y, P.robeLine);
   }
-  // hood crown selout
-  for (let x = 15; x <= 21; x++) put(x, hoodCy - 7, P.robeLine);
-  // hood point tilting back-left (native art): a couple of pixels off the crown
-  put(12, hoodCy - 4, P.robe); put(13, hoodCy - 5, P.robe); put(13, hoodCy - 6, P.robeShade);
-  put(11, hoodCy - 3, P.robeLine);
+  // soft curved top highlight cap — keeps the crown reading round, no hard corner.
+  put(hoodCx, Math.round(hoodCy - hoodR), P.robeLit, 150);
+  put(hoodCx - 1, Math.round(hoodCy - hoodR) + 1, P.robeLit, 90);
+  put(hoodCx + 1, Math.round(hoodCy - hoodR) + 1, P.robeLit, 120);
 
   if (front) {
     // ===== face void + glowing violet eyes (SE/SW) =====
@@ -627,11 +634,23 @@ function makeCharPortrait() {
     setPx(cv, cx - half - 1, y, P.robeLine, 255);
     setPx(cv, cx + half + 1, y, P.robeLine, 255);
   }
-  // hood cowl framing a dark face cavity
-  const hoodTop = 26, hoodBot = shoulderY + 10;
+  // hood cowl framing a dark face cavity — v0.5: BIG ROUND dome (owner: 둥글둥글).
+  // Circular crown (no flat top, no back-point) that widens into the shoulders.
+  const hoodTop = 22, hoodBot = shoulderY + 10;
+  const domeCy = 78;            // dome centre y
+  const domeR = 66;             // big round radius
   for (let y = hoodTop; y <= hoodBot; y++) {
-    const t = (y - hoodTop) / (hoodBot - hoodTop);
-    const half = Math.round(20 + t * 58);
+    let half;
+    if (y <= domeCy) {
+      // upper: follow the circle for a smooth round crown.
+      const dyr = (y - domeCy) / domeR;
+      half = Math.round(domeR * Math.sqrt(Math.max(0, 1 - dyr * dyr)));
+    } else {
+      // lower cowl flares out toward the shoulders.
+      const t = (y - domeCy) / (hoodBot - domeCy);
+      half = Math.round(domeR + t * 12);
+    }
+    if (half < 4) continue;
     for (let x = cx - half; x <= cx + half; x++) {
       let col = P.robe;
       if (x - cx > half - 12) col = P.robeLit;
@@ -641,9 +660,6 @@ function makeCharPortrait() {
     setPx(cv, cx - half - 1, y, P.robeLine, 255);
     setPx(cv, cx + half + 1, y, P.robeLine, 255);
   }
-  for (let x = cx - 22; x <= cx + 22; x++) setPx(cv, x, hoodTop - 1, P.robeLine, 255);
-  // hood point tilting back (upper-left)
-  for (let k = 0; k < 10; k++) setPx(cv, cx - 20 - k, hoodTop + 6 + k, P.robeShade, 255);
 
   // ===== face cavity: dark void with a soft face-shadow depth gradient =====
   const faceCx = cx, faceCy = 92;

@@ -21,8 +21,17 @@ class_name MapLoader
 ## counts stay exact; scatter is fully deterministic by cell hash so saved
 ## removed-object coords still line up after a reload.
 
+## Default (grove) data files. A scene may override these two exports to build a
+## different world (v0.5.0 home island) from the same loader.
 const LAYOUT_PATH := "res://data/map_layout.txt"
 const LEGEND_PATH := "res://data/map_legend.json"
+## (v0.5 phase B) Parallel height map: one char per cell — '0'/'1'/'2' heights, '/' ramp.
+## Optional (a world without hills simply omits it → everything stays height 0).
+const HEIGHT_PATH := "res://data/map_height.txt"
+## (v0.5.0) Per-scene overrides. Empty → use the LAYOUT_PATH / LEGEND_PATH defaults.
+@export var layout_path_override: String = ""
+@export var legend_path_override: String = ""
+@export var height_path_override: String = ""
 const ATLAS := Vector2i(0, 0)
 
 ## Deterministic global seed mixed into every procedural hash (map coords → value).
@@ -110,15 +119,21 @@ func _ready() -> void:
 	_ysort = get_node_or_null(ysort_layer_path) as Node2D
 	_feedback = get_node_or_null(feedback_layer_path)
 	_load_data()
+	_load_height_data()
 	_classify_void_cells()
 	_build_tiles()
 	_build_objects()
 	_scatter_objects()
 	_build_ridges()
 	_build_cliff_skirts()
+	_classify_elevation()
+	_build_elevation()
 	_build_edge_overlays()
-	_build_brightness_jitter()
+	# v0.5: brightness jitter retired — the real CC0 grass tiles carry their own
+	# per-diamond texture variation, so the synthetic ±3% jitter is redundant.
+	# (_build_brightness_jitter kept in the file for reference / harness compat.)
 	_build_border_collision()
+	_lift_hill_objects()
 	_place_player()
 	_wire_stump_fade()
 
@@ -142,12 +157,14 @@ func _wire_stump_fade() -> void:
 # ---- data ----------------------------------------------------------------
 
 func _load_data() -> void:
-	var f := FileAccess.open(LAYOUT_PATH, FileAccess.READ)
+	var layout_path := layout_path_override if layout_path_override != "" else LAYOUT_PATH
+	var legend_path := legend_path_override if legend_path_override != "" else LEGEND_PATH
+	var f := FileAccess.open(layout_path, FileAccess.READ)
 	# assert() is compiled OUT of release templates, so a missing layout would
 	# fall through to f.eof_reached() on a NULL handle → SIGSEGV in export.
 	# Guard explicitly and bail with a warning instead.
 	if f == null:
-		push_warning("MapLoader: %s missing; map not built" % LAYOUT_PATH)
+		push_warning("MapLoader: %s missing; map not built" % layout_path)
 		return
 	while not f.eof_reached():
 		var line := f.get_line()
@@ -163,9 +180,9 @@ func _load_data() -> void:
 	# assert() is stripped in release templates, so a missing legend would fall
 	# through to lf.get_as_text() on a NULL handle → SIGSEGV during the grove
 	# change_scene flush (this runs inside MapLoader._ready). Guard explicitly.
-	var lf := FileAccess.open(LEGEND_PATH, FileAccess.READ)
+	var lf := FileAccess.open(legend_path, FileAccess.READ)
 	if lf == null:
-		push_warning("MapLoader: %s missing; using grass fallback" % LEGEND_PATH)
+		push_warning("MapLoader: %s missing; using grass fallback" % legend_path)
 		_legend = {}
 		return
 	var parsed: Variant = JSON.parse_string(lf.get_as_text())
@@ -175,8 +192,24 @@ func _load_data() -> void:
 	if parsed is Dictionary:
 		_legend = parsed
 	else:
-		push_warning("MapLoader: %s parse failed; using grass fallback" % LEGEND_PATH)
+		push_warning("MapLoader: %s parse failed; using grass fallback" % legend_path)
 		_legend = {}
+
+
+## (v0.5 phase B) Load the parallel height map into `_height_rows`. A missing file
+## leaves the map flat (every cell height 0) — the elevation build then no-ops.
+func _load_height_data() -> void:
+	_height_rows.clear()
+	var hp := height_path_override if height_path_override != "" else HEIGHT_PATH
+	var hf := FileAccess.open(hp, FileAccess.READ)
+	if hf == null:
+		return  # flat world; not an error
+	while not hf.eof_reached():
+		var line := hf.get_line()
+		if line.length() == 0:
+			continue
+		_height_rows.append(line)
+	hf.close()
 
 
 ## Deterministic 32-bit hash of a cell (+ optional channel salt). Stable across
@@ -297,18 +330,28 @@ func _build_ridges() -> void:
 	_ridge_overlay.z_index = RIDGE_Z
 	add_child(_ridge_overlay)
 
-	var tex := load("res://assets/tiles/ridge_rock.png") as Texture2D
-	if tex == null:
+	# v0.5: continuous rock WALL — real CC0 iso rock-cliff pillars (128×~230). Two
+	# variants alternate deterministically for break-up; laid on every interior ridge
+	# cell they tile side-by-side into a continuous wall band (no more tent/cone rows).
+	var tex_a := load("res://assets/tiles/ridge_rock.png") as Texture2D
+	var tex_b := load("res://assets/tiles/ridge_rock_b.png") as Texture2D
+	if tex_a == null:
 		push_warning("MapLoader: ridge_rock texture missing; skipping ridges")
 	else:
 		for cell in ridge_cells:
 			var s := Sprite2D.new()
-			s.texture = tex
+			# Alternate the two wall variants by cell parity+hash so the wall face
+			# breaks up but stays a continuous band.
+			var use_b := tex_b != null and (_cell_hash(cell.x, cell.y, 907) & 1) == 1
+			var t: Texture2D = tex_b if use_b else tex_a
+			s.texture = t
 			s.centered = false
-			# The ridge PNG is 128 wide; align its top rim to the diamond's top vertex so
-			# the mound rises up out of the cell (raised rock), left edge at center.x-64.
+			# Anchor the sprite's BOTTOM (the wall base) at the cell's lower rim so the
+			# rock rises up out of the diamond. The piece is 128 wide; left edge at
+			# center.x-64, bottom at center.y + TILE_HALF_H.
 			var center: Vector2 = map_to_local(cell)
-			s.position = center + Vector2(-64.0, -RIDGE_RISE)
+			var th: float = float(t.get_height())
+			s.position = center + Vector2(-64.0, TILE_HALF_H - th)
 			s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 			_ridge_overlay.add_child(s)
 			ridge_sprite_count += 1
@@ -316,8 +359,8 @@ func _build_ridges() -> void:
 	_build_corridor_trail()
 
 
-## How far (px) the ridge sprite's top sits above the cell center, so the mound reads as
-## rising above the ground plane (the 128×160 sprite's lower ~64 covers the diamond).
+## (legacy) How far the old cone-mound rose; retained for reference. v0.5 anchors the
+## wall by its base instead (see _build_ridges).
 const RIDGE_RISE := 96.0
 
 ## Drop 2-3 worn-dirt patch decals on playable cells leading from the south toward the
@@ -480,6 +523,16 @@ var _cliff_overlay: Node2D
 var cliff_skirt_count: int = 0
 ## Cells that received a south-facing skirt (for the harness south-edge assertion).
 var cliff_skirt_south_cells: Array[Vector2i] = []
+## v0.5: loaded cliff-face textures (rock wall variants) used for the island edge.
+var _cliff_faces: Array[Texture2D] = []
+
+
+## Deterministic cliff-face variant for an edge cell (varied rock wall look).
+func _cliff_face_for(cell: Vector2i) -> Texture2D:
+	if _cliff_faces.is_empty():
+		return null
+	var idx := int(_cell_hash(cell.x, cell.y, 611)) % _cliff_faces.size()
+	return _cliff_faces[idx]
 
 ## The half-height of a skirt sprite's rim relative to the diamond center: the skirt
 ## PNG is 128×112 with its top (the diamond's lower rim) anchored at the cell's local
@@ -502,11 +555,16 @@ func _build_cliff_skirts() -> void:
 	_cliff_overlay.z_index = CLIFF_SKIRT_Z
 	add_child(_cliff_overlay)
 
-	var tex_s := load("res://assets/tiles/cliff_skirt_s.png") as Texture2D
-	var tex_e := load("res://assets/tiles/cliff_skirt_e.png") as Texture2D
-	var tex_se := load("res://assets/tiles/cliff_skirt_se.png") as Texture2D
-	if tex_s == null or tex_e == null or tex_se == null:
-		push_warning("MapLoader: cliff-skirt textures missing; skipping skirts")
+	# v0.5: real CC0 iso rock cliff FACES (128×~230) replace the procedural skirts.
+	# Four variants give the island edge a natural, varied rock wall → true floating
+	# diorama slab. Falls back gracefully if a texture is missing.
+	_cliff_faces.clear()
+	for n in ["cliff_face_a", "cliff_face_b", "cliff_face_c", "cliff_face_d"]:
+		var t := load("res://assets/tiles/%s.png" % n) as Texture2D
+		if t != null:
+			_cliff_faces.append(t)
+	if _cliff_faces.is_empty():
+		push_warning("MapLoader: cliff-face textures missing; skipping skirts")
 		return
 
 	for r in range(height):
@@ -521,16 +579,12 @@ func _build_cliff_skirts() -> void:
 			var east_open := _is_cliff_open(Vector2i(c + 1, r))    # +col → screen SE
 			if not south_open and not east_open:
 				continue
-			# Place the wider corner piece only where BOTH lower edges are exposed;
-			# otherwise the single-facing piece for whichever edge is open.
-			if south_open and east_open:
-				_place_skirt(tex_se, Vector2i(c, r))
+			# South-facing (or corner) edges get the full cliff face and are recorded for
+			# the harness; a purely east-facing edge also gets a face (island reads solid).
+			var tex := _cliff_face_for(Vector2i(c, r))
+			_place_skirt(tex, Vector2i(c, r))
+			if south_open:
 				cliff_skirt_south_cells.append(Vector2i(c, r))
-			elif south_open:
-				_place_skirt(tex_s, Vector2i(c, r))
-				cliff_skirt_south_cells.append(Vector2i(c, r))
-			else:
-				_place_skirt(tex_e, Vector2i(c, r))
 
 
 ## A cell is "island" (part of the authored playable slab) if it is in-bounds and its
@@ -566,11 +620,11 @@ func _place_skirt(tex: Texture2D, cell: Vector2i) -> void:
 	var s := Sprite2D.new()
 	s.texture = tex
 	s.centered = false
-	# map_to_local gives the cell center; the 128-wide skirt's left edge sits at
-	# center.x - 64, and its top rim aligns with the diamond's vertical center so the
-	# 0..32 lip overlaps the tile's lower half and the wall continues below.
+	# map_to_local gives the cell center; the 128-wide cliff face's left edge sits at
+	# center.x - 64. Its top rim tucks just above the diamond's centre so the rock
+	# reads as the tile's own edge dropping away into the void below.
 	var center := map_to_local(cell)
-	s.position = center + Vector2(-64.0, -0.0 + SKIRT_TOP_OFFSET)
+	s.position = center + Vector2(-64.0, -TILE_HALF_H * 0.5 + SKIRT_TOP_OFFSET)
 	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_cliff_overlay.add_child(s)
 	cliff_skirt_count += 1
@@ -678,6 +732,378 @@ func point_in_border(world: Vector2) -> bool:
 	return false
 
 
+# ---- real elevation (v0.5 phase B) ---------------------------------------
+##
+## Owner: "언덕이면 언덕처럼 / 최악중의 최악" → real height, not a flat decal. A parallel
+## height map (data/map_height.txt, digits 0-2, '/' = ramp) lifts the central grass
+## meadow ("풀 언덕", authored rows 17-23) to +1, a small core to +2. Elevation is now
+## GAMEPLAY, not just visual:
+##   - each raised cell is drawn on a dedicated elevation TileMapLayer offset -HILL_LIFT
+##     per level (real per-height layer, same tileset), so the plateau reads as lifted
+##     ground with the correct iso stacking;
+##   - grass-topped rock CLIFF FACES are drawn on every downhill (screen S / E) height
+##     transition, auto-selecting straight vs. corner by neighbourhood; ramp cells show
+##     a worn slope instead of a wall;
+##   - a height TRANSITION BLOCKS movement (both physics collision on the ledge AND the
+##     AStar graph edge) unless one side is a ramp — the player climbs only at ramps;
+##   - objects/player standing on a raised cell get a matching -HILL_LIFT*level position
+##     offset so they sit ON the plateau and Y-sort stays correct across levels.
+## `height_at()` / `is_ramp()` / `can_traverse()` / `hill_cells` / `ramp_cells` are the
+## public surface the TouchController (height-aware AStar) and the harness read.
+
+## Vertical lift (px) per elevation level. Iso half-tile — one plateau step.
+const HILL_LIFT := 32.0
+## z of the raised-surface elevation layers: above ground + edge overlays, below the
+## y-sorted objects so the player still draws over the plateau ground.
+const HILL_Z := 3
+## z of the cliff-face sprites on height transitions (sit with the elevation surface).
+const CLIFF_FACE_Z := 3
+
+## Parsed height rows (one string per map row; chars '0'/'1'/'2'/'/'). Empty → flat.
+var _height_rows: Array[String] = []
+## cell -> elevation level (1 or 2). Height-0 cells are NOT stored (default 0).
+var elevation: Dictionary = {}
+## Raised (level ≥ 1) cells and the authored ramp cells.
+var hill_cells: Dictionary = {}   # Vector2i -> level (1 or 2)
+var ramp_cells: Dictionary = {}   # Vector2i -> true
+## Per-level elevation TileMapLayer children (index = level).
+var _elev_layers: Array[TileMapLayer] = []
+## Node holding the cliff-face + ramp transition sprites.
+var _cliff_face_overlay: Node2D
+var hill_sprite_count: int = 0     # raised surface tiles laid (harness)
+var cliff_face_count: int = 0      # transition cliff-face apron sprites (harness)
+var ramp_slope_count: int = 0      # ramp slope sprites (harness)
+## StaticBody sealing the non-ramp height ledges (can't walk off/into a cliff).
+var _ledge_body: StaticBody2D
+var ledge_collider_count: int = 0
+
+## Public: authored/plateau elevation level of a cell (0 if flat/unknown/off-map).
+func height_at(cell: Vector2i) -> int:
+	return int(elevation.get(cell, 0))
+
+## Public: elevation level (legacy alias kept for older callers).
+func elevation_of(cell: Vector2i) -> int:
+	return height_at(cell)
+
+## Public: is this an authored ramp cell (a legal up/down crossing)?
+func is_ramp(cell: Vector2i) -> bool:
+	return ramp_cells.has(cell)
+
+## Public: may the player cross directly between two 4-adjacent cells? Same height →
+## yes. Different height → only if EITHER endpoint is a ramp (the stair). Used by the
+## height-aware AStar in TouchController and by movement/physics.
+func can_traverse(a: Vector2i, b: Vector2i) -> bool:
+	if height_at(a) == height_at(b):
+		return true
+	return is_ramp(a) or is_ramp(b)
+
+## Extra Y offset (px, negative = up) for something standing on `cell`, so raised
+## objects/tiles sit on their plateau. A ramp is drawn at the mid-height between its
+## low and high neighbour.
+func height_offset(cell: Vector2i) -> float:
+	if is_ramp(cell):
+		return -HILL_LIFT * _ramp_mid_level(cell)
+	return -HILL_LIFT * float(height_at(cell))
+
+## Mid level (float) a ramp bridges: average of its highest and lowest 4-neighbour
+## levels (so a 0↔1 ramp draws at 0.5, a 1↔2 ramp at 1.5).
+func _ramp_mid_level(cell: Vector2i) -> float:
+	var lo := 99
+	var hi := 0
+	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		var lv := height_at(cell + d)
+		lo = mini(lo, lv)
+		hi = maxi(hi, lv)
+	if lo == 99:
+		return float(_raw_height_level(cell))
+	return (float(lo) + float(hi)) * 0.5
+
+## Raw digit level at a cell from the height file ('/' resolves to its neighbour mid).
+func _raw_height_level(cell: Vector2i) -> int:
+	if cell.y < 0 or cell.y >= _height_rows.size():
+		return 0
+	var row: String = _height_rows[cell.y]
+	if cell.x < 0 or cell.x >= row.length():
+		return 0
+	var ch := row[cell.x]
+	if ch == "1":
+		return 1
+	if ch == "2":
+		return 2
+	return 0
+
+## Classify elevation from the parallel height map. Fills `elevation` (level ≥ 1),
+## `hill_cells` (level), and `ramp_cells`. A raised cell must also be authored island
+## ground (never a border-V / water) so heights can't float over the void.
+func _classify_elevation() -> void:
+	elevation.clear()
+	hill_cells.clear()
+	ramp_cells.clear()
+	if _height_rows.is_empty() or height == 0:
+		return
+	for r in range(min(height, _height_rows.size())):
+		var hrow: String = _height_rows[r]
+		var lrow: String = _layout[r] if r < _layout.size() else ""
+		for c in range(min(width, hrow.length())):
+			var cell := Vector2i(c, r)
+			var lsym := lrow[c] if c < lrow.length() else "V"
+			# Only real island ground carries height (not void/water/gate).
+			if lsym == "V" or lsym == "W" or lsym == "w" or lsym == "m":
+				continue
+			var ch := hrow[c]
+			if ch == "/":
+				ramp_cells[cell] = true
+				continue
+			var lv := 0
+			if ch == "1":
+				lv = 1
+			elif ch == "2":
+				lv = 2
+			if lv > 0:
+				elevation[cell] = lv
+				hill_cells[cell] = lv
+
+## True if `cell` is raised and its screen-SOUTH (+row) or screen-EAST (+col) neighbour
+## is at a LOWER level and is not itself reached by a ramp — i.e. a downhill face the
+## player sees. Returns the drop direction(s) for face placement.
+func _downhill_faces(cell: Vector2i) -> Array:  # of ["s"|"e", drop_levels]
+	var out: Array = []
+	if is_ramp(cell):
+		return out
+	var lv := height_at(cell)
+	if lv <= 0:
+		return out
+	var south := height_at(cell + Vector2i(0, 1))
+	var east := height_at(cell + Vector2i(1, 0))
+	if south < lv and not is_ramp(cell + Vector2i(0, 1)):
+		out.append(["s", lv - south])
+	if east < lv and not is_ramp(cell + Vector2i(1, 0)):
+		out.append(["e", lv - east])
+	return out
+
+## Build the raised surface layers, cliff faces on transitions, ramp slopes, and the
+## ledge collision. No-op on a flat map.
+func _build_elevation() -> void:
+	_cliff_face_overlay = Node2D.new()
+	_cliff_face_overlay.name = "Elevation"
+	_cliff_face_overlay.z_index = HILL_Z
+	add_child(_cliff_face_overlay)
+	if hill_cells.is_empty() and ramp_cells.is_empty():
+		return
+
+	# One real TileMapLayer per level (1,2), each offset up by HILL_LIFT*level. Same
+	# tileset so the raised ground is the identical grass art, just lifted.
+	var max_level := 0
+	for cell in hill_cells:
+		max_level = maxi(max_level, int(hill_cells[cell]))
+	_elev_layers.resize(max_level + 1)
+	for lvl in range(1, max_level + 1):
+		var layer := TileMapLayer.new()
+		layer.name = "Elev%d" % lvl
+		layer.tile_set = tile_set
+		layer.position = Vector2(0, -HILL_LIFT * lvl)
+		layer.z_index = HILL_Z
+		layer.y_sort_enabled = false
+		# Purely a visual surface — the base Ground layer + the ledge body own ALL
+		# collision. Disable this layer's physics so its offset (-HILL_LIFT) grass tiles
+		# can never nudge the player (grass has no physics polygon anyway, but be explicit
+		# so a future tileset physics layer can't leak an offset collider onto the plateau).
+		layer.collision_enabled = false
+		layer.navigation_enabled = false
+		layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		# Tonally lift each raised tier a touch (sun on the higher ground) so the plateau
+		# reads as ABOVE the lower meadow even where the grass art is the same — the cliff
+		# wall carries the geometry, this carries the value separation.
+		layer.modulate = Color(1.0, 1.0, 1.0).lerp(Color(1.14, 1.13, 1.06), float(lvl) / 2.0)
+		add_child(layer)
+		_elev_layers[lvl] = layer
+
+	# Lay the raised grass surface on each hill cell's level layer, mirroring the base
+	# variant so the plateau top matches the ground it rose from.
+	for cell in hill_cells:
+		var lvl: int = int(hill_cells[cell])
+		var layer := _elev_layers[lvl]
+		if layer != null:
+			var src := get_cell_source_id(cell)
+			if src < 2 or src > 5:
+				src = _variant_source(cell.x, cell.y)
+			layer.set_cell(cell, src, ATLAS)
+			hill_sprite_count += 1
+
+	# AO seating shadows on the LOWER ground at the foot of every exposed cliff (drawn
+	# first, under the aprons, so the hill reads as resting ON the ground).
+	_build_ao_seats()
+	# Programmatic full-perimeter rock cliff aprons on every downhill transition
+	# (auto straight/outer-corner; +2 stacks seamlessly; grass-lip fringe on top).
+	_build_cliff_faces()
+	# Ramp slopes drawn at mid height on the authored ramp cells (visible climb).
+	_build_ramp_slopes()
+	# Physics: seal the non-ramp ledges so the player can't walk off/into a height wall.
+	_build_ledge_collision()
+
+## Draw a programmatic full-perimeter rock cliff apron on every downhill (screen S / E)
+## height transition. Rewritten (v0.5 phase A2) from the old region-clip of the 128×230
+## CC0 monolith — that produced thin, gappy slivers that did not connect the plateau to
+## the ground. `CliffGen.make_apron` draws the exposed front diamond edge(s) extruded down
+## exactly `drop*HILL_LIFT` px, so the wall starts at the raised diamond bottom edge and
+## reaches the lower ground with ZERO gap; a cell exposed on both S and E gets an outer
+## corner; +2 drops make a taller wall; the top carries a grass-lip fringe.
+##
+## The apron Image is anchored at the raised cell's diamond centre (blit top-left =
+## center + (-64, -32)); a per-level offset ×HILL_LIFT lifts it with its surface.
+func _build_cliff_faces() -> void:
+	for cell in hill_cells:
+		if is_ramp(cell):
+			continue
+		var lvl := height_at(cell)
+		if lvl <= 0:
+			continue
+		var east := height_at(cell + Vector2i(1, 0))     # +col => screen SE
+		var south := height_at(cell + Vector2i(0, 1))     # +row => screen SW
+		var se_drop := (lvl - east) if (east < lvl and not is_ramp(cell + Vector2i(1, 0))) else 0
+		var sw_drop := (lvl - south) if (south < lvl and not is_ramp(cell + Vector2i(0, 1))) else 0
+		var drop := maxi(se_drop, sw_drop)
+		if drop <= 0:
+			continue
+		var salt := CliffGen.hash2(cell.x, cell.y, 611)
+		var img := CliffGen.make_apron(drop, se_drop > 0, sw_drop > 0, salt)
+		var tex := ImageTexture.create_from_image(img)
+		var s := Sprite2D.new()
+		s.texture = tex
+		s.centered = false
+		# Top-left of the apron box = the raised diamond's top-left, lifted by the level.
+		var center: Vector2 = map_to_local(cell) + Vector2(0, -HILL_LIFT * float(lvl))
+		s.position = center + Vector2(-TILE_HALF_W, -TILE_HALF_H)
+		s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		s.z_index = CLIFF_FACE_Z
+		_cliff_face_overlay.add_child(s)
+		cliff_face_count += 1
+
+
+## AO seating shadow: a soft dark diamond on the LOWER ground at the foot of every exposed
+## cliff face, so the hill visibly sits ON the ground rather than floating. Drawn under the
+## aprons (lower z). One per exposed lower neighbour.
+var ao_seat_count: int = 0
+func _build_ao_seats() -> void:
+	var ao_tex := ImageTexture.create_from_image(CliffGen.make_ao_diamond(0.6))
+	for cell in hill_cells:
+		if is_ramp(cell):
+			continue
+		var lvl := height_at(cell)
+		if lvl <= 0:
+			continue
+		for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+			var nb: Vector2i = cell + d
+			if height_at(nb) < lvl and not is_ramp(nb):
+				var s := Sprite2D.new()
+				s.texture = ao_tex
+				s.centered = false
+				var c: Vector2 = map_to_local(nb) + Vector2(0, height_offset(nb))
+				s.position = c + Vector2(-TILE_HALF_W, -TILE_HALF_H)
+				s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+				# Just above the ground tiles, below the aprons/surfaces.
+				s.z_index = CLIFF_FACE_Z - 1
+				_cliff_face_overlay.add_child(s)
+				ao_seat_count += 1
+
+## Draw a worn-dirt slope on ramp cells at the mid height between their neighbours, so
+## the up/down crossing reads as a walkable stair rather than a wall.
+func _build_ramp_slopes() -> void:
+	for cell in ramp_cells:
+		var dir := _ramp_climb_dir(cell)
+		var img := CliffGen.make_ramp(dir, CliffGen.hash2(cell.x, cell.y, 41))
+		var s := Sprite2D.new()
+		s.texture = ImageTexture.create_from_image(img)
+		s.centered = false
+		# Anchor like the apron: ramp top diamond at the ramp's MID height.
+		var c: Vector2 = map_to_local(cell) + Vector2(0, height_offset(cell))
+		s.position = c + Vector2(-TILE_HALF_W, -TILE_HALF_H)
+		s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		s.z_index = CLIFF_FACE_Z
+		_cliff_face_overlay.add_child(s)
+		ramp_slope_count += 1
+
+
+## Screen climb-direction of a ramp — toward its highest 4-neighbour ("se"/"nw"/"sw"/"ne").
+func _ramp_climb_dir(cell: Vector2i) -> String:
+	var best := "ne"
+	var best_lv := -1
+	for pair in [[Vector2i(1, 0), "se"], [Vector2i(-1, 0), "nw"], [Vector2i(0, 1), "sw"], [Vector2i(0, -1), "ne"]]:
+		var lv := height_at(cell + (pair[0] as Vector2i))
+		if lv > best_lv:
+			best_lv = lv
+			best = String(pair[1])
+	return best
+
+## Seal every non-ramp height ledge with a thin collision wall along the shared diamond
+## edge, so keyboard / tap movement can't cross a cliff (only ramps let the player pass).
+## The AStar graph is separately height-aware (TouchController.can_traverse), so tap
+## paths never even try a wall; this body is the physics belt for keyboard walking.
+func _build_ledge_collision() -> void:
+	_ledge_body = StaticBody2D.new()
+	_ledge_body.name = "LedgeCollision"
+	_ledge_body.collision_layer = 1
+	_ledge_body.collision_mask = 0
+	add_child(_ledge_body)
+	# For every adjacent pair that cannot be traversed, drop a short capsule wall on the
+	# shared iso edge. Iterate island cells once; check the +col (SE) and +row (SW) edge.
+	for cell in hill_cells.keys() + ramp_cells.keys():
+		for d in [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)]:
+			var nb: Vector2i = cell + d
+			if can_traverse(cell, nb):
+				continue
+			# Only add each edge once (from the higher cell, or the ramp-free side).
+			if height_at(cell) < height_at(nb):
+				continue
+			_add_ledge_wall(cell, d)
+
+## Add a small rectangle collider straddling the shared diamond edge between `cell` and
+## its neighbour in direction `d`, positioned at the higher cell's lifted rim.
+func _add_ledge_wall(cell: Vector2i, d: Vector2i) -> void:
+	# Collision lives in FLAT logical space: the CharacterBody's global_position is the
+	# un-lifted cell centre (world_to_cell reads it), and the visual HILL_LIFT is a pure
+	# sprite offset. So the wall sits at the un-lifted shared-edge midpoint — right where
+	# the player's body reaches when it tries to step across the (logical) grid edge.
+	var center := map_to_local(cell)
+	var edge_mid: Vector2
+	if d == Vector2i(1, 0):        # SE edge (screen down-right)
+		edge_mid = center + Vector2(TILE_HALF_W * 0.5, TILE_HALF_H * 0.5)
+	elif d == Vector2i(0, 1):      # SW edge (screen down-left)
+		edge_mid = center + Vector2(-TILE_HALF_W * 0.5, TILE_HALF_H * 0.5)
+	elif d == Vector2i(-1, 0):     # NW edge (screen up-left)
+		edge_mid = center + Vector2(-TILE_HALF_W * 0.5, -TILE_HALF_H * 0.5)
+	else:                          # d == (0,-1) NE edge (screen up-right)
+		edge_mid = center + Vector2(TILE_HALF_W * 0.5, -TILE_HALF_H * 0.5)
+	var cs := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	# Thin wall lying ALONG the diamond edge: long enough to seal it (no gap a radius-20
+	# body slips through) but shallow (10px) so it hugs the edge line and never intrudes
+	# into either cell centre — a body legitimately standing on a cell (~36px from the
+	# edge midpoint) is not pushed off. The iso edge runs at ±atan2(HALF_H, HALF_W).
+	rect.size = Vector2(78, 10)
+	cs.shape = rect
+	cs.position = edge_mid
+	var iso_angle := atan2(TILE_HALF_H, TILE_HALF_W)  # ≈ 0.4636 rad
+	# SE / NW edges rise to the right (+angle); SW / NE edges rise to the left (−angle).
+	cs.rotation = iso_angle if (d == Vector2i(1, 0) or d == Vector2i(-1, 0)) else -iso_angle
+	_ledge_body.add_child(cs)
+	ledge_collider_count += 1
+
+## Lift objects/player that stand on a raised cell by the cell's height offset so they
+## sit ON the plateau (Y-sort still uses their world Y, which now includes the lift, so
+## an object on a hill correctly sorts against the raised ground and its neighbours).
+func _lift_hill_objects() -> void:
+	if _ysort == null or hill_cells.is_empty():
+		return
+	for child in _ysort.get_children():
+		if not (child is Node2D):
+			continue
+		var cell := world_to_cell((child as Node2D).global_position)
+		var off := height_offset(cell)
+		if off != 0.0:
+			(child as Node2D).position.y += off
+
+
 # ---- objects -------------------------------------------------------------
 
 func _build_objects() -> void:
@@ -755,13 +1181,15 @@ func _object_texture(sym: String, cell: Vector2i) -> Array:  # [path, offset]
 	var h := _cell_hash(cell.x, cell.y, 7)
 	match sym:
 		"T":
-			# trees: a/b/c deterministic split.
+			# trees: a/b/c deterministic split. v0.5 CC0 iso trees (~230px tall,
+			# trunk base at sprite bottom → offset ≈ -height/2 to plant the trunk on
+			# the cell centre).
 			var pick := h % 3
 			if pick == 0:
-				return ["res://assets/objects/tree_a.png", Vector2(0, -120)]
+				return ["res://assets/objects/tree_a.png", Vector2(0, -110)]
 			elif pick == 1:
-				return ["res://assets/objects/tree_b.png", Vector2(0, -120)]
-			return ["res://assets/objects/tree_c.png", Vector2(0, -120)]
+				return ["res://assets/objects/tree_b.png", Vector2(0, -116)]
+			return ["res://assets/objects/tree_c.png", Vector2(0, -105)]
 		"F":
 			var pick := h % 3
 			if pick == 0:
@@ -770,14 +1198,14 @@ func _object_texture(sym: String, cell: Vector2i) -> Array:  # [path, offset]
 				return ["res://assets/objects/flower_violet.png", Vector2(0, -24)]
 			return ["res://assets/objects/flower_pink.png", Vector2(0, -24)]
 		"R":
-			return ["res://assets/objects/rock.png", Vector2(0, -24)]
+			return ["res://assets/objects/rock.png", Vector2(0, -22)]
 		"s":
-			return ["res://assets/objects/stone.png", Vector2(0, -24)]
+			return ["res://assets/objects/stone.png", Vector2(0, -14)]
 		"t":
-			return ["res://assets/objects/grass_tuft.png", Vector2(0, -24)]
+			return ["res://assets/objects/grass_tuft.png", Vector2(0, -12)]
 		"h":
-			return ["res://assets/objects/bush_green.png", Vector2(0, -40)]
-	return ["res://assets/objects/rock.png", Vector2(0, -24)]
+			return ["res://assets/objects/bush_green.png", Vector2(0, -18)]
+	return ["res://assets/objects/rock.png", Vector2(0, -22)]
 
 
 ## Build a Gatherable for a symbol at a cell (used by initial spawn, scatter, and

@@ -94,23 +94,27 @@ func _test_bush_art() -> void:
 	_check("bush_dry.png present", dry != null)
 	_check("bush_bloom.png present", bloom != null)
 	if dry != null:
-		# The rebuild keeps the 128×128 canvas (bush_dry.gd offset −80 + diamond collision
-		# depend on it); the thornbush body occupies the wide lower band.
-		_check("bush_dry.png has the rebuilt 128×128 canvas",
-			dry.get_width() == 128 and dry.get_height() == 128,
+		# v0.5: the dry bush is a real CC0 WITHERED/BARE tree (rubberduck dead-tree set),
+		# tight-cropped (≈108×128). Assert it fits within a tile-ish canvas and reads as
+		# dead wood — brown/desaturated, its dominant color must NOT be leafy green.
+		_check("bush_dry.png is a reasonable withered-object canvas",
+			dry.get_width() <= 160 and dry.get_height() <= 200 and dry.get_width() > 16,
 			"%dx%d" % [dry.get_width(), dry.get_height()])
-		# A dry thornbush reads as brown-grey branches: its dominant opaque color must be a
-		# warm-brown wood tone, NOT the old green shrub.
 		var dom := _dominant_color(dry)
-		var is_brown := dom.r8 >= dom.g8 and dom.g8 >= dom.b8 and dom.r8 > 90
-		_check("bush_dry dominant color is dry brown wood (not green)",
-			is_brown, "rgb=%d,%d,%d" % [dom.r8, dom.g8, dom.b8])
+		# dead wood: green is NOT the strongly-dominant channel (not a green shrub).
+		var not_green := not (dom.g8 > dom.r8 + 8 and dom.g8 > dom.b8 + 8)
+		_check("bush_dry reads as dead/withered wood (not leafy green)",
+			not_green, "rgb=%d,%d,%d" % [dom.r8, dom.g8, dom.b8])
 	if bloom != null:
-		_check("bush_bloom.png has the rebuilt 128×128 canvas",
-			bloom.get_width() == 128 and bloom.get_height() == 128,
+		# v0.5: the bloom is a lush green foliage clump (CC0 grassland plant). Assert a
+		# sane small canvas and that green foliage dominates.
+		_check("bush_bloom.png is a reasonable foliage canvas",
+			bloom.get_width() <= 160 and bloom.get_height() <= 160 and bloom.get_width() > 16,
 			"%dx%d" % [bloom.get_width(), bloom.get_height()])
-		# The bloom bursts with pink/violet blossoms: at least some violet-family pixels.
-		_check("bush_bloom carries pink/violet blossom pixels", _has_violet(bloom))
+		var bdom := _dominant_color(bloom)
+		_check("bush_bloom is green foliage (bloomed/alive)",
+			bdom.g8 >= bdom.r8 and bdom.g8 >= bdom.b8,
+			"rgb=%d,%d,%d" % [bdom.r8, bdom.g8, bdom.b8])
 
 
 ## The gate bush node checks — run after the grove is instantiated.
@@ -124,6 +128,10 @@ func _test_bush_node(map: Node) -> void:
 		var cue: Node = bush.get("_cue")
 		_check("gate bush has a shimmer readability cue (GlowSprite)",
 			cue != null and is_instance_valid(cue) and cue is GlowSprite)
+		# v0.5: the bush also carries a pulsing water-drop affordance icon (shown during Q4).
+		var drop: Node = bush.get("_drop")
+		_check("gate bush has a Q4 water-drop affordance icon",
+			drop != null and is_instance_valid(drop) and drop is Sprite2D)
 
 
 # ---- B3.2: every window has a ✕ close button + an ESC hint ------------------

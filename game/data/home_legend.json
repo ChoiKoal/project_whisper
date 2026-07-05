@@ -1,0 +1,26 @@
+{
+  "_comment": "Project Whisper 제0세계 (home island) legend. v0.5.0. Symbol -> (tileset source, object). Parsed by MapLoader (same as the grove). Barren dark-earth = D (T1 dirt, walkable + placeable), grass patches = g (variant grass). Portals 1-5 = PortalObject (kind:portal, layer accent). Y = observation stone (kind:observation, time-skip). C = home cauldron. S = spawn.",
+  "tiles": {
+    "D": {"source": 1, "tile_id": "T1"},
+    "g": {"source": 2, "tile_id": "T2A", "variants": ["T2B", "T2C", "T2D"], "variant_random": true},
+    "G": {"source": 2, "tile_id": "T2A"},
+    "V": {"source": 0, "tile_id": "T0", "walkable": false, "void": true},
+    "S": {"source": 1, "tile_id": "T1", "spawn": true},
+    "C": {"source": 1, "tile_id": "T1"},
+    "Y": {"source": 1, "tile_id": "T1"},
+    "1": {"source": 1, "tile_id": "T1"},
+    "2": {"source": 1, "tile_id": "T1"},
+    "3": {"source": 1, "tile_id": "T1"},
+    "4": {"source": 1, "tile_id": "T1"},
+    "5": {"source": 1, "tile_id": "T1"}
+  },
+  "objects": {
+    "C": {"scene": "cauldron.tscn", "object_id": "cauldron"},
+    "Y": {"kind": "observation", "object_id": "observation_stone"},
+    "1": {"kind": "portal", "object_id": "portal_nature", "layer": "nature"},
+    "2": {"kind": "portal", "object_id": "portal_science", "layer": "science"},
+    "3": {"kind": "portal", "object_id": "portal_machine", "layer": "machine"},
+    "4": {"kind": "portal", "object_id": "portal_magic", "layer": "magic"},
+    "5": {"kind": "portal", "object_id": "portal_divinity", "layer": "divinity"}
+  }
+}

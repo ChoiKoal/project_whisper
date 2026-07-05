@@ -103,7 +103,11 @@ func _ensure_buses() -> void:
 func _load_streams() -> void:
 	for name_v in SFX_NAMES + ["night_amb", "day_amb", "bgm_day", "bgm_night"]:
 		var name := String(name_v)
-		var path := AUDIO_DIR + name + ".wav"
+		# v0.5: BGM is now real CC0 .ogg (see CREDITS.md); everything else stays .wav.
+		# Prefer an .ogg if one exists for this name, else fall back to the .wav.
+		var ogg_path := AUDIO_DIR + name + ".ogg"
+		var wav_path := AUDIO_DIR + name + ".wav"
+		var path := ogg_path if ResourceLoader.exists(ogg_path) else wav_path
 		if not ResourceLoader.exists(path):
 			push_warning("AudioManager: missing stream %s" % path)
 			continue
@@ -112,6 +116,9 @@ func _load_streams() -> void:
 			s.loop_mode = AudioStreamWAV.LOOP_FORWARD
 			s.loop_begin = 0
 			s.loop_end = s.data.size() / 2   # 16-bit mono → 2 bytes/frame
+		elif s is AudioStreamOggVorbis and name in LOOP_NAMES:
+			# Ogg Vorbis loops via its own `loop` flag (seamless CC0 ambient loops).
+			s.loop = true
 		_streams[name] = s
 
 

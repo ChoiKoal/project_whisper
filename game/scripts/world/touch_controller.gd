@@ -25,7 +25,12 @@ class_name TouchController
 var _loader: MapLoader
 var _player: Player
 var _interaction: InteractionController
-var _astar: AStarGrid2D
+## (v0.5 phase B) Height-aware graph: an AStar2D over walkable cells, connecting only
+## 4-neighbours the player can actually traverse (same height, or via a ramp). Replaces
+## the flat AStarGrid2D so paths never route across a cliff ledge. `_pid(cell)` maps a
+## cell to its point id; solid/blocked cells simply have no point.
+var _astar: AStar2D
+var _region: Rect2i
 
 ## Pending auto-interaction to run when the player finishes the queued path.
 ## {"kind": "object"|"cell", "object": Node, "cell": Vector2i} or empty.
@@ -59,28 +64,58 @@ func _ready() -> void:
 	GameState.tile_walkable_changed.connect(func(_c): _rebuild_solids())
 
 
-# ---- AStar grid ----------------------------------------------------------
+# ---- AStar graph (height-aware) ------------------------------------------
+
+## Stable point id for a cell (row-major). Cells never move, so the id is fixed even
+## as walkability toggles — we add/remove the point and its edges instead.
+func _pid(cell: Vector2i) -> int:
+	return cell.y * _region.size.x + cell.x
+
 
 func _build_grid() -> void:
-	_astar = AStarGrid2D.new()
-	_astar.region = Rect2i(0, 0, _loader.width, _loader.height)
-	_astar.cell_size = Vector2(1, 1)
-	# 4-connected iso grid (diagonal moves would cut across non-adjacent diamonds).
-	_astar.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_NEVER
-	_astar.default_compute_heuristic = AStarGrid2D.HEURISTIC_MANHATTAN
-	_astar.update()
+	_astar = AStar2D.new()
+	_region = Rect2i(0, 0, _loader.width, _loader.height)
 	_rebuild_solids()
 
 
-## Recompute which cells are solid (non-walkable) from live tile data. Called on
-## build and whenever a gate changes the passable set.
+## Rebuild the walkable graph from live tile data + height. A cell is a point iff it is
+## walkable; an edge connects two 4-adjacent walkable cells iff the loader says the
+## player can traverse the height step between them (same level, or one side a ramp).
+## Called on build and whenever a gate / gather changes the passable set.
 func _rebuild_solids() -> void:
 	if _astar == null:
 		return
-	for r in range(_loader.height):
-		for c in range(_loader.width):
+	_astar.clear()
+	var w := _loader.width
+	var h := _loader.height
+	# 1. points for every walkable cell.
+	for r in range(h):
+		for c in range(w):
 			var cell := Vector2i(c, r)
-			_astar.set_point_solid(cell, not _loader.is_cell_walkable(cell))
+			if _loader.is_cell_walkable(cell):
+				_astar.add_point(_pid(cell), Vector2(c, r))
+	# 2. edges between traversable 4-neighbours (check +col / +row once per pair).
+	for r in range(h):
+		for c in range(w):
+			var cell := Vector2i(c, r)
+			if not _astar.has_point(_pid(cell)):
+				continue
+			for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+				var nb: Vector2i = cell + d
+				if nb.x >= w or nb.y >= h:
+					continue
+				if not _astar.has_point(_pid(nb)):
+					continue
+				if _height_traversable(cell, nb):
+					_astar.connect_points(_pid(cell), _pid(nb), true)
+
+
+## Height-aware traversability wrapper — defers to the loader when it supports heights,
+## otherwise everything is traversable (flat map / home island without a height file).
+func _height_traversable(a: Vector2i, b: Vector2i) -> bool:
+	if _loader.has_method("can_traverse"):
+		return _loader.can_traverse(a, b)
+	return true
 
 
 ## Public: recompute the grid now (e.g. after a scripted world change / tests).
@@ -209,16 +244,24 @@ func _path_to_cell(dest: Vector2i) -> bool:
 	if _astar == null:
 		return false
 	var start := _loader.world_to_cell(_player.global_position)
-	if not _astar.region.has_point(start) or not _astar.region.has_point(dest):
+	if not _region.has_point(start) or not _region.has_point(dest):
 		return false
-	if _astar.is_point_solid(dest):
+	# Both endpoints must be points in the walkable graph.
+	if not _astar.has_point(_pid(start)) or not _astar.has_point(_pid(dest)):
 		return false
-	var cells := _astar.get_id_path(start, dest)
-	if cells.is_empty():
+	var ids := _astar.get_id_path(_pid(start), _pid(dest))
+	if ids.is_empty():
 		return false
 	var pts: Array[Vector2] = []
-	for cid in cells:
-		pts.append(_loader.cell_center_world(cid))
+	for pid in ids:
+		var gp := _astar.get_point_position(pid)
+		var cell := Vector2i(int(gp.x), int(gp.y))
+		# Waypoint sits at the cell centre, lifted by the cell's height so the walk
+		# visually climbs ramps / stays on the plateau.
+		var world := _loader.cell_center_world(cell)
+		if _loader.has_method("height_offset"):
+			world.y += _loader.height_offset(cell)
+		pts.append(world)
 	_player.set_path(pts)
 	return true
 

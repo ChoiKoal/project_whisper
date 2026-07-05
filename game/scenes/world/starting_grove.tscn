@@ -28,6 +28,7 @@
 [ext_resource type="Script" path="res://scripts/ui/quest_hud.gd" id="26_questhud"]
 [ext_resource type="Script" path="res://scripts/ui/quest_log.gd" id="27_questlog"]
 [ext_resource type="Script" path="res://scripts/world/quest_area_watcher.gd" id="28_questarea"]
+[ext_resource type="Script" path="res://scripts/world/camera_zoom.gd" id="29_camzoom"]
 
 [sub_resource type="CircleShape2D" id="col_player"]
 radius = 20.0
@@ -94,6 +95,8 @@ shape = SubResource("col_player")
 [node name="Camera2D" type="Camera2D" parent="YSortLayer/Player"]
 position_smoothing_enabled = true
 position_smoothing_speed = 5.0
+zoom = Vector2(1.5, 1.5)
+script = ExtResource("29_camzoom")
 
 [node name="Interaction" type="Node2D" parent="."]
 script = ExtResource("6_interaction")

@@ -58,9 +58,12 @@ func _ready() -> void:
 
 func _test_draw_order(map: Node, loader: MapLoader, ysort: Node2D) -> void:
 	var edge := loader.get_node_or_null("EdgeOverlay") as Node2D
-	var jitter := loader.get_node_or_null("BrightnessJitter") as Node2D
+	# v0.5: BrightnessJitter retired (real CC0 tiles carry their own variation). The
+	# Elevation overlay is the new ground-treatment layer; assert its draw order stays
+	# below the YSort object layer, preserving the Bug-A invariant.
+	var jitter := loader.get_node_or_null("Elevation") as Node2D
 	_check("EdgeOverlay present", edge != null)
-	_check("BrightnessJitter present", jitter != null)
+	_check("Elevation overlay present (jitter retired)", jitter != null)
 	_check("YSortLayer present", ysort != null)
 	if edge == null or jitter == null or ysort == null:
 		return
@@ -69,22 +72,21 @@ func _test_draw_order(map: Node, loader: MapLoader, ysort: Node2D) -> void:
 	# = ground z (0) + their own z_index.
 	var ground_z := loader.z_index                      # 0
 	var edge_eff := ground_z + edge.z_index             # 0 + 1
-	var jitter_eff := ground_z + jitter.z_index         # 0 + 2
+	var jitter_eff := ground_z + jitter.z_index         # 0 + HILL_Z
 	var ysort_z := ysort.z_index                        # 5
 
 	_check("edge overlay z == EDGE_OVERLAY_Z", edge.z_index == MapLoader.EDGE_OVERLAY_Z)
-	_check("jitter z == JITTER_Z", jitter.z_index == MapLoader.JITTER_Z)
+	_check("elevation z == HILL_Z", jitter.z_index == MapLoader.HILL_Z)
 	_check("YSortLayer z == YSORT_Z (%d)" % MapLoader.YSORT_Z, ysort_z == MapLoader.YSORT_Z)
 
-	# The required ordering: ground < edge < jitter < YSortLayer.
+	# The required ordering: ground < edge <= elevation < YSortLayer.
 	_check("ground tiles below edge overlays", ground_z < edge_eff)
-	_check("edge overlays below jitter", edge_eff < jitter_eff)
-	_check("jitter below YSortLayer (player+objects)", jitter_eff < ysort_z)
+	_check("edge overlays at/below elevation overlay", edge_eff <= jitter_eff)
+	_check("elevation overlay below YSortLayer (player+objects)", jitter_eff < ysort_z)
 
-	# Explicit bug-A assertion: the jitter node is NOT drawn after the YSortLayer.
-	# "Drawn after" for same-canvas nodes = higher effective z, or equal z but later
-	# in tree order. Here z strictly separates them, so this reduces to z compare.
-	_check("jitter NOT drawn after YSortLayer", not (jitter_eff > ysort_z))
+	# Explicit bug-A assertion: the ground-treatment overlay is NOT drawn after the
+	# YSortLayer (so darkened ground can never cover the player).
+	_check("elevation overlay NOT drawn after YSortLayer", not (jitter_eff > ysort_z))
 
 	# Glow is on a separate CanvasLayer (always above the root canvas), and the
 	# DayNight CanvasModulate tints only the root canvas — so darkened ground can no

@@ -9,8 +9,8 @@
 [ext_resource type="Texture2D" uid="uid://xjygwprahira" path="res://assets/tiles/t2c_grass_clover.png" id="5_t2c"]
 [ext_resource type="Texture2D" uid="uid://bfh7vgp456bvg" path="res://assets/tiles/t2d_flower_grass.png" id="6_t2d"]
 [ext_resource type="Texture2D" uid="uid://768a8ma55n2g" path="res://assets/tiles/t4_mud.png" id="7_t4"]
-[ext_resource type="Texture2D" uid="uid://dwaphvjt4wt12" path="res://assets/tiles/t5a_water.png" id="8_t5a"]
-[ext_resource type="Texture2D" uid="uid://cmt65ccin5jtq" path="res://assets/tiles/t5b_water2.png" id="9_t5b"]
+[ext_resource type="Texture2D" path="res://assets/tiles/t5a_water_anim.png" id="8_t5a"]
+[ext_resource type="Texture2D" path="res://assets/tiles/t5b_water2_anim.png" id="9_t5b"]
 
 [sub_resource type="TileSetAtlasSource" id="src_t0"]
 texture = ExtResource("1_t0")
@@ -87,6 +87,11 @@ texture_region_size = Vector2i(128, 64)
 [sub_resource type="TileSetAtlasSource" id="src_t5a"]
 texture = ExtResource("8_t5a")
 texture_region_size = Vector2i(128, 64)
+0:0/animation_columns = 2
+0:0/animation_frames_count = 2
+0:0/animation_frame_0/duration = 1.0
+0:0/animation_frame_1/duration = 1.0
+0:0/animation_speed = 0.9
 0:0/0 = 0
 0:0/0/custom_data_0 = true
 0:0/0/custom_data_1 = "I7"
@@ -97,6 +102,11 @@ texture_region_size = Vector2i(128, 64)
 [sub_resource type="TileSetAtlasSource" id="src_t5b"]
 texture = ExtResource("9_t5b")
 texture_region_size = Vector2i(128, 64)
+0:0/animation_columns = 2
+0:0/animation_frames_count = 2
+0:0/animation_frame_0/duration = 1.0
+0:0/animation_frame_1/duration = 1.0
+0:0/animation_speed = 0.7
 0:0/0 = 0
 0:0/0/custom_data_0 = true
 0:0/0/custom_data_1 = "I7"

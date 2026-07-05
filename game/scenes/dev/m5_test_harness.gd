@@ -95,9 +95,15 @@ func _test_save_load_roundtrip() -> void:
 	Codex.discover_recipe("R04")
 	Codex.register_failed_fusion("I1", "I2")   # a wrong pair -> attempted set
 
-	# Time + player position
+	# Time + player position.
+	# (v0.5 phase B) Park on a FLAT, object-free interior cell. The former probe cell
+	# (20,20) became the +2 hill core, where a scattered tree's blocking collider now sits;
+	# a player teleported exactly onto a blocking object is depenetrated a few px by physics
+	# on the next frame — correct gameplay, but it breaks an exact position compare. This
+	# test covers SAVE/LOAD of the player position (not object placement), so use a clean
+	# flat cell (8,30); the save round-trip coverage is unchanged.
 	GameState.set_game_time(GameState.DAY_LENGTH * 1.5 + 123.0)
-	var moved_pos := loader_a.cell_center_world(Vector2i(20, 20))
+	var moved_pos := loader_a.cell_center_world(Vector2i(8, 30))
 	player_a.global_position = moved_pos
 
 	# Map: gather a grass tile → HOLLOW (빈 자국, src 11, v0.3.1), place a stepping
