@@ -20,6 +20,7 @@
 | L2-1 과학 타일셋+오브젝트 | done | l2_map_harness 26/26 | M/m/C/c/G/A/W 타일 + 금속 절벽 + 오브젝트 12종 아트/씬 |
 | L2-2 터미널 스테이션 맵 | done | l2_map_harness 26/26 | l2_map 데이터 3종(§A-2 byte-identical) + terminal_station.tscn + 프리뷰 |
 | L2-3 게이트+전력계 (+귀환 포탈 리워크) | done | l2_gates_harness 41/41 + v052 stress 32/32 + 전 하네스 그린 | PowerNode(power_node_energized)/G1 브리지 순차점등/G2 차폐문+에너지Whisper/G3 정전 소지형/G4 관제탑 정화컷신 + WhisperCurrency(에너지) HUD·세이브·조합 재화소모 + J1-J7 채집 스텁 + 게이트체인 레시피 L2-R01~R08 + 귀환 포탈 리워크(grove+L2, 진입존 프롬프트/E/클릭워크) |
+| L2-4 데이터 (아이템/레시피/아이콘/채집) | **L2-4 done** | verify_recipes 104/104 PASS + m8 아이콘 116/116 유니크 + m3 56/56 + l2_map/gates 그린 | items.json D62~D102 완비(41 조합물, layer:2 + placement 클래스) + recipes.json L2-R01~R42 전종(42 레시피; L2-R23=J7 반환; L2-R08 파워코어 whisper_cost) + 아이콘 48종 신규(과학 팔레트: 금속 회색/시안 발광/네온, tools_gen_icons 확장) ItemDB 커버리지 + 채집 소스(J1-J7 legend wired, A타일 J7, parts_box J2/J4 분기) — Part B와 1:1 |
 
 ## 로그
 - 2026-07-05 02:36 — 루프 시작. Godot 4.5 arm64 확보, M0+M1 서브에이전트 착수.

@@ -978,7 +978,7 @@
       "name": "코어 조각",
       "category": "craft",
       "layer": 2,
-      "flavor": "온기를 기다리는 조각. 하나만 더.",
+      "flavor": "한 조각만으로도 희미하게 맥이 뛴다. 아직 하나가 모자라다.",
       "placeable_on": [],
       "usable_on": []
     },
@@ -991,6 +991,421 @@
       "flavor": "죽은 문명의 마지막 심장. 여기에 온기를 꽂는다.",
       "placeable_on": [],
       "usable_on": ["breaker"]
+    },
+    {
+      "id": "D70",
+      "name": "강철판",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "부순 것을 다시 반듯하게. 문명은 늘 그렇게 시작했다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D71",
+      "name": "유리 렌즈",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "초점이 맺힌다. 볼 것이 남아 있다면.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D72",
+      "name": "회로 기판",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "판 위에 생각을 정렬한다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D73",
+      "name": "네온관",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "가둔 게 아니라, 재워 둔 것에 가깝다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": false,
+        "glows": true
+      }
+    },
+    {
+      "id": "D74",
+      "name": "기름 헝겊",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "탄 것과 흐르는 것. 어울리지 않는 둘이 뭉친다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D75",
+      "name": "축전 셀",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "조금씩, 아주 조금씩 모은다. 다시 쓸 날을 위해.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D76",
+      "name": "절연 피복선",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "맨살로는 위험하다. 무엇이든.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D77",
+      "name": "콘크리트 반죽",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "폐허를 갈아 다시 굳힌다. 무엇을 세우려고.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D78",
+      "name": "방열판",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "열을 흘려보낸다. 식지 않으면 죽으니까.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D79",
+      "name": "신호기",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "깜빡인다. 아무도 읽지 않을 신호를.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": false,
+        "glows": true
+      }
+    },
+    {
+      "id": "D80",
+      "name": "방탄 유리",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "지키려던 것이, 지켜 주지 못한 흔적.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D81",
+      "name": "콘크리트 블록",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "쌓으면 벽이, 무너지면 다시 재.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D82",
+      "name": "기폭 심지",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "…쓸 데를 생각하니, 손이 멈춘다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D83",
+      "name": "전선 횃대",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "나무와 전선. 두 세계가 처음으로 손을 잡는다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D84",
+      "name": "유리 모래",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "원래 하나였던 것으로 되돌아간다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D85",
+      "name": "이끼 낀 잔해",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "기계도 오래 두면, 결국 자연이 데려간다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": false,
+        "glows": true
+      }
+    },
+    {
+      "id": "D86",
+      "name": "화분 안테나",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "신호 대신 꽃을 기다리기로 했다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D87",
+      "name": "기름 등불",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "마법과 기계, 둘 다 빛을 내는 방식일 뿐.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": false,
+        "glows": true
+      }
+    },
+    {
+      "id": "D88",
+      "name": "강철 도끼",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "더 단단한 세계를 자르기 위해.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D89",
+      "name": "꺼진 로봇",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "마지막 명령을 기다리는 자세로 멈춰 있다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D90",
+      "name": "고장 난 라디오",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "주파수를 아무리 돌려도, 이제 아무도 방송하지 않는다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D91",
+      "name": "멈춘 시계",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "몇 시에 멈췄을까. 그때 무슨 일이 있었을까.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D92",
+      "name": "빈 액자",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "누구의 얼굴이 있었는지, 액자는 말하지 않는다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D93",
+      "name": "녹슨 훈장",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "누군가는 이걸 자랑스러워했다. 그 누군가도 이제 없다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D94",
+      "name": "말라붙은 잉크병",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "마지막 문장은 끝내 쓰이지 못했다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D95",
+      "name": "부서진 헬멧",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "지켜 주었을까. 묻지 않는 편이 낫겠다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D96",
+      "name": "가로등",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "이 죽은 거리에, 내가 켠 첫 불빛.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": false,
+        "glows": true
+      }
+    },
+    {
+      "id": "D97",
+      "name": "위성 안테나(모형)",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "이제는 내가 하늘에 말을 건다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D98",
+      "name": "모니터",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "두 프레임짜리 삶. 그래도 살아는 있다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": false,
+        "glows": true
+      }
+    },
+    {
+      "id": "D99",
+      "name": "로봇 동상",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "기념할 것이 이것뿐이라도, 세워 둔다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D100",
+      "name": "발전기 모형",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "작게나마, 스스로 도는 것을 하나 갖고 싶었다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": true,
+        "glows": true
+      }
+    },
+    {
+      "id": "D101",
+      "name": "철조망",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "지킬 것이 생겼다는 뜻… 이라고, 믿고 싶다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D102",
+      "name": "네온 간판",
+      "category": "craft",
+      "layer": 2,
+      "flavor": "무슨 가게였을까. 이제는 빛만 남았다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": ["L2T-M", "L2T-C", "L2T-c", "L2T-G", "L2T-A", "L2T-m", "T1", "T2A", "T2B", "T2C", "T2D", "T0"],
+        "blocks": false,
+        "glows": true
+      }
     }
   ]
 }
