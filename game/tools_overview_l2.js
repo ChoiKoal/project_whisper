@@ -21,7 +21,12 @@ const { PNG } = require("pngjs");
 
 const GAME = __dirname;
 const CLOSEUP = process.argv.includes("--closeup");
+// (L2-6) --powered → render the POST-G4 station: bridge lit + walkable, shield door open, control
+// tower + screens + generators + street lamps all ON, blackout bottleneck lifted. This is the
+// state the player leaves the world in after the Layer-2 정화 컷신 — "다시 깨어난 기지".
+const POWERED = process.argv.includes("--powered");
 const OUT = CLOSEUP ? "/workspace/group/preview-l2-closeup.png"
+          : POWERED ? "/workspace/group/preview-l2-powered.png"
                     : "/workspace/group/preview-l2.png";
 
 const TW = 128, TH = 64, HW = 64, HH = 32, LIFT = 32;
@@ -183,7 +188,12 @@ for (let r = 0; r < H; r++) for (let c = 0; c < layout[r].length; c++) {
 }
 
 // ---------------- draw objects (with glow) ----------------------------------
-const OBJ_ART = { // l2 legend object sym → art png name + is-lit glow
+const OBJ_ART = POWERED ? { // (L2-6) POST-G4 powered state: lit/on/open variants + brighter glow.
+  m: ["l2_debris_scrap", 0], R: ["l2_scrap", 0], s: ["l2_crate", 0], F: ["l2_dome", 0.25],
+  N: ["l2_neon", 0.95], T: ["l2_lamp_lit", 0.55], E: ["l2_gen_main_on", 0.5], e: ["l2_gen_sub_on", 0.45],
+  K: ["l2_breaker", 0.2], B: ["l2_bridge_on", 0.6], D: ["l2_door_open", 0],
+  O: ["l2_tower_lit", 0.7], "1": ["l2_screen_on", 0.45], "2": ["l2_antenna", 0.55], "4": ["l2_crate", 0],
+} : { // l2 legend object sym → art png name + is-lit glow (dead/dormant baseline)
   m: ["l2_debris_scrap", 0], R: ["l2_scrap", 0], s: ["l2_crate", 0], F: ["l2_dome", 0.15],
   N: ["l2_neon", 0.9], T: ["l2_lamp", 0], E: ["l2_gen_main", 0], e: ["l2_gen_sub", 0],
   K: ["l2_breaker", 0], B: ["l2_bridge_off", 0], D: ["l2_door_closed", 0],
@@ -196,9 +206,10 @@ for (let r = 0; r < H; r++) for (let c = 0; c < layout[r].length; c++) {
   const objSpec = legend.objects[sym];
   const artInfo = OBJ_ART[sym];
   if (!objSpec && !artInfo) continue;
-  // blackout gate cells: the sealed N bottleneck (rows<17, central) get the blackout overlay.
+  // blackout gate cells: the sealed N bottleneck (rows<17, central) get the blackout overlay —
+  // UNLESS powered (the G3 정전 병목 is lit once the station reawakens; the neon reads bright).
   let art, off, glowStrength;
-  const isBlackoutN = sym === "N" && r < 17 && c >= 16 && c <= 21;
+  const isBlackoutN = !POWERED && sym === "N" && r < 17 && c >= 16 && c <= 21;
   if (isBlackoutN) { art = "l2_blackout"; off = [0, -8]; glowStrength = 0; }
   else if (artInfo) {
     art = artInfo[0]; glowStrength = artInfo[1];
@@ -216,6 +227,21 @@ draws.sort((a, b) => a.depth - b.depth);
 for (const d of draws) {
   if (d.glowStrength > 0) glow(Math.round(d.gx), Math.round(d.gy), 34, d.glowStrength);
   blit(d.src, d.sx, d.sy, { tone: true });
+}
+
+// (L2-6) POWERED: lay cyan light pools + floor glow on the now-lit walkways — the energy bridge
+// (B) and the opened shield door (D) read as illuminated, walkable paths (post-G1/G2). Mirrors
+// the in-game _light_bridge / _open_door cyan pool decals.
+if (POWERED) {
+  for (let r = 0; r < H; r++) for (let c = 0; c < layout[r].length; c++) {
+    const sym = layout[r][c];
+    if (sym !== "B" && sym !== "D") continue;
+    const [lx, ly] = cellLocal(c, r);
+    const bx = OX + lx, by = OY + ly - heightAt(c, r) * LIFT;
+    if (CYAN_POOL) blit(CYAN_POOL, Math.round(bx - CYAN_POOL.width / 2),
+      Math.round(by - CYAN_POOL.height / 2 + HH * 0.4), { additive: true, alpha: 0.6 });
+    glow(Math.round(bx), Math.round(by + HH * 0.3), 26, 0.4);
+  }
 }
 
 // workbench (spawned by the session, not a layout symbol) at special.workbench_cell
