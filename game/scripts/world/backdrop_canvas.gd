@@ -9,6 +9,9 @@ const BOTTOM := Color("#1e1a2e")
 ## (L2-2) colder-blue void gradient for the science station (남색 mood, no violet warmth).
 const L2_TOP := Color("#0b1018")
 const L2_BOTTOM := Color("#131c2c")
+## (L3-2) warm copper/ember void gradient for the machine city (구리 mood, dead warmth).
+const L3_TOP := Color("#140d07")
+const L3_BOTTOM := Color("#241810")
 
 const STAR_COUNT := 90
 const DUST_COUNT := 140
@@ -23,6 +26,17 @@ var _l2_mood: bool = false
 const NEBULA_COL := Color(0.42, 0.28, 0.62, 1.0)
 ## (L2-2) cyan-teal nebula for the science void.
 const NEBULA_COL_L2 := Color(0.20, 0.46, 0.52, 1.0)
+## (L3-2) warm orange-ember nebula for the machine void.
+const NEBULA_COL_L3 := Color(0.62, 0.36, 0.16, 1.0)
+
+## (L3-2) Layer-3 city mood: warm copper gradient + orange-ember nebula.
+var _l3_mood: bool = false
+
+func set_l3_mood(on: bool) -> void:
+	_l3_mood = on
+	_home_mood = on  # reuse the denser-field path
+	_seed_field()
+	queue_redraw()
 
 func set_home_mood(on: bool) -> void:
 	_home_mood = on
@@ -117,8 +131,8 @@ func _draw() -> void:
 	var h := _size.y
 	# vertical gradient via a stack of horizontal bands (cheap, no shader).
 	var bands := 48
-	var top_col := L2_TOP if _l2_mood else TOP
-	var bot_col := L2_BOTTOM if _l2_mood else BOTTOM
+	var top_col := (L3_TOP if _l3_mood else (L2_TOP if _l2_mood else TOP))
+	var bot_col := (L3_BOTTOM if _l3_mood else (L2_BOTTOM if _l2_mood else BOTTOM))
 	for i in range(bands):
 		var t := float(i) / float(bands - 1)
 		var col := top_col.lerp(bot_col, t)
@@ -134,7 +148,7 @@ func _draw() -> void:
 			var t := float(i) / float(rings - 1)     # 0 centre .. 1 edge
 			var rr := maxr * t
 			var a := (1.0 - t) * (1.0 - t) * 0.05     # very soft
-			var col := NEBULA_COL_L2 if _l2_mood else NEBULA_COL
+			var col := (NEBULA_COL_L3 if _l3_mood else (NEBULA_COL_L2 if _l2_mood else NEBULA_COL))
 			col.a = a
 			draw_circle(nc, maxf(1.0, maxr - rr), col)
 	# static faint dust specks
@@ -149,5 +163,9 @@ func _draw() -> void:
 		draw_rect(Rect2(s["pos"], Vector2(sz, sz)), col)
 	# drifting motes (soft violet, low-alpha discs; cyan under the L2 mood)
 	for m in _motes:
-		var mc := Color(0.36, 0.72, 0.78, m["a"]) if _l2_mood else Color(0.62, 0.48, 0.85, m["a"])
+		var mc := Color(0.62, 0.48, 0.85, m["a"])
+		if _l3_mood:
+			mc = Color(0.85, 0.56, 0.28, m["a"])
+		elif _l2_mood:
+			mc = Color(0.36, 0.72, 0.78, m["a"])
 		draw_circle(m["pos"], m["r"], mc)

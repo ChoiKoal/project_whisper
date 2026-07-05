@@ -22,6 +22,10 @@ const CANVAS_SCRIPT := "res://scripts/world/backdrop_canvas.gd"
 ## the science station floats in a colder void than the violet home island. Mutually exclusive
 ## with home_mood (l2 wins if both set).
 @export var l2_mood: bool = false
+## (L3-2) Layer-3 「태엽이 멈춘 도시」 void mood: warm copper starfield + an orange-tinted ember
+## nebula, so the machine city floats in a warm dead-ember void (vs L2's cold cyan). Mutually
+## exclusive with the others (l3 wins if set alongside l2/home).
+@export var l3_mood: bool = false
 
 var _canvas: Control
 
@@ -36,7 +40,9 @@ func _ready() -> void:
 	if scr != null:
 		_canvas.set_script(scr)
 	add_child(_canvas)
-	if l2_mood and _canvas.has_method("set_l2_mood"):
+	if l3_mood and _canvas.has_method("set_l3_mood"):
+		_canvas.call("set_l3_mood", true)
+	elif l2_mood and _canvas.has_method("set_l2_mood"):
 		_canvas.call("set_l2_mood", true)
 	elif home_mood and _canvas.has_method("set_home_mood"):
 		_canvas.call("set_home_mood", true)

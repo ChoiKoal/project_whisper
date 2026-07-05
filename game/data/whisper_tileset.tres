@@ -1,4 +1,4 @@
-[gd_resource type="TileSet" load_steps=39 format=3 uid="uid://bwhisperts0001"]
+[gd_resource type="TileSet" load_steps=51 format=3 uid="uid://bwhisperts0001"]
 
 [ext_resource type="Texture2D" uid="uid://cna2wj7lr1xme" path="res://assets/tiles/t0_void.png" id="1_t0"]
 [ext_resource type="Texture2D" uid="uid://c0h0llow00t01" path="res://assets/tiles/t0_hollow.png" id="11_t0h"]
@@ -19,6 +19,12 @@
 [ext_resource type="Texture2D" path="res://assets/tiles/l2_ash.png" id="17_l2a"]
 [ext_resource type="Texture2D" path="res://assets/tiles/l2_coolant_anim.png" id="18_l2w"]
 [ext_resource type="Texture2D" path="res://assets/tiles/l2_dark.png" id="19_l2d"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l3_brass.png" id="20_l3b"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l3_pipe.png" id="21_l3p"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l3_grate.png" id="22_l3g"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l3_platform.png" id="23_l3m"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l3_plaza.png" id="24_l3o"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l3_dark.png" id="25_l3d"]
 
 [sub_resource type="TileSetAtlasSource" id="src_t0"]
 texture = ExtResource("1_t0")
@@ -211,6 +217,61 @@ texture_region_size = Vector2i(128, 64)
 0:0/0/custom_data_3 = 1.0
 0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(0, -32, 64, 0, 0, 32, -64, 0)
 
+[sub_resource type="TileSetAtlasSource" id="src_l3b"]
+texture = ExtResource("20_l3b")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l3p"]
+texture = ExtResource("21_l3p")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l3g"]
+texture = ExtResource("22_l3g")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l3m"]
+texture = ExtResource("23_l3m")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l3o"]
+texture = ExtResource("24_l3o")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l3d"]
+texture = ExtResource("25_l3d")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = false
+0:0/0/custom_data_3 = 1.0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(0, -32, 64, 0, 0, 32, -64, 0)
+
 [resource]
 tile_shape = 1
 tile_layout = 0
@@ -244,3 +305,9 @@ sources/16 = SubResource("src_l2g")
 sources/17 = SubResource("src_l2a")
 sources/18 = SubResource("src_l2w")
 sources/19 = SubResource("src_l2d")
+sources/20 = SubResource("src_l3b")
+sources/21 = SubResource("src_l3p")
+sources/22 = SubResource("src_l3g")
+sources/23 = SubResource("src_l3m")
+sources/24 = SubResource("src_l3o")
+sources/25 = SubResource("src_l3d")

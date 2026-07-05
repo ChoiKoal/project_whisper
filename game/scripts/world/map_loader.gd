@@ -47,6 +47,9 @@ const HEIGHT_PATH := "res://data/map_height.txt"
 ## palette (CliffGen.make_apron metal=true) instead of the grove rock palette — for the Layer-2
 ## science station. Off for grove/home (rock).
 @export var l2_cliff_palette: bool = false
+## (L3-1) When true, cliff aprons use the copper/brass palette (CliffGen.make_apron brass=true)
+## for the Layer-3 machine city 「태엽이 멈춘 도시」. Off for grove/home/L2.
+@export var l3_cliff_palette: bool = false
 const ATLAS := Vector2i(0, 0)
 
 ## Deterministic global seed mixed into every procedural hash (map coords → value).
@@ -705,7 +708,7 @@ func _build_shard_aprons() -> void:
 			var east_open := not _is_island_cell(cell + Vector2i(1, 0))    # +col → screen SE
 			if south_open or east_open:
 				var salt := CliffGen.hash2(cell.x, cell.y, 733)
-				var img := CliffGen.make_apron(1, east_open, south_open, salt, l2_cliff_palette)
+				var img := CliffGen.make_apron(1, east_open, south_open, salt, l2_cliff_palette, l3_cliff_palette)
 				var s := Sprite2D.new()
 				s.texture = ImageTexture.create_from_image(img)
 				s.centered = false
@@ -1138,7 +1141,7 @@ func _build_cliff_faces() -> void:
 		if drop <= 0:
 			continue
 		var salt := CliffGen.hash2(cell.x, cell.y, 611)
-		var img := CliffGen.make_apron(drop, se_drop > 0, sw_drop > 0, salt, l2_cliff_palette)
+		var img := CliffGen.make_apron(drop, se_drop > 0, sw_drop > 0, salt, l2_cliff_palette, l3_cliff_palette)
 		var tex := ImageTexture.create_from_image(img)
 		var s := Sprite2D.new()
 		s.texture = tex
@@ -1366,6 +1369,13 @@ func _spawn_object(sym: String, cell: Vector2i, spec: Dictionary) -> void:
 	if kind == "l2obj":
 		_spawn_l2_object(sym, cell, spec, world)
 		return
+	# (L3-1) Layer-3 machine objects reuse the exact same data-driven spawn path as L2 — the
+	# spec carries its own art (l3_*), offset, glow, gatherable, blocking, l3 id. Only the
+	# `kind` string differs so the two legends stay independent. The gate/gather infra
+	# (l2_object_nodes, blackout overlay, set_gate_cell_walkable) is layer-agnostic and shared.
+	if kind == "l3obj":
+		_spawn_l2_object(sym, cell, spec, world)
+		return
 	match sym:
 		"C":
 			cauldron_cell = cell
@@ -1504,6 +1514,17 @@ func l2_set_gate_cell_walkable(cell: Vector2i, walkable: bool) -> void:
 		GameState.tile_walkable_changed.emit(cell)
 
 
+## (L3-3) Layer-agnostic gate-cell walkable swap. Same mechanism as l2_set_gate_cell_walkable
+## but the lit/sealed source ids are parameterized so Layer-3 (brass sources) can open its
+## gear-bridge / boiler-valve / elevator / clock-neck cells with its own art. `lit_source` is
+## the walkable tile shown when open; `dark_source` re-seals it. Emits tile_walkable_changed so
+## the AStar grid rebuilds (same as the stepping-stone / L2 bridge swap).
+func set_gate_cell_source(cell: Vector2i, walkable: bool, lit_source: int, dark_source: int) -> void:
+	set_cell(cell, lit_source if walkable else dark_source, ATLAS)
+	if GameState != null:
+		GameState.tile_walkable_changed.emit(cell)
+
+
 ## (L2-3) The legend `gates` block ({} on non-L2 maps). The L2 gate controller reads gate cell
 ## lists (bridge/door/breaker/gen/core) from here so gate topology stays data-driven.
 func legend_gates() -> Dictionary:
@@ -1533,7 +1554,10 @@ func _spawn_l2_object(sym: String, cell: Vector2i, spec: Dictionary, world: Vect
 	# 17-18) are NOT in blackout_cells, so they still spawn neon normally.
 	if l2_blackout_cells.has(cell):
 		var ov := Sprite2D.new()
-		ov.texture = load("res://assets/objects/l2_blackout.png")
+		# Layer-3 has no held-item blackout gate (G3 is an elevator, not a dark bottleneck), so
+		# this branch only ever fires on L2. Keep the L2 art but guard the path for safety.
+		var bo_path := "res://assets/objects/l2_blackout.png"
+		ov.texture = load(bo_path)
 		ov.offset = Vector2(0, -8)
 		ov.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		ov.z_index = 1
@@ -1577,8 +1601,12 @@ func _spawn_l2_object(sym: String, cell: Vector2i, spec: Dictionary, world: Vect
 	_place(node, world)
 	# cyan additive glow for lit/active objects (neon cluster, lit machines). Reuses the
 	# cyan light-pool decal (reparents onto the CanvasModulate-free glow layer at runtime).
-	if String(spec.get("glow", "")) == "cyan":
+	# cyan (L2) or orange (L3) additive glow for lit/active objects. Reuses the light-pool decal.
+	var glow_kind := String(spec.get("glow", ""))
+	if glow_kind == "cyan":
 		_add_light_pool(node, "res://assets/objects/light_pool_cyan.png", Vector2(off.x, off.y * 0.4), float(spec.get("glow_scale", 0.8)))
+	elif glow_kind == "orange":
+		_add_light_pool(node, "res://assets/objects/light_pool_orange.png", Vector2(off.x, off.y * 0.4), float(spec.get("glow_scale", 0.8)))
 	if l2_id == "workbench":
 		l2_workbench_cell = cell
 	l2_object_nodes[l2_id + "@" + str(cell)] = {"cell": cell, "node": node, "spec": spec}

@@ -1,0 +1,70 @@
+{
+  "_comment": "Project Whisper Layer 3 (제3세계 기계의 세계) 「태엽이 멈춘 도시」 legend. Symbol -> (tileset source, l3obj spec). Parsed by the SAME MapLoader as grove/home/L2 (parameterized paths, kind:'l3obj' dispatch). Tile source ids: B=20 brass plaza, p=21 pipe, G=22 grate, M=23 platform(+1), O=24 plaza(+2), dark=25 sealed(non-walkable, used for STATIC-CLOSED gate cells g/v/L/H). K* = Layer-3 gather ids. Gate LOGIC = stage L3-3 (l3_gate_controller). 기획 수정 = 이 파일 + l3_map_layout.txt + l3_map_height.txt.",
+  "tiles": {
+    "B": {"source": 20, "tile_id": "L3T-B"},
+    "p": {"source": 21, "tile_id": "L3T-p"},
+    "G": {"source": 22, "tile_id": "L3T-G"},
+    "M": {"source": 23, "tile_id": "L3T-M"},
+    "O": {"source": 24, "tile_id": "L3T-O"},
+    "V": {"source": 0, "tile_id": "T0", "walkable": false, "void": true},
+    "S": {"source": 20, "tile_id": "L3T-B", "spawn": true},
+    "t": {"source": 20, "tile_id": "L3T-B"},
+    "r": {"source": 22, "tile_id": "L3T-G"},
+    "b": {"source": 20, "tile_id": "L3T-B"},
+    "w": {"source": 22, "tile_id": "L3T-G"},
+    "l": {"source": 22, "tile_id": "L3T-G"},
+    "k": {"source": 22, "tile_id": "L3T-G"},
+    "f": {"source": 20, "tile_id": "L3T-B"},
+    "X": {"source": 20, "tile_id": "L3T-B", "walkable": false},
+    "E": {"source": 22, "tile_id": "L3T-G", "walkable": false},
+    "C": {"source": 23, "tile_id": "L3T-M", "walkable": false},
+    "K": {"source": 24, "tile_id": "L3T-O", "walkable": false},
+    "g": {"source": 25, "tile_id": "L3T-dark", "walkable": false},
+    "v": {"source": 25, "tile_id": "L3T-dark", "walkable": false},
+    "L": {"source": 25, "tile_id": "L3T-dark", "walkable": false},
+    "H": {"source": 25, "tile_id": "L3T-dark", "walkable": false},
+    "1": {"source": 24, "tile_id": "L3T-O"},
+    "2": {"source": 22, "tile_id": "L3T-G"},
+    "3": {"source": 22, "tile_id": "L3T-G"},
+    "4": {"source": 20, "tile_id": "L3T-B"}
+  },
+  "objects": {
+    "t": {"kind": "l3obj", "l2_id": "spring_debris", "art": "l3_spring_debris", "offset": [0, -22], "gatherable": {"item_id": "K1"}, "blocks": false},
+    "r": {"kind": "l3obj", "l2_id": "gear_pile", "art": "l3_gear_pile", "offset": [0, -22], "gatherable": {"item_id": "K2"}, "blocks": false},
+    "b": {"kind": "l3obj", "l2_id": "brass_scrap", "art": "l3_brass_scrap", "offset": [0, -22], "gatherable": {"item_id": "K3"}, "blocks": false},
+    "w": {"kind": "l3obj", "l2_id": "condensate", "art": "l3_condensate", "offset": [0, -14], "glow": "orange", "glow_scale": 0.4, "gatherable": {"item_id": "K4"}, "blocks": false},
+    "l": {"kind": "l3obj", "l2_id": "belt_spool", "art": "l3_belt_spool", "offset": [0, -22], "gatherable": {"item_id": "K5"}, "blocks": false},
+    "k": {"kind": "l3obj", "l2_id": "coal_seam", "art": "l3_coal_seam", "offset": [0, -20], "gatherable": {"item_id": "K6"}, "blocks": false},
+    "f": {"kind": "l3obj", "l2_id": "grimy_glass", "art": "l3_grimy_glass", "offset": [0, -22], "gatherable": {"item_id": "K7"}, "blocks": false},
+    "X": {"kind": "l3obj", "l2_id": "gear_assembly", "art": "l3_gear_assembly", "offset": [0, -34], "blocks": true, "block_radius": 18, "gate": "G1", "place_slot": "D104"},
+    "E": {"kind": "l3obj", "l2_id": "boiler", "art": "l3_boiler", "offset": [0, -70], "blocks": true, "block_radius": 40, "gate": "G2", "landmark": true},
+    "C": {"kind": "l3obj", "l2_id": "elevator_ctrl", "art": "l3_elevator_ctrl", "offset": [0, -40], "blocks": true, "block_radius": 20, "gate": "G3", "place_slot": "D108"},
+    "K": {"kind": "l3obj", "l2_id": "clock_mount", "art": "l3_clock_mount", "offset": [0, -34], "blocks": true, "block_radius": 16, "gate": "G4", "place_slot": "D111"},
+    "g": {"kind": "l3obj", "l2_id": "gear_bridge", "art": "l3_gear_bridge_off", "offset": [0, 0], "gate": "G1"},
+    "v": {"kind": "l3obj", "l2_id": "valve_door", "art": "l3_valve_door_closed", "offset": [0, -48], "blocks": true, "block_radius": 30, "gate": "G2"},
+    "L": {"kind": "l3obj", "l2_id": "elevator", "art": "l3_elevator", "offset": [0, -64], "blocks": true, "block_radius": 30, "gate": "G3", "landmark": true},
+    "H": {"kind": "l3obj", "l2_id": "clock_neck", "art": "l3_gear_bridge_off", "offset": [0, 0], "gate": "G4"},
+    "1": {"kind": "l3obj", "l2_id": "grand_clock", "art": "l3_grand_clock", "offset": [0, -150], "glow": "orange", "glow_scale": 0.5, "blocks": true, "block_radius": 60, "landmark": true},
+    "2": {"kind": "l3obj", "l2_id": "boiler_landmark", "art": "l3_boiler_landmark", "offset": [0, -70], "blocks": true, "block_radius": 40, "landmark": true},
+    "3": {"kind": "l3obj", "l2_id": "elevator_cage", "art": "l3_elevator", "offset": [0, -64], "blocks": true, "block_radius": 30, "landmark": true},
+    "4": {"kind": "l3obj", "l2_id": "parts_pile_tut", "art": "l3_parts_pile", "offset": [0, -24], "gatherable": {"item_id": "K2"}, "blocks": false, "landmark": true}
+  },
+  "landmarks": {
+    "1": "grand_clock",
+    "2": "boiler_landmark",
+    "3": "elevator_cage",
+    "4": "tutorial_parts"
+  },
+  "_coord_note": "All cell coords are (col,row) matching l3_map_layout.txt (byte-identical to doc §A-2). The doc §A-4 table is ~1 col left of the ASCII spine; the ASCII is authoritative and these coords track it. Gate bottleneck cells g/v/L/H are STATIC-CLOSED via the dark source (25); the L3 gate controller opens them with set_gate_cell_source(cell, true, lit_source, 25).",
+  "gates": {
+    "G1": {"type": "placement", "kind": "power_node", "node_id": "gate_gear", "bridge_cells": [[18,29],[19,29],[18,30],[19,30]], "assembly": [[18,28]], "lit_source": 20},
+    "G2": {"type": "use", "target": "boiler", "boiler_cell": [17,19], "door_cells": [[18,19],[19,19],[18,20],[19,20]], "lit_source": 22},
+    "G3": {"type": "placement", "kind": "power_node", "node_id": "elevator", "lift_cells": [[18,10],[19,10],[18,11],[19,11]], "ctrl": [[17,11]], "lit_source": 23},
+    "G4": {"type": "chain", "kind": "power_node", "node_id": "clock_core", "neck_cells": [[18,4],[19,4],[18,5],[19,5]], "mount": [[19,2]], "lit_source": 24}
+  },
+  "special": {
+    "workbench_cell": [17, 37],
+    "_workbench_note": "정비대 (L3 crafting station). Spawned by the ClockworkCity session ~west of spawn S(19,37) on brass pavement. §A-7: '스폰 인접, 첫 조합 ≤4분'.",
+    "sub_boiler_cells": [[17, 19]]
+  }
+}

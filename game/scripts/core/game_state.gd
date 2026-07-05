@@ -44,6 +44,14 @@ signal layer2_purified(layer: String)
 ## portal (machine) opening in later layers, mirroring the Layer-1 `cleared` flag.
 var layer2_purified_flag: bool = false
 
+## (L3-3) Emitted when the 대시계 재가동 (G4) completes the Layer-3 정화 컷신. Carries the
+## purified layer id ("machine"). The ClockworkCity session hooks return-to-home + the next
+## portal (magic) opening; the flag persists.
+signal layer3_purified(layer: String)
+## (L3-3) True once Layer 3 (machine) is 정화된 (대시계 재가동 완료). Saved; drives the magic
+## portal opening, mirroring layer2_purified_flag.
+var layer3_purified_flag: bool = false
+
 
 ## (L2-3) Mark a power node energized (idempotent). Records it in `powered_nodes` and announces
 ## it so gate listeners (bridge swap / clear cutscene) and quests react. No signal if already on.
@@ -64,6 +72,13 @@ func is_power_node_energized(node_id: String) -> bool:
 func reset_layer2() -> void:
 	powered_nodes.clear()
 	layer2_purified_flag = false
+
+
+## (L3-3) Reset Layer-3 power/purification state to the new-game baseline. Called by new game /
+## NG+. Note: powered_nodes is a shared set (L2 + L3 node ids); reset_layer2 already clears it,
+## so this only clears the L3 purified flag. Kept as a distinct call for clarity/parity.
+func reset_layer3() -> void:
+	layer3_purified_flag = false
 
 ## (v0.4.0-C) Emitted when a structure/decor item is PLACED into the world (persistent
 ## PlacedObject). `item_id` = the placed item, `cell` = its tile. Quests/audio hook here.
