@@ -158,7 +158,7 @@ func _test_fusion_juice(map: Node) -> void:
 	if fusion_ui == null:
 		return
 
-	# Give the two ingredients for a known recipe (R04: I5 꽃 + I2 풀 → D03 씨앗) and
+	# Give the two ingredients for a known recipe (R07: I5 꽃 + I2 풀 → D54 초원) and
 	# drive the UI's real fuse path so the juice sequence runs end-to-end.
 	Inventory.add("I5", 2)
 	Inventory.add("I2", 2)
@@ -175,7 +175,7 @@ func _test_fusion_juice(map: Node) -> void:
 	for _i in range(120):
 		await get_tree().process_frame
 
-	_check("fusion logic intact: D03 씨앗 crafted", Inventory.count("D03") >= 1)
+	_check("fusion logic intact: D54 초원 crafted", Inventory.count("D54") >= 1)
 	_check("fusion logic intact: recipe recorded in codex",
 		Codex.discovered_recipe_count() > recipes_before)
 	_check("juice sequence finished (not stuck animating)",
@@ -183,7 +183,7 @@ func _test_fusion_juice(map: Node) -> void:
 	# The result slot popped in with the crafted item's name.
 	var rname: Label = fusion_ui.get("_result_name")
 	_check("result card shows the crafted item",
-		rname != null and String(rname.text) == ItemDB.item_name("D03"))
+		rname != null and String(rname.text) == ItemDB.item_name("D54"))
 
 	# Skip-by-click path: run a second fuse and immediately skip.
 	Inventory.add("I5", 2)
@@ -196,4 +196,4 @@ func _test_fusion_juice(map: Node) -> void:
 		fusion_ui.call("_skip_sequence")
 	await get_tree().process_frame
 	_check("click-skip jumps straight to result (not animating)",
-		not bool(fusion_ui.get("_animating")) and Inventory.count("D03") >= 2)
+		not bool(fusion_ui.get("_animating")) and Inventory.count("D54") >= 2)

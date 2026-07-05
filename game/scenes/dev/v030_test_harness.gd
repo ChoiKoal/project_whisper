@@ -133,7 +133,7 @@ func _test_codex(map: Node) -> void:
 	if codex == null:
 		return
 
-	# --- recipe-row test: craft D03 씨앗 via R04 (I5 꽃 + I2 풀) through the real
+	# --- recipe-row test: craft D54 초원 via R07 (I5 꽃 + I2 풀) through the real
 	# fusion path so the recipe is discovered, then check the detail pane. ---
 	var fusion_ui = map.get_node_or_null("FusionUI")
 	Inventory.add("I5", 1)
@@ -146,7 +146,7 @@ func _test_codex(map: Node) -> void:
 	for _i in range(120):
 		await get_tree().process_frame
 	fusion_ui.call("close") if fusion_ui.has_method("close") else fusion_ui.call("_set_visible", false)
-	_check("R04 discovered (D03 씨앗 crafted)", Codex.is_recipe_discovered("R04"))
+	_check("R07 discovered (D54 초원 crafted)", Codex.is_recipe_discovered("R07"))
 
 	# Discover the 꽃-family items so the name filter has something to match.
 	for id in ["I5", "D16", "D18"]:
@@ -171,23 +171,23 @@ func _test_codex(map: Node) -> void:
 	shown = codex.get("_shown_ids")
 	_check("cleared search restores full catalog", shown.size() == ItemDB.all_ids().size())
 
-	# Recipe rows: select D03 씨앗; its detail should list exactly 1 discovered recipe
-	# row (R04). Undiscovered recipes outputting D03 (none here) stay hidden.
-	Codex.discover_item("D03")
+	# Recipe rows: select D54 초원; its detail should list exactly 1 discovered recipe
+	# row (R07, its only producer). Undiscovered recipes outputting D54 (none) stay hidden.
+	Codex.discover_item("D54")
 	codex.call("set_search", "")
-	codex.call("_on_cell_pressed", "D03")
+	codex.call("_on_cell_pressed", "D54")
 	await get_tree().process_frame
 	var rbox: VBoxContainer = codex.get("_recipe_box")
 	var row_count := _count_recipe_rows(rbox)
-	_check("D03 씨앗 detail lists exactly 1 discovered recipe row (R04)", row_count == 1)
+	_check("D54 초원 detail lists exactly 1 discovered recipe row (R07)", row_count == 1)
 
 	# An item with a recipe output that is NOT discovered shows the empty message.
-	# D04 is output of R05 (D03 + I7); R05 is undiscovered → 0 rows + placeholder.
-	Codex.discover_item("D04")
-	codex.call("_on_cell_pressed", "D04")
+	# D03 씨앗 is output of R20 (D54 초원 + I5 꽃); R20 is undiscovered → 0 rows + placeholder.
+	Codex.discover_item("D03")
+	codex.call("_on_cell_pressed", "D03")
 	await get_tree().process_frame
 	rbox = codex.get("_recipe_box")
-	_check("D04 (no discovered recipe) shows '아직 알아내지 못했다'",
+	_check("D03 (no discovered recipe) shows '아직 알아내지 못했다'",
 		_count_recipe_rows(rbox) == 0 and _has_none_label(rbox))
 
 	codex.call("close")

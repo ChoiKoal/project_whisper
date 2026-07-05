@@ -38,11 +38,12 @@ func _check(label: String, cond: bool) -> void:
 
 
 func _test_item_db() -> void:
-	# items.json = N canonical + 1 alias (D06 -> I4). Catalog grew to 57 canonical
-	# in recipes-v1.1 (D23~D49 expansion); assert canonical == records-minus-alias
-	# rather than a magic number so this survives future catalog growth.
+	# items.json = N canonical + 1 alias (D06 -> I4). Catalog grew to 68 canonical
+	# in recipes-v0.3.1 (base-pair canonicalization: +D50~D61, -석기 D11); assert
+	# canonical == records-minus-alias rather than a magic number so this survives
+	# future catalog growth.
 	_check("ItemDB loaded all canonical items (no alias in all_ids)",
-		ItemDB.all_ids().size() == 57 and not ItemDB.all_ids().has("D06"))
+		ItemDB.all_ids().size() == 68 and not ItemDB.all_ids().has("D06"))
 	_check("ItemDB resolves the 1 alias (D06)", ItemDB.resolve_id("D06") == "I4" and not ItemDB.all_ids().has("D06"))
 	_check("ItemDB I2 name = 풀", ItemDB.item_name("I2") == "풀")
 	_check("ItemDB D14 placeable_on T5A/T5B",

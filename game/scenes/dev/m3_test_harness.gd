@@ -7,11 +7,11 @@ extends Node
 ##
 ## Covered (per the M3 acceptance list):
 ##   - RecipeDB: order-independent matching, alias fold (D06 -> I4), all_recipes.
-##   - Fusion R04 (I5+I2 -> D03): success consumes inputs, adds output.
+##   - Fusion R07 (I5+I2 -> D54 초원): success consumes inputs, adds output.
 ##   - Wrong pair fails, does NOT consume, ticks the hint gauge once.
 ##   - Repeating the SAME wrong pair does NOT increment the gauge again.
 ##   - 5 DISTINCT wrong pairs -> a hint is revealed and the gauge resets.
-##   - UNIQUE-AS-CATALYST: fusing I9+I7 -> D19 leaves I9 in the inventory.
+##   - UNIQUE-AS-CATALYST: fusing I9+I7 -> D19 (R33) leaves I9 in the inventory.
 ##   - Codex item discovered-once whether gathered OR fused (I3: R01 vs gather).
 ##   - Codex recipe discovery (fusion success only) + to_dict/from_dict round-trip.
 
@@ -51,42 +51,45 @@ func _fresh() -> void:
 
 func _test_recipe_db() -> void:
 	_check("RecipeDB loaded 23+ recipes", RecipeDB.all_recipes().size() >= 23)
-	# R04 = I5 + I2 -> D03, order-independent.
+	# R07 = I5 꽃 + I2 풀 -> D54 초원, order-independent (owner CSV base-pair).
 	var r := RecipeDB.find_recipe(["I5", "I2"])
-	_check("RecipeDB find_recipe(I5,I2) = R04", r.get("id", "") == "R04")
+	_check("RecipeDB find_recipe(I5,I2) = R07", r.get("id", "") == "R07")
 	var r_rev := RecipeDB.find_recipe(["I2", "I5"])
-	_check("RecipeDB find_recipe is order-independent", r_rev.get("id", "") == "R04")
-	_check("RecipeDB unknown pair -> empty", RecipeDB.find_recipe(["I1", "I2"]).is_empty())
+	_check("RecipeDB find_recipe is order-independent", r_rev.get("id", "") == "R07")
+	# Every base-pair now has a recipe, so use a genuinely undefined pair (I3 진흙 +
+	# I4 나무 has no combo).
+	_check("RecipeDB unknown pair -> empty", RecipeDB.find_recipe(["I3", "I4"]).is_empty())
 	_check("RecipeDB rejects non-2 input arrays", RecipeDB.find_recipe(["I1"]).is_empty())
 
 
-# ---- R04 success ---------------------------------------------------------
+# ---- R07 success ---------------------------------------------------------
 
 func _test_r04_success_consumes() -> void:
 	_fresh()
 	Inventory.add("I5", 1)
 	Inventory.add("I2", 1)
 	var res := Fusion.fuse("I5", "I2")
-	_check("R04 fuse matched", res["matched"] == true)
-	_check("R04 output = D03", res["output"] == "D03")
-	_check("R04 consumed I5", Inventory.count("I5") == 0)
-	_check("R04 consumed I2", Inventory.count("I2") == 0)
-	_check("R04 added D03", Inventory.count("D03") == 1)
-	_check("R04 recorded recipe in codex", Codex.is_recipe_discovered("R04"))
-	_check("R04 recorded output item in codex", Codex.is_item_discovered("D03"))
+	_check("R07 fuse matched", res["matched"] == true)
+	_check("R07 output = D54 초원", res["output"] == "D54")
+	_check("R07 consumed I5", Inventory.count("I5") == 0)
+	_check("R07 consumed I2", Inventory.count("I2") == 0)
+	_check("R07 added D54", Inventory.count("D54") == 1)
+	_check("R07 recorded recipe in codex", Codex.is_recipe_discovered("R07"))
+	_check("R07 recorded output item in codex", Codex.is_item_discovered("D54"))
 
 
 # ---- wrong pair ----------------------------------------------------------
 
 func _test_wrong_pair_no_consume_and_gauge() -> void:
 	_fresh()
-	Inventory.add("I1", 1)  # 흙
-	Inventory.add("I2", 1)  # 풀  (I1+I2 is not a recipe)
+	# I1+I2 is now a recipe (R02 잔디); use I3 진흙 + I4 나무, which has no combo.
+	Inventory.add("I3", 1)  # 진흙
+	Inventory.add("I4", 1)  # 나무  (I3+I4 is not a recipe)
 	var g0 := Codex.hint_gauge()
-	var res := Fusion.fuse("I1", "I2")
+	var res := Fusion.fuse("I3", "I4")
 	_check("wrong pair not matched", res["matched"] == false)
-	_check("wrong pair did NOT consume I1", Inventory.count("I1") == 1)
-	_check("wrong pair did NOT consume I2", Inventory.count("I2") == 1)
+	_check("wrong pair did NOT consume I3", Inventory.count("I3") == 1)
+	_check("wrong pair did NOT consume I4", Inventory.count("I4") == 1)
 	_check("wrong pair ticked the gauge +1", Codex.hint_gauge() == g0 + 1)
 
 
@@ -94,11 +97,11 @@ func _test_wrong_pair_no_consume_and_gauge() -> void:
 
 func _test_repeat_same_pair_no_increment() -> void:
 	_fresh()
-	# First failure of I1+I2 credits the gauge; repeats must not.
-	Fusion.fuse("I1", "I2")
+	# First failure of I3+I4 credits the gauge; repeats must not.
+	Fusion.fuse("I3", "I4")
 	var g1 := Codex.hint_gauge()
-	Fusion.fuse("I1", "I2")
-	Fusion.fuse("I2", "I1")  # same pair, reversed order
+	Fusion.fuse("I3", "I4")
+	Fusion.fuse("I4", "I3")  # same pair, reversed order
 	var g2 := Codex.hint_gauge()
 	_check("first failure credited gauge (=1)", g1 == 1)
 	_check("repeated same wrong pair does NOT increment gauge", g2 == 1)
@@ -106,10 +109,11 @@ func _test_repeat_same_pair_no_increment() -> void:
 
 func _test_five_distinct_pairs_reveal_hint() -> void:
 	_fresh()
-	# Five DISTINCT non-recipe pairs. None of these are recipes:
-	# I1+I2, I1+I8, I2+I8, I1+I6*, I3+I8. (I6+I7=R02, I6+I8=R15, so avoid those.)
-	# Verify each intended pair really has no recipe first.
-	var pairs := [["I1", "I2"], ["I1", "I8"], ["I2", "I8"], ["I1", "I3"], ["I3", "I8"]]
+	# Five DISTINCT non-recipe pairs. Every base gather-pair now maps to a combo
+	# (owner CSV), so the surviving non-recipes all pair 진흙 I3 (which has no combos
+	# beyond R01/R19/R29/R42/R49) with dead-end partners: I3+I4, I3+I5, I3+I6,
+	# I3+I8, I1+I3. Verify each intended pair really has no recipe first.
+	var pairs := [["I3", "I4"], ["I3", "I5"], ["I3", "I6"], ["I3", "I8"], ["I1", "I3"]]
 	var all_nonrecipe := true
 	for p: Array in pairs:
 		if not RecipeDB.find_recipe(p).is_empty():
@@ -138,27 +142,28 @@ func _test_order_independence() -> void:
 	_fresh()
 	Inventory.add("I2", 1)
 	Inventory.add("I5", 1)
-	# Reversed argument order still hits R04.
+	# Reversed argument order still hits R07.
 	var res := Fusion.fuse("I2", "I5")
-	_check("fuse(I2,I5) reversed still matches R04", res["recipe_id"] == "R04")
-	_check("fuse(I2,I5) reversed produced D03", Inventory.count("D03") == 1)
+	_check("fuse(I2,I5) reversed still matches R07", res["recipe_id"] == "R07")
+	_check("fuse(I2,I5) reversed produced D54 초원", Inventory.count("D54") == 1)
 
 
 # ---- alias fold (D06 -> I4) ---------------------------------------------
 
 func _test_alias_fold() -> void:
 	_fresh()
-	# R11 = D09 + I4 -> D10. Pass the alias D06 (== I4) as the wood input; the
-	# recipe must still match because inputs canonicalize through resolve_id.
+	# R25 = D09 건초 + I4 나무 -> D10 둥지. Pass the alias D06 (== I4) as the wood
+	# input; the recipe must still match because inputs canonicalize through
+	# resolve_id.
 	_check("D06 resolves to I4", ItemDB.resolve_id("D06") == "I4")
 	var r := RecipeDB.find_recipe(["D09", "D06"])
-	_check("find_recipe folds alias D06 -> I4 (matches R11)", r.get("id", "") == "R11")
+	_check("find_recipe folds alias D06 -> I4 (matches R25)", r.get("id", "") == "R25")
 	# And a fuse using the alias id consumes from the I4 stack.
 	Inventory.add("D09", 1)
 	Inventory.add("D06", 1)  # folds into I4 stack
 	_check("alias add folded into I4 stack", Inventory.count("I4") == 1)
 	var res := Fusion.fuse("D09", "D06")
-	_check("fuse with alias input matched R11", res["recipe_id"] == "R11")
+	_check("fuse with alias input matched R25", res["recipe_id"] == "R25")
 	_check("fuse with alias consumed the I4 stack", Inventory.count("I4") == 0)
 	_check("fuse produced D10", Inventory.count("D10") == 1)
 
@@ -167,11 +172,11 @@ func _test_alias_fold() -> void:
 
 func _test_catalyst_unique_not_consumed() -> void:
 	_fresh()
-	# R20 = I9 + I7 -> D19. I9 is unique -> catalyst, must remain.
+	# R33 = I9 + I7 -> D19. I9 is unique -> catalyst, must remain.
 	Inventory.add("I9", 1)
 	Inventory.add("I7", 1)
 	var res := Fusion.fuse("I9", "I7")
-	_check("catalyst fuse matched R20", res["recipe_id"] == "R20")
+	_check("catalyst fuse matched R33", res["recipe_id"] == "R33")
 	_check("catalyst fuse produced D19", Inventory.count("D19") == 1)
 	_check("catalyst I9 (unique) NOT consumed", Inventory.count("I9") == 1)
 	_check("catalyst non-unique I7 consumed", Inventory.count("I7") == 0)
@@ -214,24 +219,25 @@ func _test_codex_recipe_discovery_and_save() -> void:
 	Inventory.add("I5", 1)
 	Inventory.add("I2", 1)
 	Fusion.fuse("I5", "I2")
-	_check("successful fuse discovered R04", Codex.is_recipe_discovered("R04"))
+	_check("successful fuse discovered R07", Codex.is_recipe_discovered("R07"))
 
 	# to_dict / from_dict round-trip preserves items, recipes, gauge, attempted.
-	Fusion.fuse("I1", "I8")  # a failed attempt -> gauge + attempted pair
+	# I1+I8 is now a recipe (R06 암석층), so use the dead-end I3+I4 for a failed attempt.
+	Fusion.fuse("I3", "I4")  # a failed attempt -> gauge + attempted pair
 	var snap := Codex.to_dict()
 	_check("snapshot has items", snap["items"].size() >= 2)
-	_check("snapshot has recipes", snap["recipes"].has("R04"))
+	_check("snapshot has recipes", snap["recipes"].has("R07"))
 	_check("snapshot has attempted_pairs", snap["attempted_pairs"].size() >= 1)
 	var gauge_before: int = Codex.hint_gauge()
 
 	Codex.reset()
 	_check("reset cleared recipes", Codex.discovered_recipe_count() == 0)
 	Codex.from_dict(snap)
-	_check("restore recovered R04", Codex.is_recipe_discovered("R04"))
+	_check("restore recovered R07", Codex.is_recipe_discovered("R07"))
 	_check("restore recovered gauge", Codex.hint_gauge() == gauge_before)
 	# Restored attempted pair must still be suppressed.
 	var g := Codex.hint_gauge()
-	Fusion.fuse("I1", "I8")  # already-attempted per the snapshot
+	Fusion.fuse("I3", "I4")  # already-attempted per the snapshot
 	_check("restored attempted pair stays suppressed", Codex.hint_gauge() == g)
 
 
@@ -269,15 +275,15 @@ func _test_scene_wiring() -> void:
 		_check("cauldron.on_interact() emits interacted", opened["hit"])
 		_check("FusionUI is open after cauldron interact", fusion_ui._open == true)
 
-	# Full loop: gather I5+I2 (grant), fuse -> D03 (R04), then D03+I7 -> D04 (R05).
+	# Full loop: gather I5+I2 (grant), fuse -> D54 초원 (R07), then D54+I5 -> D03 씨앗 (R20).
 	Inventory.add("I5", 1)
 	Inventory.add("I2", 1)
 	var r1 := Fusion.fuse("I5", "I2")
-	_check("loop step 1: I5+I2 -> D03", r1["output"] == "D03")
-	Inventory.add("I7", 1)
-	var r2 := Fusion.fuse("D03", "I7")
-	_check("loop step 2: D03+I7 -> D04", r2["output"] == "D04")
-	_check("loop discovered R04 and R05",
-		Codex.is_recipe_discovered("R04") and Codex.is_recipe_discovered("R05"))
+	_check("loop step 1: I5+I2 -> D54 초원", r1["output"] == "D54")
+	Inventory.add("I5", 1)
+	var r2 := Fusion.fuse("D54", "I5")
+	_check("loop step 2: D54+I5 -> D03 씨앗", r2["output"] == "D03")
+	_check("loop discovered R07 and R20",
+		Codex.is_recipe_discovered("R07") and Codex.is_recipe_discovered("R20"))
 
 	map.queue_free()

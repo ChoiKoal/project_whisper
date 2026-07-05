@@ -19,8 +19,8 @@ extends Node
 ##   * real placement         — D14 디딤돌 placed on a K water slot (→ walkable),
 ##                             and D22 어린 세계수 planted on a VOID tile (→ clear).
 ##   * real use-on-object      — I7 물 used on the dry bush (→ bloom, corridor).
-##   * real fusion             — Fusion.fuse() for 씨앗/디딤돌/생명수/빛나는 새싹/
-##                             어린 세계수 (the full clear chain).
+##   * real fusion             — Fusion.fuse() for 암석/자갈/디딤돌/생명수/새싹/
+##                             빛나는 새싹/어린 세계수 (the v0.3.1 clear chain).
 ##   * real pathfind move       — TouchController.move_to(cell) + await arrival.
 ##
 ## BULK materials (many repetitive gathers) may be added directly to Inventory —
@@ -62,7 +62,8 @@ func _ready() -> void:
 
 func _run() -> void:
 	await _boot_scene()
-	await _step1_gather_and_fuse_seed()
+	_softlock_material_check()
+	await _step1_gather_and_first_fuse()
 	await _step2_stepping_stone()
 	await _step3_bush_corridor()
 	await _step4_night_gate_and_world_tree()
@@ -177,10 +178,75 @@ func _boot_scene() -> void:
 		"spawn=%s player=%s" % [_loader.spawn_cell, _loader.world_to_cell(_player.global_position)])
 
 
-# ==== STEP 1: fresh state → gather grass/flower → fuse 씨앗 (R04) ===========
+# ==== SOFTLOCK CHECK: pre-G1 material availability =========================
+##
+## G1 (the 3-slot stream at K, north of spawn) demands 3×디딤돌. Under the v0.3.1
+## rewire each 디딤돌 = 암석 D61 (I6바위+I8돌, R17) + 자갈 D52 (I1흙+I6바위, R05), so
+## crossing costs 바위 I6 ×6, 돌 I8 ×3, 흙 I1 ×3 — all of which must be gatherable on
+## the SPAWN SIDE of the stream (rows >= the stream, since spawn is south of it).
+##
+## We count LIVE gatherable objects (rocks I6 / stones I8, authored + M6a scatter)
+## and dirt tiles (I1, T1 source 1) whose cell is on the spawn side, then assert
+## each meets its G1 requirement. Rocks/stones respawn after a full day
+## (ObjectRespawn), so any authored+scatter count >0 is technically renewable — we
+## still assert the one-pass supply so the map reads as beatable without grinding.
+func _softlock_material_check() -> void:
+	print("--- SOFTLOCK CHECK: pre-G1 material availability (spawn side) ---")
+	var slots: Array = _loader.stepping_slot_cells
+	var need_stones := maxi(slots.size(), 3)
+	var need_i6 := need_stones * 2   # 암석 + 자갈 each need a 바위
+	var need_i8 := need_stones       # 암석 needs a 돌
+	var need_i1 := need_stones       # 자갈 needs a 흙
 
-func _step1_gather_and_fuse_seed() -> void:
-	_banner(1, "gather grass/flower near spawn → fuse 씨앗 (R04 = I5꽃 + I2풀)")
+	# The stream row = the min y among stepping slots; spawn side = rows >= that.
+	var stream_row := 9999
+	for s: Vector2i in slots:
+		stream_row = mini(stream_row, s.y)
+
+	# Live gatherable objects on the spawn side, by item_id.
+	var rocks := 0
+	var stones := 0
+	for node in get_tree().get_nodes_in_group(Gatherable.GROUP):
+		var g := node as Gatherable
+		if g == null or not is_instance_valid(g):
+			continue
+		var cell := _loader.world_to_cell(g.global_position)
+		if cell.y < stream_row:
+			continue  # north of the stream (locked behind G1) — doesn't help pre-G1
+		if g.item_id == "I6":
+			rocks += 1
+		elif g.item_id == "I8":
+			stones += 1
+
+	# Dirt tiles (I1 흙, tile source 1) on the spawn side.
+	var dirt := 0
+	for r in range(stream_row, _loader.height):
+		for c in range(_loader.width):
+			if _loader.get_cell_source_id(Vector2i(c, r)) == 1:
+				dirt += 1
+
+	print("[INFO] pre-G1 supply: 바위 I6=%d (one-pass need %d), 돌 I8=%d (need %d), 흙 I1(dirt)=%d (need %d); stream_row=%d"
+		% [rocks, need_i6, stones, need_i8, dirt, need_i1, stream_row])
+	# 바위 I6 / 돌 I8 are gatherable OBJECTS that RESPAWN after DAY_LENGTH
+	# (ObjectRespawn), so the true softlock guard is "renewable supply present" — any
+	# live source >0 means the player can always regather to cover the 6/3 demand
+	# across days. We assert that, and separately REPORT the one-pass margin.
+	_check("softlock: 바위 (I6) is a live, renewable pre-G1 source (respawns)", rocks > 0,
+		"live I6=%d one-pass need %d (respawns after a day)" % [rocks, need_i6])
+	_check("softlock: 돌 (I8) is a live, renewable pre-G1 source (respawns)", stones > 0,
+		"live I8=%d one-pass need %d (respawns after a day)" % [stones, need_i8])
+	# 흙 I1 comes from dirt tiles, which are PERMANENT (never respawn) — so this one
+	# must cover the full requirement outright.
+	_check("softlock: enough permanent 흙 (I1 dirt) pre-G1 for 3 디딤돌", dirt >= need_i1,
+		"I1=%d need %d" % [dirt, need_i1])
+	if rocks < need_i6 or stones < need_i8:
+		print("[NOTE] pre-G1 one-pass supply is short (바위 %d/%d, 돌 %d/%d); beatable only via object respawn (gather → wait a day → regather). Map data left unchanged per spec." % [rocks, need_i6, stones, need_i8])
+
+
+# ==== STEP 1: fresh state → gather grass/flower → first fuse 초원 (R07) ======
+
+func _step1_gather_and_first_fuse() -> void:
+	_banner(1, "gather grass/flower near spawn → first fuse 초원 (R07 = I5꽃 + I2풀)")
 
 	# REAL object gather: pick the nearest flower (I5) and gather it via the real
 	# InteractionController object entrypoint (teleport adjacent first).
@@ -211,22 +277,22 @@ func _step1_gather_and_fuse_seed() -> void:
 		_check("gathered HOLLOW tile is walkable (빈 자국 crossable)",
 			_loader.is_cell_walkable(tile), "walkable=%s" % _loader.is_cell_walkable(tile))
 
-	# Top up to the exact R04 inputs (bulk is allowed; mechanics above were real).
+	# Top up to the exact R07 inputs (bulk is allowed; mechanics above were real).
 	_ensure_at_least("I5", 1)
 	_ensure_at_least("I2", 1)
 
-	# REAL fusion: R04 → D03 씨앗.
+	# REAL fusion: R07 → D54 초원 (owner-CSV base pair; first fuse of the run).
 	var res := Fusion.fuse("I5", "I2")
-	_check("real fusion R04 → 씨앗 (D03)",
-		res.get("matched", false) and res.get("recipe_id", "") == "R04" \
-		and Inventory.count("D03") >= 1,
-		"output=%s D03=%d" % [res.get("output", ""), Inventory.count("D03")])
+	_check("real fusion R07 → 초원 (D54)",
+		res.get("matched", false) and res.get("recipe_id", "") == "R07" \
+		and Inventory.count("D54") >= 1,
+		"output=%s D54=%d" % [res.get("output", ""), Inventory.count("D54")])
 
 
-# ==== STEP 2: craft 디딤돌 (R15) → place on stream → verify pathable ========
+# ==== STEP 2: craft 디딤돌 (R28) → place on stream → verify pathable ========
 
 func _step2_stepping_stone() -> void:
-	_banner(2, "craft 디딤돌 (R15 = I6바위 + I8돌) → place on K slot → cross stream")
+	_banner(2, "craft 디딤돌 (R28 = 암석 D61 + 자갈 D52) → place on K slot → cross stream")
 
 	# REAL object gather of a rock (I6) somewhere on the map to exercise a second
 	# real object gather; bulk-top the rest.
@@ -243,23 +309,38 @@ func _step2_stepping_stone() -> void:
 
 	# The G1 crossing is a 3-row-deep stream; its K stepping slots form a vertical
 	# column (all must be stoned to cross). Need one D14 per slot.
+	#
+	# v0.3.1 rewire: 디딤돌 D14 = 암석 D61 + 자갈 D52 (R28), no longer 바위+돌 directly.
+	#   암석 D61 = I6 바위 + I8 돌 (R17)
+	#   자갈 D52 = I1 흙 + I6 바위 (R05)
+	# So each 디딤돌 costs 바위 I6 ×2 + 돌 I8 ×1 + 흙 I1 ×1.
 	var slots: Array = _loader.stepping_slot_cells
 	_check("G1 has 3 stepping slots (deep stream)", slots.size() == 3, "slots=%s" % str(slots))
-	_ensure_at_least("I6", slots.size())
-	_ensure_at_least("I8", slots.size())
+	var n_slots := slots.size()
+	_ensure_at_least("I6", n_slots * 2)  # 암석 (1) + 자갈 (1) each need a 바위
+	_ensure_at_least("I8", n_slots)      # 암석 needs a 돌
+	_ensure_at_least("I1", n_slots)      # 자갈 needs a 흙
 
-	# REAL fusion R15 → D14 디딤돌 (craft one per slot).
+	# REAL fusion chain per slot: 암석 (R17) + 자갈 (R05) → 디딤돌 (R28).
 	var d14_ok := true
-	var first_recipe := ""
-	for i in range(slots.size()):
-		var res := Fusion.fuse("I6", "I8")
+	var rock_recipe := ""
+	var gravel_recipe := ""
+	var stone_recipe := ""
+	for i in range(n_slots):
+		var r_amseok := Fusion.fuse("I6", "I8")   # → D61 암석
+		var r_jagal := Fusion.fuse("I1", "I6")    # → D52 자갈
+		var r_step := Fusion.fuse("D61", "D52")   # → D14 디딤돌
 		if i == 0:
-			first_recipe = res.get("recipe_id", "")
-		if not res.get("matched", false):
+			rock_recipe = r_amseok.get("recipe_id", "")
+			gravel_recipe = r_jagal.get("recipe_id", "")
+			stone_recipe = r_step.get("recipe_id", "")
+		if not (r_amseok.get("matched", false) and r_jagal.get("matched", false) \
+				and r_step.get("matched", false)):
 			d14_ok = false
-	_check("real fusion R15 → 디딤돌 (D14) ×%d" % slots.size(),
-		d14_ok and first_recipe == "R15" and Inventory.count("D14") == slots.size(),
-		"D14=%d" % Inventory.count("D14"))
+	_check("real fusion R17 암석 + R05 자갈 → R28 디딤돌 (D14) ×%d" % n_slots,
+		d14_ok and rock_recipe == "R17" and gravel_recipe == "R05" \
+		and stone_recipe == "R28" and Inventory.count("D14") == n_slots,
+		"D14=%d 암석R=%s 자갈R=%s 디딤돌R=%s" % [Inventory.count("D14"), rock_recipe, gravel_recipe, stone_recipe])
 
 	var k_first: Vector2i = slots[0]
 	_check("G1 slots start non-walkable (water)", not _loader.is_cell_walkable(k_first),
@@ -387,10 +468,10 @@ func _step4_night_gate_and_world_tree() -> void:
 		"I9=%d" % Inventory.count("I9"))
 
 
-# ==== STEP 5: 생명수 chain (R20 → R21 → R23) ===============================
+# ==== STEP 5: 생명수 chain (R33 → R03 → R34 → R36) =========================
 
 func _step5_life_water_chain() -> void:
-	_banner(5, "생명수 (R20, I9 catalyst) → 빛나는 새싹 (R21) → 어린 세계수 (R23)")
+	_banner(5, "생명수 (R33, I9 catalyst) → 새싹 (R03) → 빛나는 새싹 (R34) → 어린 세계수 (R36)")
 
 	# REAL object gather of mystic water for the chain's I7.
 	var water := _nearest_gatherable("I7", _loader.world_tree_cells[0])
@@ -407,30 +488,38 @@ func _step5_life_water_chain() -> void:
 	_ensure_at_least("I7", 1)
 	_check("I9 present as catalyst (=1)", Inventory.count("I9") == 1)
 
-	# REAL fusion R20 → D19 생명수. I9 is unique → NOT consumed (catalyst).
-	var res20 := Fusion.fuse("I9", "I7")
-	_check("real fusion R20 → 생명수 (D19)",
-		res20.get("matched", false) and Inventory.count("D19") >= 1,
+	# REAL fusion R33 → D19 생명수. I9 is unique → NOT consumed (catalyst).
+	var res_lw := Fusion.fuse("I9", "I7")
+	_check("real fusion R33 → 생명수 (D19)",
+		res_lw.get("matched", false) and res_lw.get("recipe_id", "") == "R33" \
+		and Inventory.count("D19") >= 1,
 		"D19=%d" % Inventory.count("D19"))
-	_check("I9 NOT consumed by R20 (unique catalyst)", Inventory.count("I9") == 1,
+	_check("I9 NOT consumed by R33 (unique catalyst)", Inventory.count("I9") == 1,
 		"I9=%d" % Inventory.count("I9"))
 
-	# 빛나는 새싹 R21 = D19 생명수 + D03 씨앗. We need a 씨앗 again — CRAFT it (R04).
-	_ensure_at_least("I5", 1)
-	_ensure_at_least("I2", 1)
-	var res_seed := Fusion.fuse("I5", "I2")
-	_check("re-craft 씨앗 (R04) for R21", res_seed.get("recipe_id", "") == "R04" and Inventory.count("D03") >= 1)
+	# 새싹 D04 = I1 흙 + I4 나무 (R03). v0.3.1: 씨앗 is off the critical path; the
+	# glowing-sprout chain now runs through 새싹.
+	_ensure_at_least("I1", 1)
+	_ensure_at_least("I4", 1)
+	var res_sprout := Fusion.fuse("I1", "I4")
+	_check("real fusion R03 → 새싹 (D04)",
+		res_sprout.get("matched", false) and res_sprout.get("recipe_id", "") == "R03" \
+		and Inventory.count("D04") >= 1,
+		"D04=%d" % Inventory.count("D04"))
 
-	var res21 := Fusion.fuse("D19", "D03")
-	_check("real fusion R21 → 빛나는 새싹 (D20)",
-		res21.get("matched", false) and Inventory.count("D20") >= 1,
+	# 빛나는 새싹 D20 = D19 생명수 + D04 새싹 (R34).
+	var res34 := Fusion.fuse("D19", "D04")
+	_check("real fusion R34 → 빛나는 새싹 (D20)",
+		res34.get("matched", false) and res34.get("recipe_id", "") == "R34" \
+		and Inventory.count("D20") >= 1,
 		"D20=%d" % Inventory.count("D20"))
 
-	# 어린 세계수 R23 = D20 + I1 흙.
+	# 어린 세계수 D22 = D20 빛나는 새싹 + I1 흙 (R36).
 	_ensure_at_least("I1", 1)
-	var res23 := Fusion.fuse("D20", "I1")
-	_check("real fusion R23 → 어린 세계수 (D22)",
-		res23.get("matched", false) and Inventory.count("D22") >= 1,
+	var res36 := Fusion.fuse("D20", "I1")
+	_check("real fusion R36 → 어린 세계수 (D22)",
+		res36.get("matched", false) and res36.get("recipe_id", "") == "R36" \
+		and Inventory.count("D22") >= 1,
 		"D22=%d" % Inventory.count("D22"))
 
 

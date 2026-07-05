@@ -302,13 +302,6 @@ icons.D10 = (cv) => { // 둥지 nest
   disc(cv, 21, 30, 3, C.cream); disc(cv, 28, 31, 3, C.blueL); // eggs
   outline(cv, P.brownD);
 };
-icons.D11 = (cv) => { // 석기 stone tool (axe head)
-  // handle
-  line(cv, 30, 12, 20, 40, C.brownM, 3);
-  // grey blade
-  for (let y = 12; y < 26; y++) { const hw = 8 - Math.abs(y - 19) * 0.5; for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, x - 24 > 0 ? C.greyL : C.grey); }
-  outline(cv, '#3f3f48');
-};
 icons.D12 = (cv) => { // 목재 lumber (stacked cut logs)
   for (const [y0] of [[16], [26]]) {
     fillRect(cv, 10, y0, 38, y0 + 9, C.brown);
@@ -565,6 +558,131 @@ icons.D49 = (cv) => { // 생명의 정원 garden of life (glow family, grand)
   outline(cv, P.green);
 };
 
+// ---------- v0.3.1 base-recipe additions D50..D61 ----------
+icons.D50 = (cv) => { // 잔디 turf sod (green-field family: flat grass strip on soil)
+  fillRect(cv, 8, 30, 40, 40, C.brownM);            // soil base
+  fillRect(cv, 8, 30, 40, 33, C.brown);
+  for (let x = 9; x < 40; x += 2) {                 // dense short blades
+    const h = 6 + ((x * 7) % 5);
+    for (let y = 0; y < h; y++) setPx(cv, x, 30 - y, (x % 3) ? C.greenL : C.greenM);
+  }
+  outline(cv, P.green);
+};
+icons.D51 = (cv) => { // 화단 flower bed (flower family: soil mound + row of blooms)
+  ellipse(cv, 24, 36, 17, 7, C.brownM, C.brown);    // bed of soil
+  for (let x = 12; x < 38; x += 4) line(cv, x, 33, x, 39, C.brownD, 1); // furrows
+  const cols = [C.pinkL, C.violetL, C.goldL, C.pinkL, C.violetL];
+  for (let i = 0; i < 5; i++) {
+    const bx = 13 + i * 5;
+    fillRect(cv, bx, 24, bx + 1, 33, C.greenM);
+    disc(cv, bx, 22, 3, cols[i]); disc(cv, bx, 22, 1, C.gold);
+  }
+  outline(cv, P.brownD);
+};
+icons.D52 = (cv) => { // 자갈 gravel (stone family: scatter of small grey chips)
+  const pts = [[16,32],[24,34],[31,31],[20,38],[29,37],[24,29],[34,35],[14,37]];
+  for (let i = 0; i < pts.length; i++) {
+    const [px, py] = pts[i];
+    ellipse(cv, px, py, 3 + (i % 2), 2 + (i % 2), i % 2 ? C.greyL : C.grey, darker(C.grey, 18));
+  }
+  outline(cv, '#45454e');
+};
+icons.D53 = (cv) => { // 암석층 rock strata (stone family: horizontal banded slab)
+  const bands = [C.greyL, C.grey, darker(C.grey, 16), C.greyL, C.grey];
+  for (let i = 0; i < bands.length; i++) fillRect(cv, 9, 16 + i * 5, 39, 21 + i * 5, bands[i]);
+  for (let i = 1; i < bands.length; i++) fillRect(cv, 9, 16 + i * 5 - 1, 39, 16 + i * 5, C.greyD); // seams
+  outline(cv, '#3f3f48');
+};
+icons.D54 = (cv) => { // 초원 meadow (green-field family: rolling grass + a few flowers)
+  for (let x = 8; x < 40; x++) {                    // grassy hillline
+    const y = 28 - Math.round(Math.sin((x - 8) / 32 * Math.PI) * 5);
+    for (let yy = y; yy < 40; yy++) setPx(cv, x, yy, (yy < y + 3) ? C.greenL : ((yy % 2) ? C.greenM : C.green));
+  }
+  disc(cv, 16, 26, 2, C.pinkL); disc(cv, 27, 24, 2, C.goldL); disc(cv, 33, 27, 2, C.violetL); // wildflowers
+  outline(cv, P.green);
+};
+icons.D55 = (cv) => { // 이끼돌 moss stone (stone + moss: grey pebble with green cap)
+  ellipse(cv, 24, 33, 15, 11, C.grey, darker(C.grey, 22));
+  for (let y = 23; y < 32; y++) for (let x = 12; x < 36; x++) {
+    if (!getA(cv, x, y)) continue;
+    const dx = (x - 24) / 14, dy = (y - 30) / 9;
+    if (dx * dx + dy * dy <= 1 && y < 30 && ((x * 3 + y) % 4 !== 0))
+      setPx(cv, x, y, (x - y) > -2 ? C.greenL : C.greenM);
+  }
+  outline(cv, '#3f3f48');
+};
+icons.D56 = (cv) => { // 화관 flower crown (flower family: ring of blooms)
+  for (let a = 20; a <= 160; a += 3) {              // arc band of the circlet
+    const r = a * Math.PI / 180;
+    setPx(cv, 24 + Math.cos(r) * 14, 30 - Math.sin(r) * 13, C.greenM);
+    setPx(cv, 24 + Math.cos(r) * 13, 30 - Math.sin(r) * 12, C.green);
+  }
+  const cols = [C.pinkL, C.goldL, C.violetL, C.pinkL, C.goldL];
+  for (let i = 0; i < 5; i++) {
+    const a = (30 + i * 30) * Math.PI / 180;
+    ellipse(cv, 24 + Math.cos(a) * 14, 30 - Math.sin(a) * 13, 4, 4, cols[i], darker(cols[i], 30));
+  }
+  outline(cv, P.green);
+};
+icons.D57 = (cv) => { // 도끼 axe (tool family: wood handle + stone head)
+  line(cv, 20, 42, 28, 12, C.brownM, 3);            // wooden haft
+  line(cv, 20, 42, 28, 12, C.brownL, 1);
+  // stone axe head (grey wedge, upper right)
+  for (let y = 10; y < 24; y++) {
+    const hw = 9 - Math.abs(y - 16) * 0.6;
+    for (let x = 28 - hw; x <= 28 + hw; x++) setPx(cv, x, y, x - 28 > 0 ? C.greyL : C.grey);
+  }
+  fillRect(cv, 26, 15, 31, 17, darker(C.grey, 20));  // lashing
+  outline(cv, '#3f3f48');
+};
+icons.D58 = (cv) => { // 수액 sap (amber drop)
+  glowBehind(cv, 24, 28, 13, C.goldL);
+  const cx = 24;
+  for (let y = 12; y < 26; y++) {                    // teardrop top
+    const hw = Math.round((y - 12) / 14 * 8);
+    for (let x = cx - hw; x <= cx + hw; x++) setPx(cv, x, y, x - cx > 1 ? C.goldL : C.gold);
+  }
+  ellipse(cv, cx, 30, 10, 10, C.goldL, C.gold);      // bulb
+  disc(cv, cx + 3, 27, 2, C.white);                  // sheen
+  outline(cv, '#a8641e');
+};
+icons.D59 = (cv) => { // 돌도끼 stone axe (tool family: heavier double stone head)
+  line(cv, 19, 42, 27, 12, C.brown, 3);              // darker sturdier haft
+  line(cv, 19, 42, 27, 12, C.brownM, 1);
+  // broad double-bevel stone head
+  for (let y = 9; y < 25; y++) {
+    const hw = 11 - Math.abs(y - 17) * 0.55;
+    for (let x = 27 - hw; x <= 27 + hw; x++)
+      setPx(cv, x, y, x - 27 > 0 ? C.greyL : (x - 27 < -4 ? darker(C.grey, 16) : C.grey));
+  }
+  line(cv, 27, 10, 27, 24, darker(C.grey, 26), 1);   // centre ridge
+  fillRect(cv, 24, 16, 31, 18, darker(C.grey, 22));  // lashing
+  outline(cv, '#3f3f48');
+};
+icons.D60 = (cv) => { // 꽃병 flower vase (flower family: bloom in a vase)
+  for (let y = 26; y < 42; y++) {                     // vase body (blue ceramic)
+    const hw = 9 - Math.abs(y - 34) * 0.25;
+    for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, x - 24 > 0 ? C.blueM : C.blue);
+  }
+  fillRect(cv, 20, 24, 28, 27, C.blueM);              // rim
+  fillRect(cv, 23, 18, 25, 26, C.greenM);             // stem
+  for (let a = 0; a < 5; a++) {                       // bloom
+    const r = a * (Math.PI * 2 / 5) - Math.PI / 2;
+    ellipse(cv, 24 + Math.cos(r) * 6, 14 + Math.sin(r) * 6, 4, 4, C.pinkL, C.pink);
+  }
+  disc(cv, 24, 14, 2, C.goldL);
+  disc(cv, 21, 32, 2, C.blueL);                       // vase sheen
+  outline(cv, P.blueD);
+};
+icons.D61 = (cv) => { // 암석 boulder-on-stone (stone family: big rock stacked on a slab)
+  fillRect(cv, 10, 34, 38, 41, C.grey);               // slab
+  fillRect(cv, 10, 34, 38, 36, C.greyL);
+  ellipse(cv, 24, 26, 14, 11, C.greyL, C.grey);       // boulder
+  for (let y = 18; y < 26; y++) for (let x = 20; x < 34; x++) if (getA(cv, x, y)) setPx(cv, x, y, lighter(C.greyL, 8));
+  line(cv, 24, 16, 20, 32, darker(C.grey, 30), 1);    // fracture
+  outline(cv, '#3f3f48');
+};
+
 // ---- shared shape helpers used above ----
 function leaf(cv, x, y, dir, lit, dark) {
   for (let i = 0; i < 8; i++) {
@@ -588,12 +706,18 @@ function flask(cv, lit, dark) {
 }
 
 // ============================================================================
-// Emit all 58 files. D06 is an alias of I4 → identical bytes to I4 (spec:
-// "D06 alias resolves to I4's icon").
+// Emit all icon files. Item catalog = 9 gatherables (I1..I9) + crafts D01..D61
+// minus the retired 석기 D11 (removed v0.3.1). D06 is an alias of I4 → identical
+// bytes to I4 (spec: "D06 alias resolves to I4's icon"). => 68 unique-id files
+// (67 painted + D06 copy), matching the 68 canonical items in items.json.
 // ============================================================================
+const RETIRED = new Set(['D11']); // 석기 — replaced by 도끼(D57)/돌도끼(D59)
 const ALL_IDS = [];
 for (let i = 1; i <= 9; i++) ALL_IDS.push('I' + i);
-for (let i = 1; i <= 49; i++) ALL_IDS.push('D' + String(i).padStart(2, '0'));
+for (let i = 1; i <= 61; i++) {
+  const id = 'D' + String(i).padStart(2, '0');
+  if (!RETIRED.has(id)) ALL_IDS.push(id);
+}
 
 let count = 0, total = 0;
 for (const id of ALL_IDS) {

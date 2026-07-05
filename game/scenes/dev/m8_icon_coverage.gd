@@ -6,7 +6,7 @@ extends Node
 ##      resolves to a real Texture2D (not the defensive category-square fallback).
 ##   2. ItemDB.icon(id) is non-null for every id, and the alias D06 resolves to the
 ##      SAME texture as its canonical I4 (D06 → I4's icon).
-##   3. No two icon FILES are byte-identical — i.e. 57 canonical icons are all
+##   3. No two icon FILES are byte-identical — i.e. 68 canonical icons are all
 ##      unique (the only allowed duplicate is D06.png == I4.png, the alias copy).
 ##
 ## Prints PASS/FAIL lines and quits with the failure count as the exit code.
@@ -27,7 +27,7 @@ func _ready() -> void:
 	print("=== ICON COVERAGE HARNESS ===")
 
 	var records := _load_records()
-	_check("items.json loaded (>=58 records)", records.size() >= 58)
+	_check("items.json loaded (>=69 records)", records.size() >= 69)
 
 	# Split canonical vs alias.
 	var canonical_ids: Array[String] = []
@@ -40,7 +40,7 @@ func _ready() -> void:
 			alias_ids.append(id)
 		else:
 			canonical_ids.append(id)
-	_check("30/58: 57 canonical + aliases split", canonical_ids.size() == 57 and alias_ids.size() == 1)
+	_check("68 canonical + 1 alias split", canonical_ids.size() == 68 and alias_ids.size() == 1)
 
 	# 1. every canonical id has a real icon FILE (present on disk).
 	var missing: Array[String] = []
@@ -61,7 +61,7 @@ func _ready() -> void:
 	var i4 := ItemDB.icon("I4")
 	_check("D06 icon resolves to I4's icon", d06 != null and d06 == i4)
 
-	# 3. no two icon files byte-identical (57 canonical files all unique).
+	# 3. no two icon files byte-identical (68 canonical files all unique).
 	var hashes := {}
 	var dup_pairs: Array = []
 	for id in canonical_ids:
@@ -71,8 +71,8 @@ func _ready() -> void:
 			dup_pairs.append([hashes[h], id])
 		else:
 			hashes[h] = id
-	_check("all 57 canonical icon files are byte-unique (dupes=%s)" % [dup_pairs], dup_pairs.is_empty())
-	_check("distinct icon hashes == 57", hashes.size() == 57)
+	_check("all 68 canonical icon files are byte-unique (dupes=%s)" % [dup_pairs], dup_pairs.is_empty())
+	_check("distinct icon hashes == 68", hashes.size() == 68)
 
 	# Sanity: the alias file, if present, equals I4's file (spec: D06 shares I4 art).
 	if ResourceLoader.exists(ICON_DIR + "D06.png"):

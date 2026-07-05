@@ -730,7 +730,7 @@ func _scatter_symbol(cell: Vector2i) -> String:
 	match band:
 		0: weights = [26, 14, 14, 6, 6, 3]     # hills: trees prominent
 		1: weights = [24, 24, 6, 8, 5, 3]      # approach: flowers prominent
-		_: weights = [30, 14, 8, 10, 6, 3]     # home: tufts + bushes
+		_: weights = [28, 13, 8, 9, 7, 6]      # home: tufts + bushes (rocks up: G1 needs 6 boulders)
 	var syms := ["t", "F", "T", "h", "s", "R"]
 	var total := 0
 	for w in weights:

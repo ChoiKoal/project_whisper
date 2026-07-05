@@ -157,14 +157,6 @@
       "usable_on": []
     },
     {
-      "id": "D11",
-      "name": "석기",
-      "category": "craft",
-      "flavor": "최초의 도구. 손에 익는다.",
-      "placeable_on": [],
-      "usable_on": []
-    },
-    {
       "id": "D12",
       "name": "목재",
       "category": "craft",
@@ -474,6 +466,102 @@
       "name": "생명의 정원",
       "category": "craft",
       "flavor": "정원이 숨을 쉰다. 세계가 부러워할 만큼.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D50",
+      "name": "잔디",
+      "category": "craft",
+      "flavor": "밟으면 폭신하다. 눕고 싶어진다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D51",
+      "name": "화단",
+      "category": "craft",
+      "flavor": "흙이 꽃을 안았다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D52",
+      "name": "자갈",
+      "category": "craft",
+      "flavor": "잘게 부서진 시간.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D53",
+      "name": "암석층",
+      "category": "craft",
+      "flavor": "땅의 나이테.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D54",
+      "name": "초원",
+      "category": "craft",
+      "flavor": "풀과 꽃이 손을 잡으면, 들판이 된다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D55",
+      "name": "이끼돌",
+      "category": "craft",
+      "flavor": "돌에도 계절이 물든다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D56",
+      "name": "화관",
+      "category": "craft",
+      "flavor": "누군가에게 씌워주고 싶다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D57",
+      "name": "도끼",
+      "category": "craft",
+      "flavor": "나무와 바위가 만나, 도구가 되었다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D58",
+      "name": "수액",
+      "category": "craft",
+      "flavor": "나무의 심장 소리, 한 방울.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D59",
+      "name": "돌도끼",
+      "category": "craft",
+      "flavor": "더 단단하게, 더 날카롭게.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D60",
+      "name": "꽃병",
+      "category": "craft",
+      "flavor": "꽃에게 물을, 물에게 꽃을.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D61",
+      "name": "암석",
+      "category": "craft",
+      "flavor": "돌 위에 바위 — 산의 첫 글자.",
       "placeable_on": [],
       "usable_on": []
     }
