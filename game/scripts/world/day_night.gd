@@ -21,10 +21,18 @@ const NIGHT := Color("#3a2a5c")
 
 
 func _ready() -> void:
+	# Defensive: if the GameState autoload were ever missing/renamed, reading
+	# .day_fraction() during the grove ready-flush would null-deref in a release
+	# template (no debug error). Fall back to the day tint and skip.
+	if GameState == null:
+		color = DAY_A
+		return
 	color = _color_for(GameState.day_fraction())
 
 
 func _process(_delta: float) -> void:
+	if GameState == null:
+		return
 	color = _color_for(GameState.day_fraction())
 
 

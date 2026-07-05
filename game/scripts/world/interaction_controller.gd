@@ -211,7 +211,7 @@ func _try_gather_tile(cell: Vector2i) -> void:
 		return
 	if not bool(data.get_custom_data("gatherable")):
 		return
-	var item_id: String = data.get_custom_data("item_id")
+	var item_id := String(data.get_custom_data("item_id"))
 	if item_id == "":
 		return
 	Inventory.add(item_id, 1)

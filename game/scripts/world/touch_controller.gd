@@ -46,6 +46,11 @@ func _ready() -> void:
 	if _player != null:
 		_player.path_finished.connect(_on_path_finished)
 	# Rebuild walkability when gates change the passable set.
+	# Defensive autoload guard (ready-time): a missing GameState would null-deref
+	# .stepping_stone_placed during the grove flush in a release template.
+	if GameState == null:
+		push_warning("TouchController: GameState singleton missing; grid static")
+		return
 	GameState.stepping_stone_placed.connect(func(_c): _rebuild_solids())
 	GameState.item_used_on_object.connect(func(_i, _o): call_deferred("_rebuild_solids"))
 	GameState.day_phase_changed.connect(func(_p): call_deferred("_rebuild_solids"))

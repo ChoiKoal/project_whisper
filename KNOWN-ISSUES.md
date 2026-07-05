@@ -1,7 +1,8 @@
-# Project Whisper — 알려진 이슈 (v0.1.1, M6c QA 트윅 기준)
+# Project Whisper — 알려진 이슈 (v0.1.2, macOS 크래시 하드닝 + 타이틀 미화 기준)
 
 작성: 2026-07-05 · Godot 4.5.stable · 정직하게 수집(핸드오프 M4/M5/M6a + M6b 패키징·E2E QA 과정에서 발견).
 갱신: 2026-07-05 · v0.1.1 — 독립 QA(220/0)가 최우선 폴리시로 지목한 2건 해결(아래 "해결됨(v0.1.1)" 참조).
+갱신: 2026-07-05 · v0.1.2 — macOS 릴리스 크래시 원인 후보 하드닝 + 타이틀 화면 미화(아래 참조).
 
 심각도 태그
 - 🔴 **게임진행** — 클리어/저장 등 진행에 영향을 줄 수 있음
@@ -9,6 +10,57 @@
 - 🟢 **외관** — 순수하게 보기/마감 문제 (플레이스홀더 포함)
 
 현재 🔴 진행-차단(블로커)은 **없음**. 전체 클리어 체인(씨앗→디딤돌→생명수→빛나는 새싹→어린 세계수→식수→클리어)과 저장/로드/NG+ 는 E2E 하니스에서 모두 PASS.
+
+---
+
+## 🔴 macOS 릴리스 크래시 — "새로 시작" 시 SIGSEGV (원인 후보 하드닝, macOS 검증 대기)
+
+**증상.** 오너 macOS(M1 Pro, macOS 26.5) 릴리스 익스포트(v0.1.1, gl_compatibility, universal)에서
+타이틀 → "새로 시작" 누르면 `SIGSEGV KERN_INVALID_ADDRESS at 0x0`. 콜스택(번역):
+`SceneTree::_flush_scene_change → Node::_add_child_nocheck → _propagate_ready → GDScriptFunction::call(_ready)
+→ Variant::callp → GDScriptFunction::call(nested) → <engine addr> CRASH at null`.
+즉 starting_grove 트리의 어떤 `_ready`가 change_scene 플러시 중 다른 GDScript 함수를 호출하고,
+그 함수가 **null 엔진 객체의 메서드를 호출** → 릴리스 템플릿은 null-check가 스트립되어 세그폴트
+(디버그였다면 스크립트 에러 출력에 그침).
+
+**재현.** linux headless(에디터 바이너리 + **릴리스 익스포트** 둘 다)에서는 재현 안 됨 —
+m7_title_flow 하니스(타이틀→새로 시작→grove 90프레임→저장→타이틀로→이어하기→grove 60프레임)가
+모두 초록. 즉 null은 **실제 렌더링/맥OS 플랫폼 특이성**에서만 발생한다고 판단.
+
+**상태: 원인 후보 하드닝, macOS 검증 대기.** macOS 실기 없이 검증 불가하므로 grove ready-체인의
+**null 엔진 객체 호출 가능 경로를 전수 감사 후 defense-in-depth로 전부 가드**했다. 하드닝 목록:
+
+- **[주 용의자·수정] `scripts/world/map_loader.gd:142-147` (구)** — `map_legend.json` 로드가 bare
+  `assert(lf != null, ...)` 뒤 곧바로 `lf.get_as_text()`. `assert`는 릴리스에서 컴파일 아웃되므로
+  파일이 없거나 못 읽으면 **null 핸들 역참조 → SIGSEGV**. 이 함수는 `MapLoader._ready()` → change_scene
+  플러시 안에서 실행됨. 명시적 `if lf == null` 가드 + 파싱 실패(비-Dictionary)도 빈 legend 폴백으로 처리.
+  (같은 함수의 layout 파일은 이미 v0.1.2 이전에 가드돼 있었으나 legend는 빠져 있었음.)
+- **[하드닝] `scripts/world/day_night.gd:_ready/_process`** — `GameState.day_fraction()` 앞에 `GameState == null`
+  가드. 없으면 낮 틴트로 폴백.
+- **[하드닝] `scripts/world/bush_dry.gd:_ready`** — `GameState.item_used_on_object.connect` 앞 GameState 가드.
+- **[하드닝] `scripts/ui/time_hud.gd:_ready/_refresh`** — `GameState.day_phase_changed` 등 앞 GameState 가드.
+- **[하드닝] `scripts/world/touch_controller.gd:_ready`** — `GameState.stepping_stone_placed.connect` 앞 GameState 가드.
+- **[하드닝] `scripts/player/player.gd:_ready`** — `$AnimatedSprite2D` → `get_node_or_null("AnimatedSprite2D")`.
+  모든 `_anim` 사용부는 이미 null 가드가 있어, 자식 노드 부재 시 애니메이션 생략으로 degrade.
+- **[사전 하드닝·확인] `scripts/world/glow_sprite.gd`** (GameState 가드 + `get_tree()`/그룹 null 가드 + 리페어런트 deferred),
+  `scripts/world/night_gate.gd`(GameState 가드), `scripts/world/map_loader.gd` layout 로더/노드 룩업(전부 null-check).
+- **[확인·안전] `scripts/world/touch_controller.gd:105` `get_viewport().get_camera_2d()`** — `cam != null` 가드 존재,
+  게다가 입력시(_unhandled_input)만 호출 → ready-타임 아님.
+- **[확인·안전] `scripts/core/save_manager.gd:260` `_loader.get_tree().current_scene`** — null이면 `_loader.get_parent()`
+  폴백 + 저장/로드시에만 호출 → ready-타임 아님.
+
+감사 결론: **grove ready-체인에 null 엔진 객체 메서드 호출이 남은 경로 없음.** 주 용의자는 map_legend 로더의
+스트립된 assert(엔진 빌트인 `FileAccess.get_as_text()`가 null에서 역참조 → 콜스택의 `<engine addr> CRASH at null`
+형태와 정확히 일치). macOS 실기 재현/검증은 오너 확인 대기.
+
+## ✅ 미화 (v0.1.2)
+
+- **타이틀 화면 리빌드.** `scenes/ui/title.tscn`(스크립트 `scripts/ui/title_menu.gd`)을 분위기 있는 화면으로
+  전면 코드-빌드. 야간 그라디언트 하늘 + 아이소 grove 디오라마(잔디 다이아·연못·나무·세계수+바이올렛 글로우·
+  가마솥 옆 고양이) + 비네트 + 떠다니는 바이올렛 모트(CPUParticles2D, additive) + 바이올렛 글로우 로고
+  ("Project Whisper", additive 이중 레이어 펄스) + cream 서브타이틀(아웃라인, 페이드인) + 라운드 패널 버튼
+  (hover/focus 시 바이올렛 필+보더). 버튼/플로우/조건부 표시(이어하기·NG+)는 **불변** — m7 하니스가 검증.
+  버전 라벨(우하단)은 `ProjectSettings config/version`에서 읽음(하드코딩 제거).
 
 ---
 

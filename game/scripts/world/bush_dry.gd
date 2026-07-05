@@ -23,6 +23,11 @@ func _ready() -> void:
 		texture = load(DRY_TEX)
 	offset = Vector2(0, -80)
 	_add_block()
+	# Defensive autoload guard (ready-time; matches night_gate/glow_sprite). A
+	# missing GameState would null-deref .item_used_on_object during the flush.
+	if GameState == null:
+		push_warning("BushDry: GameState singleton missing; bloom signal unwired")
+		return
 	GameState.item_used_on_object.connect(_on_used)
 
 

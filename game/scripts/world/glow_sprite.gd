@@ -33,8 +33,13 @@ func _ready() -> void:
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	material = mat
 	z_index = 5
-	if GameState.day_phase_changed.connect(_on_phase) == OK:
-		pass
+	# GameState is an autoload singleton; guard anyway so a missing/renamed
+	# singleton logs a warning instead of NULL-dereferencing during ready
+	# propagation (release templates strip the null-check path → SIGSEGV).
+	if GameState == null:
+		push_warning("GlowSprite: GameState singleton missing; glow disabled")
+		return
+	GameState.day_phase_changed.connect(_on_phase)
 	_apply_phase(GameState.phase())
 	# Move onto the CanvasModulate-free glow layer once the spawner has finished
 	# positioning us (offset/scale are set by the parent AFTER our _ready runs).
@@ -46,7 +51,12 @@ func _ready() -> void:
 func _reparent_to_glow_layer() -> void:
 	if not is_inside_tree():
 		return
-	var layer := get_tree().get_first_node_in_group(GLOW_LAYER_GROUP)
+	var tree := get_tree()
+	if tree == null:
+		return
+	var layer := tree.get_first_node_in_group(GLOW_LAYER_GROUP)
+	# get_first_node_in_group may legitimately return null (test_map has no glow
+	# layer). Only reparent onto a real, different parent node.
 	if layer == null or layer == get_parent():
 		return
 	reparent(layer, true)  # keep_global_transform → glow stays over its object

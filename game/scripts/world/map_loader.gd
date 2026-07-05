@@ -122,7 +122,12 @@ func _wire_stump_fade() -> void:
 
 func _load_data() -> void:
 	var f := FileAccess.open(LAYOUT_PATH, FileAccess.READ)
-	assert(f != null, "map_layout.txt missing")
+	# assert() is compiled OUT of release templates, so a missing layout would
+	# fall through to f.eof_reached() on a NULL handle → SIGSEGV in export.
+	# Guard explicitly and bail with a warning instead.
+	if f == null:
+		push_warning("MapLoader: %s missing; map not built" % LAYOUT_PATH)
+		return
 	while not f.eof_reached():
 		var line := f.get_line()
 		if line.strip_edges(false, true) == "" and f.eof_reached():
@@ -134,12 +139,23 @@ func _load_data() -> void:
 	height = _layout.size()
 	width = _layout[0].length() if height > 0 else 0
 
+	# assert() is stripped in release templates, so a missing legend would fall
+	# through to lf.get_as_text() on a NULL handle → SIGSEGV during the grove
+	# change_scene flush (this runs inside MapLoader._ready). Guard explicitly.
 	var lf := FileAccess.open(LEGEND_PATH, FileAccess.READ)
-	assert(lf != null, "map_legend.json missing")
-	var parsed = JSON.parse_string(lf.get_as_text())
+	if lf == null:
+		push_warning("MapLoader: %s missing; using grass fallback" % LEGEND_PATH)
+		_legend = {}
+		return
+	var parsed: Variant = JSON.parse_string(lf.get_as_text())
 	lf.close()
-	assert(parsed is Dictionary, "map_legend.json parse failed")
-	_legend = parsed
+	# A non-Dictionary parse (also asserted-only before) would make every later
+	# _legend.get(...) call fail; fall back to an empty legend instead.
+	if parsed is Dictionary:
+		_legend = parsed
+	else:
+		push_warning("MapLoader: %s parse failed; using grass fallback" % LEGEND_PATH)
+		_legend = {}
 
 
 ## Deterministic 32-bit hash of a cell (+ optional channel salt). Stable across
@@ -265,12 +281,18 @@ func _edge_material_at(cell: Vector2i) -> String:
 ## Cheaper and simpler than per-cell TileMapLayer modulate (unsupported), and it
 ## does not touch the base tiles.
 func _build_brightness_jitter() -> void:
+	var jitter_script := load("res://scripts/world/ground_jitter.gd")
+	if jitter_script == null:
+		push_warning("MapLoader: ground_jitter.gd failed to load; skipping jitter")
+		return
 	_bright_overlay = Node2D.new()
 	_bright_overlay.name = "BrightnessJitter"
 	_bright_overlay.z_index = 2
-	_bright_overlay.set_script(load("res://scripts/world/ground_jitter.gd"))
+	_bright_overlay.set_script(jitter_script)
 	add_child(_bright_overlay)
-	_bright_overlay.call("setup", self)
+	# Duck-typed call: only invoke if the script actually exposes setup().
+	if _bright_overlay.has_method("setup"):
+		_bright_overlay.call("setup", self)
 
 
 ## Public: brightness jitter factor for a grass cell (used by the jitter node).
@@ -308,10 +330,14 @@ func _spawn_object(sym: String, cell: Vector2i, spec: Dictionary) -> void:
 		"C":
 			cauldron_cell = cell
 			var caul := Sprite2D.new()
-			caul.set_script(load("res://scripts/world/cauldron.gd"))
+			var caul_script := load("res://scripts/world/cauldron.gd")
+			if caul_script != null:
+				caul.set_script(caul_script)
+				caul.set("object_id", "cauldron")
+			else:
+				push_warning("MapLoader: cauldron.gd failed to load")
 			caul.texture = load("res://assets/objects/cauldron.png")
 			caul.offset = Vector2(0, -64)
-			caul.set("object_id", "cauldron")
 			_place(caul, world)
 		"U":
 			stump_cell = cell

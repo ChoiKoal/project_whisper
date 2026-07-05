@@ -49,6 +49,10 @@ func _ready() -> void:
 	_glow.name = "Glow"
 	add_child(_glow)
 
+	if GameState == null:
+		push_warning("NightGate: GameState singleton missing; gate stays closed")
+		_apply(false)
+		return
 	GameState.day_phase_changed.connect(_on_phase)
 	_apply(GameState.is_night_window())
 

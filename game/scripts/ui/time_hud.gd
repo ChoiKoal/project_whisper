@@ -48,12 +48,19 @@ func _ready() -> void:
 	_text.add_theme_font_size_override("font_size", 18)
 	row.add_child(_text)
 
+	# Defensive autoload guard (ready-time). A missing GameState would null-deref
+	# .day_phase_changed during the grove flush in a release template.
+	if GameState == null:
+		push_warning("TimeHUD: GameState singleton missing; HUD static")
+		return
 	GameState.day_phase_changed.connect(func(_p): _refresh())
 	GameState.game_time_changed.connect(func(_t): _refresh())
 	_refresh()
 
 
 func _refresh() -> void:
+	if GameState == null:
+		return
 	var p := GameState.phase()
 	_icon.text = PHASE_ICON.get(p, "☀")
 	_icon.add_theme_color_override("font_color", PHASE_COLOR.get(p, CREAM))

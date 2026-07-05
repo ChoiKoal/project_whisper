@@ -36,7 +36,9 @@ const ISO_RIGHT := Vector2(1, 0)
 
 
 func _ready() -> void:
-	_anim = $AnimatedSprite2D
+	# get_node_or_null (not $): every _anim use already null-guards, so a missing
+	# sprite child degrades to "no animation" instead of a null-deref in release.
+	_anim = get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
 	if tilemap_path != NodePath():
 		_tilemap = get_node_or_null(tilemap_path) as TileMapLayer
 	_update_animation(false)
@@ -122,7 +124,11 @@ func _speed_mod_at(world_pos: Vector2) -> float:
 	var data := _tilemap.get_cell_tile_data(cell)
 	if data == null:
 		return 1.0
-	var m: float = data.get_custom_data("speed_mod")
+	var raw: Variant = data.get_custom_data("speed_mod")
+	# A tile without the speed_mod layer returns null; treat as full speed.
+	if typeof(raw) != TYPE_FLOAT and typeof(raw) != TYPE_INT:
+		return 1.0
+	var m: float = float(raw)
 	return m if m > 0.0 else 1.0
 
 
