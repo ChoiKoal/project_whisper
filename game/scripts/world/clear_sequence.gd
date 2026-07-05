@@ -116,7 +116,14 @@ func _run() -> void:
 		await _card(card)
 
 	# 4. hand off to the auto-return.
+	# (v0.6.1) Restore time BEFORE emitting cleared. GameState.time_running is an autoload
+	# flag that persists across the change_scene into the home island; leaving it false here
+	# left the home scene booting with time frozen (day/night stalled, HomeSession treating the
+	# world as permanently locked). The L2 purification (l2_gate_controller) already pairs its
+	# false→true — this L1 clear beat was the one path that never restored it.
 	_active = false
+	if GameState != null:
+		GameState.time_running = true
 	cleared.emit()
 
 

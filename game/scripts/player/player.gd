@@ -95,11 +95,26 @@ func _notification(what: int) -> void:
 		release_move_and_path()
 
 
+## (v0.6.1) True while the world is frozen for the player: any modal window open, OR a cutscene
+## running (time_running=false — clear/purification/travel swell), OR control locked (CS-05
+## ignition). Mirrors TouchController._world_locked() so keyboard-walk and tap-path freeze on the
+## exact same conditions. GameState-null-safe for headless.
+func is_world_frozen() -> bool:
+	return GameState != null and (GameState.ui_modal_open() \
+			or not GameState.time_running or GameState.control_locked())
+
+
 func _physics_process(_delta: float) -> void:
 	# (v0.4.0-B B3.1) While any window (fusion/inventory/codex/character/pause) is open,
 	# the player is frozen — no keyboard walk, no queued click/tap path advance. This is
 	# the "조합 떠있을때 움직이면 이상하잖아" lock. Guard the singleton for headless safety.
-	if GameState != null and GameState.ui_modal_open():
+	# (v0.6.1) ALSO freeze during cutscenes: L1 clear_sequence and L2 정화 컷신 pause via
+	# time_running=false, and CS-04/05 use control_lock. TouchController already blocks queued
+	# paths on both, but keyboard-walk read fresh each frame here did NOT — so holding a move
+	# key during a cutscene let the player walk through it. Gate on the same conditions
+	# TouchController._world_locked() uses so keyboard + touch freeze identically. Factored into
+	# is_world_frozen() so the sweep harness can assert the exact predicate.
+	if is_world_frozen():
 		_path.clear()
 		velocity = Vector2.ZERO
 		_update_animation(false)
