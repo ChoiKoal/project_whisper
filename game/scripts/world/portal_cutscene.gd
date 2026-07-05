@@ -63,6 +63,10 @@ func play_travel(then: Callable) -> void:
 		return
 	_active = true
 	GameState.time_running = false
+	# (v0.5.1 BUG2a) Lock player control for the beat — releases held move keys + clears any
+	# queued tap path on BOTH the lock edge here and the unlock edge below, so no input
+	# survives the travel transition.
+	GameState.set_control_lock(true)
 	if AudioManager != null and AudioManager.has_method("play_sfx"):
 		AudioManager.play_sfx("travel_whoosh")
 	var tw := create_tween()
@@ -70,6 +74,9 @@ func play_travel(then: Callable) -> void:
 	tw.tween_interval(0.3)
 	tw.tween_callback(func():
 		GameState.time_running = true
+		# Unlock before the scene change: the destination Player boots fresh, and the
+		# outgoing Player already released on EXIT_TREE — this just resets the autoload flag.
+		GameState.set_control_lock(false)
 		then.call())
 
 
@@ -85,6 +92,7 @@ const CS05_CARDS := [
 func play_return_ignition() -> void:
 	_active = true
 	GameState.time_running = false
+	GameState.set_control_lock(true)   # (v0.5.1 BUG2a) lock control for the CS-05 beat
 	# Arrival lands from a violet swell; fade it down first.
 	_swell.color = Color(VIOLET_DEEP.r, VIOLET_DEEP.g, VIOLET_DEEP.b, 1.0)
 	var intro := create_tween()
@@ -110,6 +118,7 @@ func play_return_ignition() -> void:
 		QuestManager.advance_to("P2")
 	_active = false
 	GameState.time_running = true
+	GameState.set_control_lock(false)   # (v0.5.1 BUG2a) unlock → Player releases move keys + path
 
 
 func _card(text: String) -> void:

@@ -79,6 +79,20 @@ var _state: String = "dormant"
 var _pulse_t: float = 0.0
 var _sigil_y0: float = 0.0
 
+## (v0.5.1 BUG3) A generous entry apron Area2D in FRONT of the gate (a ~2×2-tile pad just
+## screen-below the stepped base). The player stands here to enter — the monumental gate's own
+## collision (its stone pillars) no longer breaks the adjacent-cell interact, because entry is
+## driven by "is the player inside this apron?" rather than by an interactable anchor cell that
+## fell inside/above the pillar footprint. HomeSession polls is_player_in_entry_zone() to show
+## the prompt + route E; touch walks to entry_stand_point() then calls on_interact.
+var _entry_zone: Area2D
+var _player_in_zone: bool = false
+## Apron footprint (px): ~2 tiles wide (iso) × ~2 tiles deep, seated in front of the base.
+const ENTRY_W := 200.0
+const ENTRY_H := 128.0
+## How far (px) screen-DOWN from the gate base-centre the apron centre sits (in front of steps).
+const ENTRY_FORWARD := 64.0
+
 ## Human-readable layer names (kept for debug / accessibility; the visible marker is the glyph).
 const LAYER_NAMES := {
 	"nature": "자연", "science": "과학", "machine": "기계",
@@ -100,6 +114,7 @@ func _ready() -> void:
 	_build_veil()
 	_build_pool()
 	_build_particles()
+	_build_entry_zone()
 	# Adopt the current saved state and follow future changes.
 	_apply_state(GameState.portal_state(layer))
 	GameState.portal_state_changed.connect(_on_portal_changed)
@@ -213,6 +228,77 @@ func target_point() -> Vector2:
 ## Interaction: report to the world scene, which owns travel / locked-hint policy.
 func on_interact() -> void:
 	portal_interacted.emit(self)
+
+
+# ---- entry apron (v0.5.1 BUG3) -------------------------------------------
+
+## Build the generous front-apron Area2D the player stands in to enter. It sits just
+## screen-DOWN of the gate base (in front of the steps), ~2×2 tiles, so the approach never
+## overlaps the gate's own blocking collision. Monitors the "player" group for enter/exit.
+func _build_entry_zone() -> void:
+	_entry_zone = Area2D.new()
+	_entry_zone.name = "EntryZone"
+	_entry_zone.monitoring = true
+	_entry_zone.monitorable = false
+	# Only react to the player body (layer 2 is the player's; portals use collision layer 1 for
+	# the blocking pillars). We mask broadly and filter by group in the callback for robustness.
+	_entry_zone.collision_layer = 0
+	_entry_zone.collision_mask = 0xFFFFFFFF
+	var col := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(ENTRY_W, ENTRY_H)
+	col.shape = shape
+	# In front of (screen-below) the base centre. The gate anchor is at the base-bottom-centre
+	# (this node's origin), so the apron sits just south of it.
+	col.position = Vector2(0, ENTRY_FORWARD)
+	_entry_zone.add_child(col)
+	_entry_zone.body_entered.connect(_on_body_entered)
+	_entry_zone.body_exited.connect(_on_body_exited)
+	add_child(_entry_zone)
+
+
+func _on_body_entered(body: Node) -> void:
+	if body is Player or body.is_in_group("player"):
+		_player_in_zone = true
+
+
+func _on_body_exited(body: Node) -> void:
+	if body is Player or body.is_in_group("player"):
+		_player_in_zone = false
+
+
+## True while the player is standing in this gate's entry apron. Authoritative: queries the
+## Area2D's current overlaps each call (updated by the physics server every frame) rather than
+## trusting only the cached enter/exit flag — so a TELEPORT into or out of the apron (scene load,
+## cutscene reposition, arrival warp) reads correctly on the very next physics frame instead of
+## waiting on a body_entered/exited signal that a same-frame teleport can skip.
+func is_player_in_entry_zone() -> bool:
+	if _entry_zone != null and _entry_zone.monitoring:
+		for b in _entry_zone.get_overlapping_bodies():
+			if b is Player or b.is_in_group("player"):
+				return true
+		return false
+	return _player_in_zone
+
+
+## World point at the apron centre — where touch walk-then-enter should path the player to.
+func entry_stand_point() -> Vector2:
+	return global_position + Vector2(0, ENTRY_FORWARD)
+
+
+## State-driven prompt shown while the player is in the apron:
+##   • enterable (flickering/open) → "E 들어가기"
+##   • flickering (Layer-1 tease, first contact) → "E 다가가기"  (see note)
+##   • dormant → the whisper "…아직 잠들어 있다"
+## Per the brief: flickering shows the "다가가기" first-contact affordance; open shows "들어가기".
+func entry_prompt_text() -> String:
+	match _state:
+		GameState.PORTAL_OPEN:
+			return "E 들어가기"
+		GameState.PORTAL_FLICKERING:
+			return "E 다가가기"
+		_:
+			return "…아직 잠들어 있다"
 
 
 # ---- rock material --------------------------------------------------------

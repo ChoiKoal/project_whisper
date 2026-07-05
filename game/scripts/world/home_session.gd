@@ -25,6 +25,13 @@ var _portal_cutscene: Node
 
 const LOCKED_HINT := "이 문은 아직 잠들어 있다"
 
+## (v0.5.1 BUG3) The portal whose entry apron the player is currently standing in (or null).
+## Driven from _process; when non-null the E-prompt shows and `interact` enters that gate.
+var _active_portal: Portal = null
+## The floating "E 들어가기 / 다가가기 / …잠들어 있다" prompt above the active gate. Created lazily.
+var _entry_prompt: Label = null
+var _portals: Array = []
+
 
 func _ready() -> void:
 	WorldContext.current_scene = WorldContext.SCENE_HOME
@@ -74,9 +81,75 @@ func _setup() -> void:
 # ---- portals --------------------------------------------------------------
 
 func _wire_portals() -> void:
+	_portals.clear()
 	for node in get_tree().get_nodes_in_group("gatherable"):
 		if node is Portal:
+			_portals.append(node)
 			(node as Portal).portal_interacted.connect(_on_portal_interacted)
+
+
+## (v0.5.1 BUG3) Per-frame: track which gate's entry apron the player is in and show the
+## state-driven prompt. Keyboard E (and click-on-portal, via touch_controller) enter the gate.
+func _process(_delta: float) -> void:
+	# Don't offer entry while a modal window is open or a cutscene is running.
+	var locked := GameState != null and (GameState.ui_modal_open() or not GameState.time_running)
+	var here: Portal = null
+	if not locked:
+		for p in _portals:
+			if is_instance_valid(p) and (p as Portal).is_player_in_entry_zone():
+				here = p
+				break
+	_active_portal = here
+	_update_entry_prompt()
+
+
+## Keyboard entry: pressing `interact` while inside a gate's apron enters it (enterable) or
+## surfaces the locked whisper (dormant). Uses `_input` (ahead of the InteractionController's
+## `_unhandled_input`) and marks the event handled, so a gate in the apron is entered by E and
+## the same press can't also be consumed as a gather/facing interaction.
+func _input(event: InputEvent) -> void:
+	if _active_portal == null:
+		return
+	if GameState != null and (GameState.ui_modal_open() or not GameState.time_running):
+		return
+	if event.is_action_pressed("interact"):
+		get_viewport().set_input_as_handled()
+		_active_portal.on_interact()
+
+
+func _update_entry_prompt() -> void:
+	if _active_portal == null:
+		if _entry_prompt != null:
+			_entry_prompt.visible = false
+		return
+	if _entry_prompt == null:
+		_entry_prompt = _make_entry_prompt()
+	_entry_prompt.text = _active_portal.entry_prompt_text()
+	_entry_prompt.visible = true
+	_entry_prompt.size = _entry_prompt.get_minimum_size()
+	var anchor: Vector2 = _active_portal.target_point()
+	_entry_prompt.global_position = anchor - Vector2(_entry_prompt.size.x * 0.5, 24)
+
+
+func _make_entry_prompt() -> Label:
+	var l := Label.new()
+	l.add_theme_color_override("font_color", Color("#faf5e6"))
+	l.add_theme_font_size_override("font_size", 14)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.08, 0.07, 0.11, 0.84)
+	sb.set_corner_radius_all(9)
+	sb.content_margin_left = 8
+	sb.content_margin_right = 8
+	sb.content_margin_top = 3
+	sb.content_margin_bottom = 3
+	sb.set_border_width_all(1)
+	sb.border_color = Color(0.62, 0.48, 0.85, 0.75)
+	l.add_theme_stylebox_override("normal", sb)
+	l.z_index = 100
+	var host: Node = _loader if _loader != null else self
+	host.add_child(l)
+	return l
 
 
 func _on_portal_interacted(portal: Portal) -> void:

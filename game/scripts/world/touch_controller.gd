@@ -62,6 +62,10 @@ func _ready() -> void:
 	# (v0.3.1 Fix 4) Gathering an interior tile turns it into a walkable HOLLOW — rebuild
 	# so tap-to-move can cross the emptied spot (previously stayed solid to AStar).
 	GameState.tile_walkable_changed.connect(func(_c): _rebuild_solids())
+	# (v0.5.1 BUG2b) When the world input-lock toggles (a modal window opens OR a cutscene
+	# starts/ends via time_running being driven through push/pop), drop any queued path +
+	# pending auto-interact so the player never auto-walks a stale target after unlock.
+	GameState.ui_modal_changed.connect(func(_open): _clear_pending_path())
 
 
 # ---- AStar graph (height-aware) ------------------------------------------
@@ -125,11 +129,33 @@ func refresh_grid() -> void:
 
 # ---- input ---------------------------------------------------------------
 
+## (v0.5.1 BUG2b) The world is "locked" for click-to-move whenever a modal window is open OR
+## a cutscene is running (cutscenes pause GameState.time_running). No new path may be queued
+## while locked; existing paths are cleared on the lock transition + on scene exit.
+func _world_locked() -> bool:
+	if GameState == null:
+		return false
+	return GameState.ui_modal_open() or not GameState.time_running or GameState.control_locked()
+
+
+## Drop any queued path + pending auto-interact (used on lock, cutscene start, scene exit).
+func _clear_pending_path() -> void:
+	_pending = {}
+	if _player != null and is_instance_valid(_player):
+		_player.clear_path()
+
+
+func _notification(what: int) -> void:
+	# Scene teardown: never leave a queued path/pending interact dangling into the next scene.
+	if what == NOTIFICATION_EXIT_TREE:
+		_clear_pending_path()
+
+
 func _unhandled_input(event: InputEvent) -> void:
-	# (v0.4.0-B B3.1) Click-to-move is disabled while a window is open. The window's
-	# own controls still receive their clicks (they sit on higher CanvasLayers and
-	# consume the event before it reaches this world node's _unhandled_input).
-	if GameState != null and GameState.ui_modal_open():
+	# (v0.4.0-B B3.1 / v0.5.1 BUG2b) Click-to-move is disabled while a window is open OR a
+	# cutscene is playing. The window's own controls still receive their clicks (they sit on
+	# higher CanvasLayers and consume the event before it reaches this world _unhandled_input).
+	if _world_locked():
 		return
 	var world_pos := Vector2.INF
 	if event is InputEventMouseButton and event.pressed \
@@ -158,8 +184,9 @@ func _to_world(screen_pos: Vector2) -> Vector2:
 func handle_tap(world_pos: Vector2) -> void:
 	if _loader == null or _player == null:
 		return
-	# (v0.4.0-B B3.1) No world taps while a modal window is open.
-	if GameState != null and GameState.ui_modal_open():
+	# (v0.4.0-B B3.1 / v0.5.1 BUG2b) No world taps while a modal window is open or a cutscene
+	# is running — refuse the path outright (also the harness entrypoint, so it's asserted).
+	if _world_locked():
 		return
 	# 1. Object hit? (nearest gatherable/cauldron/stump within a tile of the tap)
 	var obj := _object_near(world_pos)
@@ -174,7 +201,11 @@ func handle_tap(world_pos: Vector2) -> void:
 
 
 ## Public convenience (tests / UI): move the player to a cell by pathfinding.
+## (v0.5.1 BUG2b) Honors the world lock exactly like handle_tap — no new path may be queued
+## while a modal window is open or a cutscene is running.
 func move_to(cell: Vector2i) -> bool:
+	if _world_locked():
+		return false
 	_pending = {}
 	return _path_to_cell(cell)
 
@@ -194,6 +225,24 @@ func _object_near(world_pos: Vector2) -> Node:
 
 ## Tap on an object: act now if adjacent, else walk to a cell beside it + act.
 func _target_object(obj: Node) -> void:
+	# (v0.5.1 BUG3) A Portal is entered via its front-apron entry zone, NOT via an adjacent
+	# gather cell (its interactable anchor sat inside/above the gate collision). Path to the
+	# apron stand-point and enter on arrival — walk-then-enter for click / tap.
+	if obj is Portal:
+		var gate := obj as Portal
+		if gate.is_player_in_entry_zone():
+			_player.clear_path()
+			gate.on_interact()
+			return
+		var stand_cell := _loader.world_to_cell(gate.entry_stand_point())
+		var stand_p := stand_cell
+		if not _loader.is_cell_walkable(stand_p):
+			stand_p = _nearest_walkable_adjacent(stand_cell)
+		if stand_p == Vector2i(-1, -1):
+			return
+		if _path_to_cell(stand_p):
+			_pending = {"kind": "portal", "object": gate}
+		return
 	if _is_adjacent_to(obj.target_point()):
 		_player.clear_path()
 		_interact_object(obj)
@@ -299,6 +348,12 @@ func _on_path_finished() -> void:
 				_interact_object(obj)
 		"cell":
 			_interaction.interact_with_cell(pend.get("cell", Vector2i.ZERO))
+		"portal":
+			# (v0.5.1 BUG3) Arrived at a gate's entry apron → enter it. on_interact routes to
+			# HomeSession (travel if enterable, locked whisper if dormant).
+			var gate = pend.get("object", null)
+			if gate != null and is_instance_valid(gate) and gate.has_method("on_interact"):
+				gate.on_interact()
 
 
 func _interact_object(obj: Node) -> void:

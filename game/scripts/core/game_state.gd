@@ -87,6 +87,27 @@ func pop_modal(key: String) -> void:
 func ui_modal_open() -> bool:
 	return not _modal_keys.is_empty()
 
+# ---- v0.5.1 BUG2: cutscene / scripted control lock ------------------------
+## (BUG2a) Cutscenes (opening, portal travel, CS-05) freeze player control. Unlike the modal
+## windows above, they don't push a modal key — they pause GameState.time_running. To make the
+## "release move keys on lock AND unlock" contract fire for cutscenes too, cutscenes call
+## set_control_lock(true/false); the Player listens to control_lock_changed and releases the
+## four move actions + clears its path on BOTH edges, so a key held (and its RELEASE swallowed)
+## during a cutscene can never leave the player auto-walking after the scene resumes.
+signal control_lock_changed(locked: bool)
+var _control_locked: bool = false
+
+func set_control_lock(locked: bool) -> void:
+	if _control_locked == locked:
+		# Still announce a lock→lock re-entry as an unlock-then-lock is not needed; but on the
+		# same value do nothing (idempotent).
+		return
+	_control_locked = locked
+	control_lock_changed.emit(locked)
+
+func control_locked() -> bool:
+	return _control_locked
+
 var _phase: String = "day"
 
 # ---- v0.5.0 phase C: portal states (제0세계 문 다섯) ------------------------

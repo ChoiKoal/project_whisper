@@ -68,8 +68,74 @@ var _fog_t: float = 0.0
 var _menu_revealed: bool = false
 
 
+## (v0.5.1 BUG1) The window height (px) below which the layout starts compressing, and the
+## floor height at which it is fully compressed. The owner's short window was ~526px.
+const COMPRESS_FULL_H := 720.0   # at/above this the layout is at its full (design) size
+const COMPRESS_MIN_H := 480.0    # at/below this the layout is fully compressed
+## Fixed gap (px) kept between the last button and the bottom edge (compresses a little too).
+const BUTTON_BOTTOM_GAP := 34.0
+
+
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
+	_build()
+	# (v0.5.1 BUG1) Rebuild the responsive layout when the window is resized so the menu
+	# stays fully on-screen at any size the owner drags the (resizable) window to.
+	get_viewport().size_changed.connect(_on_viewport_resized)
+
+
+## Current viewport height in the title's design/canvas space. `canvas_items` stretch with
+## `keep` aspect maps the real window onto the 1600×900 canvas, so the layout math is done in
+## canvas space and the compression key is the canvas-space visible height. We read the real
+## window height and the stretch to derive the effective canvas height available.
+func _viewport_height() -> float:
+	var vp := get_viewport()
+	if vp == null:
+		return CANVAS.y
+	var wsize := vp.get_visible_rect().size
+	if wsize.y <= 0.0:
+		return CANVAS.y
+	return wsize.y
+
+
+## 1.0 = full (tall window) → 0.0 = fully compressed (short window). Drives every responsive
+## size/offset via lerp so the whole column fits the viewport at ≥640×480.
+func _compress() -> float:
+	var h := _viewport_height()
+	return clampf((h - COMPRESS_MIN_H) / (COMPRESS_FULL_H - COMPRESS_MIN_H), 0.0, 1.0)
+
+
+## Title logotype font size — compresses on short windows.
+func _title_font_size() -> int:
+	return int(lerpf(56.0, 96.0, _compress()))
+
+
+## Width reserved for the title stack (scales with the font so the letters aren't clipped).
+func _title_stack_width() -> float:
+	return lerpf(560.0, 820.0, _compress())
+
+
+## Menu-button height — never below a comfortable ~40px tap target even fully compressed.
+func _button_height() -> float:
+	return lerpf(40.0, 52.0, _compress())
+
+
+## Distance from the viewport bottom edge to the BOTTOM button. On a tall window this is a
+## generous margin (the original ~90px feel); on a short window it shrinks to a small fixed
+## gap so the column has room to fit above it. Always ≥ BUTTON_BOTTOM_GAP.
+func _bottom_margin() -> float:
+	return lerpf(BUTTON_BOTTOM_GAP, 90.0, _compress())
+
+
+## Rebuild the whole title on a resize (cheap; it's a static screen). Guards against tearing
+## down mid-transition by simply re-running _build after clearing children.
+func _on_viewport_resized() -> void:
+	for c in get_children():
+		c.queue_free()
+	_glow_nodes.clear()
+	_parallax.clear()
+	_fog = null
+	_menu_revealed = false
 	_build()
 
 
@@ -498,30 +564,36 @@ func _build_title() -> void:
 	var col := VBoxContainer.new()
 	col.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	col.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	col.position = Vector2(0, 150)
+	# (v0.5.1 BUG1) Top offset compresses with the viewport height so the title never pushes
+	# the menu column off the bottom edge on a short window.
+	col.position = Vector2(0, lerpf(64.0, 150.0, _compress()))
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_theme_constant_override("separation", 10)
+	col.add_theme_constant_override("separation", int(lerpf(4.0, 10.0, _compress())))
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fade_root.add_child(col)
 
 	# (B4) letter-spaced logotype (tracked out with thin spaces for a calmer, more
-	# 감성적 title). Overlap a crisp title over an additive, scaled, low-alpha glow copy.
+	# 감성적 title). Overlap a crisp title over an additive, low-alpha glow copy.
+	# (v0.5.1 BUG1) The glow copy is now aligned EXACTLY over the main label — same anchors,
+	# NO scale (a scaled copy pivoted off-centre drifted sideways and read as "PProject
+	# WWhisper"). It is a pure additive-alpha bloom, offset a single pixel DOWN (never
+	# sideways), so it sits directly under the crisp letters.
+	var title_size := _title_font_size()
 	var spaced := _letter_space("Project Whisper")
 	var stack := Control.new()
-	stack.custom_minimum_size = Vector2(820, 120)
+	stack.custom_minimum_size = Vector2(_title_stack_width(), title_size * 1.25)
 	stack.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	var glow := _title_label(spaced, 96, VIOLET)
+	var glow := _title_label(spaced, title_size, VIOLET)
 	glow.set_anchors_preset(Control.PRESET_FULL_RECT)
-	glow.scale = Vector2(1.04, 1.06)
-	glow.pivot_offset = Vector2(410, 60)
+	glow.position = Vector2(0, 1)   # additive bloom, 1px down, same x — never sideways
 	glow.modulate = Color(VIOLET.r, VIOLET.g, VIOLET.b, 0.45)
 	var glow_mat := CanvasItemMaterial.new()
 	glow_mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	glow.material = glow_mat
 
-	var main := _title_label(spaced, 96, VIOLET)
+	var main := _title_label(spaced, title_size, VIOLET)
 	main.set_anchors_preset(Control.PRESET_FULL_RECT)
 
 	stack.add_child(glow)
@@ -529,7 +601,7 @@ func _build_title() -> void:
 	col.add_child(stack)
 	_glow_nodes.append(glow)
 
-	var sub := _title_label("속삭임이 세계를 만든다", 26, CREAM)
+	var sub := _title_label("속삭임이 세계를 만든다", int(lerpf(18.0, 26.0, _compress())), CREAM)
 	sub.add_theme_constant_override("outline_size", 6)
 	sub.add_theme_color_override("font_outline_color", Color(0.06, 0.05, 0.09, 0.9))
 	col.add_child(sub)
@@ -560,12 +632,16 @@ func _letter_space(s: String) -> String:
 
 func _build_buttons() -> void:
 	_buttons = VBoxContainer.new()
+	# (v0.5.1 BUG1) Anchor the column to the viewport BOTTOM and grow UPWARD from a fixed
+	# bottom margin, so the last button always sits a fixed gap above the bottom edge no
+	# matter the window height. Separation + button height compress on short windows so the
+	# whole 3-4-button column stays inside the viewport (verified 640×480 … 1920×1080).
 	_buttons.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	_buttons.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_buttons.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_buttons.position = Vector2(0, -90)
+	_buttons.position = Vector2(0, -_bottom_margin())
 	_buttons.alignment = BoxContainer.ALIGNMENT_CENTER
-	_buttons.add_theme_constant_override("separation", 14)
+	_buttons.add_theme_constant_override("separation", int(lerpf(8.0, 14.0, _compress())))
 	_fade_root.add_child(_buttons)
 
 	_add_button("새로 시작", _on_new_game)
@@ -579,13 +655,15 @@ func _build_buttons() -> void:
 func _add_button(text: String, cb: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size = Vector2(320, 52)  # ≥48px tall
+	# (v0.5.1 BUG1) Height + font compress on a short window so the full column fits; never
+	# below a comfortable tap target (~40px) even at 480px tall.
+	b.custom_minimum_size = Vector2(lerpf(240.0, 320.0, _compress()), _button_height())
 	b.focus_mode = Control.FOCUS_ALL
 	b.add_theme_color_override("font_color", CREAM)
 	b.add_theme_color_override("font_hover_color", VIOLET_SOFT)
 	b.add_theme_color_override("font_focus_color", VIOLET_SOFT)
 	b.add_theme_color_override("font_pressed_color", VIOLET)
-	b.add_theme_font_size_override("font_size", 26)
+	b.add_theme_font_size_override("font_size", int(lerpf(20.0, 26.0, _compress())))
 	b.add_theme_stylebox_override("normal", _btn_style(false))
 	b.add_theme_stylebox_override("hover", _btn_style(true))
 	b.add_theme_stylebox_override("focus", _btn_style(true))

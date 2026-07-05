@@ -40,6 +40,12 @@ const ISO_DOWN := Vector2(0, 1)
 const ISO_LEFT := Vector2(-1, 0)
 const ISO_RIGHT := Vector2(1, 0)
 
+## (v0.5.1 BUG2) The four movement actions, released together on every control lock/unlock,
+## on scene teardown, and on window-focus-loss so a swallowed key-RELEASE can never leave the
+## player auto-walking (the owner's "계속 위로 가는 키가 눌려있음"). Physics reads actions fresh
+## each frame (below) so a clean release stops motion immediately.
+const MOVE_ACTIONS := ["move_up", "move_down", "move_left", "move_right"]
+
 
 func _ready() -> void:
 	# get_node_or_null (not $): every _anim use already null-guards, so a missing
@@ -48,6 +54,45 @@ func _ready() -> void:
 	if tilemap_path != NodePath():
 		_tilemap = get_node_or_null(tilemap_path) as TileMapLayer
 	_update_animation(false)
+	# (v0.5.1 BUG2c) React to the modal input-lock toggling: on BOTH lock and unlock, force-
+	# release the move actions + clear any queued path so no held/queued input survives the
+	# lock boundary. Guarded for headless safety.
+	if GameState != null and GameState.has_signal("ui_modal_changed"):
+		GameState.ui_modal_changed.connect(func(_open): release_move_and_path())
+	# (v0.5.1 BUG2a) Cutscene control-lock toggling: release on BOTH lock and unlock edges.
+	if GameState != null and GameState.has_signal("control_lock_changed"):
+		GameState.control_lock_changed.connect(func(_locked): release_move_and_path())
+
+
+## (v0.5.1 BUG2) Release all four move actions in the Input singleton. Call on every control
+## lock AND unlock. `_physics_process` reads the actions fresh each frame, so this immediately
+## stops keyboard-driven motion; a stuck (swallowed-release) key no longer reads as pressed.
+func release_move_actions() -> void:
+	for a in MOVE_ACTIONS:
+		if InputMap.has_action(a):
+			Input.action_release(a)
+
+
+## Release move actions AND clear any queued tap/click path — the full "stop everything" used
+## on lock/unlock, focus-loss, cutscene start, and scene teardown.
+func release_move_and_path() -> void:
+	release_move_actions()
+	_path.clear()
+	velocity = Vector2.ZERO
+
+
+## (v0.5.1 BUG2c) macOS cmd-tab / any window focus loss drops key-up events, leaving move
+## actions stuck "pressed" when focus returns → the player auto-walks. On focus-out release
+## every move action + clear the path. On focus-IN release again (defensive: some platforms
+## deliver a stale repeat on return).
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		release_move_and_path()
+	elif what == NOTIFICATION_APPLICATION_FOCUS_IN or what == NOTIFICATION_WM_WINDOW_FOCUS_IN:
+		release_move_actions()
+	elif what == NOTIFICATION_EXIT_TREE:
+		# Scene change / teardown: never carry a queued path or a held key into the next scene.
+		release_move_and_path()
 
 
 func _physics_process(_delta: float) -> void:
