@@ -35,13 +35,26 @@ func _build() -> void:
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(dim)
 
+	# Framed panel (title-screen style) centered over the dim.
+	var frame := PanelContainer.new()
+	frame.set_anchors_preset(Control.PRESET_CENTER)
+	frame.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	frame.grow_vertical = Control.GROW_DIRECTION_BOTH
+	var fsb := StyleBoxFlat.new()
+	fsb.bg_color = Color(0.11, 0.10, 0.14, 0.96)
+	fsb.set_corner_radius_all(14)
+	fsb.set_content_margin_all(28)
+	fsb.set_border_width_all(1)
+	fsb.border_color = VIOLET
+	fsb.shadow_color = Color(0, 0, 0, 0.45)
+	fsb.shadow_size = 10
+	frame.add_theme_stylebox_override("panel", fsb)
+	_root.add_child(frame)
+
 	_panel = VBoxContainer.new()
-	_panel.set_anchors_preset(Control.PRESET_CENTER)
 	_panel.alignment = BoxContainer.ALIGNMENT_CENTER
-	_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
 	_panel.add_theme_constant_override("separation", 14)
-	_root.add_child(_panel)
+	frame.add_child(_panel)
 
 	var head := _label("일시정지", 40, VIOLET)
 	_panel.add_child(head)
@@ -67,12 +80,27 @@ func _label(txt: String, size: int, col: Color) -> Label:
 func _add_button(text: String, cb: Callable) -> void:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size = Vector2(240, 44)
+	b.custom_minimum_size = Vector2(260, 48)
 	b.add_theme_color_override("font_color", CREAM)
 	b.add_theme_color_override("font_hover_color", VIOLET)
+	b.add_theme_color_override("font_focus_color", VIOLET)
 	b.add_theme_font_size_override("font_size", 24)
+	b.add_theme_stylebox_override("normal", _pause_btn_style(false))
+	b.add_theme_stylebox_override("hover", _pause_btn_style(true))
+	b.add_theme_stylebox_override("focus", _pause_btn_style(true))
+	b.add_theme_stylebox_override("pressed", _pause_btn_style(true))
 	b.pressed.connect(cb)
 	_panel.add_child(b)
+
+
+func _pause_btn_style(active: bool) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color("#33333f") if active else Color(BG.r, BG.g, BG.b, 0.85)
+	sb.set_corner_radius_all(10)
+	sb.set_content_margin_all(10)
+	sb.set_border_width_all(2)
+	sb.border_color = VIOLET if active else Color(VIOLET.r, VIOLET.g, VIOLET.b, 0.25)
+	return sb
 
 
 func is_open() -> bool:

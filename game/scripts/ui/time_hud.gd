@@ -27,11 +27,18 @@ func _ready() -> void:
 	layer = 3
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	panel.position = Vector2(-160, 16)
+	panel.position = Vector2(-172, 16)
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = BG
-	sb.set_content_margin_all(8)
-	sb.set_corner_radius_all(6)
+	sb.bg_color = Color(BG.r, BG.g, BG.b, 0.92)
+	sb.set_content_margin_all(10)
+	sb.content_margin_left = 14
+	sb.content_margin_right = 14
+	sb.set_corner_radius_all(10)
+	sb.set_border_width_all(1)
+	sb.border_color = Color("#9e7ad9")
+	sb.shadow_color = Color(0, 0, 0, 0.35)
+	sb.shadow_size = 5
+	sb.shadow_offset = Vector2(0, 2)
 	panel.add_theme_stylebox_override("panel", sb)
 	add_child(panel)
 

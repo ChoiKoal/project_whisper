@@ -11,11 +11,21 @@ extends Node
 ## same inventory entry.
 
 const ITEMS_PATH := "res://data/items.json"
+const ICON_DIR := "res://assets/icons/"
+const ICON_SIZE := 48
 
 ## id -> Dictionary of the raw item record (canonical entries only).
 var _items: Dictionary = {}
 ## alias id -> canonical id (e.g. "D06" -> "I4").
 var _aliases: Dictionary = {}
+## resolved id -> Texture2D (lazy). Real icon file, or a generated fallback square.
+var _icon_cache: Dictionary = {}
+
+## Fallback square colors when an icon file is missing (defensive).
+const _CATEGORY_COLOR := {
+	"gather": Color("#7ab567"),
+	"craft": Color("#c89ae0"),
+}
 
 
 func _ready() -> void:
@@ -104,3 +114,30 @@ func can_use_on_object(id: String, object_id: String) -> bool:
 ## All canonical item ids (order not guaranteed).
 func all_ids() -> Array:
 	return _items.keys()
+
+
+## Icon texture for an item (resolved through alias, so D06 → I4's icon).
+## Loads `res://assets/icons/<id>.png`; if that file is missing, returns a
+## generated flat category-color square so the UI never shows a null/blank slot.
+## Cached per resolved id.
+func icon(id: String) -> Texture2D:
+	var rid := resolve_id(id)
+	if _icon_cache.has(rid):
+		return _icon_cache[rid]
+	var tex: Texture2D = null
+	var p := ICON_DIR + rid + ".png"
+	if ResourceLoader.exists(p):
+		tex = load(p) as Texture2D
+	if tex == null:
+		tex = _fallback_square(rid)
+	_icon_cache[rid] = tex
+	return tex
+
+
+## Defensive fallback: a flat ICON_SIZE square tinted by category. Used only when
+## an icon PNG is absent (e.g. a future item added to items.json before art).
+func _fallback_square(id: String) -> Texture2D:
+	var col: Color = _CATEGORY_COLOR.get(item_category(id), Color("#888888"))
+	var img := Image.create(ICON_SIZE, ICON_SIZE, false, Image.FORMAT_RGBA8)
+	img.fill(col)
+	return ImageTexture.create_from_image(img)

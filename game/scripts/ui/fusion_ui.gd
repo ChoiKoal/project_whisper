@@ -19,16 +19,11 @@ const SLOT_EMPTY := Color("#1f1f26")
 const DOT_ON := Color("#9e7ad9")
 const DOT_OFF := Color("#44444f")
 
-const CATEGORY_COLOR := {
-	"gather": Color("#7ab567"),
-	"craft": Color("#c89ae0"),
-}
-
 var _root: PanelContainer
 var _strip: HFlowContainer
-var _slot_icons: Array[ColorRect] = []
+var _slot_icons: Array[TextureRect] = []
 var _slot_labels: Array[Label] = []
-var _result_icon: ColorRect
+var _result_icon: TextureRect
 var _result_name: Label
 var _result_flavor: Label
 var _status: Label
@@ -183,9 +178,7 @@ func _make_slot(index: int) -> Control:
 	v.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_child(v)
 
-	var icon := ColorRect.new()
-	icon.custom_minimum_size = Vector2(56, 56)
-	icon.color = SLOT_EMPTY
+	var icon := _icon_rect(56)
 	v.add_child(icon)
 
 	var lbl := Label.new()
@@ -214,9 +207,7 @@ func _make_result_slot() -> Control:
 	v.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_child(v)
 
-	_result_icon = ColorRect.new()
-	_result_icon.custom_minimum_size = Vector2(56, 56)
-	_result_icon.color = SLOT_EMPTY
+	_result_icon = _icon_rect(56)
 	v.add_child(_result_icon)
 
 	_result_name = Label.new()
@@ -234,8 +225,21 @@ func _slot_panel() -> PanelContainer:
 	sb.bg_color = PANEL
 	sb.set_content_margin_all(6)
 	sb.set_corner_radius_all(6)
+	sb.set_border_width_all(1)
+	sb.border_color = Color(ACCENT.r, ACCENT.g, ACCENT.b, 0.4)
 	box.add_theme_stylebox_override("panel", sb)
 	return box
+
+
+## An icon TextureRect (nearest-filtered, aspect-fit), initially empty.
+func _icon_rect(sz: int) -> TextureRect:
+	var t := TextureRect.new()
+	t.custom_minimum_size = Vector2(sz, sz)
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return t
 
 
 # ---- open / close --------------------------------------------------------
@@ -283,9 +287,8 @@ func _add_strip_item(id: String) -> void:
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	btn.add_child(row)
 
-	var icon := ColorRect.new()
-	icon.custom_minimum_size = Vector2(24, 24)
-	icon.color = CATEGORY_COLOR.get(ItemDB.item_category(id), Color("#888888"))
+	var icon := _icon_rect(28)
+	icon.texture = ItemDB.icon(id)
 	row.add_child(icon)
 
 	var lbl := Label.new()
@@ -314,7 +317,7 @@ func _on_slot_pressed(index: int) -> void:
 func _clear_inputs() -> void:
 	_inputs = ["", ""]
 	_refresh_slots()
-	_result_icon.color = SLOT_EMPTY
+	_result_icon.texture = null
 	_result_name.text = "???"
 
 
@@ -322,10 +325,10 @@ func _refresh_slots() -> void:
 	for i in _inputs.size():
 		var id := _inputs[i]
 		if id == "":
-			_slot_icons[i].color = SLOT_EMPTY
+			_slot_icons[i].texture = null
 			_slot_labels[i].text = "비어 있음"
 		else:
-			_slot_icons[i].color = CATEGORY_COLOR.get(ItemDB.item_category(id), Color("#888888"))
+			_slot_icons[i].texture = ItemDB.icon(id)
 			_slot_labels[i].text = ItemDB.item_name(id)
 
 
@@ -339,7 +342,7 @@ func _on_fuse_pressed() -> void:
 	var res := Fusion.fuse(_inputs[0], _inputs[1])
 	if res["matched"]:
 		var out: String = res["output"]
-		_result_icon.color = CATEGORY_COLOR.get(ItemDB.item_category(out), Color("#888888"))
+		_result_icon.texture = ItemDB.icon(out)
 		_result_name.text = ItemDB.item_name(out)
 		_result_flavor.text = ItemDB.item_flavor(out)
 		_status.text = "새로운 것을 만들었다!"

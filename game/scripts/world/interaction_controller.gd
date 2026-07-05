@@ -38,6 +38,9 @@ var _highlight: TileHighlight
 var _feedback_layer: Node
 var _slot_hint: SteppingSlotHint
 
+## Floating "E …" prompt shown above the current target (world space). Created lazily.
+var _prompt: Label = null
+
 ## Currently held item id (from inventory selection), or "" for none.
 var _held_item: String = ""
 
@@ -68,10 +71,25 @@ func get_held_item() -> String:
 	return _held_item
 
 
+## Context hint for the held-item HUD: if the held item can act on the current
+## frame's resolved target, return a short prompt ("E: 사용" for a usable object,
+## "E: 배치" for a placeable tile), else "". Read by InventoryUI each frame.
+func held_action_hint() -> String:
+	if _held_item == "":
+		return ""
+	var obj := _target_object as Gatherable
+	if obj != null and obj.object_id != "" and ItemDB.can_use_on_object(_held_item, obj.object_id):
+		return "E: 사용"
+	if _has_tile_target and ItemDB.can_place_on_tile(_held_item, _logical_tile_id(_target_cell)):
+		return "E: 배치"
+	return ""
+
+
 func _process(_delta: float) -> void:
 	_resolve_target()
 	_update_highlight()
 	_update_slot_hint()
+	_update_prompt()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -122,6 +140,66 @@ func _update_highlight() -> void:
 
 func _cell_center_world(cell: Vector2i) -> Vector2:
 	return _tilemap.to_global(_tilemap.map_to_local(cell))
+
+
+## Floating "E …" hint above the current target. Small dark pill, cream text
+## (art guide §7). Text depends on what the `interact` action would do this frame.
+func _update_prompt() -> void:
+	var text := _prompt_text()
+	if text == "":
+		if _prompt != null:
+			_prompt.visible = false
+		return
+	if _prompt == null:
+		_prompt = _make_prompt()
+	_prompt.visible = true
+	_prompt.text = text
+	# Anchor above the target point, centered.
+	var world: Vector2 = _target_object.target_point() if _target_object != null else _cell_center_world(_target_cell)
+	_prompt.size = _prompt.get_minimum_size()
+	_prompt.global_position = world - Vector2(_prompt.size.x * 0.5, 64)
+
+
+func _prompt_text() -> String:
+	# Held item that can act on the target takes priority (matches _do_interact order).
+	if _held_item != "":
+		var obj := _target_object as Gatherable
+		if obj != null and obj.object_id != "" and ItemDB.can_use_on_object(_held_item, obj.object_id):
+			return "E 사용"
+		if _has_tile_target and ItemDB.can_place_on_tile(_held_item, _logical_tile_id(_target_cell)):
+			return "E 배치"
+	# Object interactions.
+	if _target_object != null:
+		if _target_object.has_method("can_gather") and _target_object.can_gather():
+			return "E 채집"
+		if _target_object.has_method("on_interact"):
+			return "E 조합"
+	# Gatherable ground tile.
+	if _has_tile_target:
+		var data := _tilemap.get_cell_tile_data(_target_cell)
+		if data != null and bool(data.get_custom_data("gatherable")):
+			return "E 채집"
+	return ""
+
+
+func _make_prompt() -> Label:
+	var l := Label.new()
+	l.add_theme_color_override("font_color", Color("#faf5e6"))
+	l.add_theme_font_size_override("font_size", 15)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.10, 0.09, 0.13, 0.88)
+	sb.set_corner_radius_all(8)
+	sb.content_margin_left = 8
+	sb.content_margin_right = 8
+	sb.content_margin_top = 3
+	sb.content_margin_bottom = 3
+	sb.set_border_width_all(1)
+	sb.border_color = Color("#9e7ad9")
+	l.add_theme_stylebox_override("normal", sb)
+	l.z_index = 100
+	_feedback_layer.add_child(l)
+	return l
 
 
 ## G1 guidance: while D14 is held, pulse a diamond over every stepping-slot cell

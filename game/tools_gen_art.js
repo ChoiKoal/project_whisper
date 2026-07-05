@@ -97,7 +97,16 @@ function makeTile(name, fillHex, opts = {}) {
   const W = 128, H = 64;
   const cv = makeCanvas(W, H);
   const fill = hexToRGB(fillHex);
-  const edge = opts.edgeHex ? hexToRGB(opts.edgeHex) : null;
+  // Ground readability (v0.2.0): the per-tile diamond outline was reading as a
+  // hard checkerboard. Soften every tile's edge by blending the declared edge
+  // colour ~40% toward the fill (so contrast drops to ~40% of the original),
+  // UNLESS the caller opts out (opts.hardEdge — used by VOID/mystic whose violet
+  // rim is a deliberate world signature). Fully deterministic.
+  const EDGE_MIX = opts.edgeMix !== undefined ? opts.edgeMix : 0.6; // 0.6 fill / 0.4 edge
+  let edge = opts.edgeHex ? hexToRGB(opts.edgeHex) : null;
+  if (edge && !opts.hardEdge) {
+    edge = edge.map((v, i) => Math.round(v * (1 - EDGE_MIX) + fill[i] * EDGE_MIX));
+  }
   const dot = opts.dotHex ? hexToRGB(opts.dotHex) : null;
   // deterministic pseudo-random for dot placement
   let seed = 1234567;
@@ -131,8 +140,8 @@ function makeTile(name, fillHex, opts = {}) {
   save(cv, name);
 }
 
-// T0 VOID: dark with violet edge hint
-makeTile('t0_void.png', '#2a2a33', { edgeHex: '#6b4a9e' });
+// T0 VOID: dark with violet edge hint — keep the violet rim strong (world signature).
+makeTile('t0_void.png', '#2a2a33', { edgeHex: '#6b4a9e', hardEdge: true });
 // T1 dirt path
 makeTile('t1_dirt.png', '#8a6a4a', { edgeHex: '#5c4433' });
 // T2A grass
@@ -605,7 +614,7 @@ save(makeBlob('stone.png', 64, 64, 32, 50, 12, 8, '#b0b0ba', '#6c6c76'), 'stone.
 
 // ---- Mystic water tile (m). 128x64 diamond, deep teal + violet glow. ----
 (function () {
-  makeTile('t5m_mystic.png', '#1e3a5c', { edgeHex: '#6b4a9e', dither: true, ditherHex: '#3a2a5c' });
+  makeTile('t5m_mystic.png', '#1e3a5c', { edgeHex: '#6b4a9e', dither: true, ditherHex: '#3a2a5c', hardEdge: true });
   // glow overlay diamond
   const W = 128, H = 64;
   const cv = makeCanvas(W, H);

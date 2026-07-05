@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bwhisperm8icon01"]
+
+[ext_resource type="Script" path="res://scenes/dev/m8_icon_coverage.gd" id="1_harness"]
+
+[node name="M8IconCoverage" type="Node"]
+script = ExtResource("1_harness")

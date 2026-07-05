@@ -20,11 +20,8 @@ const TEXT := Color("#faf5e6")
 const ACCENT := Color("#9e7ad9")
 const SILHOUETTE := Color("#3a3a44")
 const DIM := Color("#8a8590")
-
-const CATEGORY_COLOR := {
-	"gather": Color("#7ab567"),
-	"craft": Color("#c89ae0"),
-}
+## Undiscovered entries show the real icon darkened to a near-black silhouette.
+const SILHOUETTE_TINT := Color(0.16, 0.15, 0.2, 1.0)
 
 var _root: PanelContainer
 var _header: Label
@@ -186,16 +183,24 @@ func _make_entry(id: String) -> Control:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color("#30303a")
 	sb.set_content_margin_all(8)
-	sb.set_corner_radius_all(4)
+	sb.set_corner_radius_all(6)
+	sb.set_border_width_all(1)
+	sb.border_color = Color(ACCENT.r, ACCENT.g, ACCENT.b, 0.35 if discovered else 0.12)
 	panel.add_theme_stylebox_override("panel", sb)
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
 	panel.add_child(row)
 
-	var icon := ColorRect.new()
-	icon.custom_minimum_size = Vector2(36, 36)
-	icon.color = CATEGORY_COLOR.get(ItemDB.item_category(id), Color("#888888")) if discovered else SILHOUETTE
+	# Real icon; undiscovered entries are darkened to a silhouette of the true art.
+	var icon := TextureRect.new()
+	icon.custom_minimum_size = Vector2(40, 40)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.texture = ItemDB.icon(id)
+	if not discovered:
+		icon.modulate = SILHOUETTE_TINT
 	row.add_child(icon)
 
 	var text_col := VBoxContainer.new()
