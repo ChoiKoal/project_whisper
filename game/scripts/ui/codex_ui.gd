@@ -1,41 +1,64 @@
 extends CanvasLayer
 class_name CodexUI
-## 도감 (Codex/encyclopedia) UI — toggle with the `codex` action (C key).
+## 도감 (Codex) — fullscreen-ish encyclopedia, restyled per the owner wireframe.
+## Opened via the command bar's 도감 button or the `codex` action (REMAP: R key —
+## C is now the Character window). The UI hub owns the hotkey + one-window rule.
 ##
-## Two tabs:
-##   채집  — the 9 gather items.
-##   창조  — the canonical craft items (D06 folds into I4, so ItemDB reports 21
-##           canonical craft-category items).
-## Discovered entries show a category-colored square + name + flavor. Undiscovered
-## entries show a dark silhouette + "???". The header shows the overall 발견률 %.
+## Layout (wireframe):
+##   - title "도감" (top-left) + 검색 LineEdit (top-right): filters the grid by name
+##     substring (Korean ok).
+##   - a discovery % header + gauge-hint line (kept from the previous codex).
+##   - a GRID of ALL catalogued items: discovered = real icon + name; undiscovered =
+##     darkened silhouette + "???".
+##   - a detail pane (wireframe "#1"): big icon + name + flavor + a "조합법" section
+##     listing DISCOVERED recipes that OUTPUT the selected item, each rendered as
+##     [icon] + [icon] = [icon]. Undiscovered recipes are hidden; if none are known
+##     it reads "아직 알아내지 못했다".
 ##
-## Hint reveals from the fusion gauge (Codex._hints) surface here: on a craft
-## item's row whose recipe was hinted-but-not-yet-crafted, it shows
-## "힌트: <ingredient name> + ???".
-##
-## Colors: bg #2a2a33, text cream #faf5e6, accent #9e7ad9 (art guide §7).
+## Colors: bg #2a2a33, cream #faf5e6, violet #9e7ad9 (art guide §7).
 
 const BG := Color("#2a2a33")
+const PANEL_INNER := Color("#33333d")
 const TEXT := Color("#faf5e6")
 const ACCENT := Color("#9e7ad9")
-const SILHOUETTE := Color("#3a3a44")
-const DIM := Color("#8a8590")
-## Undiscovered entries show the real icon darkened to a near-black silhouette.
+const VIOLET_SOFT := Color("#c8b0ec")
+const DIM := Color("#b8b4a8")
+const SLOT_BG := Color("#22222a")
+## Undiscovered entries: real icon darkened to a near-black silhouette.
 const SILHOUETTE_TINT := Color(0.16, 0.15, 0.2, 1.0)
+
+const COLS := 6
+const SLOT := 60
 
 var _root: PanelContainer
 var _header: Label
-var _tabs: TabContainer
-var _gather_list: VBoxContainer
-var _craft_list: VBoxContainer
+var _search: LineEdit
+var _grid: GridContainer
+var _detail_icon: TextureRect
+var _detail_name: Label
+var _detail_flavor: Label
+var _recipe_box: VBoxContainer
 
 var _open: bool = false
-## output-item id -> recipe id, so a hinted recipe can annotate its output row.
-var _output_to_recipe: Dictionary = {}
+var _hub = null
+## output-item id -> [recipe records], so a detail pane can list recipes making it.
+var _output_to_recipes: Dictionary = {}
+## All catalogued ids in a stable order (gather then craft, each id-sorted).
+var _all_ids: Array = []
+var _slots: Array = []          # parallel to the currently-shown (filtered) ids
+var _shown_ids: Array = []
+var _selected_id: String = ""
+var _filter: String = ""
+
+
+func set_hub(hub) -> void:
+	_hub = hub
 
 
 func _ready() -> void:
+	layer = 2
 	_build_output_index()
+	_build_catalog_order()
 	_build_ui()
 	Codex.item_discovered.connect(func(_id): if _open: _rebuild())
 	Codex.recipe_discovered.connect(func(_id): if _open: _rebuild())
@@ -45,65 +68,16 @@ func _ready() -> void:
 
 func _build_output_index() -> void:
 	for rec: Dictionary in RecipeDB.all_recipes():
-		var out := ItemDB.resolve_id(String(rec["output"]))
-		# First recipe that yields this output wins the annotation slot.
-		if not _output_to_recipe.has(out):
-			_output_to_recipe[out] = rec["id"]
+		var out := ItemDB.resolve_id(String(rec.get("output", "")))
+		if not _output_to_recipes.has(out):
+			_output_to_recipes[out] = []
+		_output_to_recipes[out].append(rec)
 
 
-# ---- build ---------------------------------------------------------------
-
-func _build_ui() -> void:
-	_root = PanelContainer.new()
-	_root.set_anchors_preset(Control.PRESET_CENTER)
-	_root.custom_minimum_size = Vector2(480, 560)
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = BG
-	sb.set_content_margin_all(16)
-	sb.set_corner_radius_all(8)
-	sb.set_border_width_all(2)
-	sb.border_color = ACCENT
-	_root.add_theme_stylebox_override("panel", sb)
-	add_child(_root)
-
-	var outer := VBoxContainer.new()
-	outer.add_theme_constant_override("separation", 10)
-	_root.add_child(outer)
-
-	var title := Label.new()
-	title.text = "도감"
-	title.add_theme_color_override("font_color", TEXT)
-	title.add_theme_font_size_override("font_size", 24)
-	outer.add_child(title)
-
-	_header = Label.new()
-	_header.add_theme_color_override("font_color", ACCENT)
-	outer.add_child(_header)
-
-	_tabs = TabContainer.new()
-	_tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_tabs.custom_minimum_size = Vector2(448, 460)
-	outer.add_child(_tabs)
-
-	_gather_list = _make_tab("채집")
-	_craft_list = _make_tab("창조")
+func _build_catalog_order() -> void:
+	_all_ids = _ids_for_category("gather") + _ids_for_category("craft")
 
 
-func _make_tab(tab_name: String) -> VBoxContainer:
-	var scroll := ScrollContainer.new()
-	scroll.name = tab_name
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_tabs.add_child(scroll)
-	var list := VBoxContainer.new()
-	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	list.add_theme_constant_override("separation", 4)
-	scroll.add_child(list)
-	return list
-
-
-# ---- data ----------------------------------------------------------------
-
-## Canonical ids for a category, in a stable id-sorted order.
 func _ids_for_category(cat: String) -> Array:
 	var out: Array = []
 	for id: String in ItemDB.all_ids():
@@ -113,36 +87,177 @@ func _ids_for_category(cat: String) -> Array:
 	return out
 
 
-# ---- toggle --------------------------------------------------------------
+# ---- build ---------------------------------------------------------------
 
-func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("codex"):
-		_set_visible(not _open)
-		get_viewport().set_input_as_handled()
-		return
-	if _open and event.is_action_pressed("ui_cancel"):
-		_set_visible(false)
-		get_viewport().set_input_as_handled()
+func _build_ui() -> void:
+	_root = PanelContainer.new()
+	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_root.offset_left = 60
+	_root.offset_top = 40
+	_root.offset_right = -60
+	_root.offset_bottom = -80   # leave room for the command bar
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = BG
+	sb.set_content_margin_all(18)
+	sb.set_corner_radius_all(10)
+	sb.set_border_width_all(2)
+	sb.border_color = ACCENT
+	sb.shadow_color = Color(0, 0, 0, 0.4)
+	sb.shadow_size = 8
+	_root.add_theme_stylebox_override("panel", sb)
+	add_child(_root)
+
+	var outer := VBoxContainer.new()
+	outer.add_theme_constant_override("separation", 10)
+	_root.add_child(outer)
+
+	# --- top bar: title (left) + search (right) ---
+	var topbar := HBoxContainer.new()
+	topbar.add_theme_constant_override("separation", 12)
+	outer.add_child(topbar)
+
+	var title := Label.new()
+	title.text = "도감"
+	title.add_theme_color_override("font_color", TEXT)
+	title.add_theme_font_size_override("font_size", 28)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	topbar.add_child(title)
+
+	var search_lbl := Label.new()
+	search_lbl.text = "검색"
+	search_lbl.add_theme_color_override("font_color", DIM)
+	search_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	topbar.add_child(search_lbl)
+
+	_search = LineEdit.new()
+	_search.custom_minimum_size = Vector2(220, 0)
+	_search.placeholder_text = "이름으로 찾기…"
+	_search.add_theme_color_override("font_color", TEXT)
+	_search.text_changed.connect(_on_search_changed)
+	topbar.add_child(_search)
+
+	# --- discovery % header ---
+	_header = Label.new()
+	_header.add_theme_color_override("font_color", ACCENT)
+	outer.add_child(_header)
+
+	# --- body: grid (left) + detail pane (right) ---
+	var body := HBoxContainer.new()
+	body.add_theme_constant_override("separation", 16)
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	outer.add_child(body)
+
+	var grid_scroll := ScrollContainer.new()
+	grid_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	grid_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_child(grid_scroll)
+
+	_grid = GridContainer.new()
+	_grid.columns = COLS
+	_grid.add_theme_constant_override("h_separation", 8)
+	_grid.add_theme_constant_override("v_separation", 8)
+	grid_scroll.add_child(_grid)
+
+	# detail pane
+	var detail := PanelContainer.new()
+	var dsb := StyleBoxFlat.new()
+	dsb.bg_color = PANEL_INNER
+	dsb.set_content_margin_all(14)
+	dsb.set_corner_radius_all(8)
+	detail.add_theme_stylebox_override("panel", dsb)
+	detail.custom_minimum_size = Vector2(300, 0)
+	body.add_child(detail)
+
+	var dscroll := ScrollContainer.new()
+	dscroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	detail.add_child(dscroll)
+	var dcol := VBoxContainer.new()
+	dcol.add_theme_constant_override("separation", 10)
+	dcol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dscroll.add_child(dcol)
+
+	_detail_icon = TextureRect.new()
+	_detail_icon.custom_minimum_size = Vector2(96, 96)
+	_detail_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_detail_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_detail_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_detail_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	dcol.add_child(_detail_icon)
+
+	_detail_name = Label.new()
+	_detail_name.add_theme_color_override("font_color", TEXT)
+	_detail_name.add_theme_font_size_override("font_size", 20)
+	_detail_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	dcol.add_child(_detail_name)
+
+	_detail_flavor = Label.new()
+	_detail_flavor.add_theme_color_override("font_color", DIM)
+	_detail_flavor.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_detail_flavor.custom_minimum_size = Vector2(268, 0)
+	dcol.add_child(_detail_flavor)
+
+	var rsep := HSeparator.new()
+	dcol.add_child(rsep)
+
+	var rtitle := Label.new()
+	rtitle.text = "조합법"
+	rtitle.add_theme_color_override("font_color", ACCENT)
+	rtitle.add_theme_font_size_override("font_size", 18)
+	dcol.add_child(rtitle)
+
+	_recipe_box = VBoxContainer.new()
+	_recipe_box.add_theme_constant_override("separation", 6)
+	dcol.add_child(_recipe_box)
+
+
+# ---- toggle (hub-driven) -------------------------------------------------
+
+func open() -> void:
+	_set_visible(true)
+
+func close() -> void:
+	_set_visible(false)
+
+func is_open() -> bool:
+	return _open
 
 
 func _set_visible(v: bool) -> void:
 	_open = v
 	_root.visible = v
 	if v:
+		if _hub != null and _hub.has_method("request_focus"):
+			_hub.request_focus(_hub.Win.CODEX)
 		_rebuild()
+		_search.grab_focus()
+
+
+## Public (harness): set the search filter programmatically and re-filter the grid.
+func set_search(text: String) -> void:
+	_filter = text.strip_edges().to_lower()
+	if _search != null:
+		_search.text = text
+	if _open:
+		_rebuild()
+
+
+func _on_search_changed(text: String) -> void:
+	_filter = text.strip_edges().to_lower()
+	_rebuild()
 
 
 # ---- render --------------------------------------------------------------
 
 func _rebuild() -> void:
+	_fill_header()
+	_fill_grid()
+	_fill_detail()
+
+
+func _fill_header() -> void:
 	var gather_ids := _ids_for_category("gather")
 	var craft_ids := _ids_for_category("craft")
-
-	_fill_list(_gather_list, gather_ids)
-	_fill_list(_craft_list, craft_ids)
-
-	# 발견률 combines item + recipe denominators (spec §5): all catalogued items
-	# plus all recipes, over discovered items plus discovered recipes.
 	var item_total := gather_ids.size() + craft_ids.size()
 	var item_found := 0
 	for id: String in gather_ids + craft_ids:
@@ -153,91 +268,165 @@ func _rebuild() -> void:
 	var total := item_total + recipe_total
 	var found := item_found + recipe_found
 	var pct := 0.0 if total == 0 else (float(found) / float(total)) * 100.0
-	_header.text = "발견률  %d / %d  (%.0f%%)   채집 %d/%d · 창조 %d/%d · 레시피 %d/%d" % [
-		found, total, pct,
-		_count_found(gather_ids), gather_ids.size(),
-		_count_found(craft_ids), craft_ids.size(),
-		recipe_found, recipe_total,
+	var gauge := Codex.hint_gauge()
+	_header.text = "발견률  %d / %d  (%.0f%%)   ·   아이템 %d/%d · 레시피 %d/%d   ·   힌트 게이지 %d/%d" % [
+		found, total, pct, item_found, item_total, recipe_found, recipe_total,
+		gauge, Codex.HINT_THRESHOLD,
 	]
 
 
-func _count_found(ids: Array) -> int:
-	var n := 0
-	for id: String in ids:
-		if Codex.is_item_discovered(id):
-			n += 1
-	return n
+## The (name-substring-filtered) subset of the full catalog, in catalog order.
+func _filtered_ids() -> Array:
+	if _filter == "":
+		return _all_ids.duplicate()
+	var out: Array = []
+	for id: String in _all_ids:
+		# Only discovered items expose their real name to the filter; undiscovered
+		# entries match nothing (their name is hidden as "???").
+		if not Codex.is_item_discovered(id):
+			continue
+		if ItemDB.item_name(id).to_lower().contains(_filter):
+			out.append(id)
+	return out
 
 
-func _fill_list(list: VBoxContainer, ids: Array) -> void:
-	for c in list.get_children():
+func _fill_grid() -> void:
+	for c in _grid.get_children():
 		c.queue_free()
-	for id: String in ids:
-		list.add_child(_make_entry(id))
+	_slots.clear()
+	_shown_ids = _filtered_ids()
+	for id: String in _shown_ids:
+		_grid.add_child(_make_cell(id))
+	if _selected_id == "" and _shown_ids.size() > 0:
+		_selected_id = _shown_ids[0]
 
 
-func _make_entry(id: String) -> Control:
+func _make_cell(id: String) -> Control:
 	var discovered := Codex.is_item_discovered(id)
+	var box := PanelContainer.new()
+	box.custom_minimum_size = Vector2(SLOT, SLOT)
+	box.add_theme_stylebox_override("panel", _cell_style(id == _selected_id))
 
-	var panel := PanelContainer.new()
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color("#30303a")
-	sb.set_content_margin_all(8)
-	sb.set_corner_radius_all(6)
-	sb.set_border_width_all(1)
-	sb.border_color = Color(ACCENT.r, ACCENT.g, ACCENT.b, 0.35 if discovered else 0.12)
-	panel.add_theme_stylebox_override("panel", sb)
-
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	panel.add_child(row)
-
-	# Real icon; undiscovered entries are darkened to a silhouette of the true art.
 	var icon := TextureRect.new()
-	icon.custom_minimum_size = Vector2(40, 40)
+	icon.texture = ItemDB.icon(id)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	icon.texture = ItemDB.icon(id)
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if not discovered:
 		icon.modulate = SILHOUETTE_TINT
-	row.add_child(icon)
+	box.add_child(icon)
 
-	var text_col := VBoxContainer.new()
-	text_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(text_col)
+	if not discovered:
+		var q := Label.new()
+		q.text = "???"
+		q.add_theme_color_override("font_color", DIM)
+		q.add_theme_font_size_override("font_size", 12)
+		q.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		q.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+		q.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		q.set_anchors_preset(Control.PRESET_FULL_RECT)
+		box.add_child(q)
 
-	var name_lbl := Label.new()
-	name_lbl.add_theme_color_override("font_color", TEXT if discovered else DIM)
-	name_lbl.text = ItemDB.item_name(id) if discovered else "???"
-	text_col.add_child(name_lbl)
-
-	var sub_lbl := Label.new()
-	sub_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	sub_lbl.custom_minimum_size = Vector2(360, 0)
-	if discovered:
-		sub_lbl.add_theme_color_override("font_color", DIM)
-		sub_lbl.text = ItemDB.item_flavor(id)
-	else:
-		# Undiscovered: show a gauge-revealed hint if this item's recipe was hinted.
-		var hint_text := _hint_text_for(id)
-		if hint_text != "":
-			sub_lbl.add_theme_color_override("font_color", ACCENT)
-			sub_lbl.text = hint_text
-		else:
-			sub_lbl.add_theme_color_override("font_color", DIM)
-			sub_lbl.text = "아직 발견하지 못했다."
-	text_col.add_child(sub_lbl)
-
-	return panel
+	var btn := Button.new()
+	btn.flat = true
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var clear := StyleBoxEmpty.new()
+	btn.add_theme_stylebox_override("normal", clear)
+	btn.add_theme_stylebox_override("hover", clear)
+	btn.add_theme_stylebox_override("pressed", clear)
+	btn.pressed.connect(_on_cell_pressed.bind(id))
+	box.add_child(btn)
+	_slots.append(box)
+	return box
 
 
-## "힌트: <ingredient name> + ???" if this item's recipe has an active hint.
-func _hint_text_for(item_id: String) -> String:
-	var rid: String = _output_to_recipe.get(item_id, "")
-	if rid == "":
-		return ""
-	var ing := Codex.hint_for_recipe(rid)
-	if ing == "":
-		return ""
-	return "힌트: %s + ???" % ItemDB.item_name(ing)
+func _cell_style(selected: bool) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = SLOT_BG
+	sb.set_corner_radius_all(6)
+	sb.set_border_width_all(2)
+	sb.border_color = ACCENT if selected else Color(0.3, 0.3, 0.36, 0.8)
+	return sb
+
+
+func _on_cell_pressed(id: String) -> void:
+	_selected_id = id
+	# refresh selection borders
+	for i in _slots.size():
+		if i < _shown_ids.size():
+			_slots[i].add_theme_stylebox_override("panel", _cell_style(_shown_ids[i] == _selected_id))
+	_fill_detail()
+
+
+func _fill_detail() -> void:
+	var id := _selected_id
+	if id == "" or not ItemDB.has_item(id):
+		_detail_icon.texture = null
+		_detail_name.text = "—"
+		_detail_flavor.text = ""
+		_clear_recipes()
+		return
+	var discovered := Codex.is_item_discovered(id)
+	_detail_icon.texture = ItemDB.icon(id)
+	_detail_icon.modulate = Color.WHITE if discovered else SILHOUETTE_TINT
+	_detail_name.text = ItemDB.item_name(id) if discovered else "???"
+	_detail_flavor.text = ItemDB.item_flavor(id) if discovered else "아직 발견하지 못했다."
+	_fill_recipes(id)
+
+
+func _clear_recipes() -> void:
+	for c in _recipe_box.get_children():
+		c.queue_free()
+
+
+## List DISCOVERED recipes that output this item, each as [icon] + [icon] = [icon].
+## Undiscovered recipes are hidden; if none are known, show "아직 알아내지 못했다".
+func _fill_recipes(item_id: String) -> void:
+	_clear_recipes()
+	var recs: Array = _output_to_recipes.get(item_id, [])
+	var shown := 0
+	for rec: Dictionary in recs:
+		if not Codex.is_recipe_discovered(String(rec.get("id", ""))):
+			continue
+		_recipe_box.add_child(_recipe_row(rec))
+		shown += 1
+	if shown == 0:
+		var none := Label.new()
+		none.text = "아직 알아내지 못했다"
+		none.add_theme_color_override("font_color", DIM)
+		_recipe_box.add_child(none)
+
+
+func _recipe_row(rec: Dictionary) -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 4)
+	var inputs: Array = rec.get("inputs", [])
+	var out_id := ItemDB.resolve_id(String(rec.get("output", "")))
+	if inputs.size() == 2:
+		row.add_child(_mini_icon(String(inputs[0])))
+		row.add_child(_op_label("+"))
+		row.add_child(_mini_icon(String(inputs[1])))
+	row.add_child(_op_label("="))
+	row.add_child(_mini_icon(out_id))
+	return row
+
+
+func _mini_icon(id: String) -> TextureRect:
+	var t := TextureRect.new()
+	t.custom_minimum_size = Vector2(32, 32)
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	t.texture = ItemDB.icon(id)
+	return t
+
+
+func _op_label(op: String) -> Label:
+	var l := Label.new()
+	l.text = op
+	l.add_theme_color_override("font_color", VIOLET_SOFT)
+	l.add_theme_font_size_override("font_size", 18)
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	return l

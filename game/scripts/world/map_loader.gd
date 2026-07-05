@@ -40,6 +40,10 @@ const EDGE_OVERLAY_Z := 1
 const JITTER_Z := 2
 ## Expected z_index of the YSortLayer node in the grove scene (player + objects).
 const YSORT_Z := 5
+## (v0.3.0 A1) Cliff-skirt sprites hang BELOW the island slab. They are children of
+## the Ground tilemap (z_as_relative) at a negative z so they draw under the ground
+## tiles (effective z 0 + (-1) = -1) — the island reads as a floating diorama slab.
+const CLIFF_SKIRT_Z := -1
 
 ## Where object instances are added (must be Y-sorted).
 @export var ysort_layer_path: NodePath
@@ -109,6 +113,7 @@ func _ready() -> void:
 	_build_tiles()
 	_build_objects()
 	_scatter_objects()
+	_build_cliff_skirts()
 	_build_edge_overlays()
 	_build_brightness_jitter()
 	_build_border_collision()
@@ -323,6 +328,93 @@ func brightness_jitter(cell: Vector2i) -> float:
 	return (n - 0.5) * 0.06
 
 
+# ---- diorama cliff skirts (v0.3.0 A1) ------------------------------------
+
+## Node2D holding the cliff-skirt sprites (drawn below the ground tiles).
+var _cliff_overlay: Node2D
+## Count of skirt sprites placed, for the harness.
+var cliff_skirt_count: int = 0
+## Cells that received a south-facing skirt (for the harness south-edge assertion).
+var cliff_skirt_south_cells: Array[Vector2i] = []
+
+## The half-height of a skirt sprite's rim relative to the diamond center: the skirt
+## PNG is 128×112 with its top (the diamond's lower rim) anchored at the cell's local
+## origin +HALF (so the wall hangs from the tile's bottom edges downward).
+const SKIRT_TOP_OFFSET := 0.0
+
+## Render a downward earth/rock cross-section under every authored playable cell whose
+## outer (south / east / south-east) neighbour is off-island (VOID or out of bounds),
+## so the map reads as a floating-island slab instead of ending in flat void tiles.
+##
+## Iso-diamond screen geometry (Diamond Down): a cell's two lower silhouette edges
+## face +row (screen SW → the 's' skirt) and +col (screen SE → the 'e' skirt). Where
+## BOTH the +row and +col neighbours are off-island the outer corner shows, so an
+## 'se' corner skirt is placed as well. Sprites are children of the tilemap at a
+## negative z (below the ground) and offset downward so the wall tucks under the
+## tile's bottom vertex. VISUAL ONLY — no collision, base tiles untouched.
+func _build_cliff_skirts() -> void:
+	_cliff_overlay = Node2D.new()
+	_cliff_overlay.name = "CliffSkirts"
+	_cliff_overlay.z_index = CLIFF_SKIRT_Z
+	add_child(_cliff_overlay)
+
+	var tex_s := load("res://assets/tiles/cliff_skirt_s.png") as Texture2D
+	var tex_e := load("res://assets/tiles/cliff_skirt_e.png") as Texture2D
+	var tex_se := load("res://assets/tiles/cliff_skirt_se.png") as Texture2D
+	if tex_s == null or tex_e == null or tex_se == null:
+		push_warning("MapLoader: cliff-skirt textures missing; skipping skirts")
+		return
+
+	for r in range(height):
+		var row := _layout[r] if r < _layout.size() else ""
+		for c in range(min(width, row.length())):
+			if not _is_island_cell(Vector2i(c, r)):
+				continue
+			var south_open := not _is_island_cell(Vector2i(c, r + 1))   # +row → screen SW
+			var east_open := not _is_island_cell(Vector2i(c + 1, r))    # +col → screen SE
+			if not south_open and not east_open:
+				continue
+			# Place the wider corner piece only where BOTH lower edges are exposed;
+			# otherwise the single-facing piece for whichever edge is open.
+			if south_open and east_open:
+				_place_skirt(tex_se, Vector2i(c, r))
+				cliff_skirt_south_cells.append(Vector2i(c, r))
+			elif south_open:
+				_place_skirt(tex_s, Vector2i(c, r))
+				cliff_skirt_south_cells.append(Vector2i(c, r))
+			else:
+				_place_skirt(tex_e, Vector2i(c, r))
+
+
+## A cell is "island" (part of the authored playable slab) if it is in-bounds and its
+## authored symbol is not VOID. Uses `_layout` (authored data), NOT live tile data, so
+## a runtime gathered-VOID hole in the interior does not sprout a cliff wall.
+func _is_island_cell(cell: Vector2i) -> bool:
+	if cell.x < 0 or cell.y < 0 or cell.y >= _layout.size():
+		return false
+	var row: String = _layout[cell.y]
+	if cell.x >= row.length():
+		return false
+	return row[cell.x] != "V"
+
+
+## Add one skirt sprite centered on the cell, hanging below its bottom rim. The PNG's
+## top row is the diamond's lower rim; anchoring the sprite top at the cell origin +
+## TILE_HALF_H drops the wall straight down from the tile's bottom vertex.
+func _place_skirt(tex: Texture2D, cell: Vector2i) -> void:
+	var s := Sprite2D.new()
+	s.texture = tex
+	s.centered = false
+	# map_to_local gives the cell center; the 128-wide skirt's left edge sits at
+	# center.x - 64, and its top rim aligns with the diamond's vertical center so the
+	# 0..32 lip overlaps the tile's lower half and the wall continues below.
+	var center := map_to_local(cell)
+	s.position = center + Vector2(-64.0, -0.0 + SKIRT_TOP_OFFSET)
+	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_cliff_overlay.add_child(s)
+	cliff_skirt_count += 1
+
+
 # ---- border collision (v0.2.1 bug-B fix) ---------------------------------
 
 ## Physics node holding the map-border walls. Built in code.
@@ -460,6 +552,8 @@ func _spawn_object(sym: String, cell: Vector2i, spec: Dictionary) -> void:
 			caul.texture = load("res://assets/objects/cauldron.png")
 			caul.offset = Vector2(0, -64)
 			_place(caul, world)
+			# A3: warm violet light pool under the cauldron.
+			_add_light_pool(caul, "res://assets/objects/light_pool_violet.png", Vector2(0, -8), 0.85)
 		"U":
 			stump_cell = cell
 			rest_stump = RestStump.new()
@@ -481,9 +575,13 @@ func _spawn_object(sym: String, cell: Vector2i, spec: Dictionary) -> void:
 				var centroid := cell_center_world(cell)
 				centroid += Vector2(0, 32)  # nudge into the block center
 				_place(tree, centroid)
+				# A3: large violet light pool washing the world-tree base.
+				_add_light_pool(tree, "res://assets/objects/light_pool_violet_lg.png", Vector2(0, 0), 1.0)
 		"m":
 			var mw := MysticWater.new()
 			_place(mw, world)
+			# A3: cyan-violet pool over the mystic water.
+			_add_light_pool(mw, "res://assets/objects/light_pool_cyan.png", Vector2(0, 0), 0.7)
 		"T", "F", "R", "s", "t", "h":
 			_place(rebuild_gatherable(sym, cell), world)
 			object_spawns.append({"cell": cell, "symbol": sym})
@@ -649,6 +747,22 @@ func _place(node: Node2D, world: Vector2) -> void:
 		_ysort.add_child(node)
 	else:
 		add_child(node)
+
+
+## A3: attach a soft additive light-pool decal to a spawned object. The pool
+## script reparents itself onto the glow CanvasLayer (unaffected by CanvasModulate)
+## in _ready, so at night it blooms. `scale_strength` scales the pool footprint and
+## its peak alpha. Fails soft if the texture or script is missing.
+func _add_light_pool(parent: Node2D, tex_path: String, off: Vector2, scale_strength: float) -> void:
+	var pool_script := load("res://scripts/world/light_pool.gd")
+	var tex := load(tex_path)
+	if pool_script == null or tex == null:
+		return
+	var pool: Sprite2D = pool_script.new()
+	pool.texture = tex
+	pool.offset = off
+	pool.scale = Vector2(scale_strength, scale_strength)
+	parent.add_child(pool)
 
 
 # ---- queries -------------------------------------------------------------

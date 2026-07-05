@@ -91,8 +91,29 @@ function onDiamondEdge(x, y, w, h) {
   return d > 0.88 && d <= 1.0 + 1e-6;
 }
 
+// ---- colour helpers (tile texture density, v0.3.0) ----
+// Small deterministic tone shift of an rgb toward another rgb by t (0..1).
+function mix(a, b, t) {
+  return [
+    Math.round(a[0] * (1 - t) + b[0] * t),
+    Math.round(a[1] * (1 - t) + b[1] * t),
+    Math.round(a[2] * (1 - t) + b[2] * t),
+  ];
+}
+
 // ---- Tile generation ----
 // spec: fill color, optional edge color, optional dot color + density, dither for water
+//
+// v0.3.0 tile texture density: the base diamond fields were flat single-colour
+// fields, reading as plastic under the new diorama lighting. Each ground family now
+// carries a richer *procedural* interior texture (still 128×64, still deterministic,
+// still palette-strict — the extra tones are all art-guide §3 ramp colours). The
+// silhouette + soft v0.2.0 edge blend are UNCHANGED (subtle), so M4 tile counts and
+// save diffs stay exact. Texture kind is chosen by opts.tex:
+//   "grass" — directional blade strokes + 2-3 green tonal patches
+//   "dirt"  — pebbles + horizontal strata specks
+//   "water" — horizontal shimmer bands + sparse bright highlight pixels
+//   "mud"   — wet blotches (darker + a couple glossy specks)
 function makeTile(name, fillHex, opts = {}) {
   const W = 128, H = 64;
   const cv = makeCanvas(W, H);
@@ -108,9 +129,26 @@ function makeTile(name, fillHex, opts = {}) {
     edge = edge.map((v, i) => Math.round(v * (1 - EDGE_MIX) + fill[i] * EDGE_MIX));
   }
   const dot = opts.dotHex ? hexToRGB(opts.dotHex) : null;
-  // deterministic pseudo-random for dot placement
+  // deterministic pseudo-random for dot placement (unchanged seed → flower/clover
+  // dots land exactly where they did in v0.2.x for the decorated variants).
   let seed = 1234567;
   const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+
+  // Optional richer interior texture. Uses its OWN separate seed stream (keyed off
+  // the tile name) so it never perturbs the flower/clover `rnd` sequence above.
+  const tex = opts.tex || null;
+  let tseed = 0;
+  for (let i = 0; i < name.length; i++) tseed = (tseed * 131 + name.charCodeAt(i)) & 0x7fffffff;
+  tseed = (tseed ^ 0x5bd1e995) & 0x7fffffff;
+  const trnd = () => { tseed = (tseed * 1103515245 + 12345) & 0x7fffffff; return tseed / 0x7fffffff; };
+  // Palette-strict tone families per texture kind (all art-guide §3 ramp colours).
+  const texTones = tex ? {
+    grass: { lo: hexToRGB(opts.texLo || '#4d8b4f'), hi: hexToRGB(opts.texHi || '#a8d982'), blade: hexToRGB(opts.texLo || '#4d8b4f') },
+    dirt:  { lo: hexToRGB('#5c4433'), hi: hexToRGB('#b59268'), blade: hexToRGB('#3a2a20') },
+    water: { lo: hexToRGB(opts.texLo || '#2e6b8a'), hi: hexToRGB(opts.texHi || '#8fd4d9'), blade: null },
+    mud:   { lo: hexToRGB('#3a2a20'), hi: hexToRGB('#8a6a4a'), blade: hexToRGB('#3a2a20') },
+  }[tex] : null;
+
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       if (!inDiamond(x, y, W, H)) continue;
@@ -120,10 +158,89 @@ function makeTile(name, fillHex, opts = {}) {
         const alt = hexToRGB(opts.ditherHex);
         if (((x >> 2) + (y >> 1)) % 2 === 0) c = alt;
       }
+      // ---- procedural interior texture (v0.3.0) ----
+      if (texTones && !onDiamondEdge(x, y, W, H)) {
+        if (tex === 'grass') {
+          // large soft tonal patches from value-noise-ish hash, top-right lit.
+          const n = smoothCell(x, y, 16, 0x1111);
+          const n2 = smoothCell(x, y, 7, 0x2222);
+          if (n > 0.66) c = mix(c, texTones.hi, 0.35);
+          else if (n < 0.34) c = mix(c, texTones.lo, 0.30);
+          // faint upper-right lift
+          if (n2 > 0.6 && (x + (H - y)) > 96) c = mix(c, texTones.hi, 0.18);
+        } else if (tex === 'dirt') {
+          const n = smoothCell(x, y, 12, 0x3333);
+          if (n > 0.60) c = mix(c, texTones.hi, 0.28);
+          else if (n < 0.36) c = mix(c, texTones.lo, 0.30);
+          // horizontal strata specks
+          if (((y % 6) === 0) && smoothCell(x, y, 3, 0x4444) > 0.62) c = mix(c, texTones.lo, 0.5);
+        } else if (tex === 'water') {
+          // horizontal shimmer bands (already dithered above): lighten alternating rows.
+          if ((y % 4) === 1) c = mix(c, texTones.hi, 0.30);
+          else if ((y % 4) === 3) c = mix(c, texTones.lo, 0.25);
+        } else if (tex === 'mud') {
+          const n = smoothCell(x, y, 10, 0x5555);
+          if (n < 0.32) c = mix(c, texTones.lo, 0.45);   // wet dark blotches
+          else if (n > 0.70) c = mix(c, texTones.hi, 0.22);
+        }
+      }
       if (edge && onDiamondEdge(x, y, W, H)) c = edge;
       setPx(cv, x, y, c, 255);
     }
   }
+
+  // ---- directional blade strokes / pebbles / highlight pixels (overlaid) ----
+  if (texTones) {
+    if (tex === 'grass') {
+      // short directional blade strokes (2-3px), leaning up-right (top-right light).
+      const strokes = 34;
+      for (let n = 0; n < strokes; n++) {
+        const bx = 14 + Math.floor(trnd() * (W - 28));
+        const by = 8 + Math.floor(trnd() * (H - 16));
+        const len = 2 + Math.floor(trnd() * 3);
+        const dark = trnd() < 0.5;
+        const col = dark ? texTones.lo : texTones.hi;
+        for (let k = 0; k < len; k++) {
+          const px = bx + k, py = by - k; // up-right lean
+          if (inDiamond(px, py, W, H) && !onDiamondEdge(px, py, W, H)) setPx(cv, px, py, col, 255);
+        }
+      }
+    } else if (tex === 'dirt') {
+      // scattered pebbles (2×2, mid-grey-brown) + a few dark specks.
+      const peb = hexToRGB('#8a6a4a'), pebLit = hexToRGB('#b59268'), speck = hexToRGB('#3a2a20');
+      for (let n = 0; n < 20; n++) {
+        const px = 12 + Math.floor(trnd() * (W - 24));
+        const py = 8 + Math.floor(trnd() * (H - 16));
+        if (!inDiamond(px, py, W, H) || onDiamondEdge(px, py, W, H)) continue;
+        setPx(cv, px, py, pebLit); setPx(cv, px + 1, py, peb);
+        setPx(cv, px, py + 1, peb); setPx(cv, px + 1, py + 1, mix(peb, speck, 0.5));
+      }
+      for (let n = 0; n < 26; n++) {
+        const px = 10 + Math.floor(trnd() * (W - 20));
+        const py = 6 + Math.floor(trnd() * (H - 12));
+        if (inDiamond(px, py, W, H) && !onDiamondEdge(px, py, W, H)) setPx(cv, px, py, speck);
+      }
+    } else if (tex === 'water') {
+      // sparse bright highlight pixels (shimmer glints), top-right biased.
+      const glint = hexToRGB('#8fd4d9');
+      for (let n = 0; n < 16; n++) {
+        const px = 16 + Math.floor(trnd() * (W - 32));
+        const py = 8 + Math.floor(trnd() * (H - 16));
+        if (inDiamond(px, py, W, H) && !onDiamondEdge(px, py, W, H)) {
+          setPx(cv, px, py, glint, 235); setPx(cv, px + 1, py, glint, 200);
+        }
+      }
+    } else if (tex === 'mud') {
+      // a couple glossy wet specks (cream, low alpha) for the sheen.
+      const gloss = hexToRGB('#b8b4a8');
+      for (let n = 0; n < 8; n++) {
+        const px = 20 + Math.floor(trnd() * (W - 40));
+        const py = 12 + Math.floor(trnd() * (H - 24));
+        if (inDiamond(px, py, W, H) && !onDiamondEdge(px, py, W, H)) setPx(cv, px, py, gloss, 130);
+      }
+    }
+  }
+
   // scatter dots (flowers/clover) inside diamond, not on edge
   if (dot) {
     const count = opts.dotCount || 10;
@@ -140,24 +257,44 @@ function makeTile(name, fillHex, opts = {}) {
   save(cv, name);
 }
 
+// Deterministic smooth value in [0,1] from a coarse hash grid with bilinear
+// smoothstep interp — used for organic tonal patches inside tiles.
+function hcell(ix, iy, salt) {
+  let h = (ix * 374761393) ^ (iy * 668265263) ^ (salt * 2246822519);
+  h = (h ^ (h >>> 13)) >>> 0;
+  h = (h * 1274126177) >>> 0;
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+}
+function smoothCell(x, y, cell, salt) {
+  const gx = x / cell, gy = y / cell;
+  const x0 = Math.floor(gx), y0 = Math.floor(gy);
+  let fx = gx - x0, fy = gy - y0;
+  fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
+  const n00 = hcell(x0, y0, salt), n10 = hcell(x0 + 1, y0, salt);
+  const n01 = hcell(x0, y0 + 1, salt), n11 = hcell(x0 + 1, y0 + 1, salt);
+  const nx0 = n00 * (1 - fx) + n10 * fx;
+  const nx1 = n01 * (1 - fx) + n11 * fx;
+  return nx0 * (1 - fy) + nx1 * fy;
+}
+
 // T0 VOID: dark with violet edge hint — keep the violet rim strong (world signature).
 makeTile('t0_void.png', '#2a2a33', { edgeHex: '#6b4a9e', hardEdge: true });
-// T1 dirt path
-makeTile('t1_dirt.png', '#8a6a4a', { edgeHex: '#5c4433' });
-// T2A grass
-makeTile('t2a_grass.png', '#7ab567', { edgeHex: '#4d8b4f' });
+// T1 dirt path — pebbles + strata specks.
+makeTile('t1_dirt.png', '#8a6a4a', { edgeHex: '#5c4433', tex: 'dirt' });
+// T2A grass — blade strokes + 2-3 green tonal patches.
+makeTile('t2a_grass.png', '#7ab567', { edgeHex: '#4d8b4f', tex: 'grass', texLo: '#4d8b4f', texHi: '#a8d982' });
 // T2B grass + pink flowers
-makeTile('t2b_grass_flowers.png', '#7ab567', { edgeHex: '#4d8b4f', dotHex: '#f0a8b8', dotCount: 14 });
-// T2C grass + clover (darker green dots)
-makeTile('t2c_grass_clover.png', '#4d8b4f', { edgeHex: '#2e5d3b', dotHex: '#7ab567', dotCount: 12 });
-// T2D flower grass, light with white dots
-makeTile('t2d_flower_grass.png', '#a8d982', { edgeHex: '#7ab567', dotHex: '#faf5e6', dotCount: 16 });
-// T4 mud
-makeTile('t4_mud.png', '#5c4433', { edgeHex: '#3a2a20' });
-// T5A water
-makeTile('t5a_water.png', '#4aa3b8', { edgeHex: '#2e6b8a', dither: true, ditherHex: '#8fd4d9' });
+makeTile('t2b_grass_flowers.png', '#7ab567', { edgeHex: '#4d8b4f', tex: 'grass', texLo: '#4d8b4f', texHi: '#a8d982', dotHex: '#f0a8b8', dotCount: 14 });
+// T2C grass + clover (darker green dots) — darker grass tone family.
+makeTile('t2c_grass_clover.png', '#4d8b4f', { edgeHex: '#2e5d3b', tex: 'grass', texLo: '#2e5d3b', texHi: '#7ab567', dotHex: '#7ab567', dotCount: 12 });
+// T2D flower grass, light with white dots — bright grass tone family.
+makeTile('t2d_flower_grass.png', '#a8d982', { edgeHex: '#7ab567', tex: 'grass', texLo: '#7ab567', texHi: '#faf5e6', dotHex: '#faf5e6', dotCount: 16 });
+// T4 mud — wet blotches.
+makeTile('t4_mud.png', '#5c4433', { edgeHex: '#3a2a20', tex: 'mud' });
+// T5A water — horizontal shimmer bands + sparse highlight glints.
+makeTile('t5a_water.png', '#4aa3b8', { edgeHex: '#2e6b8a', dither: true, ditherHex: '#8fd4d9', tex: 'water', texLo: '#2e6b8a', texHi: '#8fd4d9' });
 // T5B water2
-makeTile('t5b_water2.png', '#2e6b8a', { edgeHex: '#1e3a5c', dither: true, ditherHex: '#4aa3b8' });
+makeTile('t5b_water2.png', '#2e6b8a', { edgeHex: '#1e3a5c', dither: true, ditherHex: '#4aa3b8', tex: 'water', texLo: '#1e3a5c', texHi: '#4aa3b8' });
 
 // ---- Tree objects (128x256, ground origin at bottom-center diamond) ----
 function makeTree(name, trunkHex, canopyHex) {
@@ -343,6 +480,103 @@ function makeCharSheet() {
   save(cv, 'character_sheet.png');
 }
 makeCharSheet();
+
+// ---- Character portrait (v0.3.0 B3) ----
+// A dedicated 192×192 bust portrait of the cloaked constructor for the character
+// window (C). Not a sheet-frame upscale — a nicer front-facing bust: hood + shoulders
+// filling the frame, dark hood interior with two glowing violet eyes, a violet trim V
+// on the chest, the staff orb glinting at the upper-right corner. Palette-strict
+// (art guide §2–§4), top-right soft light, selout outlines (no pure black), on a
+// subtle dark rounded backdrop so it reads inside the window's portrait pane.
+function makeCharPortrait() {
+  const S = 192;
+  const cv = makeCanvas(S, S);
+  const P = CHAR_PAL;
+  const bg = hexToRGB('#22222a');
+  const bgRim = hexToRGB('#3a2a5c');
+  const cx = S / 2;
+  // rounded dark backdrop disc
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const d = Math.hypot(x - cx, y - cx) / (S / 2);
+    if (d <= 1.0) {
+      const c = mix(bg, bgRim, Math.min(1, d * d * 0.9));
+      setPx(cv, x, y, c, 255);
+    }
+  }
+  // Bust geometry (pixel coords). Shoulders wide at the bottom, hood a rounded cowl.
+  const shoulderY = 128, hemY = S - 2;
+  // shoulders / robe mantle (trapezoid)
+  for (let y = shoulderY; y <= hemY; y++) {
+    const t = (y - shoulderY) / (hemY - shoulderY);
+    const half = Math.round(46 + t * 40);
+    for (let x = cx - half; x <= cx + half; x++) {
+      let col = P.robe;
+      if (x - cx > half - 10 && y < shoulderY + 40) col = P.robeLit;   // top-right lit
+      else if (x - cx < -(half - 10)) col = P.robeShade;              // lower-left shade
+      setPx(cv, x, y, col, 255);
+    }
+    setPx(cv, cx - half - 1, y, P.robeLine, 255);
+    setPx(cv, cx + half + 1, y, P.robeLine, 255);
+  }
+  // violet trim "V" down the chest
+  for (let k = 0; k < 34; k++) {
+    const yy = shoulderY + 6 + k;
+    const dx = Math.round(k * 0.62);
+    const col = (k % 2 === 0) ? P.trim : P.trimLit;
+    for (let w = 0; w < 4; w++) {
+      setPx(cv, cx - dx + w, yy, col, 255);
+      setPx(cv, cx + dx - w, yy, col, 255);
+    }
+  }
+  // hood: a rounded cowl framing a dark face cavity.
+  const hoodTop = 26, hoodBot = shoulderY + 10;
+  for (let y = hoodTop; y <= hoodBot; y++) {
+    const t = (y - hoodTop) / (hoodBot - hoodTop);
+    const half = Math.round(20 + t * 58);
+    for (let x = cx - half; x <= cx + half; x++) {
+      // outer hood shell
+      let col = P.robe;
+      if (x - cx > half - 12) col = P.robeLit;
+      else if (x - cx < -(half - 12)) col = P.robeShade;
+      setPx(cv, x, y, col, 255);
+    }
+    setPx(cv, cx - half - 1, y, P.robeLine, 255);
+    setPx(cv, cx + half + 1, y, P.robeLine, 255);
+  }
+  // hood crown outline
+  for (let x = cx - 22; x <= cx + 22; x++) setPx(cv, x, hoodTop - 1, P.robeLine, 255);
+  // face cavity (dark neutral) — an oval of hood shadow with two violet eyes.
+  const faceCx = cx, faceCy = 96;
+  for (let y = faceCy - 34; y <= faceCy + 30; y++) for (let x = faceCx - 30; x <= faceCx + 30; x++) {
+    const d = Math.hypot((x - faceCx) / 30, (y - faceCy) / 34);
+    if (d <= 1.0) setPx(cv, x, y, P.hoodDark, 255);
+  }
+  // two glowing violet eyes with a soft glow halo (baked bright).
+  const eyeY = faceCy - 2;
+  for (const ex of [faceCx - 13, faceCx + 13]) {
+    // glow halo
+    for (let y = eyeY - 5; y <= eyeY + 5; y++) for (let x = ex - 5; x <= ex + 5; x++) {
+      const d = Math.hypot(x - ex, y - eyeY) / 5;
+      if (d <= 1.0) setPx(cv, x, y, P.trim, Math.round(90 * (1 - d)));
+    }
+    // bright core
+    for (let y = eyeY - 2; y <= eyeY + 2; y++) for (let x = ex - 2; x <= ex + 2; x++) {
+      if (Math.hypot(x - ex, y - eyeY) <= 2.2) setPx(cv, x, y, P.trimLit, 255);
+    }
+  }
+  // staff orb glinting upper-right corner
+  const ox = S - 34, oy = 34;
+  for (let y = oy - 12; y <= oy + 12; y++) for (let x = ox - 12; x <= ox + 12; x++) {
+    const d = Math.hypot(x - ox, y - oy) / 12;
+    if (d <= 1.0) setPx(cv, x, y, mix(P.trimLit, P.trim, d), Math.round(255 * (1 - d * 0.6)));
+  }
+  // orb bright core
+  for (let y = oy - 4; y <= oy + 4; y++) for (let x = ox - 4; x <= ox + 4; x++) {
+    if (Math.hypot(x - ox, y - oy) <= 4) setPx(cv, x, y, P.robeLit, 255);
+  }
+  save(cv, 'character_portrait.png');
+}
+makeCharPortrait();
 
 // ---- Small gatherable objects (M2) ----
 // 64x64 sprites, ground origin at bottom-center. Placed via Sprite2D offset so
@@ -919,5 +1153,133 @@ makeFlower('flower_pink.png', '#d9b8ff', '#9e7ad9');     // light violet-pink
   }
   save(cv, 'bush_green.png');
 })();
+
+// ============================================================================
+// v0.3.0 Workstream A — diorama map visual quality.
+// ============================================================================
+
+// ---- A1: Diorama cliff-skirt tiles ----------------------------------------
+// The floating-island look: authored ground doesn't just stop at the void — its
+// south/east-facing outer edges drop away as a lit cliff cross-section (dirt →
+// rock strata). These are VISUAL ONLY sprites the map loader hangs under the outer
+// edge cells (behind/under the ground, no collision). 128px wide to match the tile
+// diamond footprint; ~112px tall so the strata read. Top-right lit (art guide §2),
+// palette browns/greys. Deterministic.
+//
+// Variants:
+//   cliff_skirt_s   — south-facing drop (hangs below a cell whose south is void)
+//   cliff_skirt_e   — east-facing drop
+//   cliff_skirt_se  — outer corner where south + east meet (wider spread)
+// Each is drawn as the lower half-diamond "lip" of the tile continuing down into a
+// strata wall, so it tucks under the diamond's bottom edge seamlessly.
+function makeCliffSkirt(name, kind) {
+  const W = 128, H = 112;
+  const cv = makeCanvas(W, H);
+  // Palette ramps (art guide §3 browns + neutral greys).
+  const dirt = hexToRGB('#5c4433');
+  const dirtLit = hexToRGB('#8a6a4a');
+  const dirtDark = hexToRGB('#3a2a20');
+  const rock = hexToRGB('#6e6e7a');
+  const rockLit = hexToRGB('#b8b4a8');
+  const rockDark = hexToRGB('#2a2a33');
+  const cx = 64;
+  // The diamond's bottom vertex sits at (64, 32) in tile space; the skirt starts at
+  // the diamond's lower edges (y≈0..32 across the width) and the wall drops to H.
+  // Top lip: the thin band of soil right under the diamond rim.
+  // For each column x, compute how far down the diamond's lower edge is at that x
+  // (the wall only exists below the ground silhouette).
+  function rimY(x) {
+    // lower half of a 128×64 diamond centred at (64,32): |x-64|/64 + (y-32)/32 = 1
+    // → y = 32 + 32*(1 - |x-64|/64). Clamp to [0..32]. Above rimY = still ground.
+    const u = Math.abs(x - cx) / 64;
+    return Math.round(32 * (1 - u)) + 0; // 0..32; but we anchor skirt so rim≈y0
+  }
+  // Wall silhouette width: for the S skirt the full diamond width tapers; for E,
+  // we bias to the right half; for SE, a broad wedge.
+  for (let x = 0; x < W; x++) {
+    // horizontal presence + inset per kind
+    let present = true;
+    let inset = 0;
+    const u = (x - cx) / 64; // -1..1
+    if (kind === 'e') { present = u > -0.15; inset = Math.round((1 - Math.min(1, Math.max(0, (u + 0.15)))) * 6); }
+    else if (kind === 's') { present = true; }
+    else if (kind === 'se') { present = true; }
+    if (!present) continue;
+    const ry = rimY(x); // the diamond lower-edge y for this column (0..32)
+    const wallTop = ry;  // soil starts right at the diamond rim
+    const wallBot = H - Math.round((1 - Math.abs(u)) * 6); // slight rounded base
+    for (let y = wallTop; y < wallBot; y++) {
+      const depth = (y - wallTop) / (H - wallTop); // 0 at rim → 1 at base
+      let c;
+      // Top ~28%: dirt/soil band. Below: rock strata.
+      if (depth < 0.28) {
+        c = (u > 0.1) ? dirtLit : dirt;               // top-right lit soil
+        if (depth < 0.06) c = mix(dirtLit, hexToRGB('#4d8b4f'), 0.3); // mossy top rim
+      } else {
+        // strata: horizontal bands alternating rock tones + occasional dark seam.
+        const band = Math.floor((y - wallTop) / 9);
+        const seam = ((y - wallTop) % 9) === 0;
+        let base = (band % 2 === 0) ? rock : mix(rock, rockDark, 0.35);
+        base = (u > 0.15) ? mix(base, rockLit, 0.28) : base;         // top-right lift
+        if (u < -0.35) base = mix(base, rockDark, 0.30);             // left in shadow
+        c = seam ? mix(base, rockDark, 0.55) : base;
+        // a few embedded pebble specks (deterministic)
+        if (smoothCell(x, y, 4, 0x6a6a) > 0.86) c = rockLit;
+        if (smoothCell(x, y, 5, 0x7b7b) < 0.08) c = dirtDark;
+      }
+      setPx(cv, x, y, c, 255);
+    }
+    // 1px selout on the left silhouette edge of the wall (2 steps darker)
+  }
+  // outline the vertical silhouette edges (selout, no pure black)
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      if (cv.data[i + 3] === 0) continue;
+      // if the pixel to the left/right is transparent → draw a darker rim
+      const li = (y * W + (x - 1)) * 4;
+      const rimDark = mix(dirtDark, rockDark, 0.5);
+      if (x === 0 || cv.data[li + 3] === 0) { setPx(cv, x, y, rimDark, 255); }
+    }
+  }
+  save(cv, name);
+}
+makeCliffSkirt('cliff_skirt_s.png', 's');
+makeCliffSkirt('cliff_skirt_e.png', 'e');
+makeCliffSkirt('cliff_skirt_se.png', 'se');
+
+// ---- A3: Local light-pool decals (radial gradient PNGs, 256px) -------------
+// Soft additive glow decals the map loader lays UNDER/around light sources
+// (cauldron, world tree, mystic water, open night buds). Rendered on the glow
+// CanvasLayer (additive, unaffected by day/night modulate) so at night they read
+// like the reference dioramas' local light. Radial gradient, low peak alpha.
+//   light_pool_violet  — cauldron / night buds (warm violet)
+//   light_pool_violet_lg — world tree (large)
+//   light_pool_cyan    — mystic water (cyan-violet)
+function makeLightPool(name, size, coreHex, edgeHex, peakAlpha) {
+  const W = size, H = size;
+  const cv = makeCanvas(W, H);
+  const core = hexToRGB(coreHex);
+  const edge = hexToRGB(edgeHex);
+  const cx = (W - 1) / 2, cy = (H - 1) / 2;
+  const R = W / 2;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const d = Math.hypot(x - cx, y - cy) / R; // 0 center → 1 rim
+      if (d >= 1.0) continue;
+      // smooth falloff: quadratic-ish, soft toward the rim
+      const f = Math.pow(1.0 - d, 2.2);
+      const a = Math.round(peakAlpha * f);
+      if (a <= 0) continue;
+      // colour lerps core→edge with radius so the rim tints slightly cooler/warmer
+      const c = mix(core, edge, Math.min(1, d * 1.1));
+      setPx(cv, x, y, c, a);
+    }
+  }
+  save(cv, name);
+}
+makeLightPool('light_pool_violet.png', 256, '#d9b8ff', '#6b4a9e', 150);
+makeLightPool('light_pool_violet_lg.png', 256, '#d9b8ff', '#6b4a9e', 175);
+makeLightPool('light_pool_cyan.png', 256, '#8fd4d9', '#4a5c9e', 140);
 
 console.log('DONE');

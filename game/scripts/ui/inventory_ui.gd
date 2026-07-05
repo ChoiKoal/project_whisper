@@ -31,6 +31,24 @@ const DOUBLE_CLICK_SEC := 0.35
 @export var interaction_path: NodePath
 
 var _interaction: InteractionController
+## Back-reference to the UI hub (set via set_hub) so opening/closing stays coordinated
+## with the command bar and the one-window-at-a-time rule.
+var _hub = null
+
+
+## v0.3.0: the hub is the single window authority. It calls these; the hub also owns
+## the I hotkey and ESC precedence, so this UI no longer handles those directly.
+func set_hub(hub) -> void:
+	_hub = hub
+
+func open() -> void:
+	_set_panel_visible(true)
+
+func close() -> void:
+	_set_panel_visible(false)
+
+func is_open() -> bool:
+	return _open
 
 var _panel: PanelContainer
 var _title: Label
@@ -332,16 +350,11 @@ func _slot_style(selected: bool) -> StyleBoxFlat:
 # ---- input / selection ----------------------------------------------------
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("inventory"):
-		_toggle()
-		get_viewport().set_input_as_handled()
-		return
+	# The UI hub owns the I hotkey and ESC precedence (one-window rule). This panel
+	# only handles in-panel navigation while it is open.
 	if not _open:
 		return
-	if event.is_action_pressed("ui_cancel"):
-		_set_panel_visible(false)
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("ui_right"):
+	if event.is_action_pressed("ui_right"):
 		_move_selection(1)
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ui_left"):
@@ -358,15 +371,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
-func _toggle() -> void:
-	_set_panel_visible(not _open)
-
-
 func _set_panel_visible(v: bool) -> void:
 	_open = v
 	_panel.visible = v
-	if v and _selected_index < 0 and _row_ids.size() > 0:
-		_selected_index = 0
+	if v:
+		# Ensure the one-window rule holds even if opened directly (defensive).
+		if _hub != null and _hub.has_method("request_focus"):
+			_hub.request_focus(_hub.Win.INVENTORY)
+		if _selected_index < 0 and _row_ids.size() > 0:
+			_selected_index = 0
 	_refresh_selection()
 	_refresh_detail()
 

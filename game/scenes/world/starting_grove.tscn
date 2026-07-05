@@ -18,11 +18,18 @@
 [ext_resource type="Script" path="res://scripts/world/grove_session.gd" id="16_session"]
 [ext_resource type="Script" path="res://scripts/world/touch_controller.gd" id="17_touch"]
 [ext_resource type="Script" path="res://scripts/world/stepping_slot_hint.gd" id="18_slothint"]
+[ext_resource type="Script" path="res://scripts/world/backdrop.gd" id="19_backdrop"]
+[ext_resource type="Script" path="res://scripts/world/night_fireflies.gd" id="20_fireflies"]
+[ext_resource type="Script" path="res://scripts/ui/character_window.gd" id="21_charwin"]
+[ext_resource type="Script" path="res://scripts/ui/ui_hub.gd" id="22_uihub"]
 
 [sub_resource type="CircleShape2D" id="col_player"]
 radius = 20.0
 
 [node name="StartingGrove" type="Node2D"]
+
+[node name="Backdrop" type="CanvasLayer" parent="." groups=["backdrop"]]
+script = ExtResource("19_backdrop")
 
 [node name="DayNight" type="CanvasModulate" parent="."]
 script = ExtResource("10_daynight")
@@ -30,6 +37,10 @@ script = ExtResource("10_daynight")
 [node name="GlowLayer" type="CanvasLayer" parent="." groups=["glow_layer"]]
 layer = 1
 follow_viewport_enabled = true
+
+[node name="NightFireflies" type="Node2D" parent="."]
+script = ExtResource("20_fireflies")
+map_loader_path = NodePath("../Ground")
 
 [node name="Ground" type="TileMapLayer" parent="."]
 tile_set = ExtResource("1_tileset")
@@ -106,6 +117,10 @@ script = ExtResource("8_fusion_ui")
 layer = 2
 script = ExtResource("9_codex_ui")
 
+[node name="CharacterWindow" type="CanvasLayer" parent="."]
+layer = 2
+script = ExtResource("21_charwin")
+
 [node name="TimeHUD" type="CanvasLayer" parent="."]
 script = ExtResource("11_timehud")
 
@@ -125,6 +140,10 @@ visible = false
 [node name="PauseMenu" type="CanvasLayer" parent="."]
 layer = 9
 script = ExtResource("15_pause")
+
+[node name="UIHub" type="CanvasLayer" parent="."]
+script = ExtResource("22_uihub")
+pause_menu_path = NodePath("../PauseMenu")
 
 [node name="GroveSession" type="Node" parent="."]
 script = ExtResource("16_session")
