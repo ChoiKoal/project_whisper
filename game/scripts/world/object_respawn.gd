@@ -80,10 +80,12 @@ func _respawn(entry: Dictionary) -> void:
 	if _loader == null or _ysort == null:
 		entry["respawn_at"] = -1.0
 		return
-	# Only respawn if the tile beneath is still its original (non-VOID) ground;
-	# if the player gathered the tile too (→ VOID), skip (theme: VOID persists).
+	# Only respawn if the tile beneath is still its original ground; if the player
+	# gathered the tile too (→ VOID 0 or HOLLOW 11 빈 자국), skip (theme: the emptied
+	# mark persists — v0.3.1 makes it walkable but it's still "emptied").
 	var cell: Vector2i = entry["cell"]
-	if _loader.get_cell_source_id(cell) == 0:
+	var src := _loader.get_cell_source_id(cell)
+	if src == 0 or src == 11:
 		entry["respawn_at"] = -1.0
 		return
 	# Deterministic rebuild (same texture variant as the initial spawn) so save /

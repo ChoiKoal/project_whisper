@@ -22,6 +22,7 @@
 [ext_resource type="Script" path="res://scripts/world/night_fireflies.gd" id="20_fireflies"]
 [ext_resource type="Script" path="res://scripts/ui/character_window.gd" id="21_charwin"]
 [ext_resource type="Script" path="res://scripts/ui/ui_hub.gd" id="22_uihub"]
+[ext_resource type="Script" path="res://scripts/world/vignette.gd" id="23_vignette"]
 
 [sub_resource type="CircleShape2D" id="col_player"]
 radius = 20.0
@@ -120,6 +121,9 @@ script = ExtResource("9_codex_ui")
 [node name="CharacterWindow" type="CanvasLayer" parent="."]
 layer = 2
 script = ExtResource("21_charwin")
+
+[node name="Vignette" type="CanvasLayer" parent="." groups=["vignette"]]
+script = ExtResource("23_vignette")
 
 [node name="TimeHUD" type="CanvasLayer" parent="."]
 script = ExtResource("11_timehud")

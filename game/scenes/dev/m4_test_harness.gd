@@ -184,12 +184,13 @@ func _test_respawn_and_void(loader: MapLoader) -> void:
 	var back := _find_object_at(loader, cell)
 	_check("object respawned after a full game day", back is Gatherable)
 
-	# VOID persistence: gather a grass tile → VOID, ensure it stays VOID.
+	# HOLLOW persistence: gather a grass tile → HOLLOW (빈 자국, src 11, v0.3.1), ensure
+	# the emptied mark stays and no object respawns onto it.
 	var gcell := Vector2i(12, 31)  # grass near spawn (row31 is grass 'G')
-	loader.set_cell(gcell, 0, Vector2i(0, 0))  # emulate tile-gather → VOID
+	loader.set_cell(gcell, 11, Vector2i(0, 0))  # emulate tile-gather → HOLLOW
 	GameState.set_game_time(GameState.game_time + GameState.DAY_LENGTH * 2.0)
 	respawn.force_tick()
-	_check("VOID tile persists (never respawns to ground)", loader.get_cell_source_id(gcell) == 0)
+	_check("HOLLOW tile persists (never respawns to ground)", loader.get_cell_source_id(gcell) == 11)
 
 
 # ---- helpers -------------------------------------------------------------

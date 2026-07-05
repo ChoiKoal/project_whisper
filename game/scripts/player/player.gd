@@ -111,6 +111,15 @@ func is_pathing() -> bool:
 	return not _path.is_empty()
 
 
+## (v0.3.1 Fix 3) True while the player is in motion — either driving velocity above a
+## small epsilon (keyboard) or following a queued path (tap/click). The interaction
+## controller hides the tile highlight + E-prompt while this is true so the cursor
+## stops jumping around every frame during movement.
+const MOVING_EPS := 8.0
+func is_moving() -> bool:
+	return velocity.length() > MOVING_EPS or not _path.is_empty()
+
+
 func clear_path() -> void:
 	_path.clear()
 

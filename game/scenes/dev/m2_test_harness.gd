@@ -5,7 +5,8 @@ extends Node
 ## quits with a non-zero exit code if any assertion failed.
 ##
 ## Covered (per the M2 acceptance list):
-##   1. Gather a grass tile -> inventory has I2 and the tile became T0 VOID.
+##   1. Gather a grass tile -> inventory has I2 and the tile became a walkable T0
+##      HOLLOW (빈 자국, v0.3.1; was T0 VOID).
 ##   2. Place D14 on water -> the water tile becomes walkable.
 ##   3. A unique item (I9) cannot exceed count 1.
 ## Plus: alias_of (D06 -> I4) folds into the same stack, and usable_on emits
@@ -69,12 +70,12 @@ func _test_gather_tile() -> void:
 	_check("grass tile is gatherable", data != null and bool(data.get_custom_data("gatherable")))
 	var item_id: String = data.get_custom_data("item_id")
 	Inventory.add(item_id, 1)
-	tm.set_cell(cell, 0, ATLAS)  # -> T0 VOID
+	tm.set_cell(cell, 11, ATLAS)  # -> T0 HOLLOW (빈 자국, v0.3.1; was VOID src 0)
 
 	_check("inventory gained I2", Inventory.count("I2") == before + 1)
-	_check("gathered tile became T0 VOID (source 0)", tm.get_cell_source_id(cell) == 0)
+	_check("gathered tile became T0 HOLLOW (source 11)", tm.get_cell_source_id(cell) == 11)
 	var void_data := tm.get_cell_tile_data(cell)
-	_check("VOID tile is walkable", void_data != null and bool(void_data.get_custom_data("walkable")))
+	_check("HOLLOW tile is walkable", void_data != null and bool(void_data.get_custom_data("walkable")))
 	tm.queue_free()
 
 

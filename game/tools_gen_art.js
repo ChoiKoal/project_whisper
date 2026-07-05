@@ -279,6 +279,53 @@ function smoothCell(x, y, cell, salt) {
 
 // T0 VOID: dark with violet edge hint — keep the violet rim strong (world signature).
 makeTile('t0_void.png', '#2a2a33', { edgeHex: '#6b4a9e', hardEdge: true });
+
+// T0 HOLLOW (v0.3.1): "빈 자국" — an interior gathered tile. Unlike the border VOID
+// (a hard-rimmed violet-edged hole), the hollow is a WALKABLE dark-earthen depression:
+// a brownish-dark #201a18 basin that sinks toward the center with soft (not hard)
+// edges and faint violet ember flecks — reads as "채집당한 흔적" you can still walk
+// over. Deterministic (own name-seeded stream). Distinct from the border void, which
+// is mostly hidden under the cliff skirts anyway.
+function makeHollowTile(name) {
+  const W = 128, H = 64;
+  const cv = makeCanvas(W, H);
+  const rim   = hexToRGB('#3a2a20');  // earthen rim (soft, brown)
+  const mid   = hexToRGB('#2a201c');  // mid basin
+  const deep  = hexToRGB('#201a18');  // deep center (spec)
+  const ember = hexToRGB('#9e7ad9');  // faint violet ember
+  const emberLit = hexToRGB('#d9b8ff');
+  const cx = (W - 1) / 2, cy = (H - 1) / 2;
+  // name-seeded deterministic stream (ember fleck placement).
+  let s = 0; for (let i = 0; i < name.length; i++) s = (s * 131 + name.charCodeAt(i)) & 0x7fffffff;
+  s = (s ^ 0x5bd1e995) & 0x7fffffff;
+  const rnd = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (!inDiamond(x, y, W, H)) continue;
+      // normalized diamond radius 0 (center) .. 1 (edge)
+      const d = Math.abs(x - cx) / (W / 2) + Math.abs(y - cy) / (H / 2);
+      // basin gradient: deep at center, mid, then a soft earthen rim near the edge.
+      let c;
+      if (d < 0.45) c = deep;
+      else if (d < 0.78) c = mix(deep, mid, (d - 0.45) / 0.33);
+      else c = mix(mid, rim, (d - 0.78) / 0.22);
+      // top-right soft light: lift the upper-right basin wall a touch.
+      if ((x - cx) - (y - cy) * 2 > 40 && d > 0.4 && d < 0.85) c = mix(c, rim, 0.35);
+      setPx(cv, x, y, c, 255);
+    }
+  }
+  // faint violet ember flecks scattered in the basin (few, low alpha) — the "still-warm
+  // emptied spot" signature, subtler than the border void's whole violet rim.
+  for (let n = 0; n < 10; n++) {
+    const px = 24 + Math.floor(rnd() * (W - 48));
+    const py = 12 + Math.floor(rnd() * (H - 24));
+    if (!inDiamond(px, py, W, H) || onDiamondEdge(px, py, W, H)) continue;
+    const bright = rnd() < 0.35;
+    setPx(cv, px, py, bright ? emberLit : ember, bright ? 150 : 110);
+  }
+  save(cv, name);
+}
+makeHollowTile('t0_hollow.png');
 // T1 dirt path — pebbles + strata specks.
 makeTile('t1_dirt.png', '#8a6a4a', { edgeHex: '#5c4433', tex: 'dirt' });
 // T2A grass — blade strokes + 2-3 green tonal patches.
@@ -334,17 +381,25 @@ makeTree('tree_b.png', '#5c4433', '#4d8b4f');
 // grid (chunky 4px pixel blocks) then upscaled ×4 to fill the 96×96 frame, matching
 // the existing sheet's chunky look. selout outlines (面색보다 어두운 동색계 1블록,
 // 순수 검정 없음), top-right soft light, palette-strict (art guide §2–§4).
+// v0.3.1: BLACK cloak pass (owner directive). The robe is now a near-black charcoal
+// (NOT pure black per art-guide §2) — base #26262e, shade #16161c — keeping the
+// violet trim #9e7ad9 and adding cream face/hands accents so the figure still reads
+// against the dark diorama ground. Staff + orb unchanged.
 const CHAR_PAL = {
-  robe:      hexToRGB('#e8dfc8'),  // cream robe (mid)
-  robeLit:   hexToRGB('#faf5e6'),  // top-right lift
-  robeShade: hexToRGB('#ceccaa'),  // lower-left shade
-  robeLine:  hexToRGB('#b8b4a8'),  // selout outline (robe, 2 steps darker family)
-  trim:      hexToRGB('#9e7ad9'),  // violet trim / sigil
+  robe:      hexToRGB('#26262e'),  // near-black charcoal cloak (mid)
+  robeLit:   hexToRGB('#33333d'),  // top-right lift (still dark, just readable)
+  robeShade: hexToRGB('#16161c'),  // lower-left deep shade
+  robeLine:  hexToRGB('#0e0e12'),  // selout outline (2 steps darker, NOT pure black)
+  trim:      hexToRGB('#9e7ad9'),  // violet trim / sigil (kept)
   trimLit:   hexToRGB('#d9b8ff'),  // bright violet (orb core / eye glow)
-  staff:     hexToRGB('#8a6a4a'),  // wooden staff
+  staff:     hexToRGB('#8a6a4a'),  // wooden staff (unchanged)
   staffLine: hexToRGB('#5c4433'),  // staff outline (2 steps darker brown)
-  hoodDark:  hexToRGB('#6e6e7a'),  // hood interior shadow (neutral)
+  hoodDark:  hexToRGB('#1b1b22'),  // hood interior shadow (deeper, matches charcoal)
   orbGlow:   hexToRGB('#d9b8ff'),  // additive-bright orb accent (baked bright)
+  // cream face + hands accents so the figure reads against the dark ground.
+  skin:      hexToRGB('#e8dfc8'),  // cream face (in hood cavity) / hands
+  skinShade: hexToRGB('#ceccaa'),  // cream lower-left shade
+  skinLine:  hexToRGB('#b8b4a8'),  // cream selout
 };
 
 // The logical grid is 24×24; block size 4 → 96×96. Each "set" paints a 4×4 block.
@@ -396,6 +451,14 @@ function drawConstructor(cv, ox, oy, dir, walkPhase) {
   put(staffX + 1, orbY, P.orbGlow, 130);
   put(staffX - 2, orbY + 1, P.orbGlow, 110);
   put(staffX, orbY + 2, P.orbGlow, 120);
+  // cream hand gripping the staff (v0.3.1 accent) — a small 1×2 cream block at grip
+  // height, with a selout, so a warm point reads against the black cloak + on both
+  // front and back views the gauntleted hand shows on the staff side.
+  const gripY = 11 + bob;
+  put(staffX - 1, gripY, P.skin);
+  put(staffX, gripY, P.skinShade);
+  put(staffX - 1, gripY + 1, P.skinShade);
+  put(staffX - 2, gripY, P.skinLine);
 
   // ---- robe body (a rounded trapezoid: narrow shoulders → wide hem) ----
   for (let gy = shoulder; gy <= hemBot; gy++) {
@@ -450,16 +513,22 @@ function drawConstructor(cv, ox, oy, dir, walkPhase) {
   for (let gx = 9; gx <= 13; gx++) put(gx, topHood - 1, P.robeLine);
 
   if (front) {
-    // hood interior shadow (the face is in darkness) with two violet glowing eyes.
+    // Cream face inside the hood cavity (v0.3.1) so the figure reads against the
+    // dark ground, ringed by hood shadow, with two violet glowing eyes.
     for (let gy = 7 + bob; gy <= 9 + bob; gy++) {
-      for (let gx = 9; gx <= 13; gx++) put(gx, gy, P.hoodDark);
+      for (let gx = 9; gx <= 13; gx++) {
+        // shade the lower-left of the face, lit cream elsewhere.
+        put(gx, gy, (gx <= 9 || gy >= 9 + bob) ? P.skinShade : P.skin);
+      }
     }
+    // hood shadow rim just above the brow keeps the face nestled in the cowl.
+    for (let gx = 9; gx <= 13; gx++) put(gx, 6 + bob, P.hoodDark);
     // two violet eyes (SE looks slightly right of center; mirrored for SW).
-    put(10, 8 + bob, P.trimLit);
-    put(12, 8 + bob, P.trimLit);
+    put(10, 8 + bob, P.trim);
+    put(12, 8 + bob, P.trim);
     // faint eye glow
-    put(10, 7 + bob, P.trim, 120);
-    put(12, 7 + bob, P.trim, 120);
+    put(10, 7 + bob, P.trimLit, 150);
+    put(12, 7 + bob, P.trimLit, 150);
   } else {
     // back of hood: fill the interior with robe shade (no face).
     for (let gy = 7 + bob; gy <= 9 + bob; gy++) {
@@ -545,11 +614,20 @@ function makeCharPortrait() {
   }
   // hood crown outline
   for (let x = cx - 22; x <= cx + 22; x++) setPx(cv, x, hoodTop - 1, P.robeLine, 255);
-  // face cavity (dark neutral) — an oval of hood shadow with two violet eyes.
+  // face cavity — a cream face (v0.3.1) ringed by hood shadow so it reads against the
+  // dark cloak, with two violet eyes. An outer band of hood shadow, an inner cream oval.
   const faceCx = cx, faceCy = 96;
   for (let y = faceCy - 34; y <= faceCy + 30; y++) for (let x = faceCx - 30; x <= faceCx + 30; x++) {
     const d = Math.hypot((x - faceCx) / 30, (y - faceCy) / 34);
-    if (d <= 1.0) setPx(cv, x, y, P.hoodDark, 255);
+    if (d > 1.0) continue;
+    if (d > 0.72) {
+      setPx(cv, x, y, P.hoodDark, 255);           // shadow ring nestling the face in the cowl
+    } else {
+      // cream face, lower-left shaded for the top-right soft light.
+      const lit = (x - faceCx) - (y - faceCy) > 6;
+      const shade = (x - faceCx) < -10 || (y - faceCy) > 14;
+      setPx(cv, x, y, shade ? P.skinShade : (lit ? P.skin : P.skin), 255);
+    }
   }
   // two glowing violet eyes with a soft glow halo (baked bright).
   const eyeY = faceCy - 2;

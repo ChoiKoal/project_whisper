@@ -28,6 +28,12 @@ const SAVE_VERSION := 1
 
 ## Source id a gathered tile becomes (T0 VOID) — mirrors InteractionController.
 const VOID_SOURCE := 0
+## (v0.3.1 Fix 4) Source id a gathered interior tile becomes now: the walkable HOLLOW
+## (빈 자국). Mirrors InteractionController.HOLLOW_SOURCE. The save schema is UNCHANGED
+## — the diff key is still "void_cells" — but a gathered cell now reads as HOLLOW and
+## reloads as HOLLOW. Older saves that stored real VOID (0) gathered cells also reload
+## as HOLLOW (walkable), matching the new "빈 자국 = walkable" decision.
+const HOLLOW_SOURCE := 11
 ## Source id a K water cell becomes when a D14 stepping stone is placed.
 const STEPPING_STONE_SOURCE := 1
 const ATLAS := Vector2i(0, 0)
@@ -192,9 +198,10 @@ func _map_dict() -> Dictionary:
 			var base := _base_source(row[c])
 			if cur == base:
 				continue
-			if cur == VOID_SOURCE:
-				# Cell became VOID (tile gathered). Skip cells that were VOID at
-				# base (those are already V in the layout, base==0, no diff).
+			if cur == HOLLOW_SOURCE or cur == VOID_SOURCE:
+				# Cell became HOLLOW (빈 자국 — tile gathered) or VOID. Recorded under the
+				# unchanged "void_cells" key; reloads as HOLLOW. Authored-VOID cells are
+				# base==0 so they never diff here (cur==base skipped above).
 				void_cells.append([c, r])
 			elif cur == STEPPING_STONE_SOURCE and _is_stepping_slot(cell):
 				stone_cells.append([c, r])
@@ -331,9 +338,11 @@ func apply_world_state(data: Dictionary) -> void:
 	if _loader == null:
 		return
 	var m: Dictionary = data.get("map", {})
-	# VOID gathered tiles.
+	# Gathered tiles reload as the walkable HOLLOW (빈 자국). The key is still
+	# "void_cells" (no schema change); older saves with true-VOID gathered cells also
+	# come back as HOLLOW so the emptied spots are walkable per the v0.3.1 decision.
 	for pair in m.get("void_cells", []):
-		_loader.set_cell(Vector2i(int(pair[0]), int(pair[1])), VOID_SOURCE, ATLAS)
+		_loader.set_cell(Vector2i(int(pair[0]), int(pair[1])), HOLLOW_SOURCE, ATLAS)
 	# Stepping stones (D14 placed on K water).
 	for pair in m.get("stepping_stones", []):
 		_loader.set_cell(Vector2i(int(pair[0]), int(pair[1])), STEPPING_STONE_SOURCE, ATLAS)

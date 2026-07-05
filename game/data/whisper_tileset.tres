@@ -1,6 +1,7 @@
-[gd_resource type="TileSet" load_steps=12 format=3 uid="uid://bwhisperts0001"]
+[gd_resource type="TileSet" load_steps=13 format=3 uid="uid://bwhisperts0001"]
 
 [ext_resource type="Texture2D" uid="uid://cna2wj7lr1xme" path="res://assets/tiles/t0_void.png" id="1_t0"]
+[ext_resource type="Texture2D" uid="uid://c0h0llow00t01" path="res://assets/tiles/t0_hollow.png" id="11_t0h"]
 [ext_resource type="Texture2D" path="res://assets/tiles/t5m_mystic.png" id="10_t5m"]
 [ext_resource type="Texture2D" uid="uid://c3x0nqf7a045" path="res://assets/tiles/t1_dirt.png" id="2_t1"]
 [ext_resource type="Texture2D" uid="uid://cn2ftrlf0msvf" path="res://assets/tiles/t2a_grass.png" id="3_t2a"]
@@ -13,6 +14,15 @@
 
 [sub_resource type="TileSetAtlasSource" id="src_t0"]
 texture = ExtResource("1_t0")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_t0h"]
+texture = ExtResource("11_t0h")
 texture_region_size = Vector2i(128, 64)
 0:0/0 = 0
 0:0/0/custom_data_0 = false
@@ -128,3 +138,4 @@ sources/7 = SubResource("src_t4")
 sources/8 = SubResource("src_t5a")
 sources/9 = SubResource("src_t5b")
 sources/10 = SubResource("src_t5m")
+sources/11 = SubResource("src_t0h")

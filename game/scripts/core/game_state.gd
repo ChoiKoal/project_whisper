@@ -18,6 +18,11 @@ signal world_tree_planted(cell: Vector2i)
 signal item_used_on_object(item_id: String, object: Node)
 ## Emitted when D14 (디딤돌) makes a water tile walkable, for later SFX / audit.
 signal stepping_stone_placed(cell: Vector2i)
+## (v0.3.1 Fix 4) Emitted when gathering an interior tile turns it into a walkable
+## HOLLOW (빈 자국). The pathfinding grid rebuilds its solids so tap-to-move crosses
+## the emptied spot; before this the gathered cell was VOID (non-walkable to AStar)
+## but had no physics wall — the "swiss-cheese" WASD/tap inconsistency the owner hit.
+signal tile_walkable_changed(cell: Vector2i)
 
 # ---- Day/night cycle (M4) -------------------------------------------------
 ## One full game day = 900s real (확정 스펙: 낮 540s / 저녁~새벽 360s).

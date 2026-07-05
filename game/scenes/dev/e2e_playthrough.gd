@@ -194,8 +194,8 @@ func _step1_gather_and_fuse_seed() -> void:
 		_check("real object gather granted I5 (꽃)", Inventory.count("I5") == before + 1,
 			"I5 %d→%d" % [before, Inventory.count("I5")])
 
-	# REAL tile gather: gather a grass ground tile (→ I2 풀, tile becomes VOID).
-	# This also produces the VOID tile step 6 plants on.
+	# REAL tile gather: gather a grass ground tile (→ I2 풀, tile becomes the walkable
+	# HOLLOW 빈 자국, src 11). This also produces the hollow tile step 6 plants on.
 	var tile := _find_gatherable_tile(_loader.spawn_cell)
 	if _check("found a gatherable ground tile", tile != Vector2i(-1, -1), "cell=%s" % tile):
 		var before := Inventory.count("I2")
@@ -203,9 +203,13 @@ func _step1_gather_and_fuse_seed() -> void:
 		await _frames(1)
 		_interaction.interact_with_cell(tile)
 		await _frames(1)
-		_check("real tile gather granted 풀-family item + carved VOID",
-			Inventory.count("I2") >= before and _loader.get_cell_source_id(tile) == 0,
+		_check("real tile gather granted 풀-family item + carved HOLLOW (src 11)",
+			Inventory.count("I2") >= before and _loader.get_cell_source_id(tile) == 11,
 			"src(%s)=%d" % [tile, _loader.get_cell_source_id(tile)])
+		# v0.3.1 Fix 4: the gathered hollow is WALKABLE (custom-data walkable=true) so the
+		# player can cross the emptied spot — no more swiss-cheese VOID.
+		_check("gathered HOLLOW tile is walkable (빈 자국 crossable)",
+			_loader.is_cell_walkable(tile), "walkable=%s" % _loader.is_cell_walkable(tile))
 
 	# Top up to the exact R04 inputs (bulk is allowed; mechanics above were real).
 	_ensure_at_least("I5", 1)
@@ -430,13 +434,13 @@ func _step5_life_water_chain() -> void:
 		"D22=%d" % Inventory.count("D22"))
 
 
-# ==== STEP 6: plant D22 on a VOID tile → clear ==============================
+# ==== STEP 6: plant D22 on a HOLLOW tile → clear ===========================
 
 func _step6_plant_on_void() -> void:
-	_banner(6, "plant 어린 세계수 (D22) on a VOID tile → world_tree_planted + cleared")
+	_banner(6, "plant 어린 세계수 (D22) on a HOLLOW (빈 자국) tile → world_tree_planted + cleared")
 
-	# Find a VOID tile: step 1's real tile gather carved one; if not present, gather
-	# one now for real.
+	# Find a gathered HOLLOW tile: step 1's real tile gather carved one; if not present,
+	# gather one now for real. D22 still targets it (hollow's logical id stays T0).
 	var void_cell := _find_void_cell()
 	if void_cell == Vector2i(-1, -1):
 		var tile := _find_gatherable_tile(_loader.spawn_cell)
@@ -606,14 +610,17 @@ func _walkable_neighbor(cell: Vector2i) -> Vector2i:
 
 
 func _find_void_cell() -> Vector2i:
-	# Any cell whose current source is 0 (VOID) that is NOT a base-VOID layout cell.
+	# Any interior gathered cell (now the HOLLOW 빈 자국, src 11) that is NOT a base-VOID
+	# layout cell. D22 plants on it (its logical tile id stays T0). Also accept a legacy
+	# src-0 interior cell for robustness.
 	for r in range(_loader.height):
 		var row: String = _loader._layout[r]
 		for c in range(min(_loader.width, row.length())):
 			if row[c] == "V":
 				continue  # base VOID (out-of-play border) — not plantable ground
 			var cell := Vector2i(c, r)
-			if _loader.get_cell_source_id(cell) == 0:
+			var src := _loader.get_cell_source_id(cell)
+			if src == 11 or src == 0:
 				return cell
 	return Vector2i(-1, -1)
 

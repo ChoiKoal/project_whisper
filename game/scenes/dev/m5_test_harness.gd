@@ -100,9 +100,10 @@ func _test_save_load_roundtrip() -> void:
 	var moved_pos := loader_a.cell_center_world(Vector2i(20, 20))
 	player_a.global_position = moved_pos
 
-	# Map: VOID a grass tile (gathered), place a stepping stone on a K slot
+	# Map: gather a grass tile → HOLLOW (빈 자국, src 11, v0.3.1), place a stepping
+	# stone on a K slot. (A real gather writes src 11; emulate that here.)
 	var void_cell := Vector2i(15, 30)
-	loader_a.set_cell(void_cell, 0, Vector2i(0, 0))
+	loader_a.set_cell(void_cell, 11, Vector2i(0, 0))
 	var k_cell: Vector2i = loader_a.stepping_slot_cells[0]
 	loader_a.set_cell(k_cell, 1, Vector2i(0, 0))  # emulate D14 placement
 
@@ -180,7 +181,9 @@ func _test_save_load_roundtrip() -> void:
 	_check("game_time restored", abs(GameState.game_time - exp_time) < 0.1)
 	_check("player position restored", player_b.global_position.distance_to(exp_pos) < 1.0)
 
-	_check("VOID tile restored", loader_b.get_cell_source_id(void_cell) == 0)
+	# v0.3.1: gathered cells reload as the walkable HOLLOW (src 11), and it's walkable.
+	_check("HOLLOW tile restored (빈 자국, src 11)", loader_b.get_cell_source_id(void_cell) == 11)
+	_check("restored HOLLOW is walkable", loader_b.is_cell_walkable(void_cell))
 	_check("stepping stone restored (walkable src 1)", loader_b.get_cell_source_id(k_cell) == 1)
 
 	var bush_b := _find(_scene_b, BushDry) as BushDry

@@ -25,10 +25,16 @@ func _start() -> void:
 	z_index = 100
 	modulate.a = 1.0
 	var start_pos := global_position
+	# v0.3.1 tone pass §5: softer easing (CUBIC rise) + a slight random horizontal drift
+	# so repeated gathers don't stack a rigid vertical column of identical labels.
+	var drift := randf_range(-10.0, 10.0)
+	var end_pos := start_pos + Vector2(drift, -RISE_PX)
 	var tween := create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(self, "global_position",
-		start_pos - Vector2(0, RISE_PX), DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(self, "modulate:a", 0.0, DURATION).set_ease(Tween.EASE_IN)
+	tween.tween_property(self, "global_position", end_pos, DURATION) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	# Hold opacity briefly, then fade — a gentler read than an immediate linear fade.
+	tween.tween_property(self, "modulate:a", 0.0, DURATION * 0.55).set_delay(DURATION * 0.45) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	tween.set_parallel(false)
 	tween.tween_callback(queue_free)

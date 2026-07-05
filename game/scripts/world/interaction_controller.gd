@@ -18,13 +18,24 @@ class_name InteractionController
 
 ## Source id used for the empty VOID result after gathering a tile.
 const VOID_SOURCE := 0
+## (v0.3.1 Fix 4) Source id of the walkable "빈 자국(hollow)" left after gathering an
+## interior tile. Unlike border VOID (source 0, walkable=false, physics wall), the
+## hollow is walkable (custom-data walkable=true, no physics) and its logical tile id
+## stays "T0" (see SOURCE_TO_TILE_ID) so the D22 어린 세계수 plant-on-T0 chain is
+## untouched — the world remembers being emptied but you can still walk over it.
+const HOLLOW_SOURCE := 11
 ## Source id reused visually for a stepping stone on water (T1 dirt) — TODO:
 ## dedicated "stone on water" art in a later art batch.
 const STEPPING_STONE_SOURCE := 1
 const ATLAS := Vector2i(0, 0)
 
 ## How close (px) a gatherable object must be to take priority over the faced tile.
-const OBJECT_REACH := 140.0
+## v0.3.1 R3: raised from 140 so objects one iso-cell away in ANY direction — including
+## the NE/NW cells "above" the player (lower y-sort, ~1 tile diagonal ≈ 143px) that felt
+## unreachable — are targetable. One iso tile is 128×64, so a diagonal neighbour centre is
+## ~√(64²+32²)≈72px away at the tile grid, but object target_points sit at sprite base with
+## art offsets, so 180 covers the adjacent ring generously without reaching two cells out.
+const OBJECT_REACH := 180.0
 
 @export var player_path: NodePath
 @export var tilemap_path: NodePath
@@ -51,6 +62,17 @@ var _held_item: String = ""
 var _target_object: Node = null
 var _target_cell: Vector2i = Vector2i.ZERO
 var _has_tile_target: bool = false
+
+## ---- v0.3.1 Fix 3: movement-aware + hover highlight ----------------------
+## Mouse-hover target (desktop): a gatherable object or gatherable tile under the
+## cursor. Shown regardless of movement (aids tap-to-move users); a click still
+## walk-then-interacts (handled by the TouchController). Resolved each frame from the
+## viewport mouse position; null when the mouse is off a gatherable target or on touch.
+var _hover_object: Node = null
+var _hover_cell: Vector2i = Vector2i.ZERO
+var _has_hover_cell: bool = false
+## Whether the last-seen input was touch (hover highlight is a desktop-only aid).
+var _touch_mode: bool = false
 
 
 func _ready() -> void:
@@ -87,12 +109,18 @@ func held_action_hint() -> String:
 
 func _process(_delta: float) -> void:
 	_resolve_target()
+	_resolve_hover()
 	_update_highlight()
 	_update_slot_hint()
 	_update_prompt()
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Track input mode so the desktop-only hover highlight doesn't linger on touch.
+	if event is InputEventScreenTouch or event is InputEventScreenDrag:
+		_touch_mode = true
+	elif event is InputEventMouseMotion or event is InputEventMouseButton:
+		_touch_mode = false
 	if event.is_action_pressed("interact"):
 		_do_interact()
 		get_viewport().set_input_as_handled()
@@ -126,14 +154,82 @@ func _resolve_target() -> void:
 	_has_tile_target = _tilemap.get_cell_source_id(_target_cell) != -1
 
 
+## (v0.3.1 Fix 3) Desktop mouse-hover targeting: find a gatherable object or gatherable
+## tile under the cursor. Independent of the facing/nearest target so it works while the
+## player is moving (aids tap-to-move users). No-op on touch input.
+func _resolve_hover() -> void:
+	_hover_object = null
+	_has_hover_cell = false
+	if _touch_mode or _player == null or _tilemap == null:
+		return
+	var cam := get_viewport().get_camera_2d()
+	if cam == null:
+		return
+	var mouse_screen := get_viewport().get_mouse_position()
+	var world: Vector2 = cam.get_canvas_transform().affine_inverse() * mouse_screen
+	# Nearest gatherable object within ~half a tile of the cursor.
+	var best: Node = null
+	var best_d := 72.0
+	for node in get_tree().get_nodes_in_group(Gatherable.GROUP):
+		if not node.has_method("target_point"):
+			continue
+		var d: float = node.target_point().distance_to(world)
+		if d <= best_d:
+			best_d = d
+			best = node
+	if best != null:
+		_hover_object = best
+		return
+	# Else a gatherable ground tile under the cursor.
+	var cell := _tilemap.local_to_map(_tilemap.to_local(world))
+	if _tilemap.get_cell_source_id(cell) == -1:
+		return
+	var data := _tilemap.get_cell_tile_data(cell)
+	if data != null and bool(data.get_custom_data("gatherable")):
+		_hover_cell = cell
+		_has_hover_cell = true
+
+
+## True if the current facing tile is worth highlighting when IDLE: it is gatherable,
+## OR the held item can be placed on it (D14 water / D22 hollow). A plain walkable tile
+## the player merely faces gets no highlight — that was the "jumps around" annoyance.
+func _idle_tile_worth_showing() -> bool:
+	if not _has_tile_target:
+		return false
+	var data := _tilemap.get_cell_tile_data(_target_cell)
+	if data != null and bool(data.get_custom_data("gatherable")):
+		return true
+	if _held_item != "" and ItemDB.can_place_on_tile(_held_item, _logical_tile_id(_target_cell)):
+		return true
+	return false
+
+
+## v0.3.1 Fix 3 display rule:
+##   - Mouse hover over a gatherable object/tile → hover highlight (even while moving).
+##   - Else while MOVING → no highlight (stop the per-frame jitter).
+##   - Else (IDLE) → subtle highlight on the nearest interactable object, or the facing
+##     tile only if it is gatherable / a valid held-item placement target.
 func _update_highlight() -> void:
 	if _highlight == null:
 		return
+	# 1. Hover (desktop) wins and ignores movement.
+	if _hover_object != null:
+		var hc := _tilemap.local_to_map(_tilemap.to_local(_hover_object.target_point()))
+		_highlight.show_cell(_cell_center_world(hc), true)
+		return
+	if _has_hover_cell:
+		_highlight.show_cell(_cell_center_world(_hover_cell), true)
+		return
+	# 2. Moving with no hover → hide entirely.
+	if _player != null and _player.is_moving():
+		_highlight.hide_highlight()
+		return
+	# 3. Idle: show subtle highlight on a real interactable only.
 	if _target_object != null:
 		var oc := _tilemap.local_to_map(_tilemap.to_local(_target_object.target_point()))
-		_highlight.show_cell(_cell_center_world(oc))
-	elif _has_tile_target:
-		_highlight.show_cell(_cell_center_world(_target_cell))
+		_highlight.show_cell(_cell_center_world(oc), false)
+	elif _idle_tile_worth_showing():
+		_highlight.show_cell(_cell_center_world(_target_cell), false)
 	else:
 		_highlight.hide_highlight()
 
@@ -145,19 +241,33 @@ func _cell_center_world(cell: Vector2i) -> Vector2:
 ## Floating "E …" hint above the current target. Small dark pill, cream text
 ## (art guide §7). Text depends on what the `interact` action would do this frame.
 func _update_prompt() -> void:
+	# v0.3.1 Fix 3: hide the E-prompt entirely while the player is MOVING — it only
+	# appears when IDLE next to something you can act on.
+	if _player != null and _player.is_moving():
+		_hide_prompt()
+		return
 	var text := _prompt_text()
 	if text == "":
-		if _prompt != null:
-			_prompt.visible = false
+		_hide_prompt()
 		return
 	if _prompt == null:
 		_prompt = _make_prompt()
-	_prompt.visible = true
+	# Slight fade-in when the prompt (re)appears (tone pass §5).
+	if not _prompt.visible:
+		_prompt.visible = true
+		_prompt.modulate.a = 0.0
+		var tw := create_tween()
+		tw.tween_property(_prompt, "modulate:a", 1.0, 0.18)
 	_prompt.text = text
 	# Anchor above the target point, centered.
 	var world: Vector2 = _target_object.target_point() if _target_object != null else _cell_center_world(_target_cell)
 	_prompt.size = _prompt.get_minimum_size()
 	_prompt.global_position = world - Vector2(_prompt.size.x * 0.5, 64)
+
+
+func _hide_prompt() -> void:
+	if _prompt != null:
+		_prompt.visible = false
 
 
 func _prompt_text() -> String:
@@ -183,19 +293,23 @@ func _prompt_text() -> String:
 
 
 func _make_prompt() -> Label:
+	# v0.3.1 tone pass §5: a smaller, softer pill positioned consistently above the
+	# target, with a slight fade-in (handled in _update_prompt).
 	var l := Label.new()
 	l.add_theme_color_override("font_color", Color("#faf5e6"))
-	l.add_theme_font_size_override("font_size", 15)
+	l.add_theme_font_size_override("font_size", 13)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.10, 0.09, 0.13, 0.88)
-	sb.set_corner_radius_all(8)
-	sb.content_margin_left = 8
-	sb.content_margin_right = 8
-	sb.content_margin_top = 3
-	sb.content_margin_bottom = 3
+	sb.bg_color = Color(0.08, 0.07, 0.11, 0.82)
+	sb.set_corner_radius_all(9)
+	sb.content_margin_left = 7
+	sb.content_margin_right = 7
+	sb.content_margin_top = 2
+	sb.content_margin_bottom = 2
 	sb.set_border_width_all(1)
-	sb.border_color = Color("#9e7ad9")
+	sb.border_color = Color(0.62, 0.48, 0.85, 0.75)  # violet, slightly soft
+	sb.shadow_color = Color(0, 0, 0, 0.35)
+	sb.shadow_size = 3
 	l.add_theme_stylebox_override("normal", sb)
 	l.z_index = 100
 	_feedback_layer.add_child(l)
@@ -227,29 +341,35 @@ func _is_water_cell(cell: Vector2i) -> bool:
 # ---- interaction ---------------------------------------------------------
 
 func _do_interact() -> void:
-	var obj := _target_object as Gatherable
+	# v0.3.1 R3: when the mouse is hovering a gatherable object/tile, that target wins over
+	# the facing/nearest one — you act on what you point at. Falls back to the facing target
+	# (keyboard play / touch) when there is no hover.
+	var act_object: Node = _hover_object if _hover_object != null else _target_object
+	var act_has_tile := _has_hover_cell or _has_tile_target
+	var act_cell := _hover_cell if _has_hover_cell else _target_cell
+	var obj := act_object as Gatherable
 	# 1. Held item: try placement (tile) or use (object) first.
 	if _held_item != "":
 		if obj != null and _try_use_on_object(obj):
 			return
-		if _has_tile_target and _try_place_on_tile(_target_cell):
+		if act_has_tile and _try_place_on_tile(act_cell):
 			return
 
 	# 2. Gather a targeted object.
-	if _target_object != null and _target_object.can_gather():
-		var granted: String = _target_object.gather()
+	if act_object != null and act_object.has_method("can_gather") and act_object.can_gather():
+		var granted: String = act_object.gather()
 		if granted != "":
-			_spawn_feedback(_target_object.target_point(), granted)
+			_spawn_feedback(act_object.target_point(), granted)
 		return
 
 	# 3. Non-gather interactable (e.g. Cauldron opens the Fusion UI).
-	if _target_object != null and _target_object.has_method("on_interact"):
-		_target_object.on_interact()
+	if act_object != null and act_object.has_method("on_interact"):
+		act_object.on_interact()
 		return
 
 	# 4. Gather a tile.
-	if _has_tile_target:
-		_try_gather_tile(_target_cell)
+	if act_has_tile:
+		_try_gather_tile(act_cell)
 
 
 # ---- public tap/click entrypoints (M6a touch) ----------------------------
@@ -295,8 +415,19 @@ func _try_gather_tile(cell: Vector2i) -> void:
 	Inventory.add(item_id, 1)
 	GameState.item_gathered.emit(item_id)
 	_spawn_feedback(_cell_center_world(cell), item_id)
-	# Replace with VOID (the emptied hole).
-	_tilemap.set_cell(cell, VOID_SOURCE, ATLAS)
+	# Replace with the walkable HOLLOW (빈 자국) — the emptied spot stays crossable.
+	# Its logical id remains "T0" so D22 plant-on-VOID still targets it; the AStar grid
+	# is rebuilt (via the stepping_stone_placed → _rebuild_solids listener) so tap-to-move
+	# crosses it. No physics collision is added (the tile has no physics polygon).
+	_tilemap.set_cell(cell, HOLLOW_SOURCE, ATLAS)
+	_notify_walkable_changed(cell)
+
+
+## Tell the pathfinding grid a cell's walkability changed (gather → hollow). Guarded so
+## a missing GameState (release template edge case) degrades to no rebuild, not a crash.
+func _notify_walkable_changed(cell: Vector2i) -> void:
+	if GameState != null:
+		GameState.tile_walkable_changed.emit(cell)
 
 
 # ---- placement / use framework ------------------------------------------
@@ -397,6 +528,7 @@ func _try_use_on_object(obj: Gatherable) -> bool:
 const SOURCE_TO_TILE_ID := {
 	0: "T0", 1: "T1", 2: "T2A", 3: "T2B", 4: "T2C", 5: "T2D",
 	7: "T4", 8: "T5A", 9: "T5B", 10: "T5M",
+	11: "T0",  # HOLLOW (빈 자국): logical id stays T0 so D22 plant-on-T0 still works.
 }
 
 func _logical_tile_id(cell: Vector2i) -> String:
@@ -407,3 +539,11 @@ func _logical_tile_id(cell: Vector2i) -> String:
 func _spawn_feedback(world_pos: Vector2, item_id: String) -> void:
 	var msg := "+1 %s" % ItemDB.item_name(item_id)
 	FloatingLabel.spawn(_feedback_layer, world_pos - Vector2(0, 40), msg)
+
+
+## (v0.3.1 R4) Float an arbitrary hint message above the player (e.g. the first-time
+## "이건 조합 재료야…" affordance nudge). No-op if the player isn't wired.
+func spawn_player_hint(msg: String) -> void:
+	if _player == null:
+		return
+	FloatingLabel.spawn(_feedback_layer, _player.global_position - Vector2(0, 72), msg)

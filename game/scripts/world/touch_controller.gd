@@ -54,6 +54,9 @@ func _ready() -> void:
 	GameState.stepping_stone_placed.connect(func(_c): _rebuild_solids())
 	GameState.item_used_on_object.connect(func(_i, _o): call_deferred("_rebuild_solids"))
 	GameState.day_phase_changed.connect(func(_p): call_deferred("_rebuild_solids"))
+	# (v0.3.1 Fix 4) Gathering an interior tile turns it into a walkable HOLLOW — rebuild
+	# so tap-to-move can cross the emptied spot (previously stayed solid to AStar).
+	GameState.tile_walkable_changed.connect(func(_c): _rebuild_solids())
 
 
 # ---- AStar grid ----------------------------------------------------------

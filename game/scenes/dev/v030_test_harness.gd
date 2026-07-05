@@ -106,14 +106,20 @@ func _test_command_bar(map: Node) -> void:
 		return
 	var buttons: Dictionary = hub.get("_buttons")
 	_check("command bar has 4 buttons", buttons != null and buttons.size() == 4)
-	# The button labels carry the (correct, remapped) hotkeys.
+	# The button labels carry the (correct, remapped) hotkeys. v0.3.1 tone pass prefixes a
+	# small glyph ("◈  캐릭터 (C)"), so match on a substring rather than exact equality.
 	var texts: Array = []
 	for k in buttons:
 		texts.append(String((buttons[k] as Button).text))
-	_check("bar has 캐릭터 (C)", texts.has("캐릭터 (C)"))
-	_check("bar has 인벤토리 (I)", texts.has("인벤토리 (I)"))
-	_check("bar has 도감 (R) [remapped from C]", texts.has("도감 (R)"))
-	_check("bar has 메뉴 (ESC)", texts.has("메뉴 (ESC)"))
+	var _has := func(sub: String) -> bool:
+		for t in texts:
+			if String(t).contains(sub):
+				return true
+		return false
+	_check("bar has 캐릭터 (C)", _has.call("캐릭터 (C)"))
+	_check("bar has 인벤토리 (I)", _has.call("인벤토리 (I)"))
+	_check("bar has 도감 (R) [remapped from C]", _has.call("도감 (R)"))
+	_check("bar has 메뉴 (ESC)", _has.call("메뉴 (ESC)"))
 	# key remap sanity: 'character' action is C, 'codex' action is R.
 	_check("input map has 'character' action", InputMap.has_action("character"))
 	_check("input map has 'codex' action", InputMap.has_action("codex"))

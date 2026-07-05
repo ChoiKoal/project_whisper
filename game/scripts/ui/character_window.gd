@@ -42,7 +42,29 @@ func set_hub(hub) -> void:
 func _ready() -> void:
 	layer = 2
 	_build_ui()
+	# v0.3.1 R1: keep the panel inside the viewport on resize (620×460 already fits the
+	# 1280×720 floor, but clamp defensively for smaller retina point sizes).
+	get_viewport().size_changed.connect(_clamp_to_viewport)
+	_clamp_to_viewport()
 	_set_visible(false)
+
+
+## v0.3.1 R1: cap panel height at min(700, viewport*0.85) and re-center. The content is
+## short (≈460px) so it fits the 1280×720 floor without scrolling; the cap only engages
+## on unusually short windows.
+const MAX_PANEL_H := 700.0
+## `override_size` lets the v031 harness drive an arbitrary viewport size headless; live
+## code passes Vector2.ZERO to read the real viewport. Height caps against `override_size`
+## (or the live viewport); re-centering always uses the real viewport so the panel stays
+## on-screen in production.
+func _clamp_to_viewport(override_size: Vector2 = Vector2.ZERO) -> void:
+	if _root == null:
+		return
+	var real_vp := get_viewport().get_visible_rect().size
+	var vp: Vector2 = override_size if override_size != Vector2.ZERO else real_vp
+	var cap_h: float = min(MAX_PANEL_H, vp.y * 0.85)
+	_root.set("size", Vector2(_root.size.x, min(_root.size.y, cap_h)))
+	_root.position = (real_vp - _root.size) * 0.5
 
 
 func _build_ui() -> void:

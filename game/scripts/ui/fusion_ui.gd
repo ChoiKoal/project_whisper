@@ -58,6 +58,10 @@ func _ready() -> void:
 	_build_ui()
 	Inventory.changed.connect(func(): if _open: _rebuild_strip())
 	Codex.hint_gauge_changed.connect(_on_gauge_changed)
+	# v0.3.1 R1: clamp the panel to the viewport on every resize so the ingredient
+	# strip + 조합 button stay reachable at small window sizes (owner's top pain).
+	get_viewport().size_changed.connect(_clamp_to_viewport)
+	_clamp_to_viewport()
 	_set_visible(false)
 	# Autowire: bind every Cauldron already in the scene (deferred so the whole
 	# tree — including YSortLayer children — is present).
@@ -80,22 +84,46 @@ func bind_cauldron(cauldron: Cauldron) -> void:
 
 # ---- build ---------------------------------------------------------------
 
+## v0.3.1 Fix 1: the panel is centered and CLAMPED to fit any viewport ≥ 1152×648.
+## A full-rect anchor Control hosts a CenterContainer; the panel caps its height at
+## ~85% of the viewport and its content lives in a ScrollContainer so the ingredient
+## strip, 조합 button, gauge and result stay visible together at small window sizes.
+var _fit: Control
+var _scroll_body: ScrollContainer
+
 func _build_ui() -> void:
+	# Full-rect host + center container so the panel always sits centered and can be
+	# height-clamped on resize.
+	_fit = Control.new()
+	_fit.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_fit.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_fit)
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fit.add_child(center)
+
 	_root = PanelContainer.new()
-	_root.set_anchors_preset(Control.PRESET_CENTER)
-	_root.custom_minimum_size = Vector2(520, 460)
+	_root.custom_minimum_size = Vector2(480, 0)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = BG
-	sb.set_content_margin_all(18)
+	sb.set_content_margin_all(16)
 	sb.set_corner_radius_all(8)
 	sb.set_border_width_all(2)
 	sb.border_color = ACCENT
 	_root.add_theme_stylebox_override("panel", sb)
-	add_child(_root)
+	center.add_child(_root)
+
+	# The panel's content scrolls vertically if it can't all fit (keeps every control
+	# reachable at 1152×648); horizontal scroll disabled.
+	_scroll_body = ScrollContainer.new()
+	_scroll_body.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_root.add_child(_scroll_body)
 
 	var outer := VBoxContainer.new()
-	outer.add_theme_constant_override("separation", 12)
-	_root.add_child(outer)
+	outer.add_theme_constant_override("separation", 10)
+	outer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_scroll_body.add_child(outer)
 
 	var title := Label.new()
 	title.text = "솥단지 — 조합"
@@ -205,6 +233,27 @@ func _build_ui() -> void:
 	add_child(_fx)
 
 
+## v0.3.1 R1: cap the panel height at min(700, viewport*0.85) so it never extends past
+## the window bottom. The content lives in _scroll_body (vertical scroll), so when the
+## natural content height exceeds the cap the strip stays reachable via scroll. Width is
+## also capped at viewport*0.9 for very narrow windows. Called on _ready + every resize.
+const MAX_PANEL_H := 700.0
+## `override_size` lets the v031 harness drive an arbitrary viewport size headless (the
+## dummy display can't actually resize the window); production passes Vector2.ZERO to read
+## the live viewport.
+func _clamp_to_viewport(override_size: Vector2 = Vector2.ZERO) -> void:
+	if _root == null or _scroll_body == null:
+		return
+	var vp: Vector2 = override_size if override_size != Vector2.ZERO else get_viewport().get_visible_rect().size
+	var cap_h: float = min(MAX_PANEL_H, vp.y * 0.85)
+	# The PanelContainer adds 16px content margins top+bottom (=32) around the scroll body.
+	var body_cap: float = max(120.0, cap_h - 32.0)
+	_scroll_body.custom_minimum_size = Vector2(_scroll_body.custom_minimum_size.x, body_cap)
+	_root.custom_minimum_size = Vector2(min(480.0, vp.x * 0.9), 0.0)
+	# Hard-cap the panel so a tall content tree can't push it past the cap.
+	_root.set("size", Vector2(_root.size.x, min(_root.size.y, cap_h)))
+
+
 func _symbol(t: String) -> Label:
 	var l := Label.new()
 	l.text = t
@@ -292,6 +341,7 @@ func open() -> void:
 	_rebuild_strip()
 	_refresh_dots()
 	_set_visible(true)
+	_clamp_to_viewport()
 
 
 func _set_visible(v: bool) -> void:

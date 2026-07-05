@@ -51,6 +51,7 @@ func is_open() -> bool:
 	return _open
 
 var _panel: PanelContainer
+var _grid_scroll: ScrollContainer
 var _title: Label
 var _grid: GridContainer
 var _detail_icon: TextureRect
@@ -64,6 +65,11 @@ var _held_icon: TextureRect
 var _held_label: Label
 var _held_empty_lbl: Label
 var _held_hint: Label
+## v0.3.1 R4: a persistent one-line affordance under the held box telling the player what
+## the held item is FOR (placeable / usable / a 조합 재료 with no field use).
+var _held_affordance: Label
+## Session guard: the "이건 조합 재료야…" floating hint fires only once per session.
+var _combat_hint_shown: bool = false
 
 var _open: bool = false
 var _slots: Array[Control] = []
@@ -79,6 +85,9 @@ func _ready() -> void:
 	_build_ui()
 	Inventory.changed.connect(_rebuild)
 	_rebuild()
+	# v0.3.1 R1: keep the panel inside the viewport on resize.
+	get_viewport().size_changed.connect(_clamp_to_viewport)
+	_clamp_to_viewport()
 	_set_panel_visible(false)
 
 
@@ -127,16 +136,16 @@ func _build_ui() -> void:
 	body.add_theme_constant_override("separation", 16)
 	outer.add_child(body)
 
-	var grid_scroll := ScrollContainer.new()
-	grid_scroll.custom_minimum_size = Vector2(COLS * (SLOT + 8) + 8, 5 * (SLOT + 8))
-	grid_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	body.add_child(grid_scroll)
+	_grid_scroll = ScrollContainer.new()
+	_grid_scroll.custom_minimum_size = Vector2(COLS * (SLOT + 8) + 8, 5 * (SLOT + 8))
+	_grid_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	body.add_child(_grid_scroll)
 
 	_grid = GridContainer.new()
 	_grid.columns = COLS
 	_grid.add_theme_constant_override("h_separation", 8)
 	_grid.add_theme_constant_override("v_separation", 8)
-	grid_scroll.add_child(_grid)
+	_grid_scroll.add_child(_grid)
 
 	# detail pane
 	var detail := PanelContainer.new()
@@ -185,6 +194,31 @@ func _build_ui() -> void:
 	dcol.add_child(_hold_btn)
 
 	_build_held_hud()
+
+
+## v0.3.1 R1: cap the panel height at min(700, viewport*0.85). The grid area
+## (_grid_scroll) shrinks to absorb the difference so the detail pane + 들기 button
+## stay on-screen; the grid scrolls internally. Re-centers via PRESET_CENTER anchors.
+const MAX_PANEL_H := 700.0
+## `override_size` lets the v031 harness drive an arbitrary viewport size headless; live
+## code passes Vector2.ZERO to read the real viewport.
+func _clamp_to_viewport(override_size: Vector2 = Vector2.ZERO) -> void:
+	if _panel == null or _grid_scroll == null:
+		return
+	var vp: Vector2 = override_size if override_size != Vector2.ZERO else get_viewport().get_visible_rect().size
+	var cap_h: float = min(MAX_PANEL_H, vp.y * 0.85)
+	# Chrome around the grid: title + separator + margins ≈ 110px.
+	var grid_cap: float = clampf(cap_h - 110.0, 160.0, 5 * (SLOT + 8))
+	_grid_scroll.custom_minimum_size = Vector2(COLS * (SLOT + 8) + 8, grid_cap)
+	_panel.set("size", Vector2(_panel.size.x, min(_panel.size.y, cap_h)))
+	_recenter()
+
+
+func _recenter() -> void:
+	if _panel == null:
+		return
+	var vp := get_viewport().get_visible_rect().size
+	_panel.position = (vp - _panel.size) * 0.5
 
 
 func _btn_style(active: bool) -> StyleBoxFlat:
@@ -239,13 +273,28 @@ func _build_held_hud() -> void:
 	_held_empty_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_held_box.add_child(_held_empty_lbl)
 
+	# Right column: item name (top) + persistent affordance line (bottom).
+	var namecol := VBoxContainer.new()
+	namecol.alignment = BoxContainer.ALIGNMENT_CENTER
+	namecol.add_theme_constant_override("separation", 2)
+	row.add_child(namecol)
+
 	_held_label = Label.new()
 	_held_label.add_theme_color_override("font_color", TEXT)
 	_held_label.add_theme_font_size_override("font_size", 17)
 	_held_label.add_theme_constant_override("outline_size", 4)
 	_held_label.add_theme_color_override("font_outline_color", Color(0.05, 0.04, 0.08, 0.9))
 	_held_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	row.add_child(_held_label)
+	namecol.add_child(_held_label)
+
+	# v0.3.1 R4: one-line affordance ("물가에 놓을 수 있다" / "마른 덤불에 쓸 수 있다" /
+	# dimmed "조합 재료 — 솥단지에서 쓰자").
+	_held_affordance = Label.new()
+	_held_affordance.add_theme_font_size_override("font_size", 13)
+	_held_affordance.add_theme_constant_override("outline_size", 4)
+	_held_affordance.add_theme_color_override("font_outline_color", Color(0.05, 0.04, 0.08, 0.9))
+	_held_affordance.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	namecol.add_child(_held_affordance)
 
 	_refresh_held_hud()
 
@@ -375,6 +424,7 @@ func _set_panel_visible(v: bool) -> void:
 	_open = v
 	_panel.visible = v
 	if v:
+		_clamp_to_viewport()
 		# Ensure the one-window rule holds even if opened directly (defensive).
 		if _hub != null and _hub.has_method("request_focus"):
 			_hub.request_focus(_hub.Win.INVENTORY)
@@ -457,6 +507,12 @@ func _set_held(id: String) -> void:
 	_held_item = id
 	if _interaction != null:
 		_interaction.set_held_item(id)
+	# v0.3.1 R4: the FIRST time this session the player holds a combo-only item (no field
+	# placement/use), float a one-shot hint near them so "꽃 들고 뭘 하지?" is answered.
+	if id != "" and not _combat_hint_shown and _is_combo_only(id):
+		_combat_hint_shown = true
+		if _interaction != null and _interaction.has_method("spawn_player_hint"):
+			_interaction.spawn_player_hint("이건 조합 재료야. 솥단지로 가져가자.")
 	_refresh_held_hud()
 
 
@@ -466,6 +522,8 @@ func _refresh_held_hud() -> void:
 		_held_icon.visible = false
 		_held_empty_lbl.visible = true
 		_held_label.text = ""
+		if _held_affordance != null:
+			_held_affordance.text = ""
 		_held_box.add_theme_stylebox_override("panel", _held_box_style(false))
 		return
 	_held_icon.texture = ItemDB.icon(_held_item)
@@ -473,6 +531,30 @@ func _refresh_held_hud() -> void:
 	_held_empty_lbl.visible = false
 	_held_label.text = "%s  x%d" % [ItemDB.item_name(_held_item), Inventory.count(_held_item)]
 	_held_box.add_theme_stylebox_override("panel", _held_box_style(true))
+	_refresh_affordance()
+
+
+## v0.3.1 R4: describe what the held item is FOR. Placeable items → "물가에 놓을 수 있다"
+## (D14/D22 both place on ground/water); usable items → "마른 덤불에 쓸 수 있다" (I7 on a
+## bush_dry); everything else is a 조합 재료 with no field use → a dimmed reminder to bring
+## it to the cauldron. Kept phrasing generic per the R4 spec.
+func _refresh_affordance() -> void:
+	if _held_affordance == null:
+		return
+	if not ItemDB.get_placeable_on(_held_item).is_empty():
+		_held_affordance.text = "물가에 놓을 수 있다"
+		_held_affordance.add_theme_color_override("font_color", VIOLET_SOFT)
+	elif not ItemDB.get_usable_on(_held_item).is_empty():
+		_held_affordance.text = "마른 덤불에 쓸 수 있다"
+		_held_affordance.add_theme_color_override("font_color", VIOLET_SOFT)
+	else:
+		_held_affordance.text = "조합 재료 — 솥단지에서 쓰자"
+		_held_affordance.add_theme_color_override("font_color", DIM)
+
+
+## True if the held item has no field placement/use — a pure 조합 재료.
+func _is_combo_only(id: String) -> bool:
+	return ItemDB.get_placeable_on(id).is_empty() and ItemDB.get_usable_on(id).is_empty()
 
 
 ## Show a context hint above the held box when the held item can act on a nearby

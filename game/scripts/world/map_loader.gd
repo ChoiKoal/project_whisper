@@ -634,6 +634,10 @@ func _gatherable(spec: Dictionary, cell: Vector2i, tex_path: String, off: Vector
 	g.unique = bool(gth.get("unique", false))
 	g.texture = load(tex_path)
 	g.offset = off
+	# v0.3.1 R3: only trees physically block the player; small scatter (rock/stone/flower/
+	# grass tuft/green bush) stays walkable-over. Detected from the art path — trees use
+	# tree_a/b/c.png, everything else is small.
+	g.blocks_movement = tex_path.contains("tree")
 	return g
 
 

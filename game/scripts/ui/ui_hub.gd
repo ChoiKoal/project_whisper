@@ -105,17 +105,18 @@ func _build_bar() -> void:
 	row.add_theme_constant_override("separation", 8)
 	frame.add_child(row)
 
-	_add_bar_button(row, Win.CHARACTER, "캐릭터", "C")
-	_add_bar_button(row, Win.INVENTORY, "인벤토리", "I")
-	_add_bar_button(row, Win.CODEX, "도감", "R")
-	_add_bar_button(row, Win.NONE, "메뉴", "ESC")   # NONE = pause menu
+	# v0.3.1 tone pass §5: a small glyph beside each label + a hover lift/brighten.
+	_add_bar_button(row, Win.CHARACTER, "캐릭터", "C", "◈")
+	_add_bar_button(row, Win.INVENTORY, "인벤토리", "I", "▤")
+	_add_bar_button(row, Win.CODEX, "도감", "R", "✦")
+	_add_bar_button(row, Win.NONE, "메뉴", "ESC", "≡")   # NONE = pause menu
 
 
-func _add_bar_button(row: HBoxContainer, kind: int, label: String, hotkey: String) -> void:
+func _add_bar_button(row: HBoxContainer, kind: int, label: String, hotkey: String, glyph: String = "") -> void:
 	var b := Button.new()
 	b.focus_mode = Control.FOCUS_NONE
-	b.custom_minimum_size = Vector2(118, 44)
-	b.text = "%s (%s)" % [label, hotkey]
+	b.custom_minimum_size = Vector2(122, 44)
+	b.text = ("%s  %s (%s)" % [glyph, label, hotkey]) if glyph != "" else ("%s (%s)" % [label, hotkey])
 	b.add_theme_color_override("font_color", CREAM)
 	b.add_theme_color_override("font_hover_color", VIOLET_SOFT)
 	b.add_theme_font_size_override("font_size", 16)
@@ -123,8 +124,22 @@ func _add_bar_button(row: HBoxContainer, kind: int, label: String, hotkey: Strin
 	b.add_theme_stylebox_override("hover", _bar_btn_style(true))
 	b.add_theme_stylebox_override("pressed", _bar_btn_style(true))
 	b.pressed.connect(_on_bar_pressed.bind(kind))
+	# Hover polish: a subtle scale lift, tweened, pivoting on the button center.
+	b.pivot_offset = b.custom_minimum_size * 0.5
+	b.mouse_entered.connect(_on_bar_hover.bind(b, true))
+	b.mouse_exited.connect(_on_bar_hover.bind(b, false))
 	row.add_child(b)
 	_buttons[kind] = b
+
+
+## Subtle hover lift for command-bar buttons (tone pass §5).
+func _on_bar_hover(b: Button, entering: bool) -> void:
+	if not is_instance_valid(b):
+		return
+	b.pivot_offset = b.size * 0.5
+	var tw := create_tween()
+	tw.tween_property(b, "scale", Vector2(1.06, 1.06) if entering else Vector2.ONE, 0.10) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 
 func _bar_btn_style(active: bool) -> StyleBoxFlat:
