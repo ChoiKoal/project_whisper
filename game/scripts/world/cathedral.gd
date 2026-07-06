@@ -77,6 +77,10 @@ func _on_layer5_purified(_layer: String) -> void:
 	if typeof(GameState) != TYPE_NIL and GameState.has_method("set_portal_state"):
 		# divinity 포탈 = OPEN (정화한 세계는 열린 채 — 5레이어 완결, 다섯 포탈 전부 open).
 		GameState.set_portal_state("divinity", GameState.PORTAL_OPEN)
+		# (L5-5) §C-4: 다섯 정화(L1~L5) 전부 완료면 다섯 포탈 전점등 + 빛의 문 예고를 발동한다.
+		# maybe_light_five_portals 는 5-AND + 멱등 가드를 스스로 검사하므로 여기서 조건 판단 불필요.
+		if GameState.has_method("maybe_light_five_portals"):
+			GameState.maybe_light_five_portals()
 	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("save_game"):
 		SaveManager.save_game()
 

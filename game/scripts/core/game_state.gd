@@ -107,6 +107,8 @@ func reset_layer4() -> void:
 ## purified flag. Kept distinct for clarity/parity with L2/L3/L4.
 func reset_layer5() -> void:
 	layer5_purified_flag = false
+	# (L5-5) the 빛의 문 예고 is re-earned each run — clear it alongside the L5 purified flag.
+	light_gate_previewed_flag = false
 
 ## (v0.4.0-C) Emitted when a structure/decor item is PLACED into the world (persistent
 ## PlacedObject). `item_id` = the placed item, `cell` = its tile. Quests/audio hook here.
@@ -220,6 +222,56 @@ func set_portal_state(layer: String, state: String) -> void:
 ## Current state of a portal layer ("dormant" if unknown).
 func portal_state(layer: String) -> String:
 	return String(portal_states.get(layer, PORTAL_DORMANT))
+
+# ---- (L5-5) 다섯 포탈 완결 → 빛의 문 예고 (§C-4) ---------------------------
+## The five world layers, in portal order. Layer 1 (nature) clears via SaveManager.cleared;
+## Layers 2~5 via their *_purified_flag. 진행 순서 무관 — the AND below only cares that all five
+## are done.
+const PORTAL_LAYERS := ["nature", "science", "machine", "magic", "divinity"]
+
+## (L5-5) Emitted ONCE when the fifth (final) layer is purified and all five layers are complete:
+## the divinity 정화 컷신 lights every portal (set_all_portals(OPEN)) and previews the 빛의 문 at
+## the home island's centre. Carries nothing — the Cathedral cutscene shows the text card; the
+## home island (엔딩 마일스톤) will spawn the real gate. `light_gate_previewed_flag` persists so
+## the preview state round-trips a save.
+signal five_portals_lit()
+## (L5-5) True once the 다섯 포탈 전점등 + 빛의 문 예고 has fired. Saved; drives the 홈 섬 빛의 문
+## 예고 visual on reload. Set only by _maybe_light_five_portals (idempotent).
+var light_gate_previewed_flag: bool = false
+
+## (L5-5) True iff every one of the five world layers is purified/cleared (진행 순서 무관, 5-AND).
+## Layer 1 = SaveManager.cleared; Layers 2~5 = their purified flags.
+func five_layers_purified() -> bool:
+	var l1: bool = false
+	if typeof(SaveManager) != TYPE_NIL:
+		l1 = bool(SaveManager.cleared)
+	return l1 and layer2_purified_flag and layer3_purified_flag \
+		and layer4_purified_flag and layer5_purified_flag
+
+## (L5-5) Force every portal to `state` and announce each (idempotent per portal). Used by the L5
+## 정화 컷신 to light all five portals at once (다섯 포탈 완결).
+func set_all_portals(state: String) -> void:
+	for layer in PORTAL_LAYERS:
+		set_portal_state(layer, state)
+
+## (L5-5) If all five layers are purified, light every portal OPEN and preview the 빛의 문 — ONCE.
+## Idempotent: re-entry after the flag is set is a no-op (no duplicate signal). Returns true iff
+## it fired this call. Called from the L5 정화 컷신 (great_altar 봉헌) and on cathedral boot when a
+## restored save is already fully purified.
+func maybe_light_five_portals() -> bool:
+	if light_gate_previewed_flag:
+		return false
+	if not five_layers_purified():
+		return false
+	set_all_portals(PORTAL_OPEN)
+	light_gate_previewed_flag = true
+	five_portals_lit.emit()
+	return true
+
+## (L5-5) Reset the 빛의 문 예고 flag (NG+ / new game). Portals + purified flags are reset by
+## reset_portals / reset_layer*; this clears the preview so a fresh run re-earns it.
+func reset_light_gate() -> void:
+	light_gate_previewed_flag = false
 
 
 func _ready() -> void:

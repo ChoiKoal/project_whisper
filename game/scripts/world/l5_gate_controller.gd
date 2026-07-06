@@ -471,9 +471,66 @@ func _run_purification() -> void:
 	_wave_cathedral()
 	await get_tree().create_timer(2.2).timeout
 	_brighten_base_tone()
-	# (L5-5 will extend this card into the 다섯 포탈 전점등 + 빛의 문 예고 컷신.)
 	await _purify_card("…응답 없던 세계가, 처음으로 대답을 들었다.")
+	# (L5-5 §C-4) 정화가 layer5_purified 를 emit 하면 Cathedral 훅이 다섯 포탈 전점등 + 빛의 문 예고를
+	# 발동한다(5-AND 멱등). 마지막 레이어이면(다섯 정화 완료) 그 완결을 예고하는 카드를 이어 보여준다.
+	# 다섯 정화가 아직 안 끝났으면(하네스 단독 L5 클리어 등) 기본 카드만 — 조건 판단은 GameState가 소유.
 	_finish_purification()
+	if GameState != null and GameState.get("light_gate_previewed_flag") == true:
+		await _portal_completion_cutscene()
+
+
+## (L5-5 §C-4) 다섯 포탈 완결 컷신 — 다섯 포탈 전점등 (비주얼: 대성당 위 다섯 빛기둥 순차 점화) +
+## 홈 섬 중앙 빛의 문 예고 (텍스트 카드). 문 생성 자체는 다음 마일스톤(엔딩 M) — 여기서는 예고까지.
+## 컷신 동안 input lock/time_running 을 다시 잠갔다가 끝에서 확실히 복구한다(v0.6.1 페어링).
+func _portal_completion_cutscene() -> void:
+	if GameState != null:
+		GameState.time_running = false
+		if GameState.has_method("set_control_lock"):
+			GameState.set_control_lock(true)
+	_spawn_five_portal_beams()
+	await get_tree().create_timer(1.6).timeout
+	await _purify_card("다섯 세계가, 전부 대답을 들었다. 다섯 문이 함께 빛난다.")
+	await _purify_card("…홈 섬 한가운데, 빛의 문이 열릴 자리가 밝아온다.")
+	if GameState != null:
+		GameState.time_running = true
+		if GameState.has_method("set_control_lock"):
+			GameState.set_control_lock(false)
+
+
+## (L5-5) 다섯 포탈 전점등의 비주얼 — 대성당 위로 다섯 빛기둥이 순차 점화(자연/과학/기계/마법/신성).
+## CanvasLayer 오버레이 위 다섯 세로 광선을 페이드-인/아웃. 헤드리스에서도 크래시 없이 (그냥 안 보임).
+func _spawn_five_portal_beams() -> void:
+	if _loader == null:
+		return
+	var cl := CanvasLayer.new()
+	cl.layer = 10
+	add_child(cl)
+	var tints := [
+		Color("#8fd08a"),  # nature
+		Color("#7fd7e0"),  # science
+		Color("#e0a86a"),  # machine
+		Color("#c8a0f0"),  # magic
+		Color("#f5ecd0"),  # divinity (상아/호박)
+	]
+	var i := 0
+	for tint in tints:
+		var beam := ColorRect.new()
+		beam.color = tint
+		beam.custom_minimum_size = Vector2(26, 220)
+		beam.size = Vector2(26, 220)
+		beam.position = Vector2(240 + i * 90, 60)
+		beam.modulate.a = 0.0
+		cl.add_child(beam)
+		var tw := cl.create_tween()
+		tw.tween_interval(0.18 * i)
+		tw.tween_property(beam, "modulate:a", 0.85, 0.35)
+		tw.tween_interval(1.4)
+		tw.tween_property(beam, "modulate:a", 0.0, 0.6)
+		i += 1
+	get_tree().create_timer(3.2).timeout.connect(func():
+		if is_instance_valid(cl):
+			cl.queue_free())
 
 
 func _finish_purification() -> void:

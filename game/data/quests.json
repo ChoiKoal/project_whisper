@@ -332,6 +332,76 @@
       "count": 1,
       "next": "",
       "layer": 4
+    },
+    {
+      "id": "L5-Q1",
+      "whisper": "…신이 거의 사라졌어. 뭐든, 바랜 성물부터 조용히 주워.",
+      "type": "gather",
+      "signal": "item_gathered",
+      "target": "any",
+      "count": 1,
+      "next": "L5-Q2",
+      "layer": 5
+    },
+    {
+      "id": "L5-Q2",
+      "whisper": "만들어 봐. 응답은, 아주 작은 것에서 시작돼.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "any",
+      "count": 1,
+      "next": "L5-Q3",
+      "layer": 5
+    },
+    {
+      "id": "L5-Q3",
+      "whisper": "길이 어두워. 성소의 등불을 지어, 꺼진 등불 제단에 봉헌해.",
+      "type": "gate",
+      "signal": "power_node_energized",
+      "target": "lantern_path",
+      "count": 1,
+      "next": "L5-Q4",
+      "layer": 5
+    },
+    {
+      "id": "L5-Q4",
+      "whisper": "샘이 말랐어. 생명의 씨를 심으면, 다시 차올라 — 처음으로 생명이 네 것이 돼.",
+      "type": "gate",
+      "signal": "item_used_on_object",
+      "target": "life_spring",
+      "count": 1,
+      "next": "L5-Q5",
+      "layer": 5
+    },
+    {
+      "id": "L5-Q5",
+      "whisper": "여긴 소리가 없어. 침묵의 성가를 지녀야, 회랑을 건너.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D182",
+      "count": 1,
+      "next": "L5-Q6",
+      "layer": 5
+    },
+    {
+      "id": "L5-Q6",
+      "whisper": "대제단까지 왔어. …이제, 대답을 준비할 차례야 — 봉헌의 그릇에 세 속삭임을 담아 '응답'을 지어.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D186",
+      "count": 1,
+      "next": "L5-Q7",
+      "layer": 5
+    },
+    {
+      "id": "L5-Q7",
+      "whisper": "여기에 '응답'을 봉헌하면… 세계가, 처음으로 우리 말을 들어.",
+      "type": "gate",
+      "signal": "power_node_energized",
+      "target": "great_altar",
+      "count": 1,
+      "next": "",
+      "layer": 5
     }
   ]
 }

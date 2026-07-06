@@ -172,6 +172,8 @@ func build_save_dict() -> Dictionary:
 		"layer3_purified": GameState.layer3_purified_flag,
 		"layer4_purified": GameState.layer4_purified_flag,
 		"layer5_purified": GameState.layer5_purified_flag,
+		# (L5-5) 다섯 포탈 전점등 + 빛의 문 예고가 이미 발동했는지 (5레이어 완결 후 재로드 시 유지).
+		"light_gate_previewed": GameState.light_gate_previewed_flag,
 		"whisper": WhisperCurrency.to_dict(),
 		"world_context": WorldContext.to_dict(),
 		"pending_return_ignition": pending_return_ignition,
@@ -409,6 +411,7 @@ func _apply_core_state(data: Dictionary) -> void:
 	GameState.layer3_purified_flag = bool(data.get("layer3_purified", false))
 	GameState.layer4_purified_flag = bool(data.get("layer4_purified", false))
 	GameState.layer5_purified_flag = bool(data.get("layer5_purified", false))
+	GameState.light_gate_previewed_flag = bool(data.get("light_gate_previewed", false))
 	if data.has("whisper"):
 		WhisperCurrency.from_dict(data["whisper"])
 	else:
