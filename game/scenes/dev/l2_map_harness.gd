@@ -54,6 +54,7 @@ func _ready() -> void:
 	_test_objects_textured(loader)
 	_test_scatter_exclusion(loader)
 	_test_workbench(loader)
+	_test_oil_south_progression(loader)
 
 	print("=== RESULT: %s (%d failures) ===" % ["PASS" if _fail == 0 else "FAIL", _fail])
 	get_tree().quit(_fail)
@@ -69,8 +70,8 @@ func _test_dimensions(loader: MapLoader) -> void:
 ## Expected char inventory from the authoritative l2_map_layout.txt (verified byte-identical
 ## to design §A-2). Asserts the loader ingested the same glyph distribution.
 func _test_tile_counts(loader: MapLoader) -> void:
-	var expect := {"V": 852, "G": 401, "W": 66, "c": 65, "O": 53, "M": 42, "C": 37,
-		"A": 16, "N": 14, "B": 10, "R": 9, "s": 5, "F": 5, "m": 4, "T": 4, "K": 4,
+	var expect := {"V": 852, "G": 398, "W": 66, "c": 65, "O": 53, "M": 42, "C": 37,
+		"A": 16, "N": 14, "B": 10, "R": 9, "m": 7, "s": 5, "F": 5, "T": 4, "K": 4,
 		"/": 4, "e": 2, "D": 2, "S": 1}
 	var counts := {}
 	for r in range(loader.height):
@@ -203,6 +204,38 @@ func _test_scatter_exclusion(loader: MapLoader) -> void:
 		if loader.l2_blackout_cells.has(cell):
 			rim_ramp_clean = false
 	_check("no ramp cell overlaps a blackout gate cell", rim_ramp_clean)
+
+
+## (v1.0.3 regression) SPATIAL PROGRESSION: the G1 에너지 브리지 key (전지 D64) consumes 기름(J5)
+## via 정류회로(J4+J5). J5 is 'm'(oil_leak). Before v1.0.3 every J5 source sat NORTH of the 냉각수
+## 협곡 (row 24-26) — i.e. BEHIND G1 — so the player could not craft the battery that opens G1 =
+## deadlock (KOAL 실플레이 softlock). Assert ≥1 walkable oil_leak source exists SOUTH of the canyon
+## (row > 26 = pre-G1 spawn region) so the battery chain is always craftable before the bridge.
+## Mirrors tools/tools_spatial_audit.py; keep both in sync.
+func _test_oil_south_progression(loader: MapLoader) -> void:
+	const CANYON_ROW := 26   # W 냉각수 협곡 최남단; G1 브리지가 유일 크로스.
+	var south_oil := 0
+	var north_oil := 0
+	for key in loader.l2_object_nodes:
+		if String(key).split("@")[0] != "oil_leak":
+			continue
+		var rec: Dictionary = loader.l2_object_nodes[key]
+		var cell: Vector2i = rec.get("cell", Vector2i(-1, -1))
+		# 채집 가능 = 셀 자체 또는 4-이웃이 walkable (인접 채집 규약).
+		var reachable := loader.is_cell_walkable(cell)
+		for d in [Vector2i(1,0), Vector2i(-1,0), Vector2i(0,1), Vector2i(0,-1)]:
+			if loader.is_cell_walkable(cell + d):
+				reachable = true
+		if not reachable:
+			continue
+		if cell.y > CANYON_ROW:
+			south_oil += 1
+		else:
+			north_oil += 1
+	_check("기름(J5) 소스가 협곡 남측(pre-G1)에 존재 → G1 전지 체인 확보 (softlock 방지)",
+		south_oil >= 1, "south_oil=%d north_oil=%d" % [south_oil, north_oil])
+	_check("남측 기름 배치 ≥3 (설계 §A-6 v1.0.3: (12,35)(26,37)(21,38))", south_oil >= 3,
+		"south_oil=%d" % south_oil)
 
 
 func _test_workbench(loader: MapLoader) -> void:
