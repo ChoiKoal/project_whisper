@@ -19,11 +19,15 @@ const SCENE_TERMINAL := "terminal_station"
 ## (L3-5) Layer-3 「태엽이 멈춘 도시」 — the machine portal destination. Value matches the literal
 ## clockwork_city.gd sets on WorldContext.current_scene, so the save snapshot round-trips.
 const SCENE_CLOCKWORK := "clockwork_city"
+## (L4-5) Layer-4 「봉인이 풀린 마탑」 — the magic portal destination. Value matches the literal
+## mage_tower.gd sets on WorldContext.current_scene, so the save snapshot round-trips.
+const SCENE_MAGE_TOWER := "mage_tower"
 
 const HOME_SCENE_PATH := "res://scenes/world/home_island.tscn"
 const GROVE_SCENE_PATH := "res://scenes/world/starting_grove.tscn"
 const TERMINAL_SCENE_PATH := "res://scenes/world/terminal_station.tscn"
 const CLOCKWORK_SCENE_PATH := "res://scenes/world/clockwork_city.tscn"
+const MAGE_TOWER_SCENE_PATH := "res://scenes/world/mage_tower.tscn"
 
 ## The scene id the player is currently in ("home" at the start of a new game). Set by each
 ## world scene's session node on boot; read by SaveManager to key the world snapshot.
@@ -46,16 +50,18 @@ func scene_path(scene_id: String) -> String:
 		SCENE_GROVE: return GROVE_SCENE_PATH
 		SCENE_TERMINAL: return TERMINAL_SCENE_PATH
 		SCENE_CLOCKWORK: return CLOCKWORK_SCENE_PATH
+		SCENE_MAGE_TOWER: return MAGE_TOWER_SCENE_PATH
 	return GROVE_SCENE_PATH
 
 
 ## (L2-5) Map a portal layer id to the world scene it opens. nature→grove, science→terminal,
-## machine→clockwork_city (L3-5).
+## machine→clockwork_city (L3-5), magic→mage_tower (L4-5).
 func layer_scene(layer: String) -> String:
 	match layer:
 		"science": return SCENE_TERMINAL
 		"nature": return SCENE_GROVE
 		"machine": return SCENE_CLOCKWORK
+		"magic": return SCENE_MAGE_TOWER
 	return SCENE_GROVE
 
 

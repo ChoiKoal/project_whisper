@@ -262,6 +262,76 @@
       "count": 1,
       "next": "",
       "layer": 3
+    },
+    {
+      "id": "L4-Q1",
+      "whisper": "…풀려 버렸어. 뭐든, 성한 룬석부터 주워.",
+      "type": "gather",
+      "signal": "item_gathered",
+      "target": "any",
+      "count": 1,
+      "next": "L4-Q2",
+      "layer": 4
+    },
+    {
+      "id": "L4-Q2",
+      "whisper": "새겨 봐. 봉인은, 한 글자에서 시작돼.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "any",
+      "count": 1,
+      "next": "L4-Q3",
+      "layer": 4
+    },
+    {
+      "id": "L4-Q3",
+      "whisper": "발판이 갈라졌어. 룬 다리석을 제단에 걸어, 다리를 놓아.",
+      "type": "gate",
+      "signal": "power_node_energized",
+      "target": "rune_bridge",
+      "count": 1,
+      "next": "L4-Q4",
+      "layer": 4
+    },
+    {
+      "id": "L4-Q4",
+      "whisper": "샘이 흐려졌어. 정화의 물이면, 다시 결계가 돌아.",
+      "type": "gate",
+      "signal": "item_used_on_object",
+      "target": "mana_spring",
+      "count": 1,
+      "next": "L4-Q5",
+      "layer": 4
+    },
+    {
+      "id": "L4-Q5",
+      "whisper": "균열이 길을 삼켰어. 보호 부적을 지어 몸에 두르면 건널 수 있어.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D145",
+      "count": 1,
+      "next": "L4-Q6",
+      "layer": 4
+    },
+    {
+      "id": "L4-Q6",
+      "whisper": "최심부까지 왔어. 최심부 봉인구부터 만들어 — 뼈대에 속삭임을 불어넣어.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D148",
+      "count": 1,
+      "next": "L4-Q7",
+      "layer": 4
+    },
+    {
+      "id": "L4-Q7",
+      "whisper": "여기에 봉인을 세우면… 풀려난 것이 마지막으로 한 번, 잠들어.",
+      "type": "gate",
+      "signal": "power_node_energized",
+      "target": "seal_core",
+      "count": 1,
+      "next": "",
+      "layer": 4
     }
   ]
 }

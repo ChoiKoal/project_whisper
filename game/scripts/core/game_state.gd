@@ -88,6 +88,12 @@ func reset_layer2() -> void:
 func reset_layer3() -> void:
 	layer3_purified_flag = false
 
+## (L4-5) Reset Layer-4 purification state to the new-game baseline. Called by new game / NG+.
+## Note: powered_nodes is a shared set (L2 + L3 + L4 seal-node ids); reset_layer2 already clears
+## it, so this only clears the L4 purified flag. Kept distinct for clarity/parity with L2/L3.
+func reset_layer4() -> void:
+	layer4_purified_flag = false
+
 ## (v0.4.0-C) Emitted when a structure/decor item is PLACED into the world (persistent
 ## PlacedObject). `item_id` = the placed item, `cell` = its tile. Quests/audio hook here.
 signal placed_object_placed(item_id: String, cell: Vector2i)
