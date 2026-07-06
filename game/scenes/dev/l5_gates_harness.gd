@@ -25,16 +25,15 @@ extends Node
 
 const CATHEDRAL := "res://scenes/world/cathedral.tscn"
 
-## Synthetic 「응답」(D186) recipe for the whisper_cost 3키 assertion (D186 자체 데이터는 L5-4 scope).
-## Uses two existing leaf items (J1) so canonicalization + _consume_inputs behave identically to real
-## L5-R10. whisper_cost{energy:1,mana:1,vita:1} exercises the exact 3-attribute gate Fusion added.
-const RESP_A := "J1"
-const RESP_B := "J2"
+## (L5-4) The 「응답」 gate is the REAL L5-R10 recipe now that items.json/recipes.json carry it:
+## 봉헌의 그릇(D183) 둘 → 응답(D186), whisper_cost{energy:1,mana:1,vita:1}. The stub 합성 레시피 is
+## retired — the harness now exercises the shipped data path directly (same-pair D183+D183).
+const RESP_A := "D183"
+const RESP_B := "D183"
 
 var _fail := 0
 var _purified := false
 var _purified_layer := ""
-var _synth_id := ""
 
 
 func _check(label: String, cond: bool, detail: String = "") -> void:
@@ -71,9 +70,9 @@ func _ready() -> void:
 		get_tree().quit(1)
 		return
 
-	# The L5 key items (D178/D180/D182/D186) land in items.json at L5-4; register minimal stand-ins
-	# now so Inventory.add stores them (the G3 held-hymn poll uses a real Inventory.has check).
-	_register_stub_items()
+	# (L5-4) The L5 key items (D178/D180/D182/D183/D186) now ship in items.json — assert they are real
+	# ItemDB records (no stubs). If any are missing the data step regressed.
+	_assert_real_l5_items()
 
 	if GameState.has_signal("layer5_purified"):
 		GameState.layer5_purified.connect(func(l):
@@ -90,7 +89,6 @@ func _ready() -> void:
 	_test_persistence()
 	await _test_persistence_reapply(loader)
 
-	_cleanup_synth()
 	print("=== RESULT: %s (%d failures) ===" % ["PASS" if _fail == 0 else "FAIL", _fail])
 	get_tree().quit(_fail)
 
@@ -233,9 +231,10 @@ func _test_g3_silence_corridor(loader: MapLoader) -> void:
 ##   ② 3속성 전부 보유 → 성공 + 세 속성 전부 소모(각 0).
 
 func _test_g4_whisper_cost_trio() -> void:
-	_install_synth_response_recipe()
 	var recipe := RecipeDB.find_recipe([RESP_A, RESP_B])
-	_check("「응답」 합성 레시피 등록됨", not recipe.is_empty())
+	_check("「응답」 실 레시피(L5-R10) 등록됨", not recipe.is_empty()
+		and String(recipe.get("output", "")) == "D186",
+		"id=%s out=%s" % [String(recipe.get("id", "")), String(recipe.get("output", ""))])
 	var wc := RecipeDB.whisper_cost(recipe)
 	_check("「응답」 whisper_cost 3키 {energy:1,mana:1,vita:1}",
 		int(wc.get("energy", 0)) == 1 and int(wc.get("mana", 0)) == 1 and int(wc.get("vita", 0)) == 1,
@@ -256,6 +255,8 @@ func _test_g4_whisper_cost_trio() -> void:
 	Inventory.add(RESP_B, 1)
 	var res_ok := Fusion.fuse(RESP_A, RESP_B)
 	_check("3속성 보유 → 「응답」 fuse 성공", res_ok["matched"], "reason=%s" % String(res_ok.get("failure_reason", "")))
+	_check("성공 산출 = 응답(D186)", String(res_ok.get("output", "")) == "D186",
+		"out=%s" % String(res_ok.get("output", "")))
 	_check("성공 시 energy 전소모 (0)", WhisperCurrency.energy == 0, "energy=%d" % WhisperCurrency.energy)
 	_check("성공 시 mana 전소모 (0)", WhisperCurrency.mana == 0, "mana=%d" % WhisperCurrency.mana)
 	_check("성공 시 vita 전소모 (0)", WhisperCurrency.vita == 0, "vita=%d" % WhisperCurrency.vita)
@@ -279,8 +280,9 @@ func _assert_reject_when_missing(missing: String, reason: String) -> void:
 	_check("%s 0 → 「응답」 조합 거부" % missing, not res["matched"])
 	_check("%s 부족 사유 = '%s'" % [missing, reason],
 		String(res.get("failure_reason", "")) == reason, "reason=%s" % String(res.get("failure_reason", "")))
-	_check("%s 거부 시 재료 미소모 (%s·%s 잔존)" % [missing, RESP_A, RESP_B],
-		Inventory.count(RESP_A) == 1 and Inventory.count(RESP_B) == 1)
+	# 봉헌의 그릇² same-pair → 재료 = D183 두 개. 거부 시 둘 다 잔존해야 한다.
+	_check("%s 거부 시 재료 미소모 (D183² 잔존)" % missing,
+		Inventory.count("D183") == 2)
 	Inventory.clear()
 
 
@@ -407,45 +409,11 @@ func _drain_all() -> void:
 		WhisperCurrency.spend_vita(WhisperCurrency.vita)
 
 
-## Register a synthetic 「응답」 recipe (whisper_cost 3키) into RecipeDB so the Fusion 3속성 gate is
-## exercised without depending on L5-4's D186 data. Removed in _cleanup_synth.
-func _install_synth_response_recipe() -> void:
-	if _synth_id != "":
-		return
-	_synth_id = "L5H_RESPONSE"
-	var rec := {
-		"id": _synth_id,
-		"inputs": [RESP_A, RESP_B],
-		"output": RESP_A,
-		"hint": "harness synthetic 「응답」",
-		"whisper_cost": {"energy": 1, "mana": 1, "vita": 1},
-	}
-	RecipeDB._recipes[_synth_id] = rec
-	var ca := ItemDB.resolve_id(RESP_A)
-	var cb := ItemDB.resolve_id(RESP_B)
-	var pair := [ca, cb]
-	pair.sort()
-	RecipeDB._by_inputs["%s|%s" % [pair[0], pair[1]]] = _synth_id
-
-
-## Register minimal stand-in records for the L5 key items so Inventory.add stores them (their real
-## items.json entries arrive in L5-4). Harness-local; ItemDB is a runtime autoload dict.
-func _register_stub_items() -> void:
-	for id in ["D178", "D180", "D182", "D186"]:
-		if not ItemDB.has_item(id):
-			ItemDB._items[id] = {"id": id, "name": id, "category": "key"}
-
-
-func _cleanup_synth() -> void:
-	if _synth_id == "":
-		return
-	RecipeDB._recipes.erase(_synth_id)
-	var ca := ItemDB.resolve_id(RESP_A)
-	var cb := ItemDB.resolve_id(RESP_B)
-	var pair := [ca, cb]
-	pair.sort()
-	RecipeDB._by_inputs.erase("%s|%s" % [pair[0], pair[1]])
-	_synth_id = ""
+## (L5-4) Assert the L5 key items now ship as real ItemDB records (stubs retired). The G3 held-hymn
+## poll uses a real Inventory.has check, and the G4 gate consumes the real 봉헌의 그릇(D183) pair.
+func _assert_real_l5_items() -> void:
+	for id in ["D178", "D180", "D182", "D183", "D186"]:
+		_check("실 items.json 레코드 존재: %s" % id, ItemDB.has_item(id))
 
 
 func _cells(arr: Array) -> Array:

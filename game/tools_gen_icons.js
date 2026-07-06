@@ -160,6 +160,11 @@ const P = {
   amyD: '#241834', amy: '#4a3670', amyM: '#7a5aae', amyL: '#b593e0', amyH: '#dcc4ff',
   runeGold: '#f2c14e', runeGoldD: '#b8862c', runeGoldL: '#ffe3a0',
   voidBlue: '#0e0a18', silverL: '#e0dcd0', silver: '#a8a49a', vellum: '#e8dcae', vellumD: '#b8a870',
+  // ---- Layer-5 divinity family (L5) — design v1 Part A/C: pale ivory/silver, desaturated,
+  // with a faint warm amber glow (꺼져가는 잔불). Low saturation throughout — 채도를 뺀 세계.
+  ivoryD: '#6b6459', ivory: '#9a9385', ivoryM: '#c4bdaf', ivoryL: '#e6e0d4', ivoryH: '#f4efe4',
+  ashGrey: '#4a463f', ashGreyL: '#726c62',
+  ambient: '#e0a94a', ambientD: '#a87c2e', ambientL: '#f2ce8c',
 };
 const C = {};
 for (const k in P) C[k] = hexToRGB(P[k]);
@@ -1613,6 +1618,101 @@ for (let i = 140; i <= 176; i++) {
 }
 
 // ============================================================================
+// LAYER-5 DIVINITY FAMILY (L5). S1..S7 gather + D177..D218 craft. Shared cues
+// (design v1 Part A/C): pale ivory/silver desaturated silhouettes, faint warm amber
+// (꺼져가는 잔불) glow only on the lit/sacred items — 채도를 뺀 세계. Each id gets a
+// byte-unique painter (bespoke S1-S7 + deterministic per-id variation for D-crafts).
+// ============================================================================
+
+// --- helper: a small amber ember flicker at cx,cy ---
+function emberFlicker(cv, cx, cy, r) {
+  glowBehind(cv, cx, cy, r, C.ambient);
+  disc(cv, cx, cy, Math.max(1, Math.round(r * 0.4)), C.ambientL);
+  disc(cv, cx, cy, 1, C.ivoryH);
+}
+
+// ---------- S1..S7 (Layer-5 gather) — design §B-1 ----------
+icons.S1 = (cv) => { // 성수 holy water — a still ivory-rimmed font of pale water
+  ellipse(cv, 24, 30, 15, 10, C.ivory, C.ivoryD);   // stone basin
+  ellipse(cv, 24, 28, 11, 6, C.blueM, C.blue);       // still water surface
+  disc(cv, 20, 26, 2, C.ivoryL);                     // faint sheen
+  outline(cv, P.ivoryD);
+};
+icons.S2 = (cv) => { // 빛바랜 성물 faded relic — a worn, indistinct ivory reliquary
+  ellipse(cv, 24, 28, 12, 14, C.ivoryM, C.ivory);
+  for (let y = 16; y < 40; y++) for (let x = 14; x < 34; x++) if (getA(cv, x, y)) setPx(cv, x, y, ((x + y) % 5 === 0) ? C.ivoryD : (x - y > -2 ? C.ivoryM : C.ivory));
+  disc(cv, 24, 22, 2, C.ambientD);                   // one faint warm speck
+  outline(cv, P.ivoryD);
+};
+icons.S3 = (cv) => { // 대리석 조각 marble chunk — a broken faceted white shard
+  for (let y = 16; y < 38; y++) { const hw = Math.round((38 - y) / 22 * 13); for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, x - y > -3 ? C.ivoryL : C.ivoryM); }
+  line(cv, 24, 16, 18, 36, C.ivoryH, 1);             // vein
+  line(cv, 24, 16, 30, 36, C.ivoryD, 1);
+  outline(cv, P.ivoryD);
+};
+icons.S4 = (cv) => { // 기도 구슬 prayer bead — a short string of pale beads
+  const beads = [[15, 30], [22, 33], [29, 33], [34, 28]];
+  line(cv, 15, 30, 34, 28, C.ivoryD, 1);
+  for (const [bx, by] of beads) { circle(cv, bx, by, 3, C.ivoryL, C.ivory); disc(cv, bx - 1, by - 1, 1, C.ivoryH); }
+  outline(cv, P.ivoryD);
+};
+icons.S5 = (cv) => { // 성가 악보 hymn sheet — a pale sheet with faint staff lines + notes
+  for (let y = 12; y < 38; y++) for (let x = 14; x < 34; x++) setPx(cv, x, y, x < 17 ? C.ivoryM : C.ivoryL);
+  for (const ly of [18, 22, 26, 30]) line(cv, 17, ly, 32, ly, C.ivoryD, 1);
+  disc(cv, 21, 26, 1, C.ashGrey); disc(cv, 27, 22, 1, C.ashGrey); // faint notes
+  outline(cv, P.ivoryD);
+};
+icons.S6 = (cv) => { // 재의 날개 ash wing — a grey feathered wing dusted with ash
+  for (let i = 0; i < 6; i++) { const ang = -0.5 + i * 0.28; const ex = 24 + Math.cos(ang) * (10 + i), ey = 30 + Math.sin(ang) * (10 + i); line(cv, 20, 32, ex, ey, (i % 2) ? C.ashGreyL : C.ashGrey, 1); }
+  ellipse(cv, 20, 32, 5, 4, C.ivoryM, C.ashGreyL);
+  for (let i = 0; i < 8; i++) setPx(cv, 16 + (i * 5 % 22), 12 + (i * 3 % 10), C.ivoryL); // drifting ash
+  outline(cv, P.ashGrey);
+};
+icons.S7 = (cv) => { // 신성한 잔불 divine ember — a dying warm ember on grey ash
+  ellipse(cv, 24, 34, 14, 6, C.ashGrey, darker(C.ashGrey, 12)); // ash bed
+  emberFlicker(cv, 24, 28, 12);
+  disc(cv, 20, 30, 1, C.ambient); disc(cv, 29, 31, 1, C.ambientD); // stray coals
+  outline(cv, P.ashGrey);
+};
+
+// ---------- D177..D218 (Layer-5 craft) — deterministic per-id variation ----------
+// A shared ivory tablet body + per-id count/arrangement of faint marks; the "lit/sacred"
+// ids carry an amber ember glow, others stay cold and desaturated. Numeric id drives mark
+// count, positions, and accents so every file is byte-unique.
+// Glow ids = the lantern/spring/ember/candle/glowing-decor outputs (design (a)/(e) glows:true).
+const L5_GLOW_IDS = new Set([178, 180, 184, 193, 197, 202, 203, 204, 209, 210, 214]);
+function paintL5Craft(cv, n) {
+  const glow = L5_GLOW_IDS.has(n);
+  if (glow) glowBehind(cv, 24, 24, 17, C.ambient);
+  // tablet body — rounded ivory tablet; tint shifts subtly with n for extra variance.
+  const tintUp = (n % 5) * 3;
+  const bodyLit = lighter(C.ivoryM, tintUp), bodyDk = darker(C.ivory, (n % 3) * 5);
+  for (let y = 12; y < 38; y++) for (let x = 12; x < 36; x++) {
+    const edge = (x === 12 || x === 35 || y === 12 || y === 37);
+    setPx(cv, x, y, edge ? bodyDk : (x - y > (n % 7) - 3 ? bodyLit : C.ivory));
+  }
+  // corner studs (amber for glowing/sacred items, ash-grey otherwise) — count varies by id.
+  const studCol = glow ? C.ambientD : C.ashGrey;
+  const studs = [[15, 15], [33, 15], [15, 35], [33, 35]];
+  for (let i = 0; i < (2 + (n % 3)); i++) { const s = studs[i % 4]; disc(cv, s[0], s[1], 2, studCol); }
+  // faint carved marks — 1..3 of them, arranged by id (reuse the L4 runeGlyph as a sigil form).
+  const markCount = 1 + (n % 3);
+  const mcol = glow ? C.ambientL : C.ivoryD;
+  const positions = [[24, 24], [18, 22], [30, 26], [24, 32]];
+  for (let i = 0; i < markCount; i++) {
+    const pp = positions[i % positions.length];
+    runeGlyph(cv, pp[0], pp[1], n + i, mcol);
+  }
+  // an ember speck for the lit family, a cold ash speck otherwise.
+  if (glow) { emberFlicker(cv, 24, 30, 5); }
+  else { disc(cv, 24, 30, 1, C.ashGreyL); }
+  outline(cv, P.ivoryD);
+}
+for (let i = 177; i <= 218; i++) {
+  icons['D' + i] = ((n) => (cv) => paintL5Craft(cv, n))(i);
+}
+
+// ============================================================================
 // Emit all icon files. Item catalog = 9 gatherables (I1..I9) + crafts D01..D61
 // minus the retired 석기 D11 (removed v0.3.1) + Layer-2 J1..J7 + D62..D102 (L2-4).
 // D06 is an alias of I4 → identical bytes to I4 (spec: "D06 alias resolves to I4's
@@ -1634,6 +1734,9 @@ for (let i = 103; i <= 139; i++) ALL_IDS.push('D' + i);
 // Layer-4 (L4): P1..P7 gather + D140..D176 craft.
 for (let i = 1; i <= 7; i++) ALL_IDS.push('P' + i);
 for (let i = 140; i <= 176; i++) ALL_IDS.push('D' + i);
+// Layer-5 (L5): S1..S7 gather + D177..D218 craft.
+for (let i = 1; i <= 7; i++) ALL_IDS.push('S' + i);
+for (let i = 177; i <= 218; i++) ALL_IDS.push('D' + i);
 
 let count = 0, total = 0;
 for (const id of ALL_IDS) {
