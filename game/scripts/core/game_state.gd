@@ -274,6 +274,76 @@ func reset_light_gate() -> void:
 	light_gate_previewed_flag = false
 
 
+# ---- (EG-2) 진상 조각 (Truth Shards) + (EG-1/EG-3) 엔딩 기록 -----------------
+## (EG-2) Collected truth shards, keyed by shard id → true. The five shards are the L1~L5
+## narrative investigation objects (world_tree / l2_last_log / stopped_robot / mage_ghost /
+## petrified_pilgrim). Saved (v2, null-guarded migration). Reset each run on NG+ (QA 확정:
+## truth_shards 리셋, endings_seen만 lifetime) so [돌아선다] must be re-earned per run.
+var truth_shards: Dictionary = {}
+## (EG-2) The five canonical truth-shard ids, in narrative (layer) order.
+const TRUTH_SHARD_IDS := ["world_tree", "l2_last_log", "stopped_robot", "mage_ghost", "petrified_pilgrim"]
+## (EG-2) True once the final 회수 카드 (§3.1) has been shown — this is what unlocks the light
+## gate's [돌아선다]. Set when the 5th shard is collected; reset on NG+. Saved.
+var truth_final_seen: bool = false
+## (EG-2) Emitted when a truth shard is (first) collected. `shard_id` = the shard, `count` = new total.
+signal truth_shard_collected(shard_id: String, count: int)
+## (EG-2) Emitted once when the 5th shard completes the set (the final 회수 카드 beat).
+signal truth_shards_complete()
+
+## (EG-2) Collect a truth shard (idempotent). Records it, announces it, and — when this
+## completes all five — sets truth_final_seen and fires truth_shards_complete. Returns true iff
+## this call newly collected the shard.
+func collect_truth_shard(shard_id: String) -> bool:
+	if shard_id == "" or truth_shards.get(shard_id, false):
+		return false
+	truth_shards[shard_id] = true
+	var n := truth_shard_count()
+	truth_shard_collected.emit(shard_id, n)
+	if n >= TRUTH_SHARD_IDS.size() and not truth_final_seen:
+		truth_final_seen = true
+		truth_shards_complete.emit()
+	return true
+
+## (EG-2) True if a given shard has been collected.
+func has_truth_shard(shard_id: String) -> bool:
+	return bool(truth_shards.get(shard_id, false))
+
+## (EG-2) How many of the five truth shards are collected.
+func truth_shard_count() -> int:
+	var n := 0
+	for sid in TRUTH_SHARD_IDS:
+		if truth_shards.get(sid, false):
+			n += 1
+	return n
+
+## (EG-2) True once all five truth shards are collected (the [돌아선다] gate).
+func truth_shards_all() -> bool:
+	return truth_shard_count() >= TRUTH_SHARD_IDS.size()
+
+## (EG-2) Reset the run's truth shards (NG+ / new game). The endings_seen honor record is
+## NOT touched here (it is lifetime). Called from start_ng_plus / new_game.
+func reset_truth_shards() -> void:
+	truth_shards.clear()
+	truth_final_seen = false
+
+## (EG-1/EG-3) Lifetime honor record of endings seen (E1/E2 → true). NOT reset on NG+ — it
+## rides alongside lifetime_recipes. Saved.
+var endings_seen: Dictionary = {}
+## (EG) Emitted when an ending is first recorded.
+signal ending_recorded(ending_id: String)
+
+## (EG-1/EG-3) Record an ending as seen (idempotent, lifetime). `ending_id` ∈ {"E1","E2"}.
+func record_ending(ending_id: String) -> void:
+	if ending_id == "" or endings_seen.get(ending_id, false):
+		return
+	endings_seen[ending_id] = true
+	ending_recorded.emit(ending_id)
+
+## (EG) True if an ending has ever been seen (lifetime).
+func has_ending(ending_id: String) -> bool:
+	return bool(endings_seen.get(ending_id, false))
+
+
 func _ready() -> void:
 	_phase = _phase_for(game_time)
 	if portal_states.is_empty():

@@ -174,6 +174,11 @@ func build_save_dict() -> Dictionary:
 		"layer5_purified": GameState.layer5_purified_flag,
 		# (L5-5) 다섯 포탈 전점등 + 빛의 문 예고가 이미 발동했는지 (5레이어 완결 후 재로드 시 유지).
 		"light_gate_previewed": GameState.light_gate_previewed_flag,
+		# (EG-2) 진상 조각 진행 (회차 지속; NG+에서 리셋). 최종 회수 카드 본 여부.
+		"truth_shards": GameState.truth_shards.duplicate(),
+		"truth_final_seen": GameState.truth_final_seen,
+		# (EG-1/EG-3) 본 엔딩 명예 기록 (lifetime, NG+ 무리셋).
+		"endings_seen": GameState.endings_seen.duplicate(),
 		"whisper": WhisperCurrency.to_dict(),
 		"world_context": WorldContext.to_dict(),
 		"pending_return_ignition": pending_return_ignition,
@@ -412,6 +417,11 @@ func _apply_core_state(data: Dictionary) -> void:
 	GameState.layer4_purified_flag = bool(data.get("layer4_purified", false))
 	GameState.layer5_purified_flag = bool(data.get("layer5_purified", false))
 	GameState.light_gate_previewed_flag = bool(data.get("light_gate_previewed", false))
+	# (EG-2) 진상 조각 진행 + 최종 카드 여부 (v0.9.0 세이브엔 결측 → 빈 dict/false 기본값, null-가드).
+	GameState.truth_shards = (data.get("truth_shards", {}) as Dictionary).duplicate()
+	GameState.truth_final_seen = bool(data.get("truth_final_seen", false))
+	# (EG-1/EG-3) 본 엔딩 명예 기록 (lifetime).
+	GameState.endings_seen = (data.get("endings_seen", {}) as Dictionary).duplicate()
 	if data.has("whisper"):
 		WhisperCurrency.from_dict(data["whisper"])
 	else:
@@ -568,6 +578,7 @@ func start_ng_plus(finished_run_recipes: Array = []) -> Array:
 	GameState.reset_layer3()           # (L3-5) clear the machine-world purified flag on NG+
 	GameState.reset_layer4()           # (L4-5) clear the magic-world purified flag on NG+
 	GameState.reset_layer5()           # (L5-5) clear the divinity-world purified flag on NG+
+	GameState.reset_truth_shards()     # (EG-2) 진상 조각 회차 리셋 ([돌아선다] 재획득; endings_seen는 보존)
 	WhisperCurrency.reset()            # (L2-3) no 에너지/마력 Whisper held
 	Codex.reset()
 	QuestManager.reset()   # (v0.4.0-C) fresh 속삭임 line on NG+ (from P0)
@@ -615,6 +626,7 @@ func new_game() -> void:
 	GameState.reset_layer3()           # (L3-5) clear the machine-world purified flag
 	GameState.reset_layer4()           # (L4-5) clear the magic-world purified flag
 	GameState.reset_layer5()           # (L5-5) clear the divinity-world purified flag
+	GameState.reset_truth_shards()     # (EG-2) 진상 조각 초기화
 	WhisperCurrency.reset()            # (L2-3) no 에너지/마력 Whisper held
 	Codex.reset()
 	QuestManager.reset()   # (v0.4.0-C) fresh 속삭임 line on 새로 시작 (from P0)
@@ -624,4 +636,5 @@ func new_game() -> void:
 	run_number = 1
 	carried_recipes = []
 	lifetime_recipes.clear()
+	GameState.endings_seen.clear()     # (EG) 새 게임은 명예 기록도 초기화 (NG+와 달리)
 	cleared = false

@@ -35,6 +35,13 @@ const GROUP := "gatherable"
 ## of the generic "E 들어가기"). Dormant still shows the sleeping whisper.
 @export var prompt_override: String = ""
 
+## (EG-1) When true this gate renders as the 백금(platinum) 「빛의 문」 instead of the violet
+## portals — the accent palette below is swapped to warm white-gold and the gate scales up. The
+## door of light reuses the ENTIRE Portal geometry/veil/particle machinery; only the accent
+## colour + scale differ, and it opens a distinct interaction (the ending prompt, owned by the
+## home session — it is NOT in portal_states and never travels through _travel_to_layer).
+@export var platinum: bool = false
+
 ## Emitted when the player interacts. The world scene decides: travel (flickering/open) or
 ## show the locked hint (dormant). Carries this portal so the scene can read its layer/state.
 signal portal_interacted(portal: Portal)
@@ -66,6 +73,20 @@ const VIOLET := Color("#9e7ad9")
 const VIOLET_BRIGHT := Color("#c8a8f2")
 const VIOLET_DEEP := Color("#5b3f86")
 const RUNE_STONE := Color8(64, 50, 84)   ## the cold violet-grey sigil block
+
+## (EG-1) 백금(platinum) accent palette for the 빛의 문 — warm white-gold (CS-06: 완벽하게 아름다운
+## 최종 관문). Same brightness structure as the violet trio so the state machine reads identically.
+const PLATINUM := Color(1.0, 0.96, 0.82)
+const PLATINUM_BRIGHT := Color(1.0, 0.99, 0.92)
+const PLATINUM_DEEP := Color(0.80, 0.70, 0.46)
+const RUNE_STONE_PLATINUM := Color8(120, 108, 74)
+
+## (EG-1) Live accent colours, chosen in _ready from `platinum`. All render/state code reads
+## these instead of the VIOLET* consts so the door of light is a pure recolour of the portal.
+var _acc: Color = VIOLET
+var _acc_bright: Color = VIOLET_BRIGHT
+var _acc_deep: Color = VIOLET_DEEP
+var _rune_stone_col: Color = RUNE_STONE
 
 ## Cached rock-texture sample (a clean patch of cliff_face_a, no baked foot). Sampled once.
 static var _rock_tex: Image = null
@@ -111,6 +132,13 @@ const LAYER_GLYPH := {
 
 func _ready() -> void:
 	add_to_group(GROUP)
+	if platinum:
+		_acc = PLATINUM
+		_acc_bright = PLATINUM_BRIGHT
+		_acc_deep = PLATINUM_DEEP
+		_rune_stone_col = RUNE_STONE_PLATINUM
+		# (EG-1) 최종 관문 위압감: scale up ~1.45× (설계 §1.2).
+		scale = Vector2(1.45, 1.45)
 	_ensure_rock_tex()
 	_build_gate()
 	_build_rune_glow()
@@ -136,7 +164,7 @@ func _apply_state(state: String) -> void:
 	match state:
 		GameState.PORTAL_OPEN:
 			_veil.visible = true
-			_veil.self_modulate = Color(VIOLET_BRIGHT.r, VIOLET_BRIGHT.g, VIOLET_BRIGHT.b, 1.0)
+			_veil.self_modulate = Color(_acc_bright.r, _acc_bright.g, _acc_bright.b, 1.0)
 			_veil.scale = Vector2(1.0, 1.0)
 			_pool.visible = true
 			_rune_glow.visible = true
@@ -150,7 +178,7 @@ func _apply_state(state: String) -> void:
 			_gate.self_modulate = Color(1.08, 1.03, 1.12)   # warm-lit stone
 		GameState.PORTAL_FLICKERING:
 			_veil.visible = true
-			_veil.self_modulate = Color(VIOLET.r, VIOLET.g, VIOLET.b, 1.0)
+			_veil.self_modulate = Color(_acc.r, _acc.g, _acc.b, 1.0)
 			_veil.scale = Vector2(0.94, 0.97)
 			_pool.visible = false
 			_rune_glow.visible = true
@@ -489,19 +517,19 @@ func _carve_pillar_runes(img: Image, x0: int, x1: int) -> void:
 			for dx in range(-1, 2):
 				var xx := cxr + dx
 				if xx >= x0 and xx < x1:
-					img.set_pixel(xx, yy, img.get_pixel(xx, yy).darkened(0.5).lerp(VIOLET_DEEP, 0.36))
+					img.set_pixel(xx, yy, img.get_pixel(xx, yy).darkened(0.5).lerp(_acc_deep, 0.36))
 		# upper diagonal tick (out from the spine)
 		for t in range(0, 7):
 			var xx2 := cxr + flip * t
 			var yy2 := y - 8 + t
 			if xx2 >= x0 and xx2 < x1 and yy2 >= 0 and yy2 < GATE_H:
-				img.set_pixel(xx2, yy2, img.get_pixel(xx2, yy2).darkened(0.46).lerp(VIOLET_DEEP, 0.32))
+				img.set_pixel(xx2, yy2, img.get_pixel(xx2, yy2).darkened(0.46).lerp(_acc_deep, 0.32))
 		# lower diagonal tick (opposite side)
 		for t2 in range(0, 6):
 			var xx3 := cxr - flip * t2
 			var yy3 := y + 3 + t2
 			if xx3 >= x0 and xx3 < x1 and yy3 >= 0 and yy3 < GATE_H:
-				img.set_pixel(xx3, yy3, img.get_pixel(xx3, yy3).darkened(0.44).lerp(VIOLET_DEEP, 0.3))
+				img.set_pixel(xx3, yy3, img.get_pixel(xx3, yy3).darkened(0.44).lerp(_acc_deep, 0.3))
 		# hairline crack off the foot (the "cracked" reading)
 		for dd in range(1, 5):
 			var xc := cxr + flip * dd
@@ -551,7 +579,7 @@ func _build_rune_glow() -> void:
 					if a <= 0.02:
 						continue
 					var prev := img.get_pixel(x, y)
-					img.set_pixel(x, y, Color(VIOLET_BRIGHT.r, VIOLET_BRIGHT.g, VIOLET_BRIGHT.b, maxf(prev.a, a)))
+					img.set_pixel(x, y, Color(_acc_bright.r, _acc_bright.g, _acc_bright.b, maxf(prev.a, a)))
 			gi += 1
 			yy += 46
 	_rune_glow = Sprite2D.new()
@@ -584,7 +612,7 @@ func _build_sigil() -> void:
 				continue
 			# faceted stone: lit upper-right, dark lower-left.
 			var lit := 0.66 + (1.0 - dx) * 0.32 + (1.0 - dy) * 0.30
-			var col := RUNE_STONE.lerp(Color8(96, 84, 118), clampf(lit - 0.6, 0.0, 0.6))
+			var col := _rune_stone_col.lerp(Color8(96, 84, 118), clampf(lit - 0.6, 0.0, 0.6))
 			# a carved bevel rim
 			if d > 0.82:
 				col = col.darkened(0.34)
@@ -620,7 +648,7 @@ func _build_sigil() -> void:
 ## Draw a simple motif glyph centred at `c` into image `img`. When `glow` is true, draws a
 ## soft additive violet field (for the glow sprite); otherwise a crisp bright violet inlay.
 func _draw_glyph(img: Image, c: Vector2, kind: String, glow: bool = false) -> void:
-	var col := VIOLET_BRIGHT if not glow else VIOLET
+	var col := _acc_bright if not glow else _acc
 	var R := float(SIGIL_R) * 0.56
 	# helper: stamp a soft dot
 	var stamp := func(px: float, py: float, rad: float, aa: float) -> void:
@@ -698,7 +726,7 @@ func _build_veil() -> void:
 			var ang := atan2(dy, dx)
 			var swirl := 0.5 + 0.5 * sin(ang * 3.0 + r * 7.0)
 			var a := (1.0 - r) * (0.40 + 0.60 * swirl)
-			img.set_pixel(x, y, Color(VIOLET_BRIGHT.r, VIOLET_BRIGHT.g, VIOLET_BRIGHT.b, a * 0.95))
+			img.set_pixel(x, y, Color(_acc_bright.r, _acc_bright.g, _acc_bright.b, a * 0.95))
 	_veil = Sprite2D.new()
 	_veil.texture = ImageTexture.create_from_image(img)
 	_veil.centered = true
@@ -727,7 +755,7 @@ func _build_pool() -> void:
 			var d := sqrt(dx * dx + dy * dy)
 			if d <= 1.0:
 				var a := (1.0 - d) * (1.0 - d)
-				img.set_pixel(x, y, Color(VIOLET.r, VIOLET.g, VIOLET.b, a * 0.8))
+				img.set_pixel(x, y, Color(_acc.r, _acc.g, _acc.b, a * 0.8))
 	_pool = Sprite2D.new()
 	_pool.texture = ImageTexture.create_from_image(img)
 	_pool.centered = true
@@ -757,7 +785,7 @@ func _build_particles() -> void:
 	_particles.initial_velocity_max = 18.0
 	_particles.scale_amount_min = 1.2
 	_particles.scale_amount_max = 3.0
-	_particles.color = Color(VIOLET_BRIGHT.r, VIOLET_BRIGHT.g, VIOLET_BRIGHT.b, 0.7)
+	_particles.color = Color(_acc_bright.r, _acc_bright.g, _acc_bright.b, 0.7)
 	var mat := CanvasItemMaterial.new()
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	_particles.material = mat
@@ -799,7 +827,7 @@ func _build_particles() -> void:
 	_spark.initial_velocity_max = 26.0
 	_spark.scale_amount_min = 1.0
 	_spark.scale_amount_max = 1.8
-	_spark.color = Color(VIOLET_BRIGHT.r, VIOLET_BRIGHT.g, VIOLET_BRIGHT.b, 0.85)
+	_spark.color = Color(_acc_bright.r, _acc_bright.g, _acc_bright.b, 0.85)
 	var mat3 := CanvasItemMaterial.new()
 	mat3.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	_spark.material = mat3

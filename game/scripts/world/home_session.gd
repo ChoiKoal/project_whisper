@@ -32,6 +32,19 @@ var _active_portal: Portal = null
 var _entry_prompt: Label = null
 var _portals: Array = []
 
+## (EG-1) The 빛의 문 (platinum Portal) spawned at the dais focus once five portals are lit, plus
+## its own EntryZone tracking + the confirm-prompt modal it opens. The light gate is NOT wired
+## into the normal travel path (`_on_portal_interacted`) — it opens the ending confirm prompt.
+var _light_gate: Portal = null
+var _light_gate_active: bool = false   ## player in the light gate's apron this frame
+## (EG-1) The 3-choice confirm modal ([들어간다]/[돌아선다]/[아직 아니야]) + its control_lock guard.
+var _ending_modal: Control = null
+var _ending_layer: CanvasLayer = null
+const ENDING_MODAL_KEY := "ending_prompt"
+## (EG-1/EG-3) The EndingSequence CanvasLayer that plays E1/E2 (built lazily on first ending).
+var _ending_seq: Node = null
+const EndingSequenceScript := preload("res://scripts/world/ending_sequence.gd")
+
 
 func _ready() -> void:
 	WorldContext.current_scene = WorldContext.SCENE_HOME
@@ -77,6 +90,20 @@ func _setup() -> void:
 		AudioManager.start_world_audio()
 		AudioManager.set_home_ambience(true)   # quieter/sparser home soundscape
 
+	# (EG-1) 빛의 문: spawn it if the five portals are already lit (restored save / returned after
+	# L5). Also listen for the live `five_portals_lit` so a run that lights them WHILE on the home
+	# island (never happens today — L5 lights them in the cathedral — but future-proof + harness)
+	# spawns the gate immediately. Both paths are idempotent (guarded by `_light_gate`).
+	if GameState != null:
+		if GameState.light_gate_previewed_flag:
+			_spawn_light_gate()
+		if not GameState.five_portals_lit.is_connected(_on_five_portals_lit):
+			GameState.five_portals_lit.connect(_on_five_portals_lit)
+
+
+func _on_five_portals_lit() -> void:
+	_spawn_light_gate()
+
 
 # ---- portals --------------------------------------------------------------
 
@@ -84,8 +111,12 @@ func _wire_portals() -> void:
 	_portals.clear()
 	for node in get_tree().get_nodes_in_group("gatherable"):
 		if node is Portal and is_instance_valid(node):
-			_portals.append(node)
 			var portal := node as Portal
+			# (EG-1) The 빛의 문 is a Portal too, but it opens the ending prompt, not travel — it is
+			# tracked/wired separately (see _spawn_light_gate). Never add it to the travel list.
+			if portal.platinum or portal.object_id == "light_gate":
+				continue
+			_portals.append(node)
 			if not portal.portal_interacted.is_connected(_on_portal_interacted):
 				portal.portal_interacted.connect(_on_portal_interacted)
 
@@ -102,6 +133,9 @@ func _process(_delta: float) -> void:
 				here = p
 				break
 	_active_portal = here
+	# (EG-1) Track the 빛의 문 apron separately (it opens the ending prompt, not travel).
+	_light_gate_active = (not locked) and is_instance_valid(_light_gate) \
+		and _light_gate.is_player_in_entry_zone()
 	_update_entry_prompt()
 
 
@@ -110,26 +144,45 @@ func _process(_delta: float) -> void:
 ## `_unhandled_input`) and marks the event handled, so a gate in the apron is entered by E and
 ## the same press can't also be consumed as a gather/facing interaction.
 func _input(event: InputEvent) -> void:
-	if _active_portal == null:
+	# (EG-1) While the ending confirm prompt is up, ESC = cancel (walk-away escape hatch, QA 필수).
+	if _ending_modal != null and is_instance_valid(_ending_modal):
+		if event.is_action_pressed("ui_cancel"):
+			get_viewport().set_input_as_handled()
+			_cancel_ending_prompt()
 		return
 	if GameState != null and (GameState.ui_modal_open() or not GameState.time_running):
 		return
-	if event.is_action_pressed("interact"):
+	if not event.is_action_pressed("interact"):
+		return
+	# (EG-1) 빛의 문 apron takes priority: E opens the ending confirm prompt.
+	if _light_gate_active and is_instance_valid(_light_gate):
 		get_viewport().set_input_as_handled()
-		_active_portal.on_interact()
+		_open_ending_prompt()
+		return
+	if _active_portal == null:
+		return
+	get_viewport().set_input_as_handled()
+	_active_portal.on_interact()
 
 
 func _update_entry_prompt() -> void:
-	if _active_portal == null:
+	# (EG-1) The 빛의 문 apron takes priority over the layer portals for the floating prompt.
+	var target: Portal = _light_gate if _light_gate_active and is_instance_valid(_light_gate) else _active_portal
+	var text := ""
+	if target == _light_gate and target != null:
+		text = "E 빛의 문 앞에 서기"
+	elif target != null:
+		text = target.entry_prompt_text()
+	if target == null or text == "":
 		if _entry_prompt != null:
 			_entry_prompt.visible = false
 		return
 	if _entry_prompt == null:
 		_entry_prompt = _make_entry_prompt()
-	_entry_prompt.text = _active_portal.entry_prompt_text()
+	_entry_prompt.text = text
 	_entry_prompt.visible = true
 	_entry_prompt.size = _entry_prompt.get_minimum_size()
-	var anchor: Vector2 = _active_portal.target_point()
+	var anchor: Vector2 = target.target_point()
 	_entry_prompt.global_position = anchor - Vector2(_entry_prompt.size.x * 0.5, 24)
 
 
@@ -180,6 +233,168 @@ func _travel_to_layer(layer: String) -> void:
 	else:
 		WorldContext.current_scene = dest
 		get_tree().change_scene_to_file(WorldContext.scene_path(dest))
+
+
+# ---- (EG-1) 빛의 문 (Door of Light) ---------------------------------------
+
+## Spawn the platinum 빛의 문 at the home-island centre (the focus of the five-portal arc =
+## the dais). Idempotent: a second call (live signal after the boot spawn) is a no-op. The gate
+## is a Portal(platinum=true) rendered OPEN and rooted at the dais so its light pools over the
+## whisper's heart. It is NOT registered in portal_states and never travels — E on its apron opens
+## the ending confirm prompt (see _open_ending_prompt).
+func _spawn_light_gate() -> void:
+	if is_instance_valid(_light_gate):
+		return
+	if _loader == null or _loader.spawn_cell == Vector2i(-1, -1):
+		return
+	var gate := Portal.new()
+	gate.platinum = true
+	gate.object_id = "light_gate"
+	gate.layer = "light"
+	# Seat it a touch NORTH of the dais so the raised gate reads behind the awakening plinth and
+	# the five portals' arc frames it (the reverse of a layer portal, which sits on the arc).
+	var focus := _loader.cell_center_world(_loader.spawn_cell) + Vector2(0, -HH * 1.6)
+	gate.global_position = focus
+	gate.z_index = 3
+	var host: Node = _loader if _loader != null else self
+	host.add_child(gate)
+	# Force it OPEN visually (it isn't in portal_states, so _apply_state won't be driven by the
+	# portal signal — set it directly after _ready builds the parts).
+	gate.call_deferred("_apply_state", GameState.PORTAL_OPEN)
+	# A platinum floor pool under the gate (the sole new asset; light pooled at the door's foot).
+	var pool_tex := load("res://assets/objects/light_pool_platinum.png") as Texture2D
+	if pool_tex != null:
+		var g := Sprite2D.new()
+		g.texture = pool_tex
+		g.centered = true
+		g.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		g.position = focus + Vector2(0, -4)
+		g.scale = Vector2(1.6, 1.1)
+		g.modulate = Color(1.0, 1.0, 1.0, 0.5)
+		var gm := CanvasItemMaterial.new()
+		gm.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		g.material = gm
+		g.z_index = 2
+		host.add_child(g)
+	_light_gate = gate
+
+
+## (EG-1) Open the 빛의 문 confirm prompt: 「들어가면, 세계가 완성된다. …정말?」 with three choices.
+## [들어간다] = E1 (always available). [돌아선다] = E2 (locked until 진상 조각 5 → truth_final_seen).
+## [아직 아니야] / ESC / walk-away = cancel: close + release control_lock, NO ending. QA 필수.
+func _open_ending_prompt() -> void:
+	if _ending_modal != null and is_instance_valid(_ending_modal):
+		return
+	if GameState != null:
+		GameState.push_modal(ENDING_MODAL_KEY)
+		GameState.set_control_lock(true)
+	_ending_layer = CanvasLayer.new()
+	_ending_layer.layer = 12
+	add_child(_ending_layer)
+
+	var dim := ColorRect.new()
+	dim.color = Color(0.02, 0.02, 0.04, 0.62)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	# Clicking the dim = walk-away/cancel (ESC also cancels via _unhandled_key in the modal).
+	dim.gui_input.connect(func(ev: InputEvent):
+		if ev is InputEventMouseButton and ev.pressed:
+			_cancel_ending_prompt())
+	_ending_layer.add_child(dim)
+	_ending_modal = dim
+
+	var panel := VBoxContainer.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	panel.alignment = BoxContainer.ALIGNMENT_CENTER
+	panel.add_theme_constant_override("separation", 22)
+	dim.add_child(panel)
+
+	var line1 := Label.new()
+	line1.text = "들어가면, 세계가 완성된다."
+	line1.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	line1.add_theme_color_override("font_color", Color("#faf5e6"))
+	line1.add_theme_font_size_override("font_size", 30)
+	line1.add_theme_color_override("font_outline_color", Color(0.05, 0.04, 0.08, 0.9))
+	line1.add_theme_constant_override("outline_size", 5)
+	panel.add_child(line1)
+
+	var line2 := Label.new()
+	line2.text = "…정말?"
+	line2.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	line2.add_theme_color_override("font_color", Color("#c8b0ec"))
+	line2.add_theme_font_size_override("font_size", 24)
+	panel.add_child(line2)
+
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 18)
+	panel.add_child(row)
+
+	row.add_child(_ending_button("들어간다", _choose_enter, false, ""))
+	var shards_done := GameState != null and GameState.truth_final_seen
+	var turn_tip := "" if shards_done else "아직… 이 세계를 두고 떠날 이유를 다 알지 못한다."
+	row.add_child(_ending_button("돌아선다", _choose_turn_back, not shards_done, turn_tip))
+	row.add_child(_ending_button("아직 아니야", _cancel_ending_prompt, false, ""))
+
+
+## Build one ending-choice button. `locked` greys it + shows a tooltip and disables the action.
+func _ending_button(label: String, cb: Callable, locked: bool, tip: String) -> Button:
+	var b := Button.new()
+	b.text = label
+	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size = Vector2(140, 44)
+	b.disabled = locked
+	if tip != "":
+		b.tooltip_text = tip
+	var col := Color("#faf5e6") if not locked else Color(0.55, 0.53, 0.6)
+	b.add_theme_color_override("font_color", col)
+	b.add_theme_color_override("font_disabled_color", Color(0.5, 0.48, 0.55))
+	if not locked:
+		b.pressed.connect(cb)
+	return b
+
+
+## [들어간다] → E1「완성」.
+func _choose_enter() -> void:
+	_teardown_ending_modal()
+	_play_ending("E1")
+
+
+## [돌아선다] → E2「속삭임」 (only reachable when the button is enabled = truth_final_seen).
+func _choose_turn_back() -> void:
+	if GameState == null or not GameState.truth_final_seen:
+		return
+	_teardown_ending_modal()
+	_play_ending("E2")
+
+
+## [아직 아니야] / ESC / walk-away — cancel: close the prompt, restore control_lock, NO ending.
+##횟수 무제한. This is the QA-mandated escape hatch (설계 §1.3) that keeps the E2 run alive.
+func _cancel_ending_prompt() -> void:
+	_teardown_ending_modal()
+
+
+## Tear down the modal + release its modal key / control lock. Used by BOTH the cancel path and
+## the commit path (before an ending plays). Idempotent.
+func _teardown_ending_modal() -> void:
+	if _ending_layer != null and is_instance_valid(_ending_layer):
+		_ending_layer.queue_free()
+	_ending_layer = null
+	_ending_modal = null
+	if GameState != null:
+		GameState.pop_modal(ENDING_MODAL_KEY)
+		GameState.set_control_lock(false)
+
+
+## (EG-1/EG-3) Launch the ending sequence (E1 or E2) via the EndingSequence CanvasLayer.
+func _play_ending(ending_id: String) -> void:
+	if _ending_seq != null and is_instance_valid(_ending_seq):
+		return
+	var seq: CanvasLayer = EndingSequenceScript.new()
+	add_child(seq)
+	_ending_seq = seq
+	seq.call("play", ending_id, _light_gate)
 
 
 # ---- CS-05 return & ignition ---------------------------------------------
