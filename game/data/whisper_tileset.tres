@@ -1,4 +1,4 @@
-[gd_resource type="TileSet" load_steps=65 format=3 uid="uid://bwhisperts0001"]
+[gd_resource type="TileSet" load_steps=79 format=3 uid="uid://bwhisperts0001"]
 
 [ext_resource type="Texture2D" uid="uid://cna2wj7lr1xme" path="res://assets/tiles/t0_void.png" id="1_t0"]
 [ext_resource type="Texture2D" uid="uid://c0h0llow00t01" path="res://assets/tiles/t0_hollow.png" id="11_t0h"]
@@ -32,6 +32,13 @@
 [ext_resource type="Texture2D" path="res://assets/tiles/l4_chamber.png" id="30_l4o"]
 [ext_resource type="Texture2D" path="res://assets/tiles/l4_dark.png" id="31_l4d"]
 [ext_resource type="Texture2D" path="res://assets/tiles/l4_crack.png" id="32_l4x"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l5_ivory.png" id="33_l5i"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l5_silver.png" id="34_l5s"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l5_quiet.png" id="35_l5q"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l5_choir.png" id="36_l5c"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l5_altar.png" id="37_l5o"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l5_dark.png" id="38_l5d"]
+[ext_resource type="Texture2D" path="res://assets/tiles/l5_ramp.png" id="39_l5r"]
 
 [sub_resource type="TileSetAtlasSource" id="src_t0"]
 texture = ExtResource("1_t0")
@@ -344,6 +351,70 @@ texture_region_size = Vector2i(128, 64)
 0:0/0/custom_data_3 = 1.0
 0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(0, -32, 64, 0, 0, 32, -64, 0)
 
+[sub_resource type="TileSetAtlasSource" id="src_l5i"]
+texture = ExtResource("33_l5i")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l5s"]
+texture = ExtResource("34_l5s")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l5q"]
+texture = ExtResource("35_l5q")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l5c"]
+texture = ExtResource("36_l5c")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l5o"]
+texture = ExtResource("37_l5o")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
+[sub_resource type="TileSetAtlasSource" id="src_l5d"]
+texture = ExtResource("38_l5d")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = false
+0:0/0/custom_data_3 = 1.0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(0, -32, 64, 0, 0, 32, -64, 0)
+
+[sub_resource type="TileSetAtlasSource" id="src_l5r"]
+texture = ExtResource("39_l5r")
+texture_region_size = Vector2i(128, 64)
+0:0/0 = 0
+0:0/0/custom_data_0 = false
+0:0/0/custom_data_1 = ""
+0:0/0/custom_data_2 = true
+0:0/0/custom_data_3 = 1.0
+
 [resource]
 tile_shape = 1
 tile_layout = 0
@@ -390,3 +461,10 @@ sources/29 = SubResource("src_l4m")
 sources/30 = SubResource("src_l4o")
 sources/31 = SubResource("src_l4d")
 sources/32 = SubResource("src_l4x")
+sources/33 = SubResource("src_l5i")
+sources/34 = SubResource("src_l5s")
+sources/35 = SubResource("src_l5q")
+sources/36 = SubResource("src_l5c")
+sources/37 = SubResource("src_l5o")
+sources/38 = SubResource("src_l5d")
+sources/39 = SubResource("src_l5r")
