@@ -233,6 +233,12 @@ func _test_d_e2() -> void:
 	_check("D: EndingSequence 생성 (E2)", seq != null)
 	_check("D: E2 진입 시 control_lock/time 페어링",
 		GameState.control_locked() and not GameState.time_running)
+	# EG-3 연출 beats: the gate closes (OPEN→DORMANT) as the door quietly shuts, and the sequence
+	# is in the E2 phase before we collapse it. Let a few frames pass so _run_e2's first beat runs.
+	await _frames(4)
+	var gate := _find_light_gate()
+	_check("D: E2 연출 — 빛의 문 닫힘 (OPEN→dormant)",
+		gate != null and gate.state() == GameState.PORTAL_DORMANT)
 	if seq != null:
 		seq.call("skip_all")
 	await _frames(3)
