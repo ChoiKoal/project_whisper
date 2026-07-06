@@ -254,3 +254,59 @@ E1은 그 실수의 반복(완성=정체), E2는 그 고리의 거부(미완=계
 - (b) E1 몽타주 카드 = 무드컬러+카피(저비용) vs 레이어 대표 스프라이트 1컷(고비용).
 - (c) 다양성 지표를 E1 몽타주 플레이버로 노출할지(§4.2) — 안 해도 무방.
 - (d) 크레딧 롤 콘텐츠(제작진 명단 소스).
+
+---
+
+## 부록 A — E3「침묵」 / E0「귀환」 (v1.0 스코프 아웃 + 조건 스케치)
+
+**권고: v1.0에는 넣지 않는다.** 근거를 명시하고, KOAL이 넣자면 넣을 수 있도록 조건만 스케치한다.
+
+### A.1 E3「침묵」 — 스코프 아웃 근거
+
+- 스토리라인 §5 조건 = "Whisper 남용 / 오염 임계 초과". **임계 시스템 미구현**: 현재 `WhisperCurrency`는 energy/mana/vita 획득·소모만 있고 "남용 카운터/오염 게이지"가 없다. E3를 넣으려면 새 상태 변수 + 임계 판정 + 오염 연출(포탈 순차 소등, 배치물 소멸)을 신설해야 한다 → v1.0 마감 밖.
+- 서사적 필수도 아님 — E1(완성=정체)이 이미 "실패의 그림자"를 담당. E3는 색채 보강일 뿐 코어 논지에 불필요.
+
+**조건 스케치 (v1.x용)**:
+- 트리거: `whisper_overuse_counter ≥ 임계`(예: 단일 회차 Whisper 총소모 > N, 또는 한 속성 편중 소모 비율 초과). WhisperCurrency에 소모 누적 카운터 추가 필요.
+- 연출(CS-06 E3 정본): 포탈이 하나씩 어두워짐(`set_portal_state`로 역전이) → 배치물 하나씩 사라짐(GlowSprite 페이드아웃) → 텅 빈 첫 섬(오프닝 구도) → **어떤 문도 깜빡이지 않음**(오프닝 회수의 반전 — 부름에 응답 없음).
+- 배치: 빛의 문 진입 전 또는 진입 순간 임계 판정 → E3로 라우팅(E1/E2보다 우선).
+
+### A.2 E0「귀환」(히든) — 스코프 아웃 근거
+
+- 스토리라인 §5 조건 = "1회차에서 아무 세계도 짓지 않고 임무 방기". **방치 판정이 애매**: "아무것도 만들지 않음"의 경계(배치물 0개? Fusion 0회? 시간 경과?)가 정의 안 됨. 게다가 E0는 다섯 레이어를 **정화하지 않은** 경로라 `five_portals_lit`(빛의 문)조차 안 뜨는 상태 — 별도 트리거 경로가 필요.
+- ROI 낮음 — 스피드런/밈 용도(스토리라인 §5 자인). v1.0 코어 2엔딩 완성이 우선.
+
+**조건 스케치 (v1.x용)**:
+- 트리거: 타이틀→새 게임 후 **배치물 0 + Fusion 0 + 레이어 진입 0** 상태로 일정 조건(예: 홈 섬 방치 N분, 또는 전용 "떠난다" 인터랙션). 판정 경계는 KOAL 확정 필요.
+- 연출(CS-06 E0 정본): 별하늘 3컷 → *"아무것도 만들지 않으면, 아무것도 잃지 않는다."* → **크레딧 없음, 타이틀 복귀**(다른 엔딩과 달리 NG+ 제안·기록 없음).
+- 주의: E0는 정규 진행(정화→빛의 문) 밖의 병렬 경로라, 홈 세션에 독립 판정기가 필요(다른 엔딩과 코드 경로 분리).
+
+### A.3 요약
+
+| 엔딩 | v1.0 | 이유 |
+|---|---|---|
+| E1「완성」 | ✅ 포함 | 1회차 자연 엔딩, 무조건 진입 |
+| E2「속삭임」(트루) | ✅ 포함 | 진상 조각 5 + 돌아선다 |
+| E3「침묵」 | ❌ 아웃 | Whisper 남용 임계 시스템 미구현 |
+| E0「귀환」(히든) | ❌ 아웃 | 방치 판정 애매 + 정규 경로 밖 별도 트리거 |
+
+---
+
+## 부록 B — 접속점 요약 (구현 착수용 인덱스)
+
+| 대상 | 파일 | 심볼 |
+|---|---|---|
+| 빛의 문 트리거 | `game/scripts/core/game_state.gd` | `five_portals_lit`, `light_gate_previewed_flag`, `maybe_light_five_portals()`, `set_all_portals()`, `PORTAL_OPEN` |
+| 홈 스폰 | `game/scripts/world/home_session.gd` | `_ready`/dais 배치 + `five_portals_lit` 연결 |
+| 포탈 리컬러 | `game/scripts/world/portal.gd` | `_veil`/`_rune_glow`/`_sigil_glow`/`_pool`, `VIOLET*`, `ENTRY_*` |
+| 컷신 카드 | `game/scripts/ui/opening.gd` | FADE_IN/HOLD/FADE_OUT, CARD_TINTS, 보라 점 |
+| 플래시/링 | `game/scripts/world/clear_sequence.gd` | 화이트 플래시, 리플 링 |
+| 글로우 | `game/scripts/world/glow_sprite.gd`, `light_pool.gd` | `glow_layer` 그룹, 가산블렌드 |
+| 진상 조각 오브젝트 | `world_tree.gd` / terminal_station 데코 / `clockwork_city.gd`(`ROBOT_LOGS`) / `mage_tower.gd`(`MAGE_LOGS`) / `cathedral.gd`(`STATUE_LOGS`) | `object_id`, `*_LOGS` |
+| 세이브/NG+ | `game/scripts/core/save_manager.gd` | `SAVE_VERSION=2`, `start_ng_plus()`, `to_dict/from_dict` (+`truth_shards`·`endings_seen` 신규) |
+| 재화 | `game/scripts/core/whisper_currency.gd` | energy/mana/vita, `currency_changed` |
+| 퀘스트 라인 | `game/scripts/core/quest_manager.gd` | `active_id`, `lN_active_id`, `activate_lN_line()` |
+
+---
+
+*문서 끝. 구현은 KOAL 승인 대기. — 카나*
