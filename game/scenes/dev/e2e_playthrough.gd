@@ -83,6 +83,7 @@ func _run() -> void:
 	await _stepL3_machine_journey()         # (L3-6) enter machine portal → clockwork_city → G1..G4 → 정화 → re-enter persist
 	await _stepL4_magic_journey()           # (L4) enter magic portal → mage_tower → G1..G4 → 정화 → re-enter persist
 	await _stepL5_divine_journey()          # (L5-6) enter divinity portal → cathedral → G1..G4 봉헌/응답 → 정화 → 다섯 포탈 전점등 → re-enter persist
+	await _stepEG_door_of_light()           # (EG) 다섯 포탈 전점등 후 홈 → 빛의 문 스폰 → [들어간다] → E1 완주
 	await _step7_save_load_persist()
 	await _step8_ng_plus()
 	_cleanup()
@@ -1788,6 +1789,101 @@ func _stepL5_divine_journey() -> void:
 	SaveManager.register_world(_loader, _player, _respawn)
 	SaveManager.load_game()
 	await _frames(2)
+
+
+# ==== STEP EG: door of light → E1「완성」 ===================================
+
+## After the five portals are lit (end of L5), boot the HOME island: the 빛의 문 must spawn at the
+## dais focus, its confirm prompt must offer [들어간다]/[돌아선다]/[아직 아니야] with [돌아선다]
+## LOCKED (no truth shards this run), the cancel path must restore control, and [들어간다] must run
+## E1 to the endings_seen.E1 record with control_lock/time_running paired. Then teardown + re-boot
+## the grove so STEP 7 (which asserts grove facts) has its world back.
+func _stepEG_door_of_light() -> void:
+	_banner(65, "빛의 문 → E1「완성」")
+	# Tear down whatever the L5 tail left booted; boot the home island fresh.
+	SaveManager.unregister_world()
+	if _scene != null and is_instance_valid(_scene):
+		_scene.queue_free()
+		_scene = null
+	await _frames(2)
+	WorldContext.current_scene = WorldContext.SCENE_HOME
+	WorldContext.arrival_mode = ""
+	_scene = load(HOME).instantiate()
+	add_child(_scene)
+	await _frames(10)
+	var hs := _search(_scene, HomeSession)
+	_check("EG: HomeSession 부팅", hs != null)
+
+	# The 빛의 문 spawned (five portals lit from L5 → light_gate_previewed_flag persisted).
+	var gate: Portal = null
+	for n in get_tree().get_nodes_in_group("gatherable"):
+		if n is Portal and (n as Portal).object_id == "light_gate":
+			gate = n
+			break
+	_check("EG: 예고 플래그 → 빛의 문 스폰 (platinum)", gate != null and gate.platinum)
+
+	# Open the confirm prompt: [돌아선다] locked (no shards), [들어간다] available.
+	GameState.reset_truth_shards()
+	GameState.endings_seen.clear()
+	hs.call("_open_ending_prompt")
+	await _frames(2)
+	var enter := _search_button(get_tree().root, "들어간다")
+	var turn := _search_button(get_tree().root, "돌아선다")
+	_check("EG: 프롬프트 [들어간다]/[돌아선다] 존재", enter != null and turn != null)
+	_check("EG: 조각 미완 → [돌아선다] 잠김", turn != null and turn.disabled)
+	_check("EG: 프롬프트 중 control_lock", GameState.control_locked())
+
+	# 취소 경로 (QA 필수): [아직 아니야] → 닫힘 + 복원 + 엔딩 미발동.
+	hs.call("_cancel_ending_prompt")
+	await _frames(2)
+	_check("EG: 취소 → control_lock 해제 + 엔딩 미발동",
+		not GameState.control_locked() and GameState.endings_seen.is_empty())
+
+	# [들어간다] → E1.
+	hs.call("_open_ending_prompt")
+	await _frames(2)
+	hs.call("_choose_enter")
+	await _frames(3)
+	var seq := _search(hs, EndingSequence)
+	_check("EG: E1 시퀀스 생성 + 진입 페어링 (lock+time)",
+		seq != null and GameState.control_locked() and not GameState.time_running)
+	if seq != null:
+		seq.call("skip_all")
+	await _frames(3)
+	_check("EG: E1 완주 → endings_seen.E1", GameState.has_ending("E1"))
+	_check("EG: E1 완주 → control_lock 해제 + time 복원",
+		not GameState.control_locked() and GameState.time_running)
+
+	# Teardown home; re-boot the grove for STEP 7.
+	SaveManager.unregister_world()
+	if _scene != null and is_instance_valid(_scene):
+		_scene.queue_free()
+		_scene = null
+	await _frames(2)
+	WorldContext.current_scene = WorldContext.SCENE_GROVE
+	WorldContext.arrival_mode = "portal_arrival"
+	SaveManager.pending_load = true
+	_scene = load(GROVE).instantiate()
+	add_child(_scene)
+	await _frames(4)
+	_loader = _scene.get_node("Ground") as MapLoader
+	_player = _scene.get_node("YSortLayer/Player") as Player
+	_interaction = _scene.get_node("Interaction") as InteractionController
+	_touch = _scene.get_node("TouchController") as TouchController
+	_respawn = _scene.get_node("ObjectRespawn") as ObjectRespawn
+	SaveManager.register_world(_loader, _player, _respawn)
+	SaveManager.load_game()
+	await _frames(2)
+
+
+func _search_button(node: Node, text: String) -> Button:
+	if node is Button and (node as Button).text == text:
+		return node
+	for c in node.get_children():
+		var r := _search_button(c, text)
+		if r != null:
+			return r
+	return null
 
 
 # ---- L2 helpers -----------------------------------------------------------
