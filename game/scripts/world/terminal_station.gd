@@ -26,6 +26,16 @@ var _return_portal: ReturnPortalController = null
 const DEBRIS_TARGET := 42
 const DEBRIS_SEED := 0x5C1E0CE  # deterministic salt for the debris hash gate
 
+## (EG-2) L2 진상 조각 — 마지막 로그 스크린. New object (설계 §3: L2 needed NEW log text). A few
+## dead terminal screens (l2_screen_off) at authored cells; investigating any collects the
+## "l2_last_log" shard. New 조각 대사 (선배가 관제탑을 '완성'이라 부르고 떠나 속삭임이 끊긴 것).
+const LOG_SCREEN_LOGS := [
+	"…마지막 로그 스크린: 관제탑 정상 가동. '완성' 선언 접수. 담당 컨스트럭터 이임. 이후 수신 없음.",
+	"…마지막 로그 스크린: 자동 응답만 반복됨. 이 세계에 말을 거는 이가, 더는 없다.",
+	"…마지막 로그 스크린: 마지막 근무자 기록 — '불은 켰다. 그런데 아무도 대답을 안 해.'",
+]
+const LOG_SCREEN_CELLS := [Vector2i(12, 22), Vector2i(27, 20), Vector2i(19, 30)]
+
 
 func _ready() -> void:
 	if typeof(WorldContext) != TYPE_NIL:
@@ -42,6 +52,7 @@ func _setup() -> void:
 		return
 	_spawn_workbench()
 	_scatter_debris()
+	_scatter_log_screens()
 	_spawn_return_portal()
 	# Register the live world so the station snapshots/restores like the other scenes.
 	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("register_world"):
@@ -171,6 +182,38 @@ func _scatter_debris() -> void:
 			s.global_position = _loader.cell_center_world(cell)
 			_loader.apply_height_lift(s)
 			placed += 1
+
+
+## (EG-2) Scatter the 마지막 로그 스크린 (dead terminals) — the L2 진상 조각 investigation objects.
+## Investigating any one collects the "l2_last_log" shard + shows its log. Falls back to the nearest
+## walkable cell if an authored cell is blocked so the shard is always reachable.
+func _scatter_log_screens() -> void:
+	var ys := _loader.get_node_or_null(_loader.ysort_layer_path) as Node2D
+	if ys == null:
+		return
+	var tex := load("res://assets/objects/l2_screen_off.png") as Texture2D
+	var i := 0
+	for cell in LOG_SCREEN_CELLS:
+		var use_cell: Vector2i = cell
+		if not _loader.is_cell_walkable(use_cell):
+			# Nudge to a nearby walkable cell (keep it reachable).
+			var found := false
+			for off in [Vector2i(0, 1), Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, -1), Vector2i(1, 1)]:
+				if _loader.is_cell_walkable(cell + off):
+					use_cell = cell + off
+					found = true
+					break
+			if not found:
+				i += 1
+				continue
+		var log_line: String = LOG_SCREEN_LOGS[i % LOG_SCREEN_LOGS.size()]
+		var s := TruthShard.new()
+		s.setup("l2_last_log", "마지막 로그 스크린", log_line, tex)
+		s.offset = Vector2(0, -40)
+		ys.add_child(s)
+		s.global_position = _loader.cell_center_world(use_cell)
+		_loader.apply_height_lift(s)
+		i += 1
 
 
 ## A cell is debris-eligible if it is walkable ground, not a ramp, not a cliff rim, and not

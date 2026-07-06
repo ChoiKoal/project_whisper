@@ -88,6 +88,8 @@ func _run() -> void:
 	await _test_c_e1()
 	await _test_d_e2()
 	await _test_e_shards()
+	await _test_e2_investigate()
+	await _test_e3_codex_tab()
 	await _test_f_ngplus()
 	await _test_g_save_roundtrip()
 	print("=== RESULT: %s (%d failures) ===" % ["PASS" if _fail == 0 else "FAIL", _fail])
@@ -258,6 +260,68 @@ func _test_e_shards() -> void:
 	_check("E: 5조각 → truth_shards_complete 발화", complete_fired[0])
 	_check("E: 5조각 → truth_final_seen (돌아선다 해금)", GameState.truth_final_seen)
 	GameState.truth_shards_complete.disconnect(cb)
+
+
+# ---- E2: TruthShard 조사 오브젝트 (실제 노드 on_interact) --------------------
+
+func _test_e2_investigate() -> void:
+	print("--- E2: TruthShard on_interact → 조각 수집 + 로그 기록 + 카드 ---")
+	_fresh()
+	Codex.reset()
+	var s := TruthShard.new()
+	s.setup("stopped_robot", "멈춘 로봇", "…마지막 로그: 우리는 효율적이었다. 영원할 만큼은, 아니었다.")
+	add_child(s)
+	await _frames(2)
+	_check("E2: TruthShard 는 gatherable 그룹 (조사형)", s.is_in_group("gatherable"))
+	_check("E2: 채집 불가 (조사만)", not s.can_gather())
+	s.on_interact()
+	await _frames(2)
+	_check("E2: on_interact → GameState 조각 수집", GameState.has_truth_shard("stopped_robot"))
+	_check("E2: on_interact → Codex 로그 기록", Codex.truth_log_count() == 1)
+	_check("E2: 조사 중 control_lock (카드 모달)", GameState.control_locked())
+	s.call("_close_card")
+	await _frames(2)
+	_check("E2: 카드 닫힘 → control_lock 해제", not GameState.control_locked())
+	# Idempotent re-investigate (no double count).
+	s.on_interact()
+	await _frames(2)
+	_check("E2: 재조사 멱등 (카운트 1 유지)", GameState.truth_shard_count() == 1)
+	s.call("_close_card")
+	await _frames(2)
+	s.queue_free()
+	await _frames(2)
+
+
+# ---- E3: 도감 「기록」 탭 ---------------------------------------------------
+
+func _test_e3_codex_tab() -> void:
+	print("--- E3: 도감 「기록(진상)」 탭 ---")
+	_fresh()
+	Codex.reset()
+	# Record all five shard logs + trigger the final card.
+	Codex.record_truth_log("world_tree", "세계수의 잎", "잎 뒤의 글.")
+	Codex.record_truth_log("l2_last_log", "마지막 로그 스크린", "관제탑 로그.")
+	Codex.record_truth_log("stopped_robot", "멈춘 로봇", "로봇 로그.")
+	Codex.record_truth_log("mage_ghost", "마법사의 잔영", "마법사 로그.")
+	_check("E3: 4조각 → truth_final_seen 아직", not Codex.truth_final_seen())
+	Codex.record_truth_log("petrified_pilgrim", "석화된 순례자", "순례자 로그.")
+	_check("E3: 5조각 → truth_final_seen", Codex.truth_final_seen())
+	_check("E3: truth_logs_ordered 5개 (정렬)", Codex.truth_logs_ordered().size() == 5)
+	_check("E3: 정렬 순서 = 캐논 (world_tree 먼저)",
+		String(Codex.truth_logs_ordered()[0].get("id")) == "world_tree")
+	# Drive the real CodexUI 기록 tab.
+	var ui := CodexUI.new()
+	add_child(ui)
+	await _frames(3)
+	ui.open()
+	await _frames(2)
+	var rows := ui.set_truth_filter(true)
+	await _frames(2)
+	_check("E3: 기록 탭 → 조각 로그 노출 (5)", rows == 5)
+	_check("E3: 기록 탭 행 수 (5조각 + 최종카드 패널)", ui.truth_row_count() >= 5)
+	ui.close()
+	ui.queue_free()
+	await _frames(2)
 
 
 # ---- F: NG+ 리셋/보존 -----------------------------------------------------

@@ -193,14 +193,11 @@ func _scatter_ghosts() -> void:
 			continue
 		var art: String = GHOST_ARTS[i % GHOST_ARTS.size()]
 		var log_line: String = GHOST_LOGS[i % GHOST_LOGS.size()]
-		var s := Sprite2D.new()
-		s.texture = load("res://assets/objects/%s.png" % art)
+		# (EG-2) 진상 조각 조사 오브젝트: investigating any 마법사 잔영 collects the L4 shard.
+		var s := TruthShard.new()
+		s.setup("mage_ghost", "마법사의 잔영", log_line, load("res://assets/objects/%s.png" % art))
 		s.offset = Vector2(0, -60)
-		s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		s.y_sort_enabled = true
 		s.modulate = Color(1, 1, 1, 0.75)  # translucent afterimage
-		s.set_meta("object_id", "mage_ghost")
-		s.set_meta("truth_fragment", log_line)
 		ys.add_child(s)
 		s.global_position = _loader.cell_center_world(cell)
 		_loader.apply_height_lift(s)

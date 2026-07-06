@@ -35,6 +35,44 @@ var _hints: Dictionary = {}
 ## increment the gauge (economy-design §B-3 "중복 실패 미적립").
 var _attempted_pairs: Dictionary = {}
 
+## (EG-2) 도감 「기록(진상)」 탭 — collected truth-shard logs, keyed shard_id → full log text. Set
+## when a shard is investigated (TruthShard.on_interact → record_truth_log). The GAMEPLAY gate
+## (돌아선다) reads GameState.truth_shards; this holds the readable TEXT for re-viewing in the 도감.
+## Lifetime honor: these persist even across NG+ (the shard FLAGS reset, but "이미 읽은 조각" text
+## stays available — 설계 §5 추가2 "도감 기록 탭의 조각 열람 이력은 명예 보존").
+var _truth_logs: Dictionary = {}
+## (EG-2) True once the 5th shard's final 회수 카드 (§3.1) text should be shown — mirrors
+## GameState.truth_final_seen but preserved lifetime here for the 기록 탭 재열람.
+var _truth_final_seen: bool = false
+## (EG-2) The final 회수 카드 text (§3.1) shown when all five shards are collected.
+const TRUTH_FINAL_CARD := "선배들 역시 '다음 세계'라는 임무를 받았을 뿐. 악의는 없었다. 시스템이 그렇게 설계돼 있었다. 그리고 너에게도 같은 임무가 내려와 있다 — '제0세계를 완성하라'."
+
+## (EG-2) Record a truth-shard log (idempotent-ish: overwrites with the same text). `title` is a
+## short label for the 도감 row (e.g. "세계수의 잎"). Marks the final card seen when all five land.
+signal truth_log_recorded(shard_id: String)
+func record_truth_log(shard_id: String, title: String, text: String) -> void:
+	if shard_id == "":
+		return
+	_truth_logs[shard_id] = {"title": title, "text": text}
+	if _truth_logs.size() >= GameState.TRUTH_SHARD_IDS.size():
+		_truth_final_seen = true
+	truth_log_recorded.emit(shard_id)
+
+## (EG-2) All recorded truth logs, in canonical shard order → [{id,title,text}]. For the 도감 탭.
+func truth_logs_ordered() -> Array:
+	var out: Array = []
+	for sid in GameState.TRUTH_SHARD_IDS:
+		if _truth_logs.has(sid):
+			var e: Dictionary = _truth_logs[sid]
+			out.append({"id": sid, "title": String(e.get("title", "")), "text": String(e.get("text", ""))})
+	return out
+
+func truth_log_count() -> int:
+	return _truth_logs.size()
+
+func truth_final_seen() -> bool:
+	return _truth_final_seen
+
 
 func _ready() -> void:
 	# Discovering an item happens on gather (M2 signal) and on craft (fusion UI).
@@ -170,6 +208,8 @@ func to_dict() -> Dictionary:
 		"hint_gauge": _hint_gauge,
 		"hints": _hints.duplicate(),
 		"attempted_pairs": _attempted_pairs.keys(),
+		"truth_logs": _truth_logs.duplicate(true),
+		"truth_final_seen": _truth_final_seen,
 	}
 
 
@@ -187,6 +227,9 @@ func from_dict(data: Dictionary) -> void:
 		_attempted_pairs[key] = true
 	_hints = (data.get("hints", {}) as Dictionary).duplicate()
 	_hint_gauge = int(data.get("hint_gauge", 0))
+	# (EG-2) truth logs (기록 탭). Null-guarded — v0.9.0 saves lack the key.
+	_truth_logs = (data.get("truth_logs", {}) as Dictionary).duplicate(true)
+	_truth_final_seen = bool(data.get("truth_final_seen", false))
 	hint_gauge_changed.emit(_hint_gauge)
 
 
@@ -196,5 +239,7 @@ func reset() -> void:
 	_recipes.clear()
 	_hints.clear()
 	_attempted_pairs.clear()
+	_truth_logs.clear()
+	_truth_final_seen = false
 	_hint_gauge = 0
 	hint_gauge_changed.emit(_hint_gauge)

@@ -195,13 +195,10 @@ func _scatter_statues() -> void:
 			continue
 		var art: String = STATUE_ARTS[i % STATUE_ARTS.size()]
 		var log_line: String = STATUE_LOGS[i % STATUE_LOGS.size()]
-		var s := Sprite2D.new()
-		s.texture = load("res://assets/objects/%s.png" % art)
+		# (EG-2) 진상 조각 조사 오브젝트: investigating any 석화된 순례자 collects the L5 shard.
+		var s := TruthShard.new()
+		s.setup("petrified_pilgrim", "석화된 순례자", log_line, load("res://assets/objects/%s.png" % art))
 		s.offset = Vector2(0, -60)
-		s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		s.y_sort_enabled = true
-		s.set_meta("object_id", "petrified_pilgrim")
-		s.set_meta("truth_fragment", log_line)
 		ys.add_child(s)
 		s.global_position = _loader.cell_center_world(cell)
 		_loader.apply_height_lift(s)

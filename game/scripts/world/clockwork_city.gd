@@ -192,13 +192,11 @@ func _scatter_robots() -> void:
 			continue
 		var art: String = ROBOT_ARTS[i % ROBOT_ARTS.size()]
 		var log_line: String = ROBOT_LOGS[i % ROBOT_LOGS.size()]
-		var s := Sprite2D.new()
-		s.texture = load("res://assets/objects/%s.png" % art)
+		# (EG-2) 진상 조각 조사 오브젝트: investigating ANY 멈춘 로봇 collects the L3 shard
+		# ("stopped_robot"); each pose shows its own 마지막 로그 line. Idempotent per shard.
+		var s := TruthShard.new()
+		s.setup("stopped_robot", "멈춘 로봇", log_line, load("res://assets/objects/%s.png" % art))
 		s.offset = Vector2(0, -60)
-		s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		s.y_sort_enabled = true
-		s.set_meta("object_id", "stopped_robot")
-		s.set_meta("last_log", log_line)
 		ys.add_child(s)
 		s.global_position = _loader.cell_center_world(cell)
 		_loader.apply_height_lift(s)

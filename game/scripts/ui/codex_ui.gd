@@ -53,6 +53,9 @@ var _filter: String = ""
 ## gauge-revealed hint rows ("? + [재료] = ?").
 var _hint_chip: Button
 var _hint_mode: bool = false
+## (EG-2) "기록(진상)" 탭 — lists collected truth-shard logs. Mutually exclusive with hint mode.
+var _truth_chip: Button
+var _truth_mode: bool = false
 
 
 func set_hub(hub) -> void:
@@ -67,6 +70,7 @@ func _ready() -> void:
 	Codex.item_discovered.connect(func(_id): if _open: _rebuild())
 	Codex.recipe_discovered.connect(func(_id): if _open: _rebuild())
 	Codex.hint_revealed.connect(func(_r, _i): if _open: _rebuild())
+	Codex.truth_log_recorded.connect(func(_s): if _open: _rebuild())
 	_set_visible(false)
 
 
@@ -141,6 +145,20 @@ func _build_ui() -> void:
 	_hint_chip.add_theme_stylebox_override("pressed", _chip_style(true))
 	_hint_chip.toggled.connect(_on_hint_chip_toggled)
 	topbar.add_child(_hint_chip)
+
+	# (EG-2) "기록" chip: toggles the 진상 조각 log view (「기록(진상)」 탭).
+	_truth_chip = Button.new()
+	_truth_chip.name = "TruthChip"
+	_truth_chip.toggle_mode = true
+	_truth_chip.focus_mode = Control.FOCUS_NONE
+	_truth_chip.text = "기록"
+	_truth_chip.add_theme_color_override("font_color", TEXT)
+	_truth_chip.add_theme_color_override("font_hover_color", VIOLET_SOFT)
+	_truth_chip.add_theme_stylebox_override("normal", _chip_style(false))
+	_truth_chip.add_theme_stylebox_override("hover", _chip_style(true))
+	_truth_chip.add_theme_stylebox_override("pressed", _chip_style(true))
+	_truth_chip.toggled.connect(_on_truth_chip_toggled)
+	topbar.add_child(_truth_chip)
 
 	var search_lbl := Label.new()
 	search_lbl.text = "검색"
@@ -349,9 +367,15 @@ func _fill_grid() -> void:
 	for c in _grid.get_children():
 		c.queue_free()
 	_slots.clear()
+	if _truth_mode:
+		_grid.columns = 1
+		_fill_truth_grid()
+		return
 	if _hint_mode:
+		_grid.columns = 1
 		_fill_hint_grid()
 		return
+	_grid.columns = COLS
 	_shown_ids = _filtered_ids()
 	for id: String in _shown_ids:
 		_grid.add_child(_make_cell(id))
@@ -412,10 +436,89 @@ func _chip_style(active: bool) -> StyleBoxFlat:
 
 func _on_hint_chip_toggled(pressed: bool) -> void:
 	_hint_mode = pressed
+	if pressed and _truth_chip != null and _truth_chip.button_pressed:
+		_truth_chip.button_pressed = false   # mutually exclusive (fires its toggle → _truth_mode off)
 	# The detail pane + search are item-oriented; dim them out in hint mode.
 	if _search != null:
 		_search.editable = not pressed
 	_rebuild()
+
+
+func _on_truth_chip_toggled(pressed: bool) -> void:
+	_truth_mode = pressed
+	if pressed and _hint_chip != null and _hint_chip.button_pressed:
+		_hint_chip.button_pressed = false    # mutually exclusive
+	if _search != null:
+		_search.editable = not pressed
+	_rebuild()
+
+
+## (EG-2) 「기록(진상)」 view: one row per collected truth-shard log, in canonical order, with the
+## header + full text. When all five are collected, the 최종 회수 카드 (§3.1) is appended.
+func _fill_truth_grid() -> void:
+	var logs: Array = Codex.truth_logs_ordered()
+	var total: int = GameState.TRUTH_SHARD_IDS.size()
+	var head := Label.new()
+	head.text = "진상 조각  %d / %d" % [logs.size(), total]
+	head.add_theme_color_override("font_color", ACCENT)
+	head.add_theme_font_size_override("font_size", 18)
+	_grid.add_child(head)
+	if logs.is_empty():
+		var none := Label.new()
+		none.text = "아직 회수한 조각이 없다. 다섯 세계에서 선배들의 흔적을 조사해 보자."
+		none.add_theme_color_override("font_color", DIM)
+		none.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		none.custom_minimum_size = Vector2(560, 0)
+		_grid.add_child(none)
+		return
+	for e: Dictionary in logs:
+		_grid.add_child(_truth_row(String(e.get("title", "")), String(e.get("text", ""))))
+	if Codex.truth_final_seen():
+		var sep := HSeparator.new()
+		_grid.add_child(sep)
+		_grid.add_child(_truth_row("진실", Codex.TRUTH_FINAL_CARD))
+
+
+func _truth_row(title: String, text: String) -> Control:
+	var box := PanelContainer.new()
+	box.add_theme_stylebox_override("panel", _cell_style(false))
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 4)
+	box.add_child(col)
+	var t := Label.new()
+	t.text = "「%s」" % title
+	t.add_theme_color_override("font_color", VIOLET_SOFT)
+	t.add_theme_font_size_override("font_size", 16)
+	col.add_child(t)
+	var b := Label.new()
+	b.text = text
+	b.add_theme_color_override("font_color", TEXT)
+	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	b.custom_minimum_size = Vector2(540, 0)
+	col.add_child(b)
+	return box
+
+
+## Public (harness): toggle the 기록 탭 + return the number of shard rows shown.
+func set_truth_filter(on: bool) -> int:
+	if _truth_chip != null:
+		_truth_chip.button_pressed = on
+	else:
+		_truth_mode = on
+		if _open:
+			_rebuild()
+	return Codex.truth_log_count() if on else 0
+
+
+## Public (harness): child rows in the 기록 grid (title/body panels) while active.
+func truth_row_count() -> int:
+	if not _truth_mode:
+		return 0
+	var n := 0
+	for c in _grid.get_children():
+		if c is PanelContainer:
+			n += 1
+	return n
 
 
 func _make_cell(id: String) -> Control:
