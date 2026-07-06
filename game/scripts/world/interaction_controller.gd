@@ -161,6 +161,8 @@ func _clear_targeting_visuals() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not is_inside_tree():
+		return
 	# Track input mode so the desktop-only hover highlight doesn't linger on touch.
 	if event is InputEventScreenTouch or event is InputEventScreenDrag:
 		_touch_mode = true
@@ -171,7 +173,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("interact"):
 		_do_interact()
-		get_viewport().set_input_as_handled()
+		var vp := get_viewport()
+		if vp:
+			vp.set_input_as_handled()
 
 
 # ---- targeting -----------------------------------------------------------

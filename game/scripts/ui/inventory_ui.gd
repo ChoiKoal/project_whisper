@@ -408,25 +408,32 @@ func _slot_style(selected: bool) -> StyleBoxFlat:
 # ---- input / selection ----------------------------------------------------
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not is_inside_tree():
+		return
 	# The UI hub owns the I hotkey and ESC precedence (one-window rule). This panel
 	# only handles in-panel navigation while it is open.
 	if not _open:
 		return
+	var handled := false
 	if event.is_action_pressed("ui_right"):
 		_move_selection(1)
-		get_viewport().set_input_as_handled()
+		handled = true
 	elif event.is_action_pressed("ui_left"):
 		_move_selection(-1)
-		get_viewport().set_input_as_handled()
+		handled = true
 	elif event.is_action_pressed("ui_down"):
 		_move_selection(COLS)
-		get_viewport().set_input_as_handled()
+		handled = true
 	elif event.is_action_pressed("ui_up"):
 		_move_selection(-COLS)
-		get_viewport().set_input_as_handled()
+		handled = true
 	elif event.is_action_pressed("ui_accept"):
 		_toggle_hold_current()
-		get_viewport().set_input_as_handled()
+		handled = true
+	if handled:
+		var vp := get_viewport()
+		if vp:
+			vp.set_input_as_handled()
 
 
 func _set_panel_visible(v: bool) -> void:

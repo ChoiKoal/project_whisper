@@ -220,19 +220,28 @@ func request_focus(kind: int) -> void:
 # ---- input: ESC precedence + hotkeys -------------------------------------
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not is_inside_tree():
+		return
 	# ESC: if any window is open, close it and DO NOT let the pause menu open.
 	if event.is_action_pressed("ui_cancel"):
 		if _any_window_open():
 			close_all()
-			get_viewport().set_input_as_handled()
+			var vp0 := get_viewport()
+			if vp0:
+				vp0.set_input_as_handled()
 		return
 	# Hotkeys route through the hub so the one-window rule always holds.
+	var handled := false
 	if event.is_action_pressed("character"):
 		toggle(Win.CHARACTER)
-		get_viewport().set_input_as_handled()
+		handled = true
 	elif event.is_action_pressed("inventory"):
 		toggle(Win.INVENTORY)
-		get_viewport().set_input_as_handled()
+		handled = true
 	elif event.is_action_pressed("codex"):
 		toggle(Win.CODEX)
-		get_viewport().set_input_as_handled()
+		handled = true
+	if handled:
+		var vp := get_viewport()
+		if vp:
+			vp.set_input_as_handled()

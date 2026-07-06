@@ -152,6 +152,8 @@ func _notification(what: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not is_inside_tree():
+		return
 	# (v0.4.0-B B3.1 / v0.5.1 BUG2b) Click-to-move is disabled while a window is open OR a
 	# cutscene is playing. The window's own controls still receive their clicks (they sit on
 	# higher CanvasLayers and consume the event before it reaches this world _unhandled_input).
@@ -165,7 +167,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		world_pos = _to_world(event.position)
 	if world_pos == Vector2.INF:
 		return
-	get_viewport().set_input_as_handled()
+	var vp := get_viewport()
+	if vp:
+		vp.set_input_as_handled()
 	handle_tap(world_pos)
 
 

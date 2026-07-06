@@ -155,8 +155,12 @@ func _close_card() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not is_inside_tree():
+		return
 	if _card_layer == null or not is_instance_valid(_card_layer):
 		return
 	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("interact"):
-		get_viewport().set_input_as_handled()
+		var vp := get_viewport()
+		if vp:
+			vp.set_input_as_handled()
 		_close_card()

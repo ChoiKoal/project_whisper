@@ -45,6 +45,8 @@ func play_awakening_reveal() -> void:
 		position_smoothing_enabled = prev_smooth)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not is_inside_tree():
+		return
 	if _revealing:
 		return
 	if event is InputEventMouseButton and event.pressed:

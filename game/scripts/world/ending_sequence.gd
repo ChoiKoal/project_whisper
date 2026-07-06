@@ -347,10 +347,14 @@ func _wait(secs: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not is_inside_tree():
+		return
 	if _done:
 		return
 	if event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
+		var vp := get_viewport()
+		if vp:
+			vp.set_input_as_handled()
 		skip_all()
 
 

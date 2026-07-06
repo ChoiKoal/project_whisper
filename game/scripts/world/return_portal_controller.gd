@@ -99,12 +99,16 @@ func _process(_delta: float) -> void:
 ## the InteractionController's _unhandled_input) and marks it handled so the same press isn't also
 ## consumed as a gather/facing interaction.
 func _input(event: InputEvent) -> void:
+	if not is_inside_tree():
+		return
 	if not _active or portal == null or not is_instance_valid(portal):
 		return
 	if GameState != null and (GameState.ui_modal_open() or not GameState.time_running):
 		return
 	if event.is_action_pressed("interact"):
-		get_viewport().set_input_as_handled()
+		var vp := get_viewport()
+		if vp:
+			vp.set_input_as_handled()
 		portal.on_interact()
 
 

@@ -144,10 +144,14 @@ func _process(_delta: float) -> void:
 ## `_unhandled_input`) and marks the event handled, so a gate in the apron is entered by E and
 ## the same press can't also be consumed as a gather/facing interaction.
 func _input(event: InputEvent) -> void:
+	if not is_inside_tree():
+		return
 	# (EG-1) While the ending confirm prompt is up, ESC = cancel (walk-away escape hatch, QA 필수).
 	if _ending_modal != null and is_instance_valid(_ending_modal):
 		if event.is_action_pressed("ui_cancel"):
-			get_viewport().set_input_as_handled()
+			var vp0 := get_viewport()
+			if vp0:
+				vp0.set_input_as_handled()
 			_cancel_ending_prompt()
 		return
 	if GameState != null and (GameState.ui_modal_open() or not GameState.time_running):
@@ -156,12 +160,16 @@ func _input(event: InputEvent) -> void:
 		return
 	# (EG-1) 빛의 문 apron takes priority: E opens the ending confirm prompt.
 	if _light_gate_active and is_instance_valid(_light_gate):
-		get_viewport().set_input_as_handled()
+		var vp1 := get_viewport()
+		if vp1:
+			vp1.set_input_as_handled()
 		_open_ending_prompt()
 		return
 	if _active_portal == null:
 		return
-	get_viewport().set_input_as_handled()
+	var vp2 := get_viewport()
+	if vp2:
+		vp2.set_input_as_handled()
 	_active_portal.on_interact()
 
 

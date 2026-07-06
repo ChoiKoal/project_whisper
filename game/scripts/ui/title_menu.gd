@@ -194,13 +194,17 @@ func _build() -> void:
 
 ## Skippable intro-beat: any key / mouse click before the timer fires reveals the menu.
 func _unhandled_input(event: InputEvent) -> void:
+	if not is_inside_tree():
+		return
 	if _menu_revealed:
 		return
 	if (event is InputEventKey and event.pressed) \
 			or (event is InputEventMouseButton and event.pressed) \
 			or (event is InputEventScreenTouch and event.pressed):
 		_reveal_menu()
-		get_viewport().set_input_as_handled()
+		var vp := get_viewport()
+		if vp:
+			vp.set_input_as_handled()
 
 
 ## Slide the button column up into place + fade it in (idempotent).

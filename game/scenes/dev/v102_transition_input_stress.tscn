@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cwv102transstress1"]
+
+[ext_resource type="Script" path="res://scenes/dev/v102_transition_input_stress.gd" id="1_tstress"]
+
+[node name="V102TransitionInputStress" type="Node"]
+script = ExtResource("1_tstress")

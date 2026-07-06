@@ -182,15 +182,21 @@ func _finish() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not is_inside_tree():
+		return
 	if _finishing:
 		return
 	if event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
+		var vp := get_viewport()
+		if vp:
+			vp.set_input_as_handled()
 		skip_all()
 		return
 	# Click / E / Space advance to the next card.
 	if event.is_action_pressed("interact") \
 			or (event is InputEventMouseButton and event.pressed
 				and event.button_index == MOUSE_BUTTON_LEFT):
-		get_viewport().set_input_as_handled()
+		var vp2 := get_viewport()
+		if vp2:
+			vp2.set_input_as_handled()
 		advance()

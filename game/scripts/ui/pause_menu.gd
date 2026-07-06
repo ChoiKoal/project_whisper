@@ -169,9 +169,13 @@ func _set_open(v: bool) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not is_inside_tree():
+		return
 	if event.is_action_pressed("ui_cancel"):
 		toggle()
-		get_viewport().set_input_as_handled()
+		var vp := get_viewport()
+		if vp:
+			vp.set_input_as_handled()
 
 
 # ---- actions -------------------------------------------------------------

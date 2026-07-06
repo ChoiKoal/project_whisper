@@ -441,6 +441,8 @@ func _set_visible(v: bool) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not is_inside_tree():
+		return
 	if not _open:
 		return
 	# A click / interact / left-mouse during a running success sequence SKIPS the
@@ -449,11 +451,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			or (event is InputEventMouseButton and event.pressed
 				and event.button_index == MOUSE_BUTTON_LEFT)):
 		_skip_sequence()
-		get_viewport().set_input_as_handled()
+		var vp := get_viewport()
+		if vp:
+			vp.set_input_as_handled()
 		return
 	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("interact"):
 		_set_visible(false)
-		get_viewport().set_input_as_handled()
+		var vp2 := get_viewport()
+		if vp2:
+			vp2.set_input_as_handled()
 
 
 # ---- inventory strip -----------------------------------------------------
