@@ -25,6 +25,7 @@
 [ext_resource type="Script" path="res://scripts/ui/quest_log.gd" id="27_questlog"]
 [ext_resource type="Script" path="res://scripts/world/camera_zoom.gd" id="29_camzoom"]
 [ext_resource type="Script" path="res://scripts/ui/whisper_hud.gd" id="31_whisperhud"]
+[ext_resource type="Script" path="res://scripts/world/l5_gate_controller.gd" id="32_l5gate"]
 
 [sub_resource type="CircleShape2D" id="col_player"]
 radius = 20.0
@@ -172,3 +173,8 @@ script = ExtResource("16_session")
 map_loader_path = NodePath("../Ground")
 player_path = NodePath("../YSortLayer/Player")
 respawn_path = NodePath("../ObjectRespawn")
+
+[node name="L5GateController" type="Node" parent="."]
+script = ExtResource("32_l5gate")
+map_loader_path = NodePath("../Ground")
+player_path = NodePath("../YSortLayer/Player")

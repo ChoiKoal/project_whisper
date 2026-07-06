@@ -42,11 +42,17 @@ func fuse(a_id: String, b_id: String) -> Dictionary:
 	var cost := RecipeDB.whisper_cost(recipe)
 	var energy_cost := int(cost.get("energy", 0))
 	var mana_cost := int(cost.get("mana", 0))
+	# (L5-4) L5-R10 「응답」(D186) = 봉헌의 그릇² + whisper_cost {energy:1, mana:1, vita:1} 3키.
+	# 3속성 중 하나라도 부족하면 조합 거부 (재료 미소모, 깨끗한 no-op + reason).
+	var vita_cost := int(cost.get("vita", 0))
 	if energy_cost > 0 and not WhisperCurrency.has_energy(energy_cost):
 		result["failure_reason"] = "에너지가 부족하다"
 		return result
 	if mana_cost > 0 and not WhisperCurrency.has_mana(mana_cost):
 		result["failure_reason"] = "마력이 부족하다"
+		return result
+	if vita_cost > 0 and not WhisperCurrency.has_vita(vita_cost):
+		result["failure_reason"] = "생명이 부족하다"
 		return result
 
 	# Consume the two inputs. For a same-ingredient recipe (e.g. R10 풀+풀) we
@@ -61,6 +67,8 @@ func fuse(a_id: String, b_id: String) -> Dictionary:
 		WhisperCurrency.spend_energy(energy_cost)
 	if mana_cost > 0:
 		WhisperCurrency.spend_mana(mana_cost)
+	if vita_cost > 0:
+		WhisperCurrency.spend_vita(vita_cost)
 
 	var output: String = recipe["output"]
 	Inventory.add(output, 1)

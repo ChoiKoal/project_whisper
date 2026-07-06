@@ -60,6 +60,14 @@ signal layer4_purified(layer: String)
 ## portal opening, mirroring layer3_purified_flag.
 var layer4_purified_flag: bool = false
 
+## (L5-3) Emitted when the 대제단 봉헌=응답 (G4) completes the Layer-5 정화 컷신. Carries the
+## purified layer id ("divinity"). The Cathedral session hooks divinity 포탈 open + 다섯 포탈 전점등
+## (빛의 문 예고); the flag persists. NOTE: L5 정화 = "응답 없는 세계에 대답함" (§A-1).
+signal layer5_purified(layer: String)
+## (L5-3) True once Layer 5 (divinity) is 정화된 (대제단 응답 완료). Saved; 5레이어 전부 개방·다섯 포탈
+## 완결의 최종 플래그. Mirrors layer4_purified_flag.
+var layer5_purified_flag: bool = false
+
 
 ## (L2-3) Mark a power node energized (idempotent). Records it in `powered_nodes` and announces
 ## it so gate listeners (bridge swap / clear cutscene) and quests react. No signal if already on.
@@ -93,6 +101,12 @@ func reset_layer3() -> void:
 ## it, so this only clears the L4 purified flag. Kept distinct for clarity/parity with L2/L3.
 func reset_layer4() -> void:
 	layer4_purified_flag = false
+
+## (L5-5) Reset Layer-5 purification state to the new-game baseline. Called by new game / NG+.
+## powered_nodes is shared (L2~L5 node ids); reset_layer2 clears it, so this only clears the L5
+## purified flag. Kept distinct for clarity/parity with L2/L3/L4.
+func reset_layer5() -> void:
+	layer5_purified_flag = false
 
 ## (v0.4.0-C) Emitted when a structure/decor item is PLACED into the world (persistent
 ## PlacedObject). `item_id` = the placed item, `cell` = its tile. Quests/audio hook here.

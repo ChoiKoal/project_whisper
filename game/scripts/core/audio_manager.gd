@@ -235,11 +235,37 @@ func set_home_ambience(on: bool) -> void:
 	if on == _home_ambience:
 		return
 	_home_ambience = on
+	_apply_bgm_bus()
+
+
+## (L5-3) 침묵의 회랑(G3) BGM 덕킹 — 성가를 지니고 침묵을 건널 때 BGM을 깊게 낮춰 "소리 없는" 회랑을
+## 연출한다(입술 없는 노래만 남도록). Multiplies the BGM bus like set_home_ambience, stacks with it,
+## and leaves the user's saved volume_bgm untouched. Idempotent.
+var _bgm_ducked := false
+const DUCK_BGM_SCALE := 0.28   # ≈ −11 dB — 침묵의 회랑에서 BGM이 거의 사라짐
+
+func duck_bgm(on: bool) -> void:
+	if on == _bgm_ducked:
+		return
+	_bgm_ducked = on
+	_apply_bgm_bus()
+
+
+## Apply the combined BGM bus multiplier (home ambience × silence duck), tween for a smooth fade.
+func _apply_bgm_bus() -> void:
 	var idx := AudioServer.get_bus_index(BUS_BGM)
 	if idx == -1:
 		return
-	var lin := volume_bgm * (HOME_BGM_SCALE if on else 1.0)
-	AudioServer.set_bus_volume_db(idx, linear_to_db(max(0.0001, lin)))
+	var scale := 1.0
+	if _home_ambience:
+		scale *= HOME_BGM_SCALE
+	if _bgm_ducked:
+		scale *= DUCK_BGM_SCALE
+	var lin := volume_bgm * scale
+	var target_db := linear_to_db(max(0.0001, lin))
+	var tw := create_tween()
+	tw.tween_method(func(db: float): AudioServer.set_bus_volume_db(idx, db),
+		AudioServer.get_bus_volume_db(idx), target_db, 0.5)
 
 
 func stop_all() -> void:
