@@ -16,8 +16,9 @@ extends Node
 ##   recipe_id: String   ("" if no match)
 ##   output: String      (canonical output id, "" if no match)
 ##   hint_revealed: bool (true if a failed fuse tripped a gauge reveal)
-##   failure_reason: String ((L2-3) set when a MATCHED recipe couldn't fuse — currently
-##                           "에너지가 부족하다" when whisper_cost.energy exceeds WhisperCurrency)
+##   failure_reason: String ((L2-3) set when a MATCHED recipe couldn't fuse —
+##                           "에너지가 부족하다" when whisper_cost.energy exceeds WhisperCurrency;
+##                           (L4-4) "마력이 부족하다" when whisper_cost.mana exceeds WhisperCurrency)
 func fuse(a_id: String, b_id: String) -> Dictionary:
 	var result := {
 		"matched": false,
@@ -36,12 +37,16 @@ func fuse(a_id: String, b_id: String) -> Dictionary:
 		return result
 
 	# (L2-3) Whisper 재화 gate: a recipe may cost 에너지 (L2-R08 파워 코어 = 코어 조각 +
-	# 에너지). Check affordability BEFORE consuming any material input so a shortfall is a
-	# clean no-op with a reason. Currently only the `energy` digit exists (§보완).
+	# 에너지). (L4-4) or 마력 (L4-R09 최심부 봉인구 = 봉인구 뼈대² + 마력). Check affordability
+	# BEFORE consuming any material input so a shortfall is a clean no-op with a reason.
 	var cost := RecipeDB.whisper_cost(recipe)
 	var energy_cost := int(cost.get("energy", 0))
+	var mana_cost := int(cost.get("mana", 0))
 	if energy_cost > 0 and not WhisperCurrency.has_energy(energy_cost):
 		result["failure_reason"] = "에너지가 부족하다"
+		return result
+	if mana_cost > 0 and not WhisperCurrency.has_mana(mana_cost):
+		result["failure_reason"] = "마력이 부족하다"
 		return result
 
 	# Consume the two inputs. For a same-ingredient recipe (e.g. R10 풀+풀) we
@@ -51,9 +56,11 @@ func fuse(a_id: String, b_id: String) -> Dictionary:
 		return result
 
 	# Materials consumed → now spend the Whisper cost (affordability re-checked defensively;
-	# has_energy passed above and nothing between could have drained it).
+	# has_energy/has_mana passed above and nothing between could have drained it).
 	if energy_cost > 0:
 		WhisperCurrency.spend_energy(energy_cost)
+	if mana_cost > 0:
+		WhisperCurrency.spend_mana(mana_cost)
 
 	var output: String = recipe["output"]
 	Inventory.add(output, 1)

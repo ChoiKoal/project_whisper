@@ -10,20 +10,29 @@ class_name WhisperHUD
 const CYAN := Color("#4ad9c8")
 const CREAM := Color("#faf5e6")
 const BG := Color("#141c2b")
+## (L4-3) 마력 Whisper 표기 색 (금색, 에너지 시안 대비).
+const GOLD := Color("#f2c14e")
 
 var _panel: PanelContainer
 var _icon: Label
 var _amount: Label
+## (L4-3) 마력 재화 패널 (2번째 자릿수, 에너지 행 아래, 보유 시만 표시).
+var _mana_panel: PanelContainer
+var _mana_amount: Label
 
 
 func _ready() -> void:
 	layer = 3
 	_build()
+	_build_mana()
 	if typeof(WhisperCurrency) == TYPE_NIL:
 		return
 	WhisperCurrency.currency_changed.connect(_on_changed)
 	WhisperCurrency.energy_gained.connect(_on_gained)
+	if WhisperCurrency.has_signal("mana_gained"):
+		WhisperCurrency.mana_gained.connect(_on_mana_gained)
 	_refresh(WhisperCurrency.energy)
+	_refresh_mana(WhisperCurrency.mana)
 
 
 func _build() -> void:
@@ -62,6 +71,43 @@ func _build() -> void:
 	row.add_child(_amount)
 
 
+## (L4-3) Build the mana panel — same layout as the energy panel, gold trim, one row lower
+## (y = energy y + ~44). Hidden until ≥1 mana held (L4 G2 재정화 보상으로 첫 등장).
+func _build_mana() -> void:
+	_mana_panel = PanelContainer.new()
+	_mana_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_mana_panel.position = Vector2(16, 118)   # below the energy panel (y=72, ~44 tall)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(BG.r, BG.g, BG.b, 0.9)
+	sb.set_content_margin_all(8)
+	sb.content_margin_left = 14
+	sb.content_margin_right = 14
+	sb.set_corner_radius_all(10)
+	sb.set_border_width_all(1)
+	sb.border_color = GOLD
+	sb.shadow_color = Color(0, 0, 0, 0.35)
+	sb.shadow_size = 5
+	sb.shadow_offset = Vector2(0, 2)
+	_mana_panel.add_theme_stylebox_override("panel", sb)
+	add_child(_mana_panel)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	_mana_panel.add_child(row)
+
+	# 마력 아이콘 (a stylized gold rune glyph — no art dependency).
+	var icon := Label.new()
+	icon.text = "✦"
+	icon.add_theme_font_size_override("font_size", 20)
+	icon.add_theme_color_override("font_color", GOLD)
+	row.add_child(icon)
+
+	_mana_amount = Label.new()
+	_mana_amount.add_theme_color_override("font_color", CREAM)
+	_mana_amount.add_theme_font_size_override("font_size", 18)
+	row.add_child(_mana_amount)
+
+
 ## Show/hide + set the amount. Hidden entirely at 0 (보유 시에만 표시).
 func _refresh(amount: int) -> void:
 	if _panel == null:
@@ -70,10 +116,19 @@ func _refresh(amount: int) -> void:
 	_amount.text = "에너지 %d" % amount
 
 
-func _on_changed(kind: String, amount: int) -> void:
-	if kind != "energy":
+## (L4-3) Show/hide + set the mana amount. Hidden at 0 (보유 시에만 표시).
+func _refresh_mana(amount: int) -> void:
+	if _mana_panel == null:
 		return
-	_refresh(amount)
+	_mana_panel.visible = amount > 0
+	_mana_amount.text = "마력 %d" % amount
+
+
+func _on_changed(kind: String, amount: int) -> void:
+	if kind == "energy":
+		_refresh(amount)
+	elif kind == "mana":
+		_refresh_mana(amount)
 
 
 ## First acquisition: pop-in flash so the new HUD element reads as a reward.
@@ -86,3 +141,15 @@ func _on_gained(amount: int) -> void:
 	var tw := create_tween().set_parallel(true)
 	tw.tween_property(_panel, "modulate", Color(1, 1, 1, 1), 0.5)
 	tw.tween_property(_panel, "scale", Vector2(1, 1), 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+## (L4-3) First mana acquisition: gold pop-in flash (L4 마력 Whisper 첫 등장 연출).
+func _on_mana_gained(amount: int) -> void:
+	_refresh_mana(amount)
+	if _mana_panel == null or not _mana_panel.visible:
+		return
+	_mana_panel.modulate = Color(GOLD.r, GOLD.g, GOLD.b, 0.0)
+	_mana_panel.scale = Vector2(0.6, 0.6)
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(_mana_panel, "modulate", Color(1, 1, 1, 1), 0.5)
+	tw.tween_property(_mana_panel, "scale", Vector2(1, 1), 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)

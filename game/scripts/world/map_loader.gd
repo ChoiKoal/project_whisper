@@ -50,6 +50,9 @@ const HEIGHT_PATH := "res://data/map_height.txt"
 ## (L3-1) When true, cliff aprons use the copper/brass palette (CliffGen.make_apron brass=true)
 ## for the Layer-3 machine city 「태엽이 멈춘 도시」. Off for grove/home/L2.
 @export var l3_cliff_palette: bool = false
+## (L4-1) When true, cliff aprons use the amethyst/gold palette (CliffGen.make_apron amethyst=true)
+## for the Layer-4 magic tower 「봉인이 풀린 마탑」. Off for grove/home/L2/L3.
+@export var l4_cliff_palette: bool = false
 const ATLAS := Vector2i(0, 0)
 
 ## Deterministic global seed mixed into every procedural hash (map coords → value).
@@ -708,7 +711,7 @@ func _build_shard_aprons() -> void:
 			var east_open := not _is_island_cell(cell + Vector2i(1, 0))    # +col → screen SE
 			if south_open or east_open:
 				var salt := CliffGen.hash2(cell.x, cell.y, 733)
-				var img := CliffGen.make_apron(1, east_open, south_open, salt, l2_cliff_palette, l3_cliff_palette)
+				var img := CliffGen.make_apron(1, east_open, south_open, salt, l2_cliff_palette, l3_cliff_palette, l4_cliff_palette)
 				var s := Sprite2D.new()
 				s.texture = ImageTexture.create_from_image(img)
 				s.centered = false
@@ -1141,7 +1144,7 @@ func _build_cliff_faces() -> void:
 		if drop <= 0:
 			continue
 		var salt := CliffGen.hash2(cell.x, cell.y, 611)
-		var img := CliffGen.make_apron(drop, se_drop > 0, sw_drop > 0, salt, l2_cliff_palette, l3_cliff_palette)
+		var img := CliffGen.make_apron(drop, se_drop > 0, sw_drop > 0, salt, l2_cliff_palette, l3_cliff_palette, l4_cliff_palette)
 		var tex := ImageTexture.create_from_image(img)
 		var s := Sprite2D.new()
 		s.texture = tex
@@ -1376,6 +1379,12 @@ func _spawn_object(sym: String, cell: Vector2i, spec: Dictionary) -> void:
 	if kind == "l3obj":
 		_spawn_l2_object(sym, cell, spec, world)
 		return
+	# (L4-1) Layer-4 magic objects reuse the same data-driven spawn path (spec carries l4_* art,
+	# offset, glow, gatherable, blocking, l4 id). Only the `kind` string differs so the legends
+	# stay independent; the shared gate/gather infra is layer-agnostic.
+	if kind == "l4obj":
+		_spawn_l2_object(sym, cell, spec, world)
+		return
 	match sym:
 		"C":
 			cauldron_cell = cell
@@ -1607,6 +1616,8 @@ func _spawn_l2_object(sym: String, cell: Vector2i, spec: Dictionary, world: Vect
 		_add_light_pool(node, "res://assets/objects/light_pool_cyan.png", Vector2(off.x, off.y * 0.4), float(spec.get("glow_scale", 0.8)))
 	elif glow_kind == "orange":
 		_add_light_pool(node, "res://assets/objects/light_pool_orange.png", Vector2(off.x, off.y * 0.4), float(spec.get("glow_scale", 0.8)))
+	elif glow_kind == "gold":
+		_add_light_pool(node, "res://assets/objects/light_pool_gold.png", Vector2(off.x, off.y * 0.4), float(spec.get("glow_scale", 0.8)))
 	if l2_id == "workbench":
 		l2_workbench_cell = cell
 	l2_object_nodes[l2_id + "@" + str(cell)] = {"cell": cell, "node": node, "spec": spec}

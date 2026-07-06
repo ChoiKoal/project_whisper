@@ -26,6 +26,9 @@ const CANVAS_SCRIPT := "res://scripts/world/backdrop_canvas.gd"
 ## nebula, so the machine city floats in a warm dead-ember void (vs L2's cold cyan). Mutually
 ## exclusive with the others (l3 wins if set alongside l2/home).
 @export var l3_mood: bool = false
+## (L4-2) Layer-4 「봉인이 풀린 마탑」 void mood: amethyst starfield + amethyst-gold nebula, so the
+## floating tower hangs in a tense arcane void (vs L3's dead ember). Mutually exclusive (l4 wins).
+@export var l4_mood: bool = false
 
 var _canvas: Control
 
@@ -40,7 +43,9 @@ func _ready() -> void:
 	if scr != null:
 		_canvas.set_script(scr)
 	add_child(_canvas)
-	if l3_mood and _canvas.has_method("set_l3_mood"):
+	if l4_mood and _canvas.has_method("set_l4_mood"):
+		_canvas.call("set_l4_mood", true)
+	elif l3_mood and _canvas.has_method("set_l3_mood"):
 		_canvas.call("set_l3_mood", true)
 	elif l2_mood and _canvas.has_method("set_l2_mood"):
 		_canvas.call("set_l2_mood", true)

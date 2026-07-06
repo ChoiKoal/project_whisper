@@ -156,6 +156,10 @@ const P = {
   // ---- Layer-3 machine family (L3) — design Part C: copper/brass + orange steam glow.
   copper: '#3a2c1e', brass: '#8a6a34', brassHi: '#c8a24a', brassSh: '#4a3820',
   orange: '#ff9a3c', ember: '#e8842c',
+  // ---- Layer-4 magic family (L4) — design v1 Part C: amethyst violet + gold rune glow.
+  amyD: '#241834', amy: '#4a3670', amyM: '#7a5aae', amyL: '#b593e0', amyH: '#dcc4ff',
+  runeGold: '#f2c14e', runeGoldD: '#b8862c', runeGoldL: '#ffe3a0',
+  voidBlue: '#0e0a18', silverL: '#e0dcd0', silver: '#a8a49a', vellum: '#e8dcae', vellumD: '#b8a870',
 };
 const C = {};
 for (const k in P) C[k] = hexToRGB(P[k]);
@@ -1491,6 +1495,124 @@ icons.D139 = (cv) => { // 꺼진 신호 톱니 dark signal gear (inert, no glow)
 };
 
 // ============================================================================
+// LAYER-4 MAGIC FAMILY (L4). P1..P7 gather + D140..D176 craft. Shared cues
+// (design v1 Part C): amethyst-violet silhouettes with a darker amethyst selout;
+// magical / powered items get a gold rune glowBehind; the sealed/void items carry a
+// cold void-blue accent. Each id gets a byte-unique painter (bespoke P1-P7 + a
+// deterministic per-id rune-glyph variation for the D-crafts).
+// ============================================================================
+
+// --- helper: a gold rune glyph (a small angular sigil) at cx,cy, variant v ---
+function runeGlyph(cv, cx, cy, v, col) {
+  col = col || C.runeGold;
+  const forms = [
+    [[-3,-4,3,-4],[0,-4,0,4],[-3,4,3,4]],          // I-bar
+    [[-3,-4,3,4],[3,-4,-3,4]],                       // X
+    [[0,-5,0,5],[0,-2,4,-5],[0,2,4,5]],              // Y-ish
+    [[-3,-4,-3,4],[-3,-4,3,-4],[-3,0,2,0]],          // F
+    [[-3,4,-3,-4],[-3,-4,3,0],[3,0,-3,4]],           // R
+    [[-4,0,4,0],[0,-4,0,4],[-3,-3,3,3]],             // asterisk-ish
+  ];
+  const f = forms[((v % forms.length) + forms.length) % forms.length];
+  for (const seg of f) line(cv, cx + seg[0], cy + seg[1], cx + seg[2], cy + seg[3], col, 1);
+}
+
+// --- helper: a faceted amethyst shard body centred at cx,cy ---
+function amethystBody(cv, cx, cy, rx, ry, lit, dark) {
+  ellipse(cv, cx, cy, rx, ry, lit || C.amyM, dark || C.amy);
+  line(cv, cx, cy - ry, cx, cy + ry, C.amyL, 1);            // facet ridge
+  disc(cv, cx - Math.round(rx * 0.4), cy - Math.round(ry * 0.4), 2, C.amyH); // glint
+}
+
+// ---------- P1..P7 (Layer-4 gather) — design §B-1 ----------
+icons.P1 = (cv) => { // 룬석 rune stone — grey slab with one faint carved rune
+  ellipse(cv, 24, 30, 15, 12, C.amyM, C.amy);
+  for (let y = 20; y < 30; y++) for (let x = 16; x < 34; x++) if (getA(cv, x, y)) setPx(cv, x, y, x - y > -4 ? C.amyM : C.amy);
+  runeGlyph(cv, 24, 26, 0, C.runeGoldD);   // unlit carved rune
+  outline(cv, P.amyD);
+};
+icons.P2 = (cv) => { // 마력 결정 mana crystal — glowing violet cluster
+  glowBehind(cv, 24, 24, 16, C.amyM);
+  amethystBody(cv, 24, 26, 8, 13, C.amyL, C.amyM);
+  amethystBody(cv, 15, 32, 5, 8, C.amyL, C.amyM);
+  amethystBody(cv, 33, 30, 5, 9, C.amyL, C.amyM);
+  disc(cv, 24, 20, 2, C.white);
+  outline(cv, P.amyD);
+};
+icons.P3 = (cv) => { // 은가루 silver dust — a small heap of pale glinting powder
+  ellipse(cv, 24, 34, 15, 7, C.silver, darker(C.silver, 30));
+  for (let i = 0; i < 24; i++) { const x = 12 + (i * 7 % 24), y = 28 + (i * 5 % 8); setPx(cv, x, y, C.silverL); }
+  disc(cv, 20, 30, 1, C.white); disc(cv, 29, 31, 1, C.white); sparkle(cv, 24, 26);
+  outline(cv, '#4a4650');
+};
+icons.P4 = (cv) => { // 양피지 vellum — blank rolled parchment
+  for (let y = 14; y < 36; y++) for (let x = 15; x < 33; x++) setPx(cv, x, y, x < 20 ? C.vellumD : C.vellum);
+  ellipse(cv, 18, 25, 4, 12, C.vellumD, darker(C.vellumD, 20)); // rolled left edge
+  ellipse(cv, 30, 25, 4, 12, C.vellum, C.vellumD);              // rolled right edge
+  line(cv, 22, 20, 28, 20, C.vellumD, 1); line(cv, 22, 25, 28, 25, C.vellumD, 1); // faint lines
+  outline(cv, '#8a7840');
+};
+icons.P5 = (cv) => { // 봉인 밀랍 sealing wax — a dark-violet wax seal blob
+  ellipse(cv, 24, 28, 14, 12, C.amy, C.amyD);
+  disc(cv, 24, 28, 7, C.amyM);
+  runeGlyph(cv, 24, 28, 3, C.runeGold);   // stamped sigil
+  disc(cv, 19, 23, 2, C.amyL);            // wax sheen
+  outline(cv, P.amyD);
+};
+icons.P6 = (cv) => { // 별빛 이슬 starlight dew — a luminous dewdrop with a star
+  glowBehind(cv, 24, 28, 14, C.amyL);
+  const cx = 24;
+  for (let y = 16; y < 28; y++) { const hw = Math.round((y - 16) / 12 * 8); for (let x = cx - hw; x <= cx + hw; x++) setPx(cv, x, y, x - cx > 1 ? C.amyL : C.amyM); }
+  ellipse(cv, cx, 32, 10, 10, C.amyL, C.amyM);
+  disc(cv, cx + 3, 29, 2, C.white); sparkle(cv, cx, 24);
+  outline(cv, P.amyD);
+};
+icons.P7 = (cv) => { // 공허 파편 void shard — a weightless cold-blue splinter
+  for (let y = 10; y < 40; y++) { const hw = Math.round((40 - y) / 30 * 9); for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, (x < 24) ? C.voidBlue : darker(C.amy, 10), 220); }
+  line(cv, 24, 10, 19, 38, C.amyL, 1);   // cold glint
+  disc(cv, 22, 22, 1, C.amyH); disc(cv, 26, 30, 1, C.amyH);
+  outline(cv, '#0a0714');
+};
+
+// ---------- D140..D176 (Layer-4 craft) — deterministic per-id variation ----------
+// A shared amethyst plaque body + a per-id count/arrangement of gold rune glyphs, with a
+// gold glow on the "powered/glowing" ids and a void-blue accent on the sealed/void ids. The
+// numeric id drives glyph count, positions, and accents so every file is byte-unique.
+const L4_GLOW_IDS = new Set([148, 143, 145, 154, 158, 160, 162, 164, 167, 168, 171, 172, 175, 176]);
+const L4_VOID_IDS = new Set([147, 155, 158, 173, 174, 175, 176]);
+function paintL4Craft(cv, n) {
+  const glow = L4_GLOW_IDS.has(n);
+  const voidy = L4_VOID_IDS.has(n);
+  if (glow) glowBehind(cv, 24, 24, 17, C.runeGold);
+  // plaque body — rounded amethyst tablet; its tint shifts subtly with n for extra variance.
+  const tintUp = (n % 5) * 3;
+  const bodyLit = lighter(C.amyM, tintUp), bodyDk = darker(C.amy, (n % 3) * 4);
+  for (let y = 12; y < 38; y++) for (let x = 12; x < 36; x++) {
+    const edge = (x === 12 || x === 35 || y === 12 || y === 37);
+    setPx(cv, x, y, edge ? bodyDk : (x - y > (n % 7) - 3 ? bodyLit : C.amy));
+  }
+  // corner studs (void-blue for sealed/void items, gold otherwise) — count varies by id.
+  const studCol = voidy ? C.voidBlue : C.runeGoldD;
+  const studs = [[15, 15], [33, 15], [15, 35], [33, 35]];
+  for (let i = 0; i < (2 + (n % 3)); i++) { const s = studs[i % 4]; disc(cv, s[0], s[1], 2, studCol); }
+  // gold rune glyphs — 1..3 of them, arranged by id, each a different form.
+  const glyphCount = 1 + (n % 3);
+  const gcol = glow ? C.runeGoldL : C.runeGold;
+  const positions = [[24, 24], [18, 22], [30, 26], [24, 32]];
+  for (let i = 0; i < glyphCount; i++) {
+    const pp = positions[i % positions.length];
+    runeGlyph(cv, pp[0], pp[1], n + i, gcol);
+  }
+  // a void speck accent (cold) for the void family.
+  if (voidy) { disc(cv, 24, 30, 2, C.voidBlue); sparkle(cv, 24, 30); }
+  else if (glow) sparkle(cv, 30, 18);
+  outline(cv, P.amyD);
+}
+for (let i = 140; i <= 176; i++) {
+  icons['D' + i] = ((n) => (cv) => paintL4Craft(cv, n))(i);
+}
+
+// ============================================================================
 // Emit all icon files. Item catalog = 9 gatherables (I1..I9) + crafts D01..D61
 // minus the retired 석기 D11 (removed v0.3.1) + Layer-2 J1..J7 + D62..D102 (L2-4).
 // D06 is an alias of I4 → identical bytes to I4 (spec: "D06 alias resolves to I4's
@@ -1509,6 +1631,9 @@ for (let i = 62; i <= 102; i++) ALL_IDS.push('D' + i);
 // Layer-3 (L3): K1..K7 gather + D103..D139 craft.
 for (let i = 1; i <= 7; i++) ALL_IDS.push('K' + i);
 for (let i = 103; i <= 139; i++) ALL_IDS.push('D' + i);
+// Layer-4 (L4): P1..P7 gather + D140..D176 craft.
+for (let i = 1; i <= 7; i++) ALL_IDS.push('P' + i);
+for (let i = 140; i <= 176; i++) ALL_IDS.push('D' + i);
 
 let count = 0, total = 0;
 for (const id of ALL_IDS) {

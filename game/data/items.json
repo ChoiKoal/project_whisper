@@ -2392,6 +2392,763 @@
     "blocks": false,
     "glows": false
    }
+  },
+  {
+   "id": "P1",
+   "name": "룬석",
+   "category": "gather",
+   "layer": 4,
+   "flavor": "글자를 새기면 힘이 깃든다고 했다. 아무것도 안 새겨진 지금이, 차라리 안심이다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "P2",
+   "name": "마력 결정",
+   "category": "gather",
+   "layer": 4,
+   "flavor": "쥐면 손끝이 저릿하다. 이 작은 조각 하나가, 탑 하나를 무너뜨렸을지도.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "P3",
+   "name": "은가루",
+   "category": "gather",
+   "layer": 4,
+   "flavor": "룬을 또렷하게 만드는 가루. 잘못 새긴 글자도, 또렷하게 만든다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "P4",
+   "name": "양피지",
+   "category": "gather",
+   "layer": 4,
+   "flavor": "무엇이든 적을 수 있는 빈 종이. 봉인문이든, 마지막 유언이든.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "P5",
+   "name": "봉인 밀랍",
+   "category": "gather",
+   "layer": 4,
+   "flavor": "눌러 찍으면 약속이 된다. 식으면, 무를 수 없는 약속.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "P6",
+   "name": "별빛 이슬",
+   "category": "gather",
+   "layer": 4,
+   "flavor": "무너지는 세계에도 밤은 온다. 이슬은, 그 밤이 남긴 것.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "P7",
+   "name": "공허 파편",
+   "category": "gather",
+   "layer": 4,
+   "flavor": "봉인 너머에서 새어 나온 조각. 만지면 차갑고, 아무 무게도 없다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D140",
+   "name": "룬 각인석",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "비어 있던 돌에, 처음으로 한 글자가 앉는다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D141",
+   "name": "룬 다리석",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "끊긴 곳과 끊긴 곳 사이. 빛으로, 한 발판을 놓는다.",
+   "placeable_on": [],
+   "usable_on": [
+    "rune_altar"
+   ],
+   "key_item": true
+  },
+  {
+   "id": "D142",
+   "name": "결계 부적",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "새어 나온 것이, 이 종이 한 장을 넘지 못한다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D143",
+   "name": "정화의 물",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "흐려진 샘에, 맑음을 한 방울.",
+   "placeable_on": [],
+   "usable_on": [
+    "mana_spring"
+   ],
+   "key_item": true
+  },
+  {
+   "id": "D144",
+   "name": "봉인 인장",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "닫는다는 약속. 밀랍이 식으면, 무를 수 없다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D145",
+   "name": "보호 부적",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "균열 너머로 한 걸음. 이 부적이 붙든 숨만큼만.",
+   "placeable_on": [],
+   "usable_on": [],
+   "key_item": true
+  },
+  {
+   "id": "D146",
+   "name": "봉인구 뼈대",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "봉인이 될 그릇. 아직은 밀랍만 굳어 있다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D147",
+   "name": "룬 문장",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "풀려난 것의 이름. 다시 부르면, 다시 갇힌다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D148",
+   "name": "최심부 봉인구",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "풀려난 세계를, 마지막으로 한 번 더 봉한다. 온기가 아니라, 침묵을.",
+   "placeable_on": [],
+   "usable_on": [
+    "seal_mount"
+   ],
+   "key_item": true
+  },
+  {
+   "id": "D149",
+   "name": "룬 원판",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "같은 돌 둘. 마주 보면, 울림이 깊어진다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D150",
+   "name": "응축 마력핵",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "두 빛이 하나로. 너무 밝아, 손이 떨린다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D151",
+   "name": "겹 양피지",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "한 장으론 찢겼을 말을, 두 장이 견딘다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D152",
+   "name": "은박 룬",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "빛을 되비추는 글자. 어둠 속에서도, 읽힌다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D153",
+   "name": "마력 잉크",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "쓰는 대로 빛나는 잉크. 지워도, 자국이 남는다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D154",
+   "name": "밀랍 초",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "작은 불 하나. 무너지는 세계에도, 밤은 온다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D155",
+   "name": "공허 가루",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "손에 쥐면 차갑다. 아무것도 아닌 것의, 무게.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D156",
+   "name": "별 양피지",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "읽을 수 없는 지도. 그래도, 어딘가를 가리킨다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D157",
+   "name": "봉인 붓",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "한 획으로 닫는 붓. 쓰는 손이, 자꾸 멈칫한다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D158",
+   "name": "공허 결정",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "깨진 자리에 맺힌 이슬. 텅 빈 것도, 빛을 담는다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D159",
+   "name": "룬 회로",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "글자와 글자가, 서로에게 빛을 건넨다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D160",
+   "name": "결계 등불",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "금 그은 자리마다, 작은 등이 켜진다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D161",
+   "name": "봉인 두루마리",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "펼치면 열리고, 말면 닫힌다. 조심스럽게.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D162",
+   "name": "룬 정수",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "새긴 글자에 힘이 깃든다. 읽으면, 손끝이 저리다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D163",
+   "name": "이끼 낀 룬석",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "금기의 글자도, 오래 두면 숲이 덮는다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L4T-A",
+     "L4T-p",
+     "L4T-R",
+     "L4T-M",
+     "L4T-O",
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": false
+   }
+  },
+  {
+   "id": "D164",
+   "name": "네온 룬등",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "옛 빛과 새 빛이, 한 등 안에서 다툰다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L4T-A",
+     "L4T-p",
+     "L4T-R",
+     "L4T-M",
+     "L4T-O",
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": true
+   }
+  },
+  {
+   "id": "D165",
+   "name": "태엽 룬시계",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "시간과 봉인이, 같은 축으로 돈다.",
+   "placeable_on": [],
+   "usable_on": []
+  },
+  {
+   "id": "D166",
+   "name": "룬 오벨리스크",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "무너지는 거리에, 한 글자를 세워 둔다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "L4T-A",
+     "L4T-p",
+     "L4T-R",
+     "L4T-M",
+     "L4T-O",
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true,
+    "glows": false
+   }
+  },
+  {
+   "id": "D167",
+   "name": "마력 가로등",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "보랏빛이 발밑을 겨우 비춘다. 금색 룬이 맴돈다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L4T-A",
+     "L4T-p",
+     "L4T-R",
+     "L4T-M",
+     "L4T-O",
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": true
+   }
+  },
+  {
+   "id": "D168",
+   "name": "정화의 분수",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "맑은 물이 돈다. 봉인이 풀린 자리에도, 한 뼘의 고요.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "L4T-A",
+     "L4T-p",
+     "L4T-R",
+     "L4T-M",
+     "L4T-O",
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true,
+    "glows": true
+   }
+  },
+  {
+   "id": "D169",
+   "name": "결계 문",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "여닫을 때마다, 균열 하나가 아문다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "L4T-A",
+     "L4T-p",
+     "L4T-R",
+     "L4T-M",
+     "L4T-O",
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true,
+    "glows": false
+   }
+  },
+  {
+   "id": "D170",
+   "name": "봉인된 마도서",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "읽지 마라 적힌 책. 그래서 더, 펴 보고 싶은.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "L4T-A",
+     "L4T-p",
+     "L4T-R",
+     "L4T-M",
+     "L4T-O",
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true,
+    "glows": false
+   }
+  },
+  {
+   "id": "D171",
+   "name": "마력 화로",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "온기가 아니라 빛을 내는 불. 손을 쬐어도, 차갑다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "structure",
+    "on": [
+     "L4T-A",
+     "L4T-p",
+     "L4T-R",
+     "L4T-M",
+     "L4T-O",
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": true,
+    "glows": true
+   }
+  },
+  {
+   "id": "D172",
+   "name": "룬 간판",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "무슨 탑이었을까. 이제는 룬 하나만 빛난다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L4T-A",
+     "L4T-p",
+     "L4T-R",
+     "L4T-M",
+     "L4T-O",
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": true
+   }
+  },
+  {
+   "id": "D173",
+   "name": "식은 마력핵",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "다 타 버린 힘. 쥐면, 재처럼 부스러진다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L4T-A",
+     "L4T-p",
+     "L4T-R",
+     "L4T-M",
+     "L4T-O",
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": false
+   }
+  },
+  {
+   "id": "D174",
+   "name": "금 간 봉인석",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "닫으려 한 자국 위로, 다시 금이 간다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L4T-A",
+     "L4T-p",
+     "L4T-R",
+     "L4T-M",
+     "L4T-O",
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": false
+   }
+  },
+  {
+   "id": "D175",
+   "name": "꺼진 룬등",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "불이 죽은 등. 룬만, 아직 형태를 기억한다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L4T-A",
+     "L4T-p",
+     "L4T-R",
+     "L4T-M",
+     "L4T-O",
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": false
+   }
+  },
+  {
+   "id": "D176",
+   "name": "잔영의 유리",
+   "category": "craft",
+   "layer": 4,
+   "flavor": "유리 속에 누군가 서 있다. 돌아보면, 아무도 없다.",
+   "placeable_on": [],
+   "usable_on": [],
+   "placement": {
+    "class": "decor",
+    "on": [
+     "L4T-A",
+     "L4T-p",
+     "L4T-R",
+     "L4T-M",
+     "L4T-O",
+     "L3T-B",
+     "L3T-p",
+     "L3T-G",
+     "L3T-M",
+     "L3T-O",
+     "L2T-M",
+     "L2T-C",
+     "L2T-c",
+     "L2T-G",
+     "T1",
+     "T2A",
+     "T2B",
+     "T2C",
+     "T2D",
+     "T0"
+    ],
+    "blocks": false,
+    "glows": false
+   }
   }
  ]
 }

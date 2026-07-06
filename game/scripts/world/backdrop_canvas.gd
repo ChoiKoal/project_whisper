@@ -12,6 +12,9 @@ const L2_BOTTOM := Color("#131c2c")
 ## (L3-2) warm copper/ember void gradient for the machine city (구리 mood, dead warmth).
 const L3_TOP := Color("#140d07")
 const L3_BOTTOM := Color("#241810")
+## (L4-2) deep amethyst void gradient for the magic tower (자수정 보라 mood, tense arcane).
+const L4_TOP := Color("#0e0a18")
+const L4_BOTTOM := Color("#241834")
 
 const STAR_COUNT := 90
 const DUST_COUNT := 140
@@ -28,12 +31,22 @@ const NEBULA_COL := Color(0.42, 0.28, 0.62, 1.0)
 const NEBULA_COL_L2 := Color(0.20, 0.46, 0.52, 1.0)
 ## (L3-2) warm orange-ember nebula for the machine void.
 const NEBULA_COL_L3 := Color(0.62, 0.36, 0.16, 1.0)
+## (L4-2) amethyst-gold nebula for the magic void.
+const NEBULA_COL_L4 := Color(0.52, 0.34, 0.66, 1.0)
 
 ## (L3-2) Layer-3 city mood: warm copper gradient + orange-ember nebula.
 var _l3_mood: bool = false
+## (L4-2) Layer-4 tower mood: deep amethyst gradient + amethyst-gold nebula.
+var _l4_mood: bool = false
 
 func set_l3_mood(on: bool) -> void:
 	_l3_mood = on
+	_home_mood = on  # reuse the denser-field path
+	_seed_field()
+	queue_redraw()
+
+func set_l4_mood(on: bool) -> void:
+	_l4_mood = on
 	_home_mood = on  # reuse the denser-field path
 	_seed_field()
 	queue_redraw()
@@ -131,8 +144,8 @@ func _draw() -> void:
 	var h := _size.y
 	# vertical gradient via a stack of horizontal bands (cheap, no shader).
 	var bands := 48
-	var top_col := (L3_TOP if _l3_mood else (L2_TOP if _l2_mood else TOP))
-	var bot_col := (L3_BOTTOM if _l3_mood else (L2_BOTTOM if _l2_mood else BOTTOM))
+	var top_col := (L4_TOP if _l4_mood else (L3_TOP if _l3_mood else (L2_TOP if _l2_mood else TOP)))
+	var bot_col := (L4_BOTTOM if _l4_mood else (L3_BOTTOM if _l3_mood else (L2_BOTTOM if _l2_mood else BOTTOM)))
 	for i in range(bands):
 		var t := float(i) / float(bands - 1)
 		var col := top_col.lerp(bot_col, t)
@@ -148,7 +161,7 @@ func _draw() -> void:
 			var t := float(i) / float(rings - 1)     # 0 centre .. 1 edge
 			var rr := maxr * t
 			var a := (1.0 - t) * (1.0 - t) * 0.05     # very soft
-			var col := (NEBULA_COL_L3 if _l3_mood else (NEBULA_COL_L2 if _l2_mood else NEBULA_COL))
+			var col := (NEBULA_COL_L4 if _l4_mood else (NEBULA_COL_L3 if _l3_mood else (NEBULA_COL_L2 if _l2_mood else NEBULA_COL)))
 			col.a = a
 			draw_circle(nc, maxf(1.0, maxr - rr), col)
 	# static faint dust specks
@@ -164,7 +177,9 @@ func _draw() -> void:
 	# drifting motes (soft violet, low-alpha discs; cyan under the L2 mood)
 	for m in _motes:
 		var mc := Color(0.62, 0.48, 0.85, m["a"])
-		if _l3_mood:
+		if _l4_mood:
+			mc = Color(0.78, 0.62, 0.36, m["a"])   # golden arcane mote
+		elif _l3_mood:
 			mc = Color(0.85, 0.56, 0.28, m["a"])
 		elif _l2_mood:
 			mc = Color(0.36, 0.72, 0.78, m["a"])

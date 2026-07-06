@@ -51,6 +51,17 @@ const B_LIP := Color8(138, 106, 52)    # brass cap
 const B_LIP_DK := Color8(90, 68, 36)
 const B_EMBER := Color8(232, 132, 44)  # 식어가는 잔열 (주황) conduit weep
 
+# (L4-1) Amethyst/gold cliff palette for the Layer-4 magic tower 「봉인이 풀린 마탑」 (자수정 보라
+# 단면). Same geometry as the metal/brass apron, recolored arcane (자수정 base + 보라 램프 + a
+# violet cap lip + a 금색 룬 weep instead of the L3 주황). Selected by the `amethyst` flag.
+const A_BASE := Color8(74, 54, 112)     # 자수정 보라 base
+const A_DARK := Color8(48, 34, 78)
+const A_LIGHT := Color8(122, 92, 174)   # 밝은 자수정 하이라이트
+const A_SHADOW := Color8(34, 24, 56)
+const A_LIP := Color8(100, 70, 150)     # amethyst cap
+const A_LIP_DK := Color8(64, 44, 100)
+const A_GOLD := Color8(242, 193, 78)    # 금색 룬 weep
+
 
 ## Deterministic value hash (mirrors MapLoader._cell_hash / the JS cellHash).
 static func hash2(c: int, r: int, salt: int = 0) -> int:
@@ -76,7 +87,7 @@ static func _rock_noise(px: int, py: int, seed: int) -> float:
 ## RAISED cell's diamond centre: blit at (center.x - 64, center.y - 32).
 ## The top 64px row contains the two front diamond edges; the wall hangs below; the last
 ## `TH/2` rows fold back into the lower diamond foot so the base seats on the ground.
-static func make_apron(drop: int, expose_se: bool, expose_sw: bool, salt: int, metal: bool = false, brass: bool = false) -> Image:
+static func make_apron(drop: int, expose_se: bool, expose_sw: bool, salt: int, metal: bool = false, brass: bool = false, amethyst: bool = false) -> Image:
 	var wall := LIFT * drop
 	var img_h := wall + TH
 	var img := Image.create(TW, img_h, false, Image.FORMAT_RGBA8)
@@ -118,7 +129,9 @@ static func make_apron(drop: int, expose_se: bool, expose_sw: bool, salt: int, m
 			var n: float = _rock_noise(x, y, salt) * 0.12 - 0.06
 			var shade := side_light * vshade + facet + crack + n
 			var col: Color
-			if brass:
+			if amethyst:
+				col = _amethyst_col(shade)
+			elif brass:
 				col = _brass_col(shade)
 			elif metal:
 				col = _metal_col(shade)
@@ -126,7 +139,12 @@ static func make_apron(drop: int, expose_se: bool, expose_sw: bool, salt: int, m
 				col = _rock_col(shade)
 			# (L2-2/L3-1) metal/brass cliff: a riveted strata line + an occasional conduit seam
 			# (cyan leak for L2, 주황 잔열 weep for L3).
-			if brass:
+			if amethyst:
+				if (y - wall_top) % 20 < 1:
+					col = col.lerp(A_LIGHT, 0.4)                # amethyst rivet band
+				elif not is_left and (_rock_noise(x / 9, 0, salt + 3) < 0.06):
+					col = col.lerp(A_GOLD, 0.5)                 # 금색 룬 weep
+			elif brass:
 				if (y - wall_top) % 20 < 1:
 					col = col.lerp(B_LIGHT, 0.4)                # brass rivet band
 				elif not is_left and (_rock_noise(x / 9, 0, salt + 3) < 0.06):
@@ -142,7 +160,9 @@ static func make_apron(drop: int, expose_se: bool, expose_sw: bool, salt: int, m
 		var lip_h := 5
 		for y in range(wall_top, mini(wall_top + lip_h, img_h)):
 			var g: Color
-			if brass:
+			if amethyst:
+				g = A_LIP if ((x + y) % 3 != 0) else A_LIP_DK
+			elif brass:
 				g = B_LIP if ((x + y) % 3 != 0) else B_LIP_DK
 			elif metal:
 				g = M_LIP if ((x + y) % 3 != 0) else M_LIP_DK
@@ -175,6 +195,17 @@ static func _brass_col(s: float) -> Color:
 		return B_DARK.lerp(B_BASE, clampf((s - 0.7) / 0.3, 0.0, 1.0))
 	else:
 		return B_BASE.lerp(B_LIGHT, clampf((s - 1.0) / 0.4, 0.0, 1.0))
+
+
+## (L4-1) Map a shade scalar to an amethyst/violet colour (parallel to _brass_col, arcane palette).
+static func _amethyst_col(s: float) -> Color:
+	s = clampf(s, 0.0, 1.4)
+	if s < 0.7:
+		return A_SHADOW.lerp(A_DARK, clampf(s / 0.7, 0.0, 1.0))
+	elif s < 1.0:
+		return A_DARK.lerp(A_BASE, clampf((s - 0.7) / 0.3, 0.0, 1.0))
+	else:
+		return A_BASE.lerp(A_LIGHT, clampf((s - 1.0) / 0.4, 0.0, 1.0))
 
 
 ## Map a shade scalar (~[0.4..1.2]) to a rock colour by lerping the palette.

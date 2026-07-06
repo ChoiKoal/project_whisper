@@ -52,6 +52,14 @@ signal layer3_purified(layer: String)
 ## portal opening, mirroring layer2_purified_flag.
 var layer3_purified_flag: bool = false
 
+## (L4-3) Emitted when the 최심부 봉인 재구축 (G4) completes the Layer-4 정화 컷신. Carries the
+## purified layer id ("magic"). The MageTower session hooks return-to-home + the next portal
+## (divinity) opening; the flag persists. NOTE: L4 정화 = "풀려난 것을 다시 봉인함" (§A-1).
+signal layer4_purified(layer: String)
+## (L4-3) True once Layer 4 (magic) is 정화된 (최심부 봉인 재구축 완료). Saved; drives the divinity
+## portal opening, mirroring layer3_purified_flag.
+var layer4_purified_flag: bool = false
+
 
 ## (L2-3) Mark a power node energized (idempotent). Records it in `powered_nodes` and announces
 ## it so gate listeners (bridge swap / clear cutscene) and quests react. No signal if already on.

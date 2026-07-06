@@ -1,0 +1,67 @@
+{
+  "_comment": "Project Whisper Layer 4 (제4세계 마법의 세계) 「봉인이 풀린 마탑」 legend. Symbol -> (tileset source, l4obj spec). Parsed by the SAME MapLoader as grove/home/L2/L3 (parameterized paths, kind:'l4obj' dispatch → same _spawn_l2_object path). Tile source ids: A=26 amethyst plaza, p=27 rune conduit, R=28 rune corridor, M=29 floating shard(+1), O=30 chamber(+2), dark=31 sealed(non-walkable, gate cells g/v/L/H), crack=32 (x, non-walkable, 부적 소지 시 통과). P* = Layer-4 gather ids. NOTE §A-2 (byte-identical) carries no X/K symbols — the G1 룬 제단 + G4 봉인 코어 배전반 mounts are SPAWNED by the L4 gate controller at the gates-block coords (rune_altar/seal_mount). Gate LOGIC = stage L4-3 (l4_gate_controller). 기획 수정 = 이 파일 + l4_map_layout.txt + l4_map_height.txt.",
+  "tiles": {
+    "A": {"source": 26, "tile_id": "L4T-A"},
+    "p": {"source": 27, "tile_id": "L4T-p"},
+    "R": {"source": 28, "tile_id": "L4T-R"},
+    "M": {"source": 29, "tile_id": "L4T-M"},
+    "O": {"source": 30, "tile_id": "L4T-O"},
+    "V": {"source": 0, "tile_id": "T0", "walkable": false, "void": true},
+    "S": {"source": 26, "tile_id": "L4T-A", "spawn": true},
+    "q": {"source": 26, "tile_id": "L4T-A"},
+    "m": {"source": 29, "tile_id": "L4T-M"},
+    "s": {"source": 26, "tile_id": "L4T-A"},
+    "y": {"source": 26, "tile_id": "L4T-A"},
+    "z": {"source": 29, "tile_id": "L4T-M"},
+    "d": {"source": 26, "tile_id": "L4T-A"},
+    "o": {"source": 29, "tile_id": "L4T-M"},
+    "x": {"source": 32, "tile_id": "L4T-crack", "walkable": false},
+    "E": {"source": 28, "tile_id": "L4T-R", "walkable": false},
+    "C": {"source": 28, "tile_id": "L4T-R", "walkable": false},
+    "g": {"source": 31, "tile_id": "L4T-dark", "walkable": false},
+    "v": {"source": 31, "tile_id": "L4T-dark", "walkable": false},
+    "L": {"source": 31, "tile_id": "L4T-dark", "walkable": false},
+    "H": {"source": 31, "tile_id": "L4T-dark", "walkable": false},
+    "1": {"source": 30, "tile_id": "L4T-O"},
+    "2": {"source": 28, "tile_id": "L4T-R"},
+    "3": {"source": 29, "tile_id": "L4T-M"},
+    "4": {"source": 26, "tile_id": "L4T-A"}
+  },
+  "objects": {
+    "q": {"kind": "l4obj", "l2_id": "rune_node", "art": "l4_rune_node", "offset": [0, -22], "gatherable": {"item_id": "P1"}, "blocks": false},
+    "m": {"kind": "l4obj", "l2_id": "mana_geode", "art": "l4_mana_geode", "offset": [0, -22], "glow": "gold", "glow_scale": 0.35, "gatherable": {"item_id": "P2"}, "blocks": false},
+    "s": {"kind": "l4obj", "l2_id": "silver_vein", "art": "l4_silver_vein", "offset": [0, -22], "gatherable": {"item_id": "P3"}, "blocks": false},
+    "y": {"kind": "l4obj", "l2_id": "vellum_roll", "art": "l4_vellum_roll", "offset": [0, -22], "gatherable": {"item_id": "P4"}, "blocks": false},
+    "z": {"kind": "l4obj", "l2_id": "wax_lump", "art": "l4_wax_lump", "offset": [0, -22], "gatherable": {"item_id": "P5"}, "blocks": false},
+    "d": {"kind": "l4obj", "l2_id": "dew_pool", "art": "l4_dew_pool", "offset": [0, -14], "glow": "gold", "glow_scale": 0.3, "gatherable": {"item_id": "P6"}, "blocks": false},
+    "o": {"kind": "l4obj", "l2_id": "void_shard", "art": "l4_void_shard", "offset": [0, -20], "gatherable": {"item_id": "P7"}, "blocks": false},
+    "E": {"kind": "l4obj", "l2_id": "mana_spring", "art": "l4_mana_spring", "offset": [0, -70], "blocks": true, "block_radius": 40, "gate": "G2", "landmark": true},
+    "C": {"kind": "l4obj", "l2_id": "ward_pillar", "art": "l4_ward_pillar", "offset": [0, -40], "blocks": true, "block_radius": 20, "gate": "G3"},
+    "g": {"kind": "l4obj", "l2_id": "rune_bridge", "art": "l4_rune_bridge_off", "offset": [0, 0], "gate": "G1"},
+    "v": {"kind": "l4obj", "l2_id": "ward_door", "art": "l4_ward_door_closed", "offset": [0, -48], "blocks": true, "block_radius": 30, "gate": "G2"},
+    "L": {"kind": "l4obj", "l2_id": "crack_gate", "art": "l4_crack_gate", "offset": [0, -64], "blocks": true, "block_radius": 30, "gate": "G3", "landmark": true},
+    "H": {"kind": "l4obj", "l2_id": "seal_neck", "art": "l4_rune_bridge_off", "offset": [0, 0], "gate": "G4"},
+    "1": {"kind": "l4obj", "l2_id": "seal_core", "art": "l4_seal_core", "offset": [0, -150], "glow": "gold", "glow_scale": 0.5, "blocks": true, "block_radius": 60, "landmark": true},
+    "2": {"kind": "l4obj", "l2_id": "spring_landmark", "art": "l4_spring_landmark", "offset": [0, -70], "blocks": true, "block_radius": 40, "landmark": true},
+    "3": {"kind": "l4obj", "l2_id": "crack_landmark", "art": "l4_crack_gate", "offset": [0, -64], "blocks": true, "block_radius": 30, "landmark": true},
+    "4": {"kind": "l4obj", "l2_id": "rune_heap_tut", "art": "l4_rune_heap", "offset": [0, -24], "gatherable": {"item_id": "P1"}, "blocks": false, "landmark": true}
+  },
+  "landmarks": {
+    "1": "seal_core",
+    "2": "mana_spring_landmark",
+    "3": "great_crack",
+    "4": "tutorial_runes"
+  },
+  "_coord_note": "All cell coords are (col,row) matching l4_map_layout.txt (byte-identical to doc §A-2). Gate bottleneck cells g/v/L/H are STATIC-CLOSED via the dark source (31); the L4 gate controller opens them with set_gate_cell_source(cell, true, lit_source, 31). Crack tiles x (source 32) are held-charm gated at runtime (L2 랜턴 소지 판정 재사용). rune_altar (G1) + seal_mount (G4) 마운트는 §A-2에 심볼이 없으므로 게이트 컨트롤러가 gates.altar/gates.mount 좌표에 스폰한다.",
+  "gates": {
+    "G1": {"type": "placement", "kind": "power_node", "node_id": "rune_bridge", "bridge_cells": [[18,29],[19,29],[18,30],[19,30]], "altar": [[17,28]], "lit_source": 28},
+    "G2": {"type": "use", "target": "mana_spring", "spring_cell": [17,19], "door_cells": [[18,19],[19,19],[18,20],[19,20]], "lit_source": 28},
+    "G3": {"type": "held", "kind": "charm", "charm_item": "D145", "crack_cells": [[18,10],[19,10],[18,11],[19,11]], "ward": [[17,11]], "lit_source": 29},
+    "G4": {"type": "chain", "kind": "power_node", "node_id": "seal_core", "neck_cells": [[18,4],[19,4],[18,5],[19,5]], "mount": [[19,2]], "lit_source": 30}
+  },
+  "special": {
+    "workbench_cell": [17, 37],
+    "_workbench_note": "정비대 (L4 crafting station). Spawned by the MageTower session ~west of spawn S(19,37) on amethyst pavement. §A-7: '스폰 인접, 첫 조합 ≤4분'.",
+    "crack_bottleneck_cells": [[18,10],[19,10],[18,11],[19,11]]
+  }
+}
