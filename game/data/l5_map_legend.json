@@ -1,0 +1,71 @@
+{
+  "_comment": "Project Whisper Layer 5 (제5세계 신성의 세계) 「응답 없는 대성당」 legend. Symbol -> (tileset source, l5obj spec). Parsed by the SAME MapLoader as grove/home/L2/L3/L4 (parameterized paths, kind:'l5obj' dispatch → same _spawn_l2_object path). Tile source ids: P=33 ivory pave, L=34 silver plaza, Q=35 silence corridor(+1), C=36 upper choir(+1), O=37 great altar(+2), dark=38 sealed(non-walkable, gate cells g/e/Y/H), ramp=39. S1~S7 = Layer-5 gather ids. NOTE §A-2 (byte-identical) carries no K symbol — the G4 대제단 봉헌대 mount is SPAWNED by the L5 gate controller at gates.mount (19,2). X/E/W/A/B altars exist as §A-2 symbols. Gate LOGIC = stage L5-3 (l5_gate_controller). 기획 수정 = 이 파일 + l5_map_layout.txt + l5_map_height.txt.",
+  "tiles": {
+    "P": {"source": 33, "tile_id": "L5T-P"},
+    "L": {"source": 34, "tile_id": "L5T-L"},
+    "Q": {"source": 35, "tile_id": "L5T-Q"},
+    "C": {"source": 36, "tile_id": "L5T-C"},
+    "O": {"source": 37, "tile_id": "L5T-O"},
+    "V": {"source": 0, "tile_id": "T0", "walkable": false, "void": true},
+    "S": {"source": 33, "tile_id": "L5T-P", "spawn": true},
+    "/": {"source": 39, "tile_id": "L5T-ramp"},
+    "g": {"source": 38, "tile_id": "L5T-dark", "walkable": false},
+    "e": {"source": 38, "tile_id": "L5T-dark", "walkable": false},
+    "Y": {"source": 38, "tile_id": "L5T-dark", "walkable": false},
+    "H": {"source": 38, "tile_id": "L5T-dark", "walkable": false},
+    "X": {"source": 33, "tile_id": "L5T-P"},
+    "E": {"source": 34, "tile_id": "L5T-L"},
+    "W": {"source": 36, "tile_id": "L5T-C"},
+    "A": {"source": 35, "tile_id": "L5T-Q"},
+    "B": {"source": 35, "tile_id": "L5T-Q"},
+    "h": {"source": 33, "tile_id": "L5T-P"},
+    "r": {"source": 33, "tile_id": "L5T-P"},
+    "b": {"source": 33, "tile_id": "L5T-P"},
+    "p": {"source": 34, "tile_id": "L5T-L"},
+    "n": {"source": 35, "tile_id": "L5T-Q"},
+    "w": {"source": 34, "tile_id": "L5T-L"},
+    "k": {"source": 36, "tile_id": "L5T-C"},
+    "1": {"source": 37, "tile_id": "L5T-O"},
+    "2": {"source": 34, "tile_id": "L5T-L"},
+    "3": {"source": 35, "tile_id": "L5T-Q"},
+    "4": {"source": 33, "tile_id": "L5T-P"}
+  },
+  "objects": {
+    "h": {"kind": "l5obj", "l2_id": "holy_font", "art": "l5_holy_font", "offset": [0, -18], "gatherable": {"item_id": "S1"}, "blocks": false},
+    "r": {"kind": "l5obj", "l2_id": "relic_pile", "art": "l5_relic_pile", "offset": [0, -20], "gatherable": {"item_id": "S2"}, "blocks": false},
+    "b": {"kind": "l5obj", "l2_id": "marble_chunk", "art": "l5_marble_chunk", "offset": [0, -20], "gatherable": {"item_id": "S3"}, "blocks": false},
+    "p": {"kind": "l5obj", "l2_id": "bead_string", "art": "l5_bead_string", "offset": [0, -18], "gatherable": {"item_id": "S4"}, "blocks": false},
+    "n": {"kind": "l5obj", "l2_id": "hymn_sheet", "art": "l5_hymn_sheet", "offset": [0, -18], "gatherable": {"item_id": "S5"}, "blocks": false},
+    "w": {"kind": "l5obj", "l2_id": "ash_wing", "art": "l5_ash_wing", "offset": [0, -20], "gatherable": {"item_id": "S6"}, "blocks": false},
+    "k": {"kind": "l5obj", "l2_id": "divine_ember", "art": "l5_divine_ember", "offset": [0, -18], "glow": "gold", "glow_scale": 0.32, "gatherable": {"item_id": "S7"}, "blocks": false},
+    "X": {"kind": "l5obj", "l2_id": "lantern_altar", "art": "l5_lantern_altar", "offset": [0, -40], "blocks": true, "block_radius": 22, "gate": "G1"},
+    "E": {"kind": "l5obj", "l2_id": "life_spring", "art": "l5_life_spring", "offset": [0, -66], "blocks": true, "block_radius": 38, "gate": "G2", "landmark": true},
+    "W": {"kind": "l5obj", "l2_id": "choir_stand", "art": "l5_choir_stand", "offset": [0, -40], "blocks": true, "block_radius": 22, "gate": "G3"},
+    "A": {"kind": "l5obj", "l2_id": "pilgrim_dynamo", "art": "l5_pilgrim_dynamo", "offset": [0, -40], "glow": "gold", "glow_scale": 0.3, "blocks": true, "block_radius": 22},
+    "B": {"kind": "l5obj", "l2_id": "mana_reliquary", "art": "l5_mana_reliquary", "offset": [0, -40], "glow": "gold", "glow_scale": 0.3, "blocks": true, "block_radius": 22},
+    "g": {"kind": "l5obj", "l2_id": "dead_lantern", "art": "l5_lantern_path_off", "offset": [0, 0], "gate": "G1"},
+    "e": {"kind": "l5obj", "l2_id": "life_door", "art": "l5_life_door_closed", "offset": [0, -48], "blocks": true, "block_radius": 30, "gate": "G2"},
+    "Y": {"kind": "l5obj", "l2_id": "silence_gate", "art": "l5_silence_gate", "offset": [0, -48], "blocks": true, "block_radius": 30, "gate": "G3", "landmark": true},
+    "H": {"kind": "l5obj", "l2_id": "offering_neck", "art": "l5_lantern_path_off", "offset": [0, 0], "gate": "G4"},
+    "1": {"kind": "l5obj", "l2_id": "great_altar_landmark", "art": "l5_great_altar", "offset": [0, -150], "glow": "gold", "glow_scale": 0.5, "blocks": true, "block_radius": 60, "landmark": true},
+    "2": {"kind": "l5obj", "l2_id": "spring_landmark", "art": "l5_spring_landmark", "offset": [0, -66], "blocks": true, "block_radius": 38, "landmark": true},
+    "3": {"kind": "l5obj", "l2_id": "silence_landmark", "art": "l5_silence_gate", "offset": [0, -48], "blocks": true, "block_radius": 30, "landmark": true},
+    "4": {"kind": "l5obj", "l2_id": "relic_heap_tut", "art": "l5_relic_pile", "offset": [0, -20], "gatherable": {"item_id": "S2"}, "blocks": false, "landmark": true}
+  },
+  "landmarks": {
+    "1": "great_altar",
+    "2": "life_spring_landmark",
+    "3": "silence_corridor_mouth",
+    "4": "tutorial_relics"
+  },
+  "special": {
+    "workbench_cell": [17, 37]
+  },
+  "_coord_note": "All cell coords are (col,row) matching l5_map_layout.txt (byte-identical to doc §A-2). Gate bottleneck cells g/e/Y/H are STATIC-CLOSED via the dark source (38); the L5 gate controller opens them with set_gate_cell_source(cell, true, lit_source, 38). offering_altar (G4) mount은 §A-2에 심볼이 없으므로 게이트 컨트롤러가 gates.mount 좌표 (19,2)에 스폰한다. 재획득처 A(발전 제단, 에너지)/B(마력 성물함, 마력)는 게이트가 아니라 idempotent 보상 오브젝트.",
+  "gates": {
+    "G1": {"type": "placement", "kind": "power_node", "node_id": "dead_lantern", "bridge_cells": [[18,29],[19,29],[18,30],[19,30]], "altar": [[17,31]], "lit_source": 33},
+    "G2": {"type": "use", "target": "life_spring", "spring_cell": [17,19], "door_cells": [[18,19],[19,19],[18,20],[19,20]], "lit_source": 34},
+    "G3": {"type": "held", "kind": "hymn", "hymn_item": "D182", "gate_cells": [[18,10],[19,10],[18,11],[19,11]], "stand": [[17,12]], "lit_source": 36},
+    "G4": {"type": "chain", "kind": "power_node", "node_id": "offering_altar", "neck_cells": [[18,4],[19,4],[18,5],[19,5]], "mount": [[19,2]], "lit_source": 37}
+  }
+}

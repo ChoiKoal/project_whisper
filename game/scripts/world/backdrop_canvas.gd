@@ -15,6 +15,10 @@ const L3_BOTTOM := Color("#241810")
 ## (L4-2) deep amethyst void gradient for the magic tower (자수정 보라 mood, tense arcane).
 const L4_TOP := Color("#0e0a18")
 const L4_BOTTOM := Color("#241834")
+## (L5-2) 잿빛 여명(grey dawn) void gradient for the unanswered cathedral (탈색 회백 mood, 신성이
+##거의 꺼진 여명 — 차갑고 창백한 회색에서 옅은 상아빛으로).
+const L5_TOP := Color("#161820")
+const L5_BOTTOM := Color("#2a2c33")
 
 const STAR_COUNT := 90
 const DUST_COUNT := 140
@@ -33,11 +37,15 @@ const NEBULA_COL_L2 := Color(0.20, 0.46, 0.52, 1.0)
 const NEBULA_COL_L3 := Color(0.62, 0.36, 0.16, 1.0)
 ## (L4-2) amethyst-gold nebula for the magic void.
 const NEBULA_COL_L4 := Color(0.52, 0.34, 0.66, 1.0)
+## (L5-2) pale ivory-grey nebula for the cathedral void (꺼져가는 신성의 옅은 여명 빛).
+const NEBULA_COL_L5 := Color(0.60, 0.58, 0.54, 1.0)
 
 ## (L3-2) Layer-3 city mood: warm copper gradient + orange-ember nebula.
 var _l3_mood: bool = false
 ## (L4-2) Layer-4 tower mood: deep amethyst gradient + amethyst-gold nebula.
 var _l4_mood: bool = false
+## (L5-2) Layer-5 cathedral mood: grey-dawn gradient + pale ivory nebula.
+var _l5_mood: bool = false
 
 func set_l3_mood(on: bool) -> void:
 	_l3_mood = on
@@ -47,6 +55,12 @@ func set_l3_mood(on: bool) -> void:
 
 func set_l4_mood(on: bool) -> void:
 	_l4_mood = on
+	_home_mood = on  # reuse the denser-field path
+	_seed_field()
+	queue_redraw()
+
+func set_l5_mood(on: bool) -> void:
+	_l5_mood = on
 	_home_mood = on  # reuse the denser-field path
 	_seed_field()
 	queue_redraw()
@@ -144,8 +158,8 @@ func _draw() -> void:
 	var h := _size.y
 	# vertical gradient via a stack of horizontal bands (cheap, no shader).
 	var bands := 48
-	var top_col := (L4_TOP if _l4_mood else (L3_TOP if _l3_mood else (L2_TOP if _l2_mood else TOP)))
-	var bot_col := (L4_BOTTOM if _l4_mood else (L3_BOTTOM if _l3_mood else (L2_BOTTOM if _l2_mood else BOTTOM)))
+	var top_col := (L5_TOP if _l5_mood else (L4_TOP if _l4_mood else (L3_TOP if _l3_mood else (L2_TOP if _l2_mood else TOP))))
+	var bot_col := (L5_BOTTOM if _l5_mood else (L4_BOTTOM if _l4_mood else (L3_BOTTOM if _l3_mood else (L2_BOTTOM if _l2_mood else BOTTOM))))
 	for i in range(bands):
 		var t := float(i) / float(bands - 1)
 		var col := top_col.lerp(bot_col, t)
@@ -161,7 +175,7 @@ func _draw() -> void:
 			var t := float(i) / float(rings - 1)     # 0 centre .. 1 edge
 			var rr := maxr * t
 			var a := (1.0 - t) * (1.0 - t) * 0.05     # very soft
-			var col := (NEBULA_COL_L4 if _l4_mood else (NEBULA_COL_L3 if _l3_mood else (NEBULA_COL_L2 if _l2_mood else NEBULA_COL)))
+			var col := (NEBULA_COL_L5 if _l5_mood else (NEBULA_COL_L4 if _l4_mood else (NEBULA_COL_L3 if _l3_mood else (NEBULA_COL_L2 if _l2_mood else NEBULA_COL))))
 			col.a = a
 			draw_circle(nc, maxf(1.0, maxr - rr), col)
 	# static faint dust specks
@@ -177,7 +191,9 @@ func _draw() -> void:
 	# drifting motes (soft violet, low-alpha discs; cyan under the L2 mood)
 	for m in _motes:
 		var mc := Color(0.62, 0.48, 0.85, m["a"])
-		if _l4_mood:
+		if _l5_mood:
+			mc = Color(0.82, 0.80, 0.74, m["a"])   # pale ivory dawn mote
+		elif _l4_mood:
 			mc = Color(0.78, 0.62, 0.36, m["a"])   # golden arcane mote
 		elif _l3_mood:
 			mc = Color(0.85, 0.56, 0.28, m["a"])

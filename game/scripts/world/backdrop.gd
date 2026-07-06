@@ -29,6 +29,10 @@ const CANVAS_SCRIPT := "res://scripts/world/backdrop_canvas.gd"
 ## (L4-2) Layer-4 「봉인이 풀린 마탑」 void mood: amethyst starfield + amethyst-gold nebula, so the
 ## floating tower hangs in a tense arcane void (vs L3's dead ember). Mutually exclusive (l4 wins).
 @export var l4_mood: bool = false
+## (L5-2) Layer-5 「응답 없는 대성당」 void mood: grey-dawn gradient + pale ivory nebula, so the
+## cathedral void reads as a nearly-extinguished dawn (신성이 거의 꺼진 회백 여명). Mutually
+## exclusive (l5 wins if set).
+@export var l5_mood: bool = false
 
 var _canvas: Control
 
@@ -43,7 +47,9 @@ func _ready() -> void:
 	if scr != null:
 		_canvas.set_script(scr)
 	add_child(_canvas)
-	if l4_mood and _canvas.has_method("set_l4_mood"):
+	if l5_mood and _canvas.has_method("set_l5_mood"):
+		_canvas.call("set_l5_mood", true)
+	elif l4_mood and _canvas.has_method("set_l4_mood"):
 		_canvas.call("set_l4_mood", true)
 	elif l3_mood and _canvas.has_method("set_l3_mood"):
 		_canvas.call("set_l3_mood", true)
