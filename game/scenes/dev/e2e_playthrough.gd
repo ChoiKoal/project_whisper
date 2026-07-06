@@ -34,6 +34,7 @@ const OPENING := "res://scenes/ui/opening.tscn"
 const TERMINAL := "res://scenes/world/terminal_station.tscn"  # (L2-6) science world
 const CLOCKWORK := "res://scenes/world/clockwork_city.tscn"   # (L3-6) machine world
 const MAGE_TOWER := "res://scenes/world/mage_tower.tscn"      # (L4) magic world
+const CATHEDRAL := "res://scenes/world/cathedral.tscn"       # (L5-6) divinity world
 
 var _fail := 0
 var _step := 0
@@ -81,6 +82,7 @@ func _run() -> void:
 	await _stepL2_science_journey()         # (L2-6) enter science portal → terminal_station → G1..G4 → 정화 → re-enter persist
 	await _stepL3_machine_journey()         # (L3-6) enter machine portal → clockwork_city → G1..G4 → 정화 → re-enter persist
 	await _stepL4_magic_journey()           # (L4) enter magic portal → mage_tower → G1..G4 → 정화 → re-enter persist
+	await _stepL5_divine_journey()          # (L5-6) enter divinity portal → cathedral → G1..G4 봉헌/응답 → 정화 → 다섯 포탈 전점등 → re-enter persist
 	await _step7_save_load_persist()
 	await _step8_ng_plus()
 	_cleanup()
@@ -1521,6 +1523,273 @@ func _l4_use_target(loader: MapLoader, object_id: String) -> Node:
 	return null
 
 
+## (L5-6) The fifth and final layer 「응답 없는 대성당」. Mirrors _stepL4_magic_journey: boots the
+## REAL cathedral.tscn (divinity destination), drives the four 봉헌/응답 게이트 through the SAME
+## item_used_on_object framework onto the L5 gate controller's use-targets, earns the VITA Whisper
+## at G2 (first life ever), crafts the 「응답」 D186 with the real 3-attribute whisper_cost
+## {energy:1,mana:1,vita:1} recipe, offers it at the great altar (정화 = 응답), asserts portal
+## propagation (divinity OPEN — 마지막 레이어, no next portal), and — because this is the fifth
+## purification with L1~L4 already done — asserts the 다섯 포탈 전점등 + 빛의 문 예고 fires (§C-4).
+## Then a save → clobber → re-enter roundtrip proves L5 state persists. Ends by re-booting the grove
+## so step 7 (which asserts grove facts) has its world back.
+func _stepL5_divine_journey() -> void:
+	_banner(95, "divinity 포탈(flickering) → cathedral → G1..G4 봉헌/응답 → L5 정화 → 다섯 포탈 전점등 → re-enter persist")
+
+	# Precondition from the L4 journey: divinity portal FLICKERING (final dead world awoke).
+	_check("divinity 포탈 flickering (L4 정화 전파로 깨어남)",
+		GameState.portal_state("divinity") == GameState.PORTAL_FLICKERING,
+		"divinity=%s" % GameState.portal_state("divinity"))
+	# Precondition: L1~L4 all complete (five-portal completion is 5-AND — proving it fires here
+	# proves the whole game arc). L1 cleared at step6/R; L2~L4 purified in their journeys.
+	_check("L1~L4 완료 (5레이어 완결의 사전 4레이어)",
+		SaveManager.cleared and GameState.layer2_purified_flag \
+		and GameState.layer3_purified_flag and GameState.layer4_purified_flag,
+		"cleared=%s L2=%s L3=%s L4=%s" % [SaveManager.cleared, GameState.layer2_purified_flag,
+			GameState.layer3_purified_flag, GameState.layer4_purified_flag])
+	_check("정화 전 다섯 포탈 예고 미발동 (아직 L5 미정화)", not GameState.light_gate_previewed_flag)
+
+	# Boot the REAL cathedral (divinity destination). Its session activates the L5 line.
+	WorldContext.current_scene = WorldContext.SCENE_CATHEDRAL
+	WorldContext.travel_layer = "divinity"
+	WorldContext.arrival_mode = "portal_arrival"
+	SaveManager.pending_load = false
+	_scene = load(CATHEDRAL).instantiate()
+	add_child(_scene)
+	await _frames(8)   # loader spawns objects; gate controller + session wire deferred
+
+	var c_loader := _scene.get_node("Ground") as MapLoader
+	var gates := _scene.get_node_or_null("L5GateController")
+	_check("cathedral booted (loader + L5GateController)", c_loader != null and gates != null)
+	if c_loader == null or gates == null:
+		return
+
+	var purified := [false]
+	var pur_cb := func(_l): purified[0] = true
+	GameState.layer5_purified.connect(pur_cb)
+	var lit := [false]
+	var lit_cb := func(): lit[0] = true
+	GameState.five_portals_lit.connect(lit_cb)
+
+	# L5 속삭임 라인 활성 (첫 진입) + L1~L4 라인 5중 공존 (독립 포인터).
+	_check("첫 L5 진입 → L5-Q1 활성 (L5 라인 시작)", QuestManager.l5_active_id == "L5-Q1",
+		"l5_active=%s" % QuestManager.l5_active_id)
+	_check("L1~L5 라인 5중 공존 (독립 포인터, 완주 라인 빈 포인터 허용)",
+		QuestManager.active_id == "P2" \
+		and QuestManager.l5_active_id == "L5-Q1" \
+		and QuestManager.l5_active_id != QuestManager.l4_active_id \
+		and QuestManager.l5_active_id != QuestManager.l3_active_id \
+		and QuestManager.l5_active_id != QuestManager.l2_active_id \
+		and QuestManager.l5_active_id != QuestManager.active_id,
+		"L1=%s L2=%s L3=%s L4=%s L5=%s" % [QuestManager.active_id, QuestManager.l2_active_id,
+			QuestManager.l3_active_id, QuestManager.l4_active_id, QuestManager.l5_active_id])
+
+	# ---- L5 속삭임 라인 진행 (SAME signals, independent pointer) --------------------------
+	GameState.item_gathered.emit("S1")
+	_check("L5-Q1(첫 채집) 완료 → L5-Q2 활성", QuestManager.l5_active_id == "L5-Q2",
+		"l5_active=%s" % QuestManager.l5_active_id)
+
+	# ---- G1 등불 봉헌: 성소의 등불 D178 → 성소 등불 제단(lantern_altar) → 참배길 순차 점등 ------
+	var g1: Dictionary = c_loader.legend_gates().get("G1", {})
+	var bridge_cells := _l2_cells(g1.get("bridge_cells", []))
+	var bridge_before := bridge_cells.size() > 0 and c_loader.is_cell_walkable(bridge_cells[0])
+	Inventory.clear()
+	Inventory.add("D178", 1)
+	# item_crafted 신호로 L5-Q2(첫 조합) 진행 (실 조합은 G4 「응답」에서 수행; 라인 진행은 신호 기반).
+	GameState.item_crafted.emit("D178", "L5-R01")
+	_check("L5-Q2(첫 조합) 완료 → L5-Q3 활성", QuestManager.l5_active_id == "L5-Q3",
+		"l5_active=%s" % QuestManager.l5_active_id)
+	var lantern := _l4_use_target(c_loader, "lantern_altar")
+	_check("G1 성소 등불 제단 use-target wired", lantern != null)
+	if lantern != null:
+		Inventory.remove("D178", 1)
+		GameState.item_used_on_object.emit("D178", lantern)
+	await get_tree().create_timer(1.4).timeout   # staggered 참배길 light timers use real time
+	var bridge_walk := bridge_cells.size() > 0
+	for c in bridge_cells:
+		if not c_loader.is_cell_walkable(c):
+			bridge_walk = false
+	_check("G1 등불 봉헌 → 참배길 순차 점등 후 전 셀 walkable (물리+AStar)",
+		bridge_walk and not bridge_before, "n=%d" % bridge_cells.size())
+	_check("lantern_path power node energized", GameState.is_power_node_energized("lantern_path"))
+	_check("L5-Q3(등불 봉헌) 완료", QuestManager.is_done("L5-Q3"))
+
+	# ---- G2 생명의 샘: 생명의 씨 D180 → 생명의 샘(life_spring) → 밸브문 개방 + 생명 Whisper +1 (첫 vita) ---
+	var g2: Dictionary = c_loader.legend_gates().get("G2", {})
+	var door_cells := _l2_cells(g2.get("door_cells", []))
+	var vita_before := WhisperCurrency.vita
+	Inventory.add("D180", 1)
+	var spring := _l4_use_target(c_loader, "life_spring")
+	_check("G2 생명의 샘 use-target wired", spring != null)
+	if spring != null:
+		Inventory.remove("D180", 1)
+		GameState.item_used_on_object.emit("D180", spring)
+	for i in range(6):
+		await get_tree().process_frame
+	var door_open := door_cells.size() > 0
+	for c in door_cells:
+		if not c_loader.is_cell_walkable(c):
+			door_open = false
+	_check("G2 생명의씨→샘 사용 → 밸브문 개방 (walkable)", door_open)
+	_check("G2 보상: 생명 Whisper +1 (첫 vita, §보완 필수)",
+		WhisperCurrency.vita == vita_before + 1, "vita=%d" % WhisperCurrency.vita)
+	# G2 also advances the L5 line (item_used_on_object → life_spring 게이트 퀘스트).
+	_check("L5-Q4(생명의 샘) 진행", QuestManager.is_done("L5-Q4") or QuestManager.l5_active_id != "L5-Q3")
+
+	# ---- G3 침묵의 회랑: 침묵의 성가 D182 소지 상태 폴링 → 침묵 병목 walkable (held-item 패턴) -------
+	var g3: Dictionary = c_loader.legend_gates().get("G3", {})
+	var gate_cells := _l2_cells(g3.get("gate_cells", []))
+	var gate_before := gate_cells.size() > 0 and c_loader.is_cell_walkable(gate_cells[0])
+	Inventory.add("D182", 1)
+	for i in range(4):
+		await get_tree().process_frame
+	var corridor_walk := gate_cells.size() > 0
+	for c in gate_cells:
+		if not c_loader.is_cell_walkable(c):
+			corridor_walk = false
+	_check("G3 성가 소지 → 침묵의 회랑 walkable (통과, 소지형)",
+		corridor_walk and not gate_before, "n=%d" % gate_cells.size())
+	# Keep the hymn held so the corridor stays passable through the final offering.
+
+	# ---- G4 대제단 봉헌 = 「응답」 D186 (3속성 whisper_cost) → Layer 5 정화(응답) -----------------
+	# 실 조합: 봉헌의 그릇 D183 둘 → 응답 D186 (whisper_cost {energy:1,mana:1,vita:1}). 세 속성 확보.
+	WhisperCurrency.add_energy(1)
+	WhisperCurrency.add_mana(1)
+	# vita already earned at G2 (+1). Assert all three present before the offering craft.
+	_check("G4 사전: 3속성 전부 보유 (energy/mana/vita ≥1)",
+		WhisperCurrency.energy >= 1 and WhisperCurrency.mana >= 1 and WhisperCurrency.vita >= 1,
+		"e=%d m=%d v=%d" % [WhisperCurrency.energy, WhisperCurrency.mana, WhisperCurrency.vita])
+	Inventory.add("D183", 1); Inventory.add("D183", 1)
+	var e_pre := WhisperCurrency.energy
+	var m_pre := WhisperCurrency.mana
+	var v_pre := WhisperCurrency.vita
+	var r_resp := Fusion.fuse("D183", "D183")
+	_check("real L5 craft: 「응답」 D186 (whisper_cost 3속성 각 1 소모)",
+		r_resp.get("output","") == "D186" and Inventory.count("D186") >= 1 \
+		and WhisperCurrency.energy == e_pre - 1 and WhisperCurrency.mana == m_pre - 1 \
+		and WhisperCurrency.vita == v_pre - 1,
+		"out=%s e %d→%d m %d→%d v %d→%d" % [r_resp.get("output",""), e_pre, WhisperCurrency.energy,
+			m_pre, WhisperCurrency.mana, v_pre, WhisperCurrency.vita])
+
+	# 3속성 부족 시 「응답」 조합 거부 (재료 미소모). 모두 0으로 만든 뒤 재시도.
+	Inventory.add("D183", 1); Inventory.add("D183", 1)
+	var d183_before_refusal := Inventory.count("D183")
+	var r_refused := Fusion.fuse("D183", "D183")
+	_check("G4 3속성 0 → 「응답」 조합 거부 (clean no-op, D183² 잔존)",
+		not bool(r_refused.get("matched", false)) \
+		and String(r_refused.get("output", "")) == "" \
+		and Inventory.count("D183") == d183_before_refusal,
+		"reason=%s D183=%d" % [r_refused.get("failure_reason", ""), Inventory.count("D183")])
+	Inventory.remove("D183", Inventory.count("D183"))
+
+	# Offer the 「응답」 D186 → great_altar energize → purification cutscene (응답).
+	_check("정화 전 layer5_purified_flag = false", not GameState.layer5_purified_flag)
+	var altar := _l4_use_target(c_loader, "offering_altar")
+	_check("G4 대제단 봉헌대 use-target wired", altar != null)
+	if altar != null:
+		Inventory.remove("D186", 1)
+		GameState.item_used_on_object.emit("D186", altar)
+	for i in range(80):
+		await get_tree().create_timer(0.1).timeout
+		if GameState.layer5_purified_flag:
+			break
+	_check("G4 대제단 봉헌 → Layer 5 정화 플래그 set", GameState.layer5_purified_flag)
+	_check("정화 컷신 → layer5_purified 시그널 발화", purified[0])
+	# The layer5_purified emit drives the Cathedral hook → maybe_light_five_portals → the 다섯 포탈
+	# 완결 컷신, which RE-locks time_running for its ~3.6s of preview cards before restoring it. The
+	# preview flag is set synchronously with the purify flag, so wait for the completion cutscene to
+	# engage (time_running re-locked to false) THEN fully finish (restored true) — 확실한 복구 검증.
+	for i in range(30):    # let the 완결 컷신 engage its re-lock (few frames)
+		await get_tree().process_frame
+		if not GameState.time_running:
+			break
+	for i in range(90):    # then wait for it to finish and restore
+		if GameState.time_running:
+			break
+		await get_tree().create_timer(0.1).timeout
+	_check("정화 + 다섯 포탈 완결 컷신 후 time_running 복구 (v0.6.1 페어링)", GameState.time_running)
+
+	# ---- 정화 → 포탈 전파: divinity OPEN (마지막 레이어, 다음 포탈 없음) --------------------
+	_check("정화 후 divinity 포탈 OPEN (자유 왕래, 마지막 레이어)",
+		GameState.portal_state("divinity") == GameState.PORTAL_OPEN,
+		"divinity=%s" % GameState.portal_state("divinity"))
+
+	# ---- §C-4 다섯 포탈 전점등 + 빛의 문 예고 (5레이어 완결, 5-AND) -----------------------
+	_check("5레이어 완결 → 다섯 포탈 전점등 발동 (빛의 문 예고 플래그 set)",
+		GameState.light_gate_previewed_flag)
+	_check("§C-4 five_portals_lit 시그널 발화 (관찰됨)", lit[0])
+	_check("다섯 포탈 전부 OPEN (자연/과학/기계/마법/신성)",
+		GameState.portal_state("nature") == GameState.PORTAL_OPEN \
+		and GameState.portal_state("science") == GameState.PORTAL_OPEN \
+		and GameState.portal_state("machine") == GameState.PORTAL_OPEN \
+		and GameState.portal_state("magic") == GameState.PORTAL_OPEN \
+		and GameState.portal_state("divinity") == GameState.PORTAL_OPEN,
+		"n=%s s=%s ma=%s mg=%s d=%s" % [GameState.portal_state("nature"),
+			GameState.portal_state("science"), GameState.portal_state("machine"),
+			GameState.portal_state("magic"), GameState.portal_state("divinity")])
+
+	GameState.layer5_purified.disconnect(pur_cb)
+	GameState.five_portals_lit.disconnect(lit_cb)
+
+	# ---- save → re-enter cathedral → assert L5 state persisted -------------------------
+	WorldContext.current_scene = WorldContext.SCENE_CATHEDRAL
+	SaveManager.save_game()
+	var d := SaveManager.build_save_dict()
+	_check("세이브 dict = v2 (멀티씬) + L5 상태 + vita + 빛의 문 예고",
+		int(d.get("version", 0)) == 2 and d.has("powered_nodes") \
+		and (d["powered_nodes"] as Dictionary).has("lantern_path") \
+		and (d["powered_nodes"] as Dictionary).has("great_altar") \
+		and bool(d.get("layer5_purified", false)) \
+		and bool(d.get("light_gate_previewed", false)) \
+		and int((d.get("whisper", {}) as Dictionary).get("vita", -1)) >= 0)
+	SaveManager.unregister_world()
+	_scene.queue_free()
+	_scene = null
+	await _frames(2)
+
+	# Clobber L5 state, re-enter, load → the powered nodes + 정화 + 빛의 문 예고 restore.
+	GameState.reset_layer5()
+	GameState.powered_nodes.erase("lantern_path")
+	GameState.powered_nodes.erase("life_spring")
+	GameState.powered_nodes.erase("great_altar")
+	_check("클로버: reset_layer5 → 정화 + 빛의 문 예고 플래그 clear",
+		not GameState.layer5_purified_flag and not GameState.light_gate_previewed_flag)
+	WorldContext.current_scene = WorldContext.SCENE_CATHEDRAL
+	WorldContext.arrival_mode = "portal_arrival"
+	SaveManager.pending_load = true
+	_scene = load(CATHEDRAL).instantiate()
+	add_child(_scene)
+	await _frames(6)
+	SaveManager.load_game()
+	await _frames(2)
+	_check("re-enter L5: 정화 플래그 지속", GameState.layer5_purified_flag)
+	_check("re-enter L5: 빛의 문 예고 플래그 지속", GameState.light_gate_previewed_flag)
+	_check("re-enter L5: lantern_path power node 지속", GameState.is_power_node_energized("lantern_path"))
+	_check("re-enter L5: great_altar power node 지속", GameState.is_power_node_energized("great_altar"))
+	_check("re-enter L5: divinity 포탈 OPEN 지속",
+		GameState.portal_state("divinity") == GameState.PORTAL_OPEN)
+
+	# Tear the cathedral down; step 7 continues in the grove for the L1 save/load roundtrip.
+	SaveManager.unregister_world()
+	_scene.queue_free()
+	_scene = null
+	await _frames(2)
+	# Re-boot the grove so step 7 (which asserts grove facts) has its world back.
+	WorldContext.current_scene = WorldContext.SCENE_GROVE
+	WorldContext.arrival_mode = "portal_arrival"
+	SaveManager.pending_load = true
+	_scene = load(GROVE).instantiate()
+	add_child(_scene)
+	await _frames(4)
+	_loader = _scene.get_node("Ground") as MapLoader
+	_player = _scene.get_node("YSortLayer/Player") as Player
+	_interaction = _scene.get_node("Interaction") as InteractionController
+	_touch = _scene.get_node("TouchController") as TouchController
+	_respawn = _scene.get_node("ObjectRespawn") as ObjectRespawn
+	SaveManager.register_world(_loader, _player, _respawn)
+	SaveManager.load_game()
+	await _frames(2)
+
+
 # ---- L2 helpers -----------------------------------------------------------
 
 func _l2_cells(arr: Array) -> Array:
@@ -1619,8 +1888,8 @@ func _step7_save_load_persist() -> void:
 func _step8_ng_plus() -> void:
 	_banner(8, "NG+ start → run=2, exactly 3 recipes carried (subset), world reset")
 
-	# The discovered set from this run = the UNION of L1 + L2 recipes crafted in this single
-	# continuous playthrough (both chains fed the SAME codex). Assert both layers are represented.
+	# The discovered set from this run = the UNION of L1~L5 recipes crafted in this single
+	# continuous playthrough (all five chains fed the SAME codex). Assert every layer is represented.
 	var discovered: Array = Codex.to_dict().get("recipes", [])
 	_check("run discovered >= 5 recipes (clear chain)", discovered.size() >= 5,
 		"discovered=%d" % discovered.size())
@@ -1628,6 +1897,7 @@ func _step8_ng_plus() -> void:
 	var has_l2 := false
 	var has_l3 := false
 	var has_l4 := false
+	var has_l5 := false
 	for rid in discovered:
 		if String(rid).begins_with("L2-"):
 			has_l2 = true
@@ -1635,15 +1905,21 @@ func _step8_ng_plus() -> void:
 			has_l3 = true
 		if String(rid).begins_with("L4-"):
 			has_l4 = true
-	_check("NG+ pool = 네 레이어 union (L1 + L2 + L3 + L4 레시피 모두 discovered)",
-		has_l1 and has_l2 and has_l3 and has_l4,
-		"L1=%s L2=%s L3=%s L4=%s discovered=%d" % [has_l1, has_l2, has_l3, has_l4, discovered.size()])
+		if String(rid).begins_with("L5-"):
+			has_l5 = true
+	_check("NG+ pool = 다섯 레이어 union (L1 + L2 + L3 + L4 + L5 레시피 모두 discovered)",
+		has_l1 and has_l2 and has_l3 and has_l4 and has_l5,
+		"L1=%s L2=%s L3=%s L4=%s L5=%s discovered=%d" % [has_l1, has_l2, has_l3, has_l4, has_l5, discovered.size()])
 	var prev_run := SaveManager.run_number
 	# Layer-2 state present pre-NG+ (so we can prove NG+ resets it).
 	var l2_before_ng := GameState.is_power_node_energized("bridge") \
 		or GameState.portal_state("machine") == GameState.PORTAL_FLICKERING
 	# L4 state present pre-NG+ (magic purified this run) so we can prove NG+ resets Layer 4 too.
 	var l4_purified_before_ng := GameState.layer4_purified_flag
+	# L5 state present pre-NG+ (divinity purified + 다섯 포탈 예고 fired this run) so we can prove NG+
+	# resets Layer 5 + the 빛의 문 예고 flag too.
+	var l5_purified_before_ng := GameState.layer5_purified_flag
+	var l5_previewed_before_ng := GameState.light_gate_previewed_flag
 
 	var carried := SaveManager.start_ng_plus()
 
@@ -1665,6 +1941,13 @@ func _step8_ng_plus() -> void:
 		and not GameState.is_power_node_energized("seal_core") \
 		and not GameState.is_power_node_energized("rune_bridge"),
 		"before=%s after=%s" % [l4_purified_before_ng, GameState.layer4_purified_flag])
+	_check("NG+ resets Layer 5 (대성당 정화 플래그 + 빛의 문 예고 clear + 봉헌 노드 clear)",
+		l5_purified_before_ng and l5_previewed_before_ng \
+		and not GameState.layer5_purified_flag and not GameState.light_gate_previewed_flag \
+		and not GameState.is_power_node_energized("great_altar") \
+		and not GameState.is_power_node_energized("lantern_path"),
+		"pur=%s→%s prev=%s→%s" % [l5_purified_before_ng, GameState.layer5_purified_flag,
+			l5_previewed_before_ng, GameState.light_gate_previewed_flag])
 	_check("NG+ resets portal line (nature flickering, science/machine/magic/divinity dormant)",
 		GameState.portal_state("nature") == GameState.PORTAL_FLICKERING \
 		and GameState.portal_state("science") == GameState.PORTAL_DORMANT \
