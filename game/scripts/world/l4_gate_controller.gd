@@ -326,6 +326,8 @@ func _spawn_mana_beam(source: Node, to_world: Vector2) -> void:
 ## x tiles walkable; else re-seal. Same held-item判定 as L2's랜턴 (no lantern → wall), only via
 ## tile-source swap here (the L/x cells carry the dark/crack sources).
 func _process(_delta: float) -> void:
+	if not is_instance_valid(_loader):
+		return
 	var warded := _has_charm()
 	if warded and not _g3_open:
 		_g3_open = true
@@ -484,6 +486,9 @@ func _tex_if_exists(path: String) -> Texture2D:
 
 
 func _find_node(l4id: String) -> Node:
+	# Guard against a torn-down loader (deferred signal firing during scene teardown).
+	if not is_instance_valid(_loader):
+		return null
 	for key in _loader.l2_object_nodes.keys():
 		if String(key).split("@")[0] == l4id:
 			return _loader.l2_object_nodes[key].get("node")

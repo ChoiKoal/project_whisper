@@ -33,6 +33,7 @@ const HOME := "res://scenes/world/home_island.tscn"
 const OPENING := "res://scenes/ui/opening.tscn"
 const TERMINAL := "res://scenes/world/terminal_station.tscn"  # (L2-6) science world
 const CLOCKWORK := "res://scenes/world/clockwork_city.tscn"   # (L3-6) machine world
+const MAGE_TOWER := "res://scenes/world/mage_tower.tscn"      # (L4) magic world
 
 var _fail := 0
 var _step := 0
@@ -79,6 +80,7 @@ func _run() -> void:
 	await _stepR_return_and_ignition()      # CS-04 done → return home → CS-05 (portal ignition)
 	await _stepL2_science_journey()         # (L2-6) enter science portal → terminal_station → G1..G4 → 정화 → re-enter persist
 	await _stepL3_machine_journey()         # (L3-6) enter machine portal → clockwork_city → G1..G4 → 정화 → re-enter persist
+	await _stepL4_magic_journey()           # (L4) enter magic portal → mage_tower → G1..G4 → 정화 → re-enter persist
 	await _step7_save_load_persist()
 	await _step8_ng_plus()
 	_cleanup()
@@ -1248,6 +1250,277 @@ func _stepL3_machine_journey() -> void:
 	await _frames(2)
 
 
+## The fourth layer 「봉인이 풀린 마탑」. Mirrors _stepL3_machine_journey: boots the REAL
+## mage_tower.tscn (magic destination), drives the four 봉인/결계 게이트 through the SAME
+## item_used_on_object framework onto the L4 gate controller's use-targets, crafts the gate keys
+## with real Fusion (discovering L4 recipes into the same codex), earns the MANA Whisper at G2
+## (first mana ever) and spends it at G4 (whisper_cost.mana 1), reconstructs the innermost seal
+## (정화 = re-sealing), and asserts portal propagation (magic OPEN + divinity FLICKERING). Then a
+## save → clobber → re-enter roundtrip proves L4 state persists. Ends by re-booting the grove so
+## step 7 (which asserts grove facts) has its world back.
+func _stepL4_magic_journey() -> void:
+	_banner(94, "magic 포탈(flickering) → mage_tower → G1..G4 → L4 정화 → re-enter persist")
+
+	# Precondition from the L3 journey: magic portal FLICKERING (next dead world awoke).
+	_check("magic 포탈 flickering (L3 정화 전파로 깨어남)",
+		GameState.portal_state("magic") == GameState.PORTAL_FLICKERING,
+		"magic=%s" % GameState.portal_state("magic"))
+
+	# Boot the REAL mage_tower (magic destination). Its session activates the L4 line.
+	WorldContext.current_scene = WorldContext.SCENE_MAGE_TOWER
+	WorldContext.travel_layer = "magic"
+	WorldContext.arrival_mode = "portal_arrival"
+	SaveManager.pending_load = false
+	_scene = load(MAGE_TOWER).instantiate()
+	add_child(_scene)
+	await _frames(6)   # loader spawns objects; gate controller + session wire deferred
+
+	var m_loader := _scene.get_node("Ground") as MapLoader
+	var gates := _scene.get_node_or_null("L4GateController")
+	_check("mage_tower booted (loader + L4GateController)", m_loader != null and gates != null)
+	if m_loader == null or gates == null:
+		return
+
+	var purified := [false]
+	var pur_cb := func(_l): purified[0] = true
+	GameState.layer4_purified.connect(pur_cb)
+
+	# L4 속삭임 라인 활성 (첫 진입) + L1/L2/L3 라인 4중 공존 (독립 포인터).
+	_check("첫 L4 진입 → L4-Q1 활성 (L4 라인 시작)", QuestManager.l4_active_id == "L4-Q1",
+		"l4_active=%s" % QuestManager.l4_active_id)
+	# All four whisper lines coexist on independent pointers. L3 may already be COMPLETE (empty
+	# pointer) since the L3 journey ran its line to L3-Q7; the invariant is that each line owns its
+	# own pointer and none collides with L4's fresh head.
+	_check("L1 + L2 + L3 + L4 라인 4중 공존 (독립 포인터, L3 완주 후 빈 포인터 허용)",
+		QuestManager.active_id == "P2" \
+		and QuestManager.l2_active_id.begins_with("L2-") \
+		and (QuestManager.l3_active_id == "" or QuestManager.l3_active_id.begins_with("L3-")) \
+		and QuestManager.l4_active_id == "L4-Q1" \
+		and QuestManager.l4_active_id != QuestManager.l2_active_id \
+		and QuestManager.l4_active_id != QuestManager.active_id,
+		"L1=%s L2=%s L3=%s L4=%s" % [QuestManager.active_id, QuestManager.l2_active_id,
+			QuestManager.l3_active_id, QuestManager.l4_active_id])
+
+	# ---- L4 속삭임 라인 진행 (SAME signals, independent pointer) --------------------------
+	GameState.item_gathered.emit("P1")
+	_check("L4-Q1(첫 채집) 완료 → L4-Q2 활성", QuestManager.l4_active_id == "L4-Q2",
+		"l4_active=%s" % QuestManager.l4_active_id)
+
+	# ---- G1 룬 다리: 룬 다리석 D141 = 룬 접합재(P1+P3, R01→D140) + 마력결정(P6, R02) ----------
+	Inventory.clear()
+	Inventory.add("P1", 1); Inventory.add("P3", 1)
+	var r_d140 := Fusion.fuse("P1", "P3")
+	Inventory.add("P6", 1)
+	var r_d141 := Fusion.fuse("D140", "P6")
+	_check("real L4 craft: 룬 다리석 D141 (접합재→다리석 다단)",
+		r_d140.get("output","") == "D140" and r_d141.get("output","") == "D141" \
+		and Inventory.count("D141") >= 1)
+	GameState.item_crafted.emit("D140", "L4-R01")
+	_check("L4-Q2(첫 조합) 완료 → L4-Q3 활성", QuestManager.l4_active_id == "L4-Q3",
+		"l4_active=%s" % QuestManager.l4_active_id)
+
+	var g1: Dictionary = m_loader.legend_gates().get("G1", {})
+	var bridge_cells := _l2_cells(g1.get("bridge_cells", []))
+	var bridge_before := bridge_cells.size() > 0 and m_loader.is_cell_walkable(bridge_cells[0])
+	var altar := _l4_use_target(m_loader, "rune_altar")
+	_check("G1 룬 제단 use-target wired", altar != null)
+	if altar != null:
+		Inventory.remove("D141", 1)
+		GameState.item_used_on_object.emit("D141", altar)
+	await get_tree().create_timer(1.4).timeout   # staggered bridge-deck light timers use real time
+	var bridge_walk := bridge_cells.size() > 0
+	for c in bridge_cells:
+		if not m_loader.is_cell_walkable(c):
+			bridge_walk = false
+	_check("G1 룬 다리석 설치 → 금색 룬 다리 전개 후 잔교 walkable (물리+AStar)",
+		bridge_walk and not bridge_before, "n=%d" % bridge_cells.size())
+	_check("rune_bridge power node energized", GameState.is_power_node_energized("rune_bridge"))
+	_check("L4-Q3(룬 다리) 완료", QuestManager.is_done("L4-Q3"))
+
+	# ---- G2 결계 분수: 정화의 물 D143(P2+P6) 사용 → 밸브문 개방 + 마력 Whisper +1 (첫 마력) ------
+	Inventory.add("P2", 1); Inventory.add("P6", 1)
+	var r_d143 := Fusion.fuse("P2", "P6")
+	_check("real L4 craft: 정화의 물 D143", r_d143.get("output","") == "D143" \
+		and Inventory.count("D143") >= 1)
+	var mana_before := WhisperCurrency.mana
+	var spring := _l4_use_target(m_loader, "mana_spring")
+	_check("G2 마력샘 use-target wired", spring != null)
+	if spring != null:
+		Inventory.remove("D143", 1)
+		GameState.item_used_on_object.emit("D143", spring)
+	for i in range(6):
+		await get_tree().process_frame
+	var g2: Dictionary = m_loader.legend_gates().get("G2", {})
+	var door_cells := _l2_cells(g2.get("door_cells", []))
+	var door_open := door_cells.size() > 0
+	for c in door_cells:
+		if not m_loader.is_cell_walkable(c):
+			door_open = false
+	_check("G2 마력샘 정화 → 결계 밸브문 개방 (walkable)", door_open)
+	_check("G2 보상: 마력 Whisper +1 (첫 마력, §보완 필수)",
+		WhisperCurrency.mana == mana_before + 1, "mana=%d" % WhisperCurrency.mana)
+
+	# ---- G3 균열 통과: 보호 부적 D145 = 부적 심(P4+P1, R03→D142) + 마력결정(P6, R06) 소지형 ------
+	Inventory.add("P4", 1); Inventory.add("P1", 1)
+	var r_d142 := Fusion.fuse("P4", "P1")
+	Inventory.add("P6", 1)
+	var r_d145 := Fusion.fuse("D142", "P6")
+	_check("real L4 craft: 보호 부적 D145 (부적 심→부적 다단)",
+		r_d142.get("output","") == "D142" and r_d145.get("output","") == "D145" \
+		and Inventory.count("D145") >= 1)
+	var g3: Dictionary = m_loader.legend_gates().get("G3", {})
+	var crack_cells := _l2_cells(g3.get("crack_cells", []))
+	var crack_before := crack_cells.size() > 0 and m_loader.is_cell_walkable(crack_cells[0])
+	# 소지형: holding the charm opens the crack (per-frame poll), dropping it re-seals.
+	for i in range(4):
+		await get_tree().process_frame
+	var crack_walk := crack_cells.size() > 0
+	for c in crack_cells:
+		if not m_loader.is_cell_walkable(c):
+			crack_walk = false
+	_check("G3 보호 부적 소지 → 균열 병목 walkable (통과, 소지형)",
+		crack_walk and not crack_before, "n=%d" % crack_cells.size())
+
+	# ---- G4 최심부 봉인: 최심부 봉인구 D148 = 봉인구 뼈대(P1+P5, R07→D146)² + 마력(cost 1) --------
+	Inventory.add("P1", 1); Inventory.add("P5", 1)
+	var r_d146a := Fusion.fuse("P1", "P5")   # 봉인구 뼈대 #1
+	Inventory.add("P1", 1); Inventory.add("P5", 1)
+	Fusion.fuse("P1", "P5")                  # 봉인구 뼈대 #2
+	_check("real L4 craft: 봉인구 뼈대 D146 ×2 (최심부 재료)",
+		r_d146a.get("output","") == "D146" and Inventory.count("D146") == 2,
+		"D146=%d" % Inventory.count("D146"))
+	var mana_at_core := WhisperCurrency.mana
+	var r_seal := Fusion.fuse("D146", "D146")   # 최심부 봉인구 D148 (whisper_cost mana 1)
+	_check("real L4 craft: 최심부 봉인구 D148 (whisper_cost 마력 1 소모)",
+		r_seal.get("output","") == "D148" and Inventory.count("D148") >= 1 \
+		and WhisperCurrency.mana == mana_at_core - 1,
+		"mana %d→%d" % [mana_at_core, WhisperCurrency.mana])
+
+	# 마력 0 시 거부 (mana-gated recipe refusal): the single mana Whisper is spent — a second seal
+	# must be a CLEAN no-op. Affordability is checked BEFORE inputs are consumed, so a fresh 뼈대²
+	# survives intact and the codex/inventory don't grow. Proves the whisper_cost.mana gate rejects
+	# (not asserts) on shortfall.
+	_check("마력 0 확인 (재발급 없음)", WhisperCurrency.mana == 0, "mana=%d" % WhisperCurrency.mana)
+	Inventory.add("P1", 1); Inventory.add("P5", 1); Fusion.fuse("P1", "P5")
+	Inventory.add("P1", 1); Inventory.add("P5", 1); Fusion.fuse("P1", "P5")
+	var d146_before_refusal := Inventory.count("D146")
+	var d148_before_refusal := Inventory.count("D148")
+	var r_refused := Fusion.fuse("D146", "D146")
+	_check("G4 마력 0 → 최심부 봉인구 조합 거부 (마력이 부족하다, clean no-op)",
+		String(r_refused.get("failure_reason", "")) == "마력이 부족하다" \
+		and not bool(r_refused.get("matched", false)) \
+		and String(r_refused.get("output", "")) == "" \
+		and Inventory.count("D146") == d146_before_refusal \
+		and Inventory.count("D148") == d148_before_refusal,
+		"reason=%s D146 %d→%d" % [r_refused.get("failure_reason", ""),
+			d146_before_refusal, Inventory.count("D146")])
+	# Drop the leftover 뼈대² so downstream inventory assertions stay clean.
+	Inventory.remove("D146", Inventory.count("D146"))
+
+	# Install the 최심부 봉인구 → seal_core energize → purification cutscene (re-sealing).
+	_check("정화 전 layer4_purified_flag = false", not GameState.layer4_purified_flag)
+	var mount := _l4_use_target(m_loader, "seal_mount")
+	_check("G4 봉인 코어 배전반 use-target wired", mount != null)
+	if mount != null:
+		Inventory.remove("D148", 1)
+		GameState.item_used_on_object.emit("D148", mount)
+	for i in range(60):
+		await get_tree().create_timer(0.1).timeout
+		if GameState.layer4_purified_flag:
+			break
+	_check("G4 최심부 봉인 재구축 → Layer 4 정화 플래그 set", GameState.layer4_purified_flag)
+	_check("정화 컷신 → layer4_purified 시그널 발화", purified[0])
+	_check("정화 컷신 후 time_running 복구 (v0.6.1 페어링)", GameState.time_running)
+
+	# ---- 정화 → 포탈 전파: magic OPEN, divinity(Layer 5) flickering ---------------------
+	_check("정화 후 magic 포탈 OPEN (자유 왕래)",
+		GameState.portal_state("magic") == GameState.PORTAL_OPEN,
+		"magic=%s" % GameState.portal_state("magic"))
+	_check("정화 후 divinity(Layer 5) 포탈 flickering (다음 세계 깨어남)",
+		GameState.portal_state("divinity") == GameState.PORTAL_FLICKERING,
+		"divinity=%s" % GameState.portal_state("divinity"))
+
+	GameState.layer4_purified.disconnect(pur_cb)
+
+	# ---- save → re-enter mage_tower → assert L4 state persisted ------------------------
+	WorldContext.current_scene = WorldContext.SCENE_MAGE_TOWER
+	SaveManager.save_game()
+	var d := SaveManager.build_save_dict()
+	_check("세이브 dict = v2 (멀티씬) + L4 상태 + mana",
+		int(d.get("version", 0)) == 2 and d.has("powered_nodes") \
+		and (d["powered_nodes"] as Dictionary).has("rune_bridge") \
+		and (d["powered_nodes"] as Dictionary).has("seal_core") \
+		and bool(d.get("layer4_purified", false)) \
+		and int((d.get("whisper", {}) as Dictionary).get("mana", -1)) >= 0)
+	SaveManager.unregister_world()
+	_scene.queue_free()
+	_scene = null
+	await _frames(2)
+
+	# Clobber L4 state, re-enter, load → the powered nodes + 정화 플래그 restore.
+	GameState.reset_layer4()
+	GameState.powered_nodes.erase("rune_bridge")
+	GameState.powered_nodes.erase("mana_spring")
+	GameState.powered_nodes.erase("seal_core")
+	_check("클로버: reset_layer4 → 정화 플래그 clear", not GameState.layer4_purified_flag)
+	WorldContext.current_scene = WorldContext.SCENE_MAGE_TOWER
+	WorldContext.arrival_mode = "portal_arrival"
+	SaveManager.pending_load = true
+	_scene = load(MAGE_TOWER).instantiate()
+	add_child(_scene)
+	await _frames(6)
+	SaveManager.load_game()
+	await _frames(2)
+	_check("re-enter L4: 정화 플래그 지속", GameState.layer4_purified_flag)
+	_check("re-enter L4: rune_bridge power node 지속", GameState.is_power_node_energized("rune_bridge"))
+	_check("re-enter L4: seal_core power node 지속", GameState.is_power_node_energized("seal_core"))
+	_check("re-enter L4: magic 포탈 OPEN 지속",
+		GameState.portal_state("magic") == GameState.PORTAL_OPEN)
+	# The single mana Whisper earned at G2 was spent at G4 (whisper_cost.mana 1), so the balance
+	# round-trips as 0 — the invariant is that the mana ledger persists exactly (no phantom regrant).
+	_check("re-enter L4: mana Whisper 원장 지속 (G2 획득 → G4 소모 = 0, 재발급 없음)",
+		WhisperCurrency.mana == 0, "mana=%d" % WhisperCurrency.mana)
+
+	# Tear the tower down; step 7 continues in the grove for the L1 save/load roundtrip.
+	SaveManager.unregister_world()
+	_scene.queue_free()
+	_scene = null
+	await _frames(2)
+	# Re-boot the grove so step 7 (which asserts grove facts) has its world back.
+	WorldContext.current_scene = WorldContext.SCENE_GROVE
+	WorldContext.arrival_mode = "portal_arrival"
+	SaveManager.pending_load = true
+	_scene = load(GROVE).instantiate()
+	add_child(_scene)
+	await _frames(4)
+	_loader = _scene.get_node("Ground") as MapLoader
+	_player = _scene.get_node("YSortLayer/Player") as Player
+	_interaction = _scene.get_node("Interaction") as InteractionController
+	_touch = _scene.get_node("TouchController") as TouchController
+	_respawn = _scene.get_node("ObjectRespawn") as ObjectRespawn
+	SaveManager.register_world(_loader, _player, _respawn)
+	SaveManager.load_game()
+	await _frames(2)
+
+
+## L4 use-target finder — like _l2_use_target but also searches the ysort layer for the
+## controller-spawned rune_altar / seal_mount sprites (not in l2_object_nodes).
+func _l4_use_target(loader: MapLoader, object_id: String) -> Node:
+	var t := _l2_use_target(loader, object_id)
+	if t != null:
+		return t
+	var ys := loader.get_node_or_null(loader.ysort_layer_path) as Node2D
+	if ys != null:
+		for child in ys.get_children():
+			if child is Sprite2D and child.has_meta("object_id") \
+					and String(child.get_meta("object_id")) == object_id:
+				for ch in child.get_children():
+					if ch is Gatherable and String((ch as Gatherable).object_id) == object_id:
+						return ch
+				return child
+	return null
+
+
 # ---- L2 helpers -----------------------------------------------------------
 
 func _l2_cells(arr: Array) -> Array:
@@ -1354,18 +1627,23 @@ func _step8_ng_plus() -> void:
 	var has_l1 := ("R28" in discovered) or ("R36" in discovered) or ("R34" in discovered)
 	var has_l2 := false
 	var has_l3 := false
+	var has_l4 := false
 	for rid in discovered:
 		if String(rid).begins_with("L2-"):
 			has_l2 = true
 		if String(rid).begins_with("L3-"):
 			has_l3 = true
-	_check("NG+ pool = 세 레이어 union (L1 + L2 + L3 레시피 모두 discovered)",
-		has_l1 and has_l2 and has_l3,
-		"L1=%s L2=%s L3=%s discovered=%d" % [has_l1, has_l2, has_l3, discovered.size()])
+		if String(rid).begins_with("L4-"):
+			has_l4 = true
+	_check("NG+ pool = 네 레이어 union (L1 + L2 + L3 + L4 레시피 모두 discovered)",
+		has_l1 and has_l2 and has_l3 and has_l4,
+		"L1=%s L2=%s L3=%s L4=%s discovered=%d" % [has_l1, has_l2, has_l3, has_l4, discovered.size()])
 	var prev_run := SaveManager.run_number
 	# Layer-2 state present pre-NG+ (so we can prove NG+ resets it).
 	var l2_before_ng := GameState.is_power_node_energized("bridge") \
 		or GameState.portal_state("machine") == GameState.PORTAL_FLICKERING
+	# L4 state present pre-NG+ (magic purified this run) so we can prove NG+ resets Layer 4 too.
+	var l4_purified_before_ng := GameState.layer4_purified_flag
 
 	var carried := SaveManager.start_ng_plus()
 
@@ -1382,12 +1660,20 @@ func _step8_ng_plus() -> void:
 		l2_before_ng and not GameState.is_power_node_energized("bridge") \
 		and not GameState.is_power_node_energized("control_core") \
 		and not GameState.layer2_purified_flag)
-	_check("NG+ resets portal line (nature flickering, science/machine dormant)",
+	_check("NG+ resets Layer 4 (마탑 정화 플래그 clear + seal 노드 clear)",
+		l4_purified_before_ng and not GameState.layer4_purified_flag \
+		and not GameState.is_power_node_energized("seal_core") \
+		and not GameState.is_power_node_energized("rune_bridge"),
+		"before=%s after=%s" % [l4_purified_before_ng, GameState.layer4_purified_flag])
+	_check("NG+ resets portal line (nature flickering, science/machine/magic/divinity dormant)",
 		GameState.portal_state("nature") == GameState.PORTAL_FLICKERING \
 		and GameState.portal_state("science") == GameState.PORTAL_DORMANT \
-		and GameState.portal_state("machine") == GameState.PORTAL_DORMANT)
-	_check("NG+ resets Whisper 재화 (에너지 0)", WhisperCurrency.energy == 0,
-		"energy=%d" % WhisperCurrency.energy)
+		and GameState.portal_state("machine") == GameState.PORTAL_DORMANT \
+		and GameState.portal_state("magic") == GameState.PORTAL_DORMANT \
+		and GameState.portal_state("divinity") == GameState.PORTAL_DORMANT)
+	_check("NG+ resets Whisper 재화 (에너지 0 + 마력 0)",
+		WhisperCurrency.energy == 0 and WhisperCurrency.mana == 0,
+		"energy=%d mana=%d" % [WhisperCurrency.energy, WhisperCurrency.mana])
 	var fresh: Array = Codex.to_dict().get("recipes", [])
 	_check("NG+ fresh codex has exactly the 3 carried discovered", fresh.size() == 3,
 		"fresh=%d" % fresh.size())
