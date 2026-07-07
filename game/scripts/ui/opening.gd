@@ -59,12 +59,77 @@ var _card_tween: Tween
 var _finishing: bool = false
 ## Guards re-entrant advance() (a click landing mid-transition).
 var _busy: bool = false
+## (CQ-3 G1/G2) True during the pre-card CS-01 intro (purple-dot heartbeat → island
+## silhouette). A click / ESC during the intro fast-forwards straight to the cards.
+var _intro_playing: bool = false
+var _intro_done: bool = false
+## The faint island silhouette + starfield revealed under the second card (G2).
+var _stars: Node2D
+var _isle: Node2D
 
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	_build()
-	_show_card(0)
+	_play_intro()
+
+
+## (CQ-3 G1) CS-01 opening: 검은 화면. 아주 작은 보라 점 하나가 심장박동처럼 두 번 깜빡인다.
+## (G2) 점이 커지며 흐릿한 부유섬 실루엣으로, 별하늘 배경. Then the cards proceed.
+func _play_intro() -> void:
+	_intro_playing = true
+	# 낮은 톤의 단음 (best-effort — reuses the portal hum as a low single tone).
+	if AudioManager != null and AudioManager.has_method("play_sfx"):
+		AudioManager.play_sfx("portal_hum")
+	# 보라 점 심장박동 2회 (shared Director rhythm — E2 「대답」이 이걸 회수한다).
+	await CutsceneDirector.purple_dot_heartbeat(self, self, 2)
+	if _finishing:
+		return
+	# 점이 커지며 → 흐릿한 부유섬 실루엣 + 별하늘 페이드인 (아주 낮은 대비).
+	_reveal_starfield_and_isle()
+	if not _intro_done:
+		await get_tree().create_timer(1.4, true, false, true).timeout
+	_intro_playing = false
+	_intro_done = true
+	if not _finishing:
+		_show_card(0)
+
+
+## Build a faint starfield + a floating-island silhouette behind the cards, fading them in.
+## Drawn once with a small Node2D that scatters dim star dots + a dark isle diamond.
+func _reveal_starfield_and_isle() -> void:
+	if _stars != null:
+		return
+	_stars = _StarfieldIsle.new()
+	_stars.modulate.a = 0.0
+	# Sit just above the backdrop, below the text label.
+	add_child(_stars)
+	move_child(_stars, 1)
+	var tw := create_tween()
+	tw.tween_property(_stars, "modulate:a", 0.5, 1.6).set_trans(Tween.TRANS_SINE)
+
+
+## A tiny procedural starfield + floating-island silhouette (CS-01 별하늘 + 부유섬). Node2D so
+## it draws over the ColorRect backdrop; deterministic seed so the sky is stable per boot.
+class _StarfieldIsle extends Node2D:
+	func _draw() -> void:
+		var vp := get_viewport()
+		var sz: Vector2 = vp.get_visible_rect().size if vp != null else Vector2(1600, 900)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 0x5748  # "WH" — stable sky
+		for i in range(90):
+			var p := Vector2(rng.randf() * sz.x, rng.randf() * sz.y * 0.9)
+			var a := rng.randf_range(0.25, 0.9)
+			draw_circle(p, rng.randf_range(0.6, 1.6), Color(0.85, 0.86, 0.95, a))
+		# Floating-island silhouette: a dark iso diamond low-centre with a tapered underside.
+		var c := Vector2(sz.x * 0.5, sz.y * 0.62)
+		var hw := sz.x * 0.13
+		var hh := sz.y * 0.045
+		var top := c + Vector2(0, -hh)
+		var isle := PackedVector2Array([
+			c + Vector2(-hw, 0), top, c + Vector2(hw, 0),
+			c + Vector2(hw * 0.6, hh * 1.4), c + Vector2(0, hh * 3.2), c + Vector2(-hw * 0.6, hh * 1.4)])
+		draw_colored_polygon(isle, Color(0.05, 0.05, 0.09, 0.85))
 
 
 func _build() -> void:
@@ -156,6 +221,14 @@ func _drift_tint(i: int) -> void:
 ## already on the last card, ends the sequence (→ grove).
 func advance() -> void:
 	if _finishing:
+		return
+	# During the CS-01 intro (heartbeat/silhouette), a click fast-forwards to the first card.
+	if _intro_playing and not _intro_done:
+		_intro_done = true
+		_intro_playing = false
+		if _stars != null and is_instance_valid(_stars):
+			_stars.modulate.a = 0.5
+		_show_card(0)
 		return
 	if _card_tween != null and _card_tween.is_valid():
 		_card_tween.kill()
