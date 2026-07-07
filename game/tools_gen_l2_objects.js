@@ -8,6 +8,9 @@
 // Produces into assets/objects/  (l2_*.png). Run: node tools_gen_l2_objects.js
 const zlib = require('zlib'), fs = require('fs'), path = require('path');
 const OUT = path.join(process.env.ART_OUT_DIR || __dirname, 'assets', 'objects');
+// AP-2 (v1.2.0 아트 정합): 정면뷰 기계 박스 → 3/4 아이소 박스/실린더. 공용 헬퍼 재사용.
+const ISO = require('./tools_iso_lib.js');
+const { isoBox, isoCylinder, topDiamond, darker: dk } = ISO;
 
 function crc32(b){let c=~0;for(let i=0;i<b.length;i++){c^=b[i];for(let k=0;k<8;k++)c=(c>>>1)^(0xEDB88320&-(c&1));}return(~c)>>>0;}
 function chunk(t,d){const l=Buffer.alloc(4);l.writeUInt32BE(d.length,0);const tb=Buffer.from(t,'ascii');const body=Buffer.concat([tb,d]);const cr=Buffer.alloc(4);cr.writeUInt32BE(crc32(body),0);return Buffer.concat([l,body,cr]);}
@@ -41,17 +44,20 @@ function deterministic(seed){let s=seed;return()=>{s=(s*1103515245+12345)&0x7fff
   for(let i=0;i<22;i++)px(cv,40+i,61-i*0.5,MSH);
   save(cv,'l2_scrap.png');})();
 
-// ---- s 부품 상자 (parts crate, gatherable). 80×80, lid slightly open. ----
-(function crate(){const W=80,H=80,cv=C(W,H);ao(cv,W/2,74,22,7,70);
-  const bx=22,by=40,bw=36,bh=30;
-  rect(cv,bx,by,bx+bw,by+bh,MMID);// body
-  rect(cv,bx,by,bx+bw,by+3,mix(MMID,MHI,0.5));// top rim lit
-  rect(cv,bx,by,bx+2,by+bh,mix(MMID,MHI,0.3));rect(cv,bx+bw-2,by,bx+bw,by+bh,MSH);
-  // corner brackets
-  for(const cxk of [bx+2,bx+bw-4])for(const cyk of [by+2,by+bh-6])rect(cv,cxk,cyk,cxk+2,cyk+4,mix(MSH,CYAN,0.15));
-  // slightly open lid revealing dark interior + a wire glint
-  rect(cv,bx-1,by-6,bx+bw+1,by+2,MSH);rect(cv,bx+2,by-4,bx+bw-2,by-1,DEEP);
-  px(cv,bx+10,by-3,CYAN,200);px(cv,bx+22,by-2,RUST,200);
+// ---- s 부품 상자 (parts crate, gatherable). 80×80. AP-2: 3/4 아이소 박스 + 열린 뚜껑. ----
+(function crate(){const W=80,H=80,cv=C(W,H);const cx=40;ao(cv,cx,74,22,7,70);
+  // 아이소 박스: 윗면 마름모(cx, topY=40, rx=20) + 측벽 24. 우측 광원면 밝게.
+  const topY=40, rx=20, h=24;
+  isoBox(cv,cx,topY,rx,h,MMID,mix(MMID,MHI,0.5),MSH);
+  const ry=rx/2;
+  // 열린 뚜껑: 윗면 마름모 안쪽으로 어두운 내부(개구부) + 뒤로 젖혀진 뚜껑판
+  for(let y=-ry+3;y<=ry-3;y++)for(let x=-rx+6;x<=rx-6;x++){const d=Math.abs(x)/(rx-6)+Math.abs(y)/(ry-3);if(d<=1)px(cv,cx+x,topY+y,DEEP,255);}
+  // 뒤로 젖혀진 뚜껑(윗면 뒤쪽 가장자리에서 위로) — 얇은 아이소 판
+  for(let x=-rx+4;x<=rx-4;x++){const ey=topY-(ry-Math.abs(x)*ry/rx)-4;px(cv,cx+x,ey,mix(MMID,MHI,0.4));px(cv,cx+x,ey+1,MMID);px(cv,cx+x,ey+2,MSH);}
+  // 내용물 글린트(전선/부품)
+  px(cv,cx-4,topY,CYAN,200);px(cv,cx+6,topY+1,RUST,200);px(cv,cx,topY-2,mix(CYAN,[255,255,255],0.3),180);
+  // 모서리 브래킷(측벽 하단)
+  for(const bxk of [cx-rx+3,cx+rx-5])px(cv,bxk,topY+ry+h-6,mix(MSH,CYAN,0.2),200);
   save(cv,'l2_crate.png');})();
 
 // ---- F 깨진 유리 돔 파편 (broken glass dome fragment, gatherable J3). 96×96. ----
@@ -133,47 +139,50 @@ function screen(on){const W=176,H=160,cv=C(W,H);ao(cv,W/2,152,44,10,70);
   save(cv,on?'l2_screen_on.png':'l2_screen_off.png');}
 screen(false);screen(true);
 
-// ---- 발전기 메인 E (2×2) + 보조 e (1×2), off/on. ----
-function generator(name,W,H,big,on){const cv=C(W,H);ao(cv,W/2,H-8,big?40:22,big?10:7,70);
-  const bw=big?96:52,bh=big?70:56,bx=(W-bw)/2,by=H-14-bh;
-  rect(cv,bx,by,bx+bw,by+bh,MMID);// body
-  rect(cv,bx,by,bx+bw,by+4,mix(MMID,MHI,0.5));rect(cv,bx,by,bx+3,by+bh,mix(MMID,MHI,0.3));rect(cv,bx+bw-3,by,bx+bw,by+bh,MSH);
-  // vent slats
-  for(let i=0;i<5;i++)rect(cv,bx+6,by+10+i*7,bx+bw-6,by+12+i*7,MSH,180);
-  // gauge panel
-  const gx=bx+bw-(big?32:22),gy=by+bh-(big?30:24);
-  rect(cv,gx,gy,gx+(big?24:16),gy+(big?18:14),DKPANEL);
+// ---- 발전기 메인 E (2×2) + 보조 e (1×2), off/on. AP-2: 3/4 아이소 박스(윗면 냉각 그릴). ----
+function generator(name,W,H,big,on){const cv=C(W,H);const cx=W/2;ao(cv,cx,H-8,big?42:24,big?11:8,72);
+  const rx=big?46:28, h=big?58:48;
+  const topY=H-14-h-rx/2;              // bottom-center 접지 유지 (박스 하단 = H-14)
+  const ry=rx/2;
+  isoBox(cv,cx,topY,rx,h,MMID,mix(MMID,MHI,0.5),MSH);
+  // 윗면 냉각 그릴(마름모 평행 슬릿) — 3/4 뷰의 상판
+  for(const off of big?[-14,-4,6,16]:[-8,0,8]){for(let x=-rx+10;x<=rx-10;x++){const y=off - x*0.5;if(Math.abs(x)/rx+Math.abs(y)/ry<=0.82)px(cv,cx+x,topY+y,dk(MMID,0.35),200);}}
+  // 우측 광원면(오른쪽 벽)에 시안 게이지 패널
+  const pw=big?22:14, ph=big?18:14;
+  const px0=cx+ (big?10:6), py0=topY+ry+ (big?18:14);
+  for(let y=0;y<ph;y++)for(let x=0;x<pw;x++){px(cv,px0+x,py0+y+(x)*0.5,DKPANEL,255);}
   const gauge=on?CYAN:hex('#2a3038');
-  // gauge needle / readout
-  glow(cv,gx+(big?12:8),gy+(big?9:7),big?12:8,on?CYAN:hex('#1a2028'),on?150:0);
-  rect(cv,gx+2,gy+2,gx+(big?22:14),gy+4,gauge,on?220:140);
-  if(on){// rotating core glow on top
-    glow(cv,bx+bw*0.4,by+bh*0.4,big?22:14,CYAN,140);
-    // hum particles
-    const r=deterministic(name.length*13);for(let n=0;n<6;n++)px(cv,bx+10+Math.floor(r()*(bw-20)),by-2-Math.floor(r()*10),CYAN,150);
+  for(let i=0;i<3;i++)for(let x=0;x<pw-4;x++){px(cv,px0+2+x,py0+3+i*4+(2+x)*0.5,gauge,on?220:140);}
+  glow(cv,px0+pw/2,py0+ph/2,big?12:8,on?CYAN:hex('#1a2028'),on?150:0);
+  // 좌측 그늘면 리벳 밴드
+  for(let b=0;b<2;b++)for(let x=-rx+5;x<-3;x+=6){px(cv,cx+x,topY+ry+ (big?12:10)+b*14 + (-x)*0.5,MHI,170);}
+  // 배기관: 윗면에서 솟은 아이소 실린더 소형
+  isoCylinder(cv,cx-(big?14:8),topY-(big?18:14),big?9:6,big?18:14,mix(MHI,CYAN,0.1),mix(MMID,MHI,0.4),MSH,1.0);
+  if(on){
+    glow(cv,cx,topY,big?22:14,CYAN,140);             // 윗면 코어 발광
+    const r=deterministic(name.length*13);for(let n=0;n<6;n++)px(cv,cx-rx+10+Math.floor(r()*(2*rx-20)),topY-4-Math.floor(r()*10),CYAN,150);
+    px(cv,cx-(big?14:8),topY-(big?18:14),mix(CYAN,[255,255,255],0.3),200);   // 배기 발광
   }
-  // exhaust stack (main only)
-  if(big){rect(cv,bx+8,by-22,bx+20,by,MSH);rect(cv,bx+8,by-22,bx+12,by,mix(MSH,MHI,0.3));}
   save(cv,name);}
 generator('l2_gen_main.png',176,140,true,false);
 generator('l2_gen_main_on.png',176,140,true,true);
 generator('l2_gen_sub.png',96,120,false,false);
 generator('l2_gen_sub_on.png',96,120,false,true);
 
-// ---- K 배전반 (breaker/socket panel, empty/energized). 80×96. ----
-function breaker(name,on){const W=80,H=96,cv=C(W,H);ao(cv,W/2,88,20,6,60);
-  const bx=24,by=34,bw=32,bh=48;
-  rect(cv,bx,by,bx+bw,by+bh,MMID);rect(cv,bx,by,bx+bw,by+3,mix(MMID,MHI,0.5));rect(cv,bx+bw-3,by,bx+bw,by+bh,MSH);
-  // panel face + socket
-  rect(cv,bx+5,by+6,bx+bw-5,by+bh-8,DKPANEL);
+// ---- K 배전반 (breaker/socket panel, empty/energized). 80×96. AP-2: 3/4 아이소 박스. ----
+function breaker(name,on){const W=80,H=96,cv=C(W,H);const cx=W/2;ao(cv,cx,88,20,6,60);
+  const rx=18, h=44, ry=rx/2;
+  const topY=88-h-ry;                  // bottom-center 접지
+  isoBox(cv,cx,topY,rx,h,MMID,mix(MMID,MHI,0.5),MSH);
+  // 소켓/게이지는 우측 광원면(오른쪽 벽)에 — 정면감 제거
+  const fx=cx+4, fy=topY+ry+10;
+  for(let y=0;y<26;y++)for(let x=0;x<12;x++)px(cv,fx+x,fy+y+(x)*0.5,DKPANEL,255);
   const sock=on?CYAN:hex('#26303a');
-  // socket ring
-  glow(cv,bx+bw/2,by+22,on?12:0,CYAN,on?160:0);
-  for(let a=0;a<360;a+=30){const rad=6;px(cv,bx+bw/2+Math.cos(a*Math.PI/180)*rad,by+22+Math.sin(a*Math.PI/180)*rad,sock,220);}
-  rect(cv,bx+bw/2-2,by+20,bx+bw/2+2,by+24,sock);
-  // gauge bar fills when energized
-  rect(cv,bx+7,by+bh-14,bx+bw-7,by+bh-11,hex('#26303a'));
-  if(on)rect(cv,bx+7,by+bh-14,bx+bw-9,by+bh-11,CYAN,230);
+  glow(cv,fx+6,fy+8+ (6)*0.5,on?10:0,CYAN,on?160:0);
+  for(let a=0;a<360;a+=45){const rad=5;const sxx=fx+6+Math.cos(a*Math.PI/180)*rad, syy=fy+8+Math.sin(a*Math.PI/180)*rad;px(cv,sxx,syy+ (sxx-fx)*0.5,sock,220);}
+  // 게이지 바 (에너지 시 충전)
+  for(let x=0;x<10;x++)px(cv,fx+1+x,fy+18+(1+x)*0.5,hex('#26303a'),220);
+  if(on)for(let x=0;x<7;x++)px(cv,fx+1+x,fy+18+(1+x)*0.5,CYAN,230);
   save(cv,name);}
 breaker('l2_breaker.png',false);
 breaker('l2_breaker_on.png',true);
@@ -208,23 +217,23 @@ function tower(name,lit){const W=256,H=320,cv=C(W,H);ao(cv,W/2,306,66,14,80);
 tower('l2_tower.png',false);
 tower('l2_tower_lit.png',true);
 
-// ---- 정비대 (tech workbench = L2 crafting station, violet-cyan glow). 128×112. ----
-(function workbench(){const W=128,H=112,cv=C(W,H);ao(cv,W/2,104,34,9,70);
-  // bench body
-  const bx=28,by=54,bw=72,bh=46;
-  rect(cv,bx,by,bx+bw,by+bh,MMID);rect(cv,bx,by,bx+bw,by+4,mix(MMID,MHI,0.5));rect(cv,bx+bw-3,by,bx+bw,by+bh,MSH);
-  // worktop with a glowing fusion aperture (violet→cyan)
-  rect(cv,bx+2,by-8,bx+bw-2,by+2,MSH);
-  const ax=bx+bw/2,ay=by-4;
-  glow(cv,ax,ay,26,VIOLET,110);glow(cv,ax,ay,16,CYAN,130);
-  for(let a=0;a<360;a+=24)px(cv,ax+Math.cos(a*Math.PI/180)*9,ay+Math.sin(a*Math.PI/180)*4.5,mix(VIOLET,CYAN,0.5),220);
+// ---- 정비대 (tech workbench = L2 crafting station, violet-cyan glow). 128×112.
+//      AP-2: 3/4 아이소 박스 + 윗면(worktop)에 융합 개구부 — 위에서 조합하는 정합 뷰. ----
+(function workbench(){const W=128,H=112,cv=C(W,H);const cx=W/2;ao(cv,cx,104,34,9,70);
+  const rx=34, h=40, ry=rx/2;
+  const topY=104-h-ry;                 // bottom-center 접지
+  isoBox(cv,cx,topY,rx,h,MMID,mix(MMID,MHI,0.5),MSH);
+  // 윗면 worktop에 빛나는 융합 개구부(보라→시안) — 마름모 윗면 중앙, 타원 애퍼처
+  const ax=cx, ay=topY;
+  glow(cv,ax,ay,24,VIOLET,110);glow(cv,ax,ay,15,CYAN,130);
+  for(let a=0;a<360;a+=20)px(cv,ax+Math.cos(a*Math.PI/180)*10,ay+Math.sin(a*Math.PI/180)*5,mix(VIOLET,CYAN,0.5),220);
   px(cv,ax,ay,hex('#e6fffb'),240);
-  // tool arm over the aperture
-  for(let i=0;i<18;i++)px(cv,bx+14+i,by-6-i*0.4,MHI);px(cv,bx+32,by-13,CYAN,200);
-  // side gauges
-  rect(cv,bx+bw-16,by+10,bx+bw-6,by+30,DKPANEL);rect(cv,bx+bw-14,by+12,bx+bw-8,by+16,CYAN,200);
-  // legs
-  rect(cv,bx+4,by+bh,bx+9,by+bh+8,MSH);rect(cv,bx+bw-9,by+bh,bx+bw-4,by+bh+8,MSH);
+  // 개구부 위로 뻗은 툴암(아이소 각도)
+  for(let i=0;i<18;i++)px(cv,cx-14+i,topY-6-i*0.3,MHI);px(cv,cx+4,topY-12,CYAN,200);
+  // 우측 광원면 사이드 게이지
+  const gx=cx+rx-14, gy=topY+ry+12;
+  for(let y=0;y<18;y++)for(let x=0;x<8;x++)px(cv,gx+x,gy+y+ (x)*0.5,DKPANEL,255);
+  for(let x=0;x<6;x++)px(cv,gx+1+x,gy+3+(1+x)*0.5,CYAN,200);
   save(cv,'l2_workbench.png');})();
 
 // ---- B 에너지 브리지(꺼짐) — unwalkable dark gap with dormant light strips. 128×64 diamond overlay. ----
@@ -243,7 +252,10 @@ bridge('l2_bridge_off.png',false);
 bridge('l2_bridge_on.png',true);
 
 // ---- D 차폐문 (shield door, closed → open). 128×128, stands on the corridor cell. ----
-function door(name,open){const W=128,H=128,cv=C(W,H);ao(cv,W/2,120,30,8,70);
+function door(name,open){const W=128,H=128,cv=C(W,H);const cx=W/2;ao(cv,cx,120,32,9,72);
+  // AP-2: 아이소 문턱 플린스(2:1 마름모) — 문이 바닥 다이아에 접지되게. 벽형 수직 리프는 유지.
+  topDiamond(cv,cx,116,30,MSH);
+  for(let t=0;t<=30;t++){const yy=15*(1-t/30);px(cv,cx-t,116-yy,dk(MSH,0.5));px(cv,cx+t,116-yy,dk(MSH,0.5));px(cv,cx-t,116+yy,dk(MSH,0.5));px(cv,cx+t,116+yy,dk(MSH,0.5));}
   if(!open){
     // two heavy blast-door leaves meeting in the middle, closed
     rect(cv,30,36,64,116,MMID);rect(cv,64,36,98,116,mix(MMID,MSH,0.2));
