@@ -42,6 +42,11 @@ func _setup() -> void:
 	# A return portal near the grove spawn — always OPEN (the way back to the home island).
 	_spawn_return_portal()
 
+	# (v1.1.0 GP-4 §1) 시들지 않는 노목 QuestNPC near the grove spawn (reachable, off the portal apron).
+	if _loader != null and _loader.spawn_cell != Vector2i(-1, -1):
+		QuestNPC.spawn(self, _loader, _loader.spawn_cell + Vector2i(3, 1), "oak", "시들지 않는 노목",
+			"…고맙구나. 색이란 걸, 다시 봤어.", "res://assets/objects/young_tree.png")
+
 	# Apply a pending "이어하기" load into this live scene.
 	if SaveManager.pending_load:
 		SaveManager.pending_load = false

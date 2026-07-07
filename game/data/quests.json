@@ -402,6 +402,348 @@
       "count": 1,
       "next": "",
       "layer": 5
+    },
+    {
+      "id": "N-echo-Q1",
+      "whisper": "솥이 비어 있어. …뭐든 두 개, 섞어봐. 태어나는 걸 보고 싶어.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "any",
+      "count": 1,
+      "next": "N-echo-Q2",
+      "reward": {
+        "recipes": [
+          "R09"
+        ]
+      }
+    },
+    {
+      "id": "N-echo-Q2",
+      "whisper": "이 섬은 아직 네 게 아니야. 네가 만든 걸… 하나, 여기 놓아줘.",
+      "type": "place",
+      "signal": "placed_object_placed",
+      "target": "any",
+      "count": 1,
+      "next": "N-echo-Q3",
+      "reward": {
+        "placeable": "npc_echo_lamp"
+      }
+    },
+    {
+      "id": "N-echo-Q3",
+      "whisper": "차가운 밤이야. 오래 타는 걸 만들어 줄래. 흙과… 불씨 같은 걸.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D48",
+      "count": 1,
+      "next": "N-echo-Q4",
+      "reward": {
+        "whisper": {
+          "attr": "energy",
+          "amt": 1
+        }
+      }
+    },
+    {
+      "id": "N-echo-Q4",
+      "whisper": "가끔… 내가 누구였는지 잊어. 저 물 위, 오래된 잎을 봐줄래.",
+      "type": "recall",
+      "signal": "truth_shard_investigated",
+      "target": "world_tree",
+      "count": 1,
+      "next": "",
+      "reward": {
+        "log": {
+          "id": "npc_echo",
+          "title": "메아리의 회고",
+          "text": "솥에 처음 깃든 목소리. 첫 컨스트럭터의 속삭임 잔향. …그게 나였던가."
+        }
+      }
+    },
+    {
+      "id": "N-oak-Q1",
+      "whisper": "…목이, 마르구나. 축축한 흙에서 돋는 초록을. 한 줌.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D07",
+      "count": 1,
+      "next": "N-oak-Q2",
+      "reward": {
+        "recipes": [
+          "R09"
+        ]
+      }
+    },
+    {
+      "id": "N-oak-Q2",
+      "whisper": "내 그늘이 보이는 곳에… 꽃을 하나. 오래 못 봤어, 색이란 걸.",
+      "type": "place",
+      "signal": "placed_object_placed",
+      "target": "any",
+      "count": 1,
+      "next": "N-oak-Q3",
+      "reward": {
+        "placeable": "npc_oak_flower"
+      }
+    },
+    {
+      "id": "N-oak-Q3",
+      "whisper": "바람이 없어. 흔들릴 걸 만들어 줘. 가볍고… 색이 도는 것.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D18",
+      "count": 1,
+      "next": "N-oak-Q4",
+      "reward": {
+        "whisper": {
+          "attr": "energy",
+          "amt": 1
+        }
+      }
+    },
+    {
+      "id": "N-oak-Q4",
+      "whisper": "저기 물가에… 아주 어린 나무가 있지. 그게 나였을까. 봐줘.",
+      "type": "recall",
+      "signal": "truth_shard_investigated",
+      "target": "world_tree",
+      "count": 1,
+      "next": "",
+      "reward": {
+        "log": {
+          "id": "npc_oak",
+          "title": "노목의 회고",
+          "text": "잎을 떨구지 못한 채 죽은 나무. 물가의 어린 세계수 — 그 시작이 곧 나의 끝이었다."
+        }
+      }
+    },
+    {
+      "id": "N-robot-Q1",
+      "whisper": "안내. 안내. …전력이, 필요합니다. 도는 것을, 죽은 것에서 만들어.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D64",
+      "count": 1,
+      "next": "N-robot-Q2",
+      "reward": {
+        "recipes": [
+          "L2-R03"
+        ]
+      }
+    },
+    {
+      "id": "N-robot-Q2",
+      "whisper": "승객 여러분. 제 앞에 등을 하나. 어두우면… 안내를, 못 합니다.",
+      "type": "place",
+      "signal": "placed_object_placed",
+      "target": "any",
+      "count": 1,
+      "next": "N-robot-Q3",
+      "reward": {
+        "placeable": "npc_robot_lamp"
+      }
+    },
+    {
+      "id": "N-robot-Q3",
+      "whisper": "복구. 복구. 회로를 이을… 가는 선 같은 걸 주세요. 감사합니다. 감사합니다.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D62",
+      "count": 1,
+      "next": "N-robot-Q4",
+      "reward": {
+        "whisper": {
+          "attr": "energy",
+          "amt": 1
+        }
+      }
+    },
+    {
+      "id": "N-robot-Q4",
+      "whisper": "마지막 방송을… 재생하시겠습니까? 예 / 예 / 예.",
+      "type": "recall",
+      "signal": "truth_shard_investigated",
+      "target": "l2_last_log",
+      "count": 1,
+      "next": "",
+      "reward": {
+        "log": {
+          "id": "npc_robot",
+          "title": "안내 로봇의 회고",
+          "text": "관제 안내 AI. 마지막 방송을 무한히 반복하다 전력이 다했다. …안내를, 계속하겠습니다."
+        }
+      }
+    },
+    {
+      "id": "N-guard-Q1",
+      "whisper": "경비… 교대. 태엽이. 감을 것을. 돌아가는, 둥근 걸.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D104",
+      "count": 1,
+      "next": "N-guard-Q2",
+      "reward": {
+        "recipes": [
+          "L3-R02"
+        ]
+      }
+    },
+    {
+      "id": "N-guard-Q2",
+      "whisper": "초소가, 보이는 곳에. 불을. 꺼지면… 나는 못, 본다.",
+      "type": "place",
+      "signal": "placed_object_placed",
+      "target": "any",
+      "count": 1,
+      "next": "N-guard-Q3",
+      "reward": {
+        "placeable": "npc_guard_lamp"
+      }
+    },
+    {
+      "id": "N-guard-Q3",
+      "whisper": "기름이. 굳었다. 미끄러운… 걸. 조금.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D116",
+      "count": 1,
+      "next": "N-guard-Q4",
+      "reward": {
+        "whisper": {
+          "attr": "mana",
+          "amt": 1
+        }
+      }
+    },
+    {
+      "id": "N-guard-Q4",
+      "whisper": "내 앞의… 저 멈춘 동료를. 확인. 해줘. …나도, 곧.",
+      "type": "recall",
+      "signal": "truth_shard_investigated",
+      "target": "stopped_robot",
+      "count": 1,
+      "next": "",
+      "reward": {
+        "log": {
+          "id": "npc_guard",
+          "title": "파수 로봇의 회고",
+          "text": "멈춰가는 경비 기계. 앞선 동료가 멈춘 자리를 지키다, 저도 태엽이 다했습니다. …교대, 없이."
+        }
+      }
+    },
+    {
+      "id": "N-mage-Q1",
+      "whisper": "자네, 조수인가? 마침 잘 왔어. 빛나는 결정 하나 만들어 오게. 당장!",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D150",
+      "count": 1,
+      "next": "N-mage-Q2",
+      "reward": {
+        "recipes": [
+          "L4-R11"
+        ]
+      }
+    },
+    {
+      "id": "N-mage-Q2",
+      "whisper": "내 연구실이… 어디 갔지? 아무튼 내가 보이는 데 등불 하나 놓게. 어두워서 실험을 못 해.",
+      "type": "place",
+      "signal": "placed_object_placed",
+      "target": "any",
+      "count": 1,
+      "next": "N-mage-Q3",
+      "reward": {
+        "placeable": "npc_mage_lamp"
+      }
+    },
+    {
+      "id": "N-mage-Q3",
+      "whisper": "봉인용 밀랍이 떨어졌네. 끈적하고… 잘 굳는 걸로. 빨리, 큰일 나기 전에.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D154",
+      "count": 1,
+      "next": "N-mage-Q4",
+      "reward": {
+        "whisper": {
+          "attr": "mana",
+          "amt": 1
+        }
+      }
+    },
+    {
+      "id": "N-mage-Q4",
+      "whisper": "저 구석의 잔영… 나랑 똑 닮았군. 우스운 친구야. …잠깐. 왜 안 움직이지. 왜. 확인해 봐.",
+      "type": "recall",
+      "signal": "truth_shard_investigated",
+      "target": "mage_ghost",
+      "count": 1,
+      "next": "",
+      "reward": {
+        "log": {
+          "id": "npc_mage",
+          "title": "마법사 잔영의 회고",
+          "text": "붕괴의 순간에 얼어붙은 잔상. 저 구석의 잔영이 나 자신임을, 그는 끝내 인정하지 못했다."
+        }
+      }
+    },
+    {
+      "id": "N-saint-Q1",
+      "whisper": "…응답이, 없었습니다. 빛을 하나. 만들어 바쳐 주시겠어요.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D190",
+      "count": 1,
+      "next": "N-saint-Q2",
+      "reward": {
+        "recipes": [
+          "L5-R14"
+        ]
+      }
+    },
+    {
+      "id": "N-saint-Q2",
+      "whisper": "제단이 보이는 곳에… 촛불을. 저는 손을, 움직일 수 없어서.",
+      "type": "place",
+      "signal": "placed_object_placed",
+      "target": "any",
+      "count": 1,
+      "next": "N-saint-Q3",
+      "reward": {
+        "placeable": "npc_saint_candle"
+      }
+    },
+    {
+      "id": "N-saint-Q3",
+      "whisper": "향이… 필요합니다. 타면서 피어오르는, 옅은 걸.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D217",
+      "count": 1,
+      "next": "N-saint-Q4",
+      "reward": {
+        "whisper": {
+          "attr": "vita",
+          "amt": 1
+        }
+      }
+    },
+    {
+      "id": "N-saint-Q4",
+      "whisper": "저를… 봐주세요. 기도하다 굳은 저를. 응답은 오지 않았지만, 당신은 왔으니까.",
+      "type": "recall",
+      "signal": "truth_shard_investigated",
+      "target": "petrified_pilgrim",
+      "count": 1,
+      "next": "",
+      "reward": {
+        "log": {
+          "id": "npc_saint",
+          "title": "석상의 회고",
+          "text": "응답을 기다리다 석화된 신도. 응답은 끝내 오지 않았으나, 방랑자가 왔다. 그것으로 되었다."
+        }
+      }
     }
   ]
 }

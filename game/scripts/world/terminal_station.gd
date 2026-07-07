@@ -53,6 +53,7 @@ func _setup() -> void:
 	_spawn_workbench()
 	_scatter_debris()
 	_scatter_log_screens()
+	_spawn_npc()
 	_spawn_return_portal()
 	# Register the live world so the station snapshots/restores like the other scenes.
 	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("register_world"):
@@ -172,6 +173,15 @@ func _add_pool(parent: Node2D, tex_path: String, off: Vector2, strength: float) 
 	pool.offset = off
 	pool.scale = Vector2(strength, strength)
 	parent.add_child(pool)
+
+
+## (v1.1.0 GP-4 §1) Spawn the 안내 로봇 QuestNPC near spawn (reachable). E-상호작용이 `robot`
+## 서브체인을 활성 (QuestNPC.on_interact → activate_npc_line).
+func _spawn_npc() -> void:
+	if _loader == null or _loader.spawn_cell == Vector2i(-1, -1):
+		return
+	QuestNPC.spawn(self, _loader, _loader.spawn_cell + Vector2i(3, 0), "robot", "안내 로봇",
+		"안내. 안내. …오늘의 안내는, 여기까지입니다.", "res://assets/objects/l3_robot_standing.png")
 
 
 ## Sparse debris scatter — small scrap bits (l2_debris_scrap) + ash wisps (l2_debris_ash) — on

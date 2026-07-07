@@ -66,6 +66,12 @@ func _setup() -> void:
 	_draw_cauldron_pad()
 	_wire_portals()
 
+	# (v1.1.0 GP-4 §1) 메아리(Echo) QuestNPC — 솥단지 곁의 상시 조력자(튜토리얼 + 상시 의뢰). 솥 셀 옆에
+	# 배치(막히면 인접 walkable로 nudge). E-상호작용이 `echo` 서브체인을 활성.
+	if _loader != null and _loader.cauldron_cell != Vector2i(-1, -1):
+		QuestNPC.spawn(self, _loader, _loader.cauldron_cell + Vector2i(1, 1), "echo", "메아리",
+			"…또 왔구나. 언제든, 곁에 있을게.", "res://assets/objects/l2_lamp_lit.png")
+
 	# A FRESH awakening = arrived from the CS-01 opening (not a portal return, not 이어하기).
 	# On that beat we play the camera reveal (zoom on dais → ease out to the portal arc).
 	var fresh_awakening := WorldContext.arrival_mode != "portal_arrival" and not SaveManager.pending_load

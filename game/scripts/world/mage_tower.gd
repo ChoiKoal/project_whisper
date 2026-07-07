@@ -53,6 +53,7 @@ func _setup() -> void:
 	_spawn_workbench()
 	_scatter_debris()
 	_scatter_ghosts()
+	_spawn_npc()
 	_spawn_return_portal()
 	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("register_world"):
 		SaveManager.register_world(_loader, _player, respawn)
@@ -215,6 +216,15 @@ func _scatter_ghosts() -> void:
 		s.global_position = _loader.cell_center_world(cell)
 		_loader.apply_height_lift(s)
 		i += 1
+
+
+## (v1.1.0 GP-4 §1) Spawn the 마법사 잔영 QuestNPC near spawn (reachable), off the gate spine. Its
+## E-상호작용 activates the `mage` sub-chain (QuestNPC.on_interact → activate_npc_line).
+func _spawn_npc() -> void:
+	if _loader == null or _loader.spawn_cell == Vector2i(-1, -1):
+		return
+	QuestNPC.spawn(self, _loader, _loader.spawn_cell + Vector2i(3, 0), "mage", "마법사 잔영",
+		"조수! 어디 갔나… 아, 자넨가. 됐네, 가 보게.", "res://assets/objects/l4_mage_ghost_standing.png")
 
 
 func _debris_eligible(cell: Vector2i) -> bool:

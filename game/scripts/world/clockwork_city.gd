@@ -52,6 +52,7 @@ func _setup() -> void:
 	_spawn_workbench()
 	_scatter_debris()
 	_scatter_robots()
+	_spawn_npc()
 	_spawn_return_portal()
 	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("register_world"):
 		SaveManager.register_world(_loader, _player, respawn)
@@ -214,6 +215,15 @@ func _scatter_robots() -> void:
 		s.global_position = _loader.cell_center_world(cell)
 		_loader.apply_height_lift(s)
 		i += 1
+
+
+## (v1.1.0 GP-4 §1) Spawn the 파수 로봇 QuestNPC near spawn (reachable). E-상호작용이 `guard`
+## 서브체인을 활성.
+func _spawn_npc() -> void:
+	if _loader == null or _loader.spawn_cell == Vector2i(-1, -1):
+		return
+	QuestNPC.spawn(self, _loader, _loader.spawn_cell + Vector2i(3, 0), "guard", "파수 로봇",
+		"경비… 교대. 없음. …계속, 선다.", "res://assets/objects/l3_robot_standing.png")
 
 
 func _debris_eligible(cell: Vector2i) -> bool:

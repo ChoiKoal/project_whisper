@@ -53,6 +53,7 @@ func _setup() -> void:
 	_spawn_workbench()
 	_scatter_debris()
 	_scatter_statues()
+	_spawn_npc()
 	_spawn_return_portal()
 	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("register_world"):
 		SaveManager.register_world(_loader, _player, respawn)
@@ -216,6 +217,15 @@ func _scatter_statues() -> void:
 		s.global_position = _loader.cell_center_world(cell)
 		_loader.apply_height_lift(s)
 		i += 1
+
+
+## (v1.1.0 GP-4 §1) Spawn the 기도하다 굳은 석상 QuestNPC near spawn (reachable). E-상호작용이 `saint`
+## 서브체인을 활성.
+func _spawn_npc() -> void:
+	if _loader == null or _loader.spawn_cell == Vector2i(-1, -1):
+		return
+	QuestNPC.spawn(self, _loader, _loader.spawn_cell + Vector2i(3, 0), "saint", "석상",
+		"…응답은, 오지 않았습니다. 그래도, 당신이 왔으니.", "res://assets/objects/l5_pilgrim_dynamo.png")
 
 
 func _debris_eligible(cell: Vector2i) -> bool:
