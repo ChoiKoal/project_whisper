@@ -8,6 +8,9 @@
 // Produces into assets/objects/  (l3_*.png). Run: node tools_gen_l3_objects.js
 const zlib = require('zlib'), fs = require('fs'), path = require('path');
 const OUT = path.join(process.env.ART_OUT_DIR || __dirname, 'assets', 'objects');
+// AP-2 (v1.2.0 아트 정합): 정면뷰 기계 → 3/4 아이소 박스/실린더. 공용 헬퍼 재사용.
+const ISO = require('./tools_iso_lib.js');
+const { isoBox, isoCylinder, topDiamond, darker: dk } = ISO;
 
 function crc32(b){let c=~0;for(let i=0;i<b.length;i++){c^=b[i];for(let k=0;k<8;k++)c=(c>>>1)^(0xEDB88320&-(c&1));}return(~c)>>>0;}
 function chunk(t,d){const l=Buffer.alloc(4);l.writeUInt32BE(d.length,0);const tb=Buffer.from(t,'ascii');const body=Buffer.concat([tb,d]);const cr=Buffer.alloc(4);cr.writeUInt32BE(crc32(body),0);return Buffer.concat([l,body,cr]);}
@@ -147,7 +150,10 @@ gearBridge('l3_gear_bridge_off.png',false);
 gearBridge('l3_gear_bridge_on.png',true);
 
 // ---- 2. 증기 밸브 방폭문 (steam valve blast-door) closed/open. 128×128. ----
-function valveDoor(name,open){const W=128,H=128,cv=C(W,H);ao(cv,W/2,120,30,8,70);
+function valveDoor(name,open){const W=128,H=128,cv=C(W,H);const cx=W/2;ao(cv,cx,120,32,9,72);
+  // AP-2: 아이소 문턱 플린스(2:1 마름모) — 벽형 밸브문이 바닥 다이아에 접지.
+  topDiamond(cv,cx,116,30,B_SH);
+  for(let t=0;t<=30;t++){const yy=15*(1-t/30);px(cv,cx-t,116-yy,dk(B_SH,0.5));px(cv,cx+t,116-yy,dk(B_SH,0.5));px(cv,cx-t,116+yy,dk(B_SH,0.5));px(cv,cx+t,116+yy,dk(B_SH,0.5));}
   if(!open){
     // two brass leaves meeting in the middle
     rect(cv,30,36,64,116,B_MID);rect(cv,64,36,98,116,mix(B_MID,B_SH,0.25));
@@ -176,31 +182,29 @@ function valveDoor(name,open){const W=128,H=128,cv=C(W,H);ao(cv,W/2,120,30,8,70)
 valveDoor('l3_valve_door_closed.png',false);
 valveDoor('l3_valve_door_open.png',true);
 
-// ---- 3. 증기 보일러 (steam boiler, 2×3) off/on. 176×160. ----
-function boiler(name,on){const W=176,H=160,cv=C(W,H);ao(cv,W/2,H-8,44,11,72);
-  const bw=100,bh=98,bx=(W-bw)/2,by=H-16-bh;
-  // riveted brass tank body
-  rect(cv,bx,by,bx+bw,by+bh,B_MID);
-  rect(cv,bx,by,bx+bw,by+5,mix(B_MID,B_HI,0.5));rect(cv,bx,by,bx+4,by+bh,mix(B_MID,B_HI,0.3));rect(cv,bx+bw-4,by,bx+bw,by+bh,B_SH);
-  // horizontal reinforcing bands + rivets
-  for(let i=0;i<4;i++){const yy=by+16+i*22;rect(cv,bx,yy,bx+bw,yy+3,B_SH,200);for(let rx=bx+8;rx<bx+bw-6;rx+=14)px(cv,rx,yy+1,B_HI,200);}
-  // firebox at the base
-  const fbx=bx+bw/2,fby=by+bh-14;
-  rect(cv,fbx-22,fby-10,fbx+22,fby+8,hex('#2a1c0e'));
-  if(on){// glowing firebox + ember bed
-    glow(cv,fbx,fby,24,ORANGE,170);glow(cv,fbx,fby,14,hex('#ffd08a'),150);
-    const r=deterministic(3011);for(let n=0;n<18;n++){const ex=fbx-18+Math.floor(r()*36),ey=fby-6+Math.floor(r()*10);px(cv,ex,ey,mix(EMBER,ORANGE,r()),230);}
-  } else {rect(cv,fbx-20,fby-8,fbx+20,fby+6,DEEP,200);}
-  // pressure gauge
-  const gx=bx+bw-30,gy=by+20;
-  for(let y=-11;y<=11;y++)for(let x=-11;x<=11;x++){if(x*x+y*y<=121)px(cv,gx+x,gy+y,DKPANEL,235);}
-  for(let a=0;a<360;a+=8)px(cv,gx+Math.cos(a*Math.PI/180)*11,gy+Math.sin(a*Math.PI/180)*11,B_SH,220);
-  if(on){glow(cv,gx,gy,10,ORANGE,150);// needle to high
-    for(let i=0;i<9;i++)px(cv,gx+i*0.7,gy-i*0.6,ORANGE,230);px(cv,gx,gy,hex('#ffe0b0'),240);
-  } else {for(let i=0;i<9;i++)px(cv,gx-i*0.7,gy+i*0.4,hex('#4a3c28'),200);px(cv,gx,gy,hex('#2a2018'),220);}
-  // exhaust stack + steam puff on top
-  rect(cv,bx+14,by-24,bx+30,by,B_SH);rect(cv,bx+14,by-24,bx+18,by,mix(B_SH,B_HI,0.3));
-  if(on){glow(cv,bx+22,by-26,16,hex('#e8dccb'),120);const r=deterministic(31);for(let n=0;n<16;n++){const t=n/16;const sx=bx+22+Math.round(Math.sin(t*6+r())*9);const sy=by-24-Math.floor(t*26);px(cv,sx,sy,mix(hex('#e8dccb'),ORANGE,0.25),Math.round(150*(1-t)));}}
+// ---- 3. 증기 보일러 (steam boiler, 2×3) off/on. 176×160. AP-2: 3/4 아이소 실린더 탱크. ----
+function boiler(name,on){const W=176,H=160,cv=C(W,H);const cx=W/2;ao(cv,cx,H-8,46,12,72);
+  // 아이소 실린더 탱크: 윗면 타원(황동 캡), 좌/우 톤 분리 몸통. bottom-center 접지.
+  const rx=48, h=92, ry=rx/2;
+  const topY=H-14-h-ry;
+  isoCylinder(cv,cx,topY,rx,h,mix(B_MID,B_HI,0.35),mix(B_MID,B_HI,0.15),mix(B_MID,COPPER,0.35),0.96);
+  // 수평 보강 밴드 + 리벳 (곡면 따라 살짝 아래로 휨 — 앞면 타원 곡률)
+  for(let i=0;i<4;i++){const yy=topY+ry+14+i*20;for(let x=-rx;x<=rx;x++){const xr=x/rx;if(xr*xr>1)continue;const dip=Math.round(ry*0.18*(1-xr*xr));const face=x>0?B_SH:dk(B_SH,0.1);px(cv,cx+x,yy+dip,face,200);if((x+rx)%14<1)px(cv,cx+x,yy+dip-1,B_HI,200);}}
+  // 파이어박스: 앞면(광원측 하단) 아치형 개구부
+  const fbx=cx+6,fby=topY+ry+h-16;
+  for(let y=-10;y<=8;y++)for(let x=-22;x<=22;x++){const d=(x/22)**2+((y+2)/12)**2;if(d<=1)px(cv,fbx+x,fby+y,hex('#2a1c0e'),255);}
+  if(on){glow(cv,fbx,fby,24,ORANGE,170);glow(cv,fbx,fby,14,hex('#ffd08a'),150);
+    const r=deterministic(3011);for(let n=0;n<18;n++){const ex=fbx-18+Math.floor(r()*36),ey=fby-6+Math.floor(r()*10);if((ex-fbx)**2/484+(ey-fby+2)**2/144<=1)px(cv,ex,ey,mix(EMBER,ORANGE,r()),230);}
+  } else {for(let y=-8;y<=6;y++)for(let x=-20;x<=20;x++){const d=(x/20)**2+((y+2)/10)**2;if(d<=1)px(cv,fbx+x,fby+y,DEEP,200);}}
+  // 압력 게이지 (우측 광원면 상부)
+  const gx=cx+rx-16,gy=topY+ry+18;
+  for(let y=-10;y<=10;y++)for(let x=-10;x<=10;x++){if(x*x+y*y<=100)px(cv,gx+x,gy+y,DKPANEL,235);}
+  for(let a=0;a<360;a+=8)px(cv,gx+Math.cos(a*Math.PI/180)*10,gy+Math.sin(a*Math.PI/180)*10,B_SH,220);
+  if(on){glow(cv,gx,gy,9,ORANGE,150);for(let i=0;i<8;i++)px(cv,gx+i*0.7,gy-i*0.6,ORANGE,230);px(cv,gx,gy,hex('#ffe0b0'),240);}
+  else{for(let i=0;i<8;i++)px(cv,gx-i*0.7,gy+i*0.4,hex('#4a3c28'),200);px(cv,gx,gy,hex('#2a2018'),220);}
+  // 윗면에서 솟은 배기관(아이소 실린더 소형) + 증기
+  isoCylinder(cv,cx-16,topY-20,9,20,mix(B_SH,B_HI,0.3),mix(B_SH,B_HI,0.15),dk(B_SH,0.1),1.0);
+  if(on){glow(cv,cx-16,topY-22,16,hex('#e8dccb'),120);const r=deterministic(31);for(let n=0;n<16;n++){const t=n/16;const sx=cx-16+Math.round(Math.sin(t*6+r())*9);const sy=topY-22-Math.floor(t*26);px(cv,sx,sy,mix(hex('#e8dccb'),ORANGE,0.25),Math.round(150*(1-t)));}}
   save(cv,name);}
 boiler('l3_boiler.png',false);
 boiler('l3_boiler_on.png',true);
@@ -221,110 +225,89 @@ boiler('l3_boiler_on.png',true);
   save(cv,'l3_boiler_landmark.png');})();
 
 // ---- 4. 정지한 엘리베이터 케이지 (stopped elevator cage, 2×2) off/on. 128×160. ----
-function elevator(name,on){const W=128,H=160,cv=C(W,H);ao(cv,W/2,H-8,30,8,70);
-  const cx=W/2;
-  // top rail / winch beam
-  rect(cv,20,10,108,18,B_SH);rect(cv,20,10,108,12,mix(B_SH,B_HI,0.3));
-  // cage geometry — raised (on) sits higher, taut cable; off hangs mid-shaft, slack
-  const cageTop=on?40:70,cageBot=cageTop+70,cageL=38,cageR=90;
-  // cable
-  if(on){for(let y=18;y<cageTop;y++)px(cv,cx,y,B_HI,220);px(cv,cx-1,18,B_MID,180);px(cv,cx+1,18,B_MID,180);}
-  else{// slack, S-curved cable
-    for(let y=18;y<cageTop;y++){const sx=cx+Math.round(Math.sin((y-18)*0.18)*6);px(cv,sx,y,hex('#5a4a30'),200);}}
-  // iron cage frame
-  rect(cv,cageL,cageTop,cageR,cageTop+4,IRON);rect(cv,cageL,cageBot-4,cageR,cageBot,IRON);
-  rect(cv,cageL,cageTop,cageL+4,cageBot,IRON);rect(cv,cageR-4,cageTop,cageR,cageBot,IRON);
-  // interior dark
-  rect(cv,cageL+4,cageTop+4,cageR-4,cageBot-4,on?hex('#3a2c1a'):DEEP,on?200:220);
-  // cage lattice bars
-  for(let x=cageL+12;x<cageR-4;x+=10)for(let y=cageTop+4;y<cageBot-4;y++)px(cv,x,y,IRON,150);
-  for(let y=cageTop+14;y<cageBot-4;y+=14)for(let x=cageL+4;x<cageR-4;x++)px(cv,x,y,IRON,120);
-  // frame highlights
-  rect(cv,cageL,cageTop,cageR,cageTop+1,mix(IRON,B_HI,0.4));
-  // arrival lamp on top of cage
-  const lampx=cx,lampy=cageTop-6;
-  if(on){glow(cv,lampx,lampy,12,ORANGE,170);px(cv,lampx,lampy,hex('#ffe0b0'),240);
-    // interior lit glow
-    glow(cv,cx,cageTop+34,20,ORANGE,70);}
-  else{px(cv,lampx,lampy,hex('#2a2018'),220);}
+function elevator(name,on){const W=128,H=160,cv=C(W,H);const cx=W/2;ao(cv,cx,H-8,32,9,70);
+  // AP-2: 3/4 아이소 철제 케이지 — 윗면 마름모(지붕 프레임) + 격자 측벽. bottom-center 접지.
+  const rx=32, h=76, ry=rx/2;
+  const botY=H-14, topY=botY-h-ry;
+  // 상단 윈치 빔(윗면 위로 가로) + 케이블
+  rect(cv,cx-44,12,cx+44,20,B_SH);rect(cv,cx-44,12,cx+44,14,mix(B_SH,B_HI,0.3));
+  if(on){for(let y=20;y<topY;y++)px(cv,cx,y,B_HI,220);}
+  else{for(let y=20;y<topY;y++){const sx=cx+Math.round(Math.sin((y-20)*0.18)*6);px(cv,sx,y,hex('#5a4a30'),200);}}
+  // 케이지 아이소 박스 (어두운 내부가 비치도록 프레임만 — isoBox 후 격자)
+  const iron=IRON, ironR=mix(IRON,B_HI,0.35), ironL=dk(IRON,0.25);
+  isoBox(cv,cx,topY,rx,h,mix(iron,B_HI,0.15),ironR,ironL);
+  // 내부 어둡게 (측벽 안쪽) — 윗면 마름모 아래 앞면 절반을 어둡게 덧칠해 오픈 케이지감
+  for(let x=-rx+5;x<=rx-5;x++){const edgeY=topY+(ry-Math.abs(x)*ry/rx);for(let y=6;y<h-4;y++){if((x+y)%2===0)continue;px(cv,cx+x,edgeY+y,on?hex('#3a2c1a'):DEEP,on?150:180);}}
+  // 격자 세로 바 (측벽 위)
+  for(let x=-rx+8;x<rx-4;x+=10){const edgeY=topY+(ry-Math.abs(x)*ry/rx);for(let y=2;y<h-2;y++)px(cv,cx+x,edgeY+y,iron,150);}
+  // 도착 램프 (윗면 위)
+  const lampy=topY-4;
+  if(on){glow(cv,cx,lampy,12,ORANGE,170);px(cv,cx,lampy,hex('#ffe0b0'),240);glow(cv,cx,topY+34,20,ORANGE,70);}
+  else px(cv,cx,lampy,hex('#2a2018'),220);
   save(cv,name);}
 elevator('l3_elevator.png',false);
 elevator('l3_elevator_on.png',true);
 
 // ---- 5. 게이트 기어 어셈블리 스탠드 (gate gear assembly) off/on. 96×96. ----
-function gearAssembly(name,on){const W=96,H=96,cv=C(W,H);ao(cv,W/2,88,24,7,66);
-  // mounting stand / socket
-  rect(cv,34,66,62,86,B_SH);rect(cv,34,66,62,69,mix(B_SH,B_HI,0.3));
-  rect(cv,28,84,68,90,B_SH);// footing
-  const gx=48,gy=48,rad=24,teeth=12;
+function gearAssembly(name,on){const W=96,H=96,cv=C(W,H);const cx=W/2;ao(cv,cx,88,26,7,66);
+  // AP-2: 정면 원판 기어 → 작업대 위에 "누운" 기어(윗면=2:1 타원). 샘플 문법 정본 미러.
+  const topY=50, rx=26, h=26, ry=rx/2;
+  isoBox(cv,cx,topY,rx,h,mix(COPPER,B_MID,0.5),mix(B_MID,B_HI,0.35),B_SH);
+  // 작업대 윗면 리벳 테두리
+  for(let a=0;a<360;a+=45){const x=Math.cos(a*Math.PI/180)*(rx-4),y=Math.sin(a*Math.PI/180)*(ry-2);px(cv,cx+x,topY+y,B_HI,200);}
+  // 기어: 윗면(2:1 타원)이 보이게 누움
+  const gx=cx, gy=topY-2, grx=19, gry=grx/2, teeth=10;
   const tone=on?B_HI:mix(B_MID,COPPER,0.4);
-  // gear body
-  for(let ang=0;ang<360;ang+=3){const seg=Math.floor(ang/(360/teeth));const missing=(!on&&seg===3);// missing tooth notch when off
-    const isTooth=(Math.round(ang/(360/(teeth*2)))%2===0);const rr=rad+(isTooth&&!missing?5:0);
-    if(missing&&isTooth)continue;
-    px(cv,gx+Math.cos(ang*Math.PI/180)*rr,gy+Math.sin(ang*Math.PI/180)*rr*0.9,tone,235);}
-  for(let y=-rad;y<=rad;y++)for(let x=-rad;x<=rad;x++){const d=(x/rad)**2+(y/(rad*0.9))**2;if(d<=1){const c=y<0?mix(tone,B_HI,0.3):mix(tone,B_SH,0.35);px(cv,gx+x,gy+y,c,235);}}
-  // dark socket / hub
-  for(let y=-6;y<=6;y++)for(let x=-6;x<=6;x++){const d=(x/6)**2+(y/6)**2;if(d<=1)px(cv,gx+x,gy+y,on?mix(B_SH,ORANGE,0.2):DEEP,230);}
-  if(on){// complete gear + spark at the mesh (upper-right)
-    glow(cv,gx,gy,10,ORANGE,80);
-    glow(cv,gx+22,gy-14,9,ORANGE,180);px(cv,gx+22,gy-14,hex('#fff0d0'),255);
-    // spin-implied motion arcs
-    for(let a=20;a<70;a+=6)px(cv,gx+Math.cos(a*Math.PI/180)*(rad+8),gy+Math.sin(a*Math.PI/180)*(rad+8),ORANGE,120);
-  } else {
-    // empty notch highlighted dark
-    const na=3*(360/teeth)+15;px(cv,gx+Math.cos(na*Math.PI/180)*rad,gy+Math.sin(na*Math.PI/180)*rad*0.9,DEEP,200);
-  }
+  for(let ti=0;ti<teeth;ti++){const a=(ti/teeth)*360;const rad=a*Math.PI/180;
+    const seg=ti; const missing=(!on&&seg===3);   // off: 빠진 톱니 노치
+    if(missing)continue;
+    const lit=(Math.sin(rad)<0?0.45:0)+(Math.cos(rad)>0?0.3:0);const tc=mix(tone,B_HI,lit*(on?1:0.4));
+    for(let d=0;d<5;d++){const rr=grx+d;for(let w=-1;w<=1;w++){const wa=rad+w*0.11;px(cv,gx+Math.cos(wa)*rr,gy+Math.sin(wa)*(rr*0.5),tc,235);}}}
+  for(let y=-gry;y<=gry;y++)for(let x=-grx;x<=grx;x++){const d=(x/grx)**2+(y/gry)**2;if(d<=1){const lit=(y<0?0.32:0)+(x>0?0.22:0);const c=mix(mix(COPPER,tone,0.6),B_HI,lit);px(cv,gx+x,gy+y,c,235);}}
+  for(let a=0;a<360;a+=60){for(let i=6;i<grx-3;i++)px(cv,gx+Math.cos(a*Math.PI/180)*i,gy+Math.sin(a*Math.PI/180)*i*0.5,B_SH,150);}
+  // 허브 소켓
+  for(let y=-4;y<=4;y++)for(let x=-7;x<=7;x++){const d=(x/7)**2+(y/4)**2;if(d<=1)px(cv,gx+x,gy+y,on?mix(B_SH,ORANGE,0.2):DEEP,235);}
+  for(let a=0;a<360;a+=2){const x=Math.cos(a*Math.PI/180)*grx,y=Math.sin(a*Math.PI/180)*gry;px(cv,gx+x,gy+y,dk(B_MID,0.5),200);}
+  if(on){glow(cv,gx,gy,8,ORANGE,80);glow(cv,gx+9,gy-4,7,ORANGE,150);px(cv,gx+9,gy-4,hex('#fff0d0'),255);
+    for(let a=20;a<70;a+=6)px(cv,gx+Math.cos(a*Math.PI/180)*(grx+3),gy+Math.sin(a*Math.PI/180)*(gry+2),ORANGE,120);}
   save(cv,name);}
 gearAssembly('l3_gear_assembly.png',false);
 gearAssembly('l3_gear_assembly_on.png',true);
 
 // ---- 6. 엘리베이터 제어반 / 균형추 마운트 (elevator control) off/on. 80×96. ----
-function elevatorCtrl(name,on){const W=80,H=96,cv=C(W,H);ao(cv,W/2,88,20,6,60);
-  const bx=24,by=34,bw=32,bh=48;
-  rect(cv,bx,by,bx+bw,by+bh,B_MID);rect(cv,bx,by,bx+bw,by+3,mix(B_MID,B_HI,0.5));rect(cv,bx+bw-3,by,bx+bw,by+bh,B_SH);
-  rect(cv,bx+5,by+6,bx+bw-5,by+bh-8,DKPANEL);
-  // counterweight hook / rail on the left side
-  rect(cv,bx-8,by-2,bx-4,by+bh,B_SH);
-  const hookx=bx-6;
-  if(on){// counterweight seated on the hook
-    rect(cv,bx-12,by+18,bx-1,by+38,IRON);rect(cv,bx-12,by+18,bx-1,by+20,mix(IRON,B_HI,0.4));
-    for(let i=0;i<18;i++)px(cv,hookx,by-2+i,B_HI,220);// taut chain
-  } else {// empty hook, chain dangling loose
-    px(cv,hookx,by+2,B_HI,200);for(let i=0;i<12;i++)px(cv,hookx+Math.round(Math.sin(i*0.4)*3),by+4+i,hex('#5a4a30'),200);
-  }
-  // gauge fill bar
-  rect(cv,bx+7,by+bh-14,bx+bw-7,by+bh-11,hex('#2a2012'));
-  if(on){rect(cv,bx+7,by+bh-14,bx+bw-9,by+bh-11,ORANGE,230);glow(cv,bx+bw/2,by+18,10,ORANGE,120);}
-  else{rect(cv,bx+7,by+bh-14,bx+11,by+bh-11,hex('#4a3c28'),200);}
-  // small round dial
-  for(let a=0;a<360;a+=10)px(cv,bx+bw/2+Math.cos(a*Math.PI/180)*7,by+18+Math.sin(a*Math.PI/180)*7,B_SH,220);
-  px(cv,bx+bw/2,by+18,on?hex('#ffe0b0'):hex('#2a2018'),230);
+function elevatorCtrl(name,on){const W=80,H=96,cv=C(W,H);const cx=W/2;ao(cv,cx,88,20,6,60);
+  // AP-2: 3/4 아이소 박스 제어반. 다이얼/게이지는 우측 광원면.
+  const rx=18,h=44,ry=rx/2,topY=88-h-ry;
+  isoBox(cv,cx,topY,rx,h,B_MID,mix(B_MID,B_HI,0.4),B_SH);
+  // 좌측 균형추 레일 + 훅
+  const railx=cx-rx-4;rect(cv,railx,topY,railx+3,topY+ry+h,B_SH);
+  if(on){rect(cv,railx-8,topY+ry+14,railx+2,topY+ry+34,IRON);rect(cv,railx-8,topY+ry+14,railx+2,topY+ry+16,mix(IRON,B_HI,0.4));for(let i=0;i<18;i++)px(cv,railx+1,topY+i,B_HI,220);}
+  else{px(cv,railx+1,topY+4,B_HI,200);for(let i=0;i<12;i++)px(cv,railx+1+Math.round(Math.sin(i*0.4)*3),topY+6+i,hex('#5a4a30'),200);}
+  // 우측 광원면 패널: 다이얼 + 게이지 바
+  const fx=cx+3, fy=topY+ry+10;
+  for(let y=0;y<24;y++)for(let x=0;x<12;x++)px(cv,fx+x,fy+y+(x)*0.5,DKPANEL,255);
+  for(let a=0;a<360;a+=20)px(cv,fx+6+Math.cos(a*Math.PI/180)*5,fy+8+Math.sin(a*Math.PI/180)*5+ (6)*0.5,B_SH,220);
+  px(cv,fx+6,fy+8+ (6)*0.5,on?hex('#ffe0b0'):hex('#2a2018'),230);
+  for(let x=0;x<10;x++)px(cv,fx+1+x,fy+18+(1+x)*0.5,hex('#2a2012'),220);
+  if(on){for(let x=0;x<8;x++)px(cv,fx+1+x,fy+18+(1+x)*0.5,ORANGE,230);glow(cv,fx+6,fy+8+ (6)*0.5,9,ORANGE,120);}
+  else for(let x=0;x<3;x++)px(cv,fx+1+x,fy+18+(1+x)*0.5,hex('#4a3c28'),200);
   save(cv,name);}
 elevatorCtrl('l3_elevator_ctrl.png',false);
 elevatorCtrl('l3_elevator_ctrl_on.png',true);
 
 // ---- 7. 대시계 심장 마운트 (great-clock heart mount) off/on. 80×96. ----
-function clockMount(name,on){const W=80,H=96,cv=C(W,H);ao(cv,W/2,88,20,6,60);
-  const bx=22,by=30,bw=36,bh=54;
-  rect(cv,bx,by,bx+bw,by+bh,B_MID);rect(cv,bx,by,bx+bw,by+3,mix(B_MID,B_HI,0.5));rect(cv,bx+bw-3,by,bx+bw,by+bh,B_SH);
-  rect(cv,bx+4,by+5,bx+bw-4,by+bh-6,DKPANEL);
-  // heart socket — a ring of brass petals framing the core cavity
-  const hx=bx+bw/2,hy=by+26;
-  for(let a=0;a<360;a+=30){const x=hx+Math.cos(a*Math.PI/180)*13,y=hy+Math.sin(a*Math.PI/180)*13;px(cv,x,y,B_HI,220);px(cv,x,y+1,B_SH,180);}
-  if(on){// heart installed — orange glow radiating
-    glow(cv,hx,hy,22,ORANGE,180);glow(cv,hx,hy,12,hex('#ffd08a'),160);
-    // clockwork heart core
-    for(let a=0;a<360;a+=6)px(cv,hx+Math.cos(a*Math.PI/180)*7,hy+Math.sin(a*Math.PI/180)*7,mix(B_HI,ORANGE,0.4),235);
+function clockMount(name,on){const W=80,H=96,cv=C(W,H);const cx=W/2;ao(cv,cx,88,20,6,60);
+  // AP-2: 3/4 아이소 박스 마운트 + 심장 소켓은 우측 광원면(정면감 제거).
+  const rx=19,h=50,ry=rx/2,topY=88-h-ry;
+  isoBox(cv,cx,topY,rx,h,B_MID,mix(B_MID,B_HI,0.4),B_SH);
+  // 심장 소켓 — 우측 광원면 중앙 (황동 꽃잎 링 + 캐비티)
+  const hx=cx+6, hy=topY+ry+22;
+  for(let a=0;a<360;a+=30){const x=hx+Math.cos(a*Math.PI/180)*11,y=hy+Math.sin(a*Math.PI/180)*11;px(cv,x,y,B_HI,220);px(cv,x,y+1,B_SH,180);}
+  if(on){glow(cv,hx,hy,20,ORANGE,180);glow(cv,hx,hy,11,hex('#ffd08a'),160);
+    for(let a=0;a<360;a+=6)px(cv,hx+Math.cos(a*Math.PI/180)*6,hy+Math.sin(a*Math.PI/180)*6,mix(B_HI,ORANGE,0.4),235);
     px(cv,hx,hy,hex('#fff0d0'),255);
-    // radiating spokes
-    for(let a=0;a<360;a+=45)for(let i=8;i<16;i++)px(cv,hx+Math.cos(a*Math.PI/180)*i,hy+Math.sin(a*Math.PI/180)*i,ORANGE,150);
-    // gauge fill
-    rect(cv,bx+6,by+bh-12,bx+bw-8,by+bh-9,ORANGE,230);
-  } else {// empty dark cavity
-    for(let y=-8;y<=8;y++)for(let x=-8;x<=8;x++){if(x*x+y*y<=64)px(cv,hx+x,hy+y,DEEP,235);}
-    rect(cv,bx+6,by+bh-12,bx+10,by+bh-9,hex('#4a3c28'),200);
-  }
+    for(let a=0;a<360;a+=45)for(let i=7;i<13;i++)px(cv,hx+Math.cos(a*Math.PI/180)*i,hy+Math.sin(a*Math.PI/180)*i,ORANGE,150);
+  } else {for(let y=-7;y<=7;y++)for(let x=-7;x<=7;x++){if(x*x+y*y<=49)px(cv,hx+x,hy+y,DEEP,235);}}
   save(cv,name);}
 clockMount('l3_clock_mount.png',false);
 clockMount('l3_clock_mount_on.png',true);
@@ -500,23 +483,21 @@ function robotStanding(){const W=90,H=150,cv=C(W,H);ao(cv,W/2,142,22,7,68);const
 robotStanding();
 
 // ---- 14. L3 정비대 (workbench, brass with ORANGE fusion aperture). 128×112. ----
-(function workbench(){const W=128,H=112,cv=C(W,H);ao(cv,W/2,104,34,9,70);
-  const bx=28,by=54,bw=72,bh=46;
-  rect(cv,bx,by,bx+bw,by+bh,B_MID);rect(cv,bx,by,bx+bw,by+4,mix(B_MID,B_HI,0.5));rect(cv,bx+bw-3,by,bx+bw,by+bh,B_SH);
-  // riveted band
-  for(let rx=bx+6;rx<bx+bw-4;rx+=12)px(cv,rx,by+20,B_HI,190);rect(cv,bx,by+18,bx+bw,by+21,B_SH,160);
-  // worktop with a glowing fusion aperture (orange)
-  rect(cv,bx+2,by-8,bx+bw-2,by+2,B_SH);
-  const ax=bx+bw/2,ay=by-4;
-  glow(cv,ax,ay,26,EMBER,110);glow(cv,ax,ay,16,ORANGE,140);
-  for(let a=0;a<360;a+=24)px(cv,ax+Math.cos(a*Math.PI/180)*9,ay+Math.sin(a*Math.PI/180)*4.5,mix(EMBER,ORANGE,0.6),220);
+(function workbench(){const W=128,H=112,cv=C(W,H);const cx=W/2;ao(cv,cx,104,34,9,70);
+  // AP-2: 3/4 아이소 박스 + 윗면 worktop에 오렌지 융합 개구부(위에서 조합하는 정합 뷰).
+  const rx=34,h=40,ry=rx/2,topY=104-h-ry;
+  isoBox(cv,cx,topY,rx,h,B_MID,mix(B_MID,B_HI,0.4),B_SH);
+  // 윗면 융합 개구부(오렌지) — 마름모 윗면 중앙 타원
+  const ax=cx,ay=topY;
+  glow(cv,ax,ay,24,EMBER,110);glow(cv,ax,ay,15,ORANGE,140);
+  for(let a=0;a<360;a+=20)px(cv,ax+Math.cos(a*Math.PI/180)*10,ay+Math.sin(a*Math.PI/180)*5,mix(EMBER,ORANGE,0.6),220);
   px(cv,ax,ay,hex('#fff0d0'),245);
-  // tool arm over the aperture
-  for(let i=0;i<18;i++)px(cv,bx+14+i,by-6-i*0.4,B_HI);px(cv,bx+32,by-13,ORANGE,210);
-  // side gauge
-  rect(cv,bx+bw-16,by+10,bx+bw-6,by+30,DKPANEL);rect(cv,bx+bw-14,by+12,bx+bw-8,by+16,ORANGE,210);
-  // legs
-  rect(cv,bx+4,by+bh,bx+9,by+bh+8,B_SH);rect(cv,bx+bw-9,by+bh,bx+bw-4,by+bh+8,B_SH);
+  // 툴암(아이소 각도)
+  for(let i=0;i<18;i++)px(cv,cx-14+i,topY-6-i*0.3,B_HI);px(cv,cx+4,topY-12,ORANGE,210);
+  // 우측 광원면 사이드 게이지
+  const gx=cx+rx-14,gy=topY+ry+12;
+  for(let y=0;y<18;y++)for(let x=0;x<8;x++)px(cv,gx+x,gy+y+ (x)*0.5,DKPANEL,255);
+  for(let x=0;x<6;x++)px(cv,gx+1+x,gy+3+(1+x)*0.5,ORANGE,210);
   save(cv,'l3_workbench.png');})();
 
 // =========================================================================
