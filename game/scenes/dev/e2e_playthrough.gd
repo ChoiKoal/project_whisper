@@ -113,8 +113,15 @@ func _frames(n: int) -> void:
 		await get_tree().process_frame
 
 
+## (GP-6 §2 정합) Search from the scene-tree ROOT, not just `_scene`. The GatePuzzle modal is
+## parented to `get_tree().current_scene` (the gate controllers call GatePuzzle.open(current_scene…)),
+## which in this harness is the e2e_playthrough node itself — an ANCESTOR of the instantiated `_scene`,
+## not a descendant. Searching from `_scene` down could never see it, leaving the puzzle modal open and
+## its input-lock suppressing every later interaction (the GP-6 하네스 바이패스 충돌). Rooting the search
+## at get_tree().root finds the puzzle wherever production parents it (under `_scene` OR current_scene).
 func _find(cls) -> Node:
-	return _search(_scene, cls)
+	var root: Node = get_tree().root if get_tree() != null else _scene
+	return _search(root if root != null else _scene, cls)
 
 func _search(node: Node, cls) -> Node:
 	if is_instance_of(node, cls):
