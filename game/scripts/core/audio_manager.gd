@@ -28,6 +28,8 @@ const SFX_NAMES := [
 	"portal_hum", "travel_whoosh", "portal_ignite",
 	# L2-3: power / gate SFX (전력 hum + 스파크).
 	"power_hum", "power_spark",
+	# v1.3.0 (CQ) cutscene birdsong — the "반복 → 반복이 깨짐" 모티프 (CS-02/04, E1).
+	"bird",
 ]
 ## Streams that must loop (the CC0 BGM oggs + the fuse-bubble SFX).
 const LOOP_NAMES := ["fuse_bubble", "bgm_day", "bgm_night"]
