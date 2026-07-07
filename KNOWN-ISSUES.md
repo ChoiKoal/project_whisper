@@ -5,6 +5,14 @@
 갱신: 2026-07-05 · v0.1.2 — macOS 릴리스 크래시 원인 후보 하드닝 + 타이틀 화면 미화(아래 참조).
 갱신: 2026-07-06 · v0.6.0 — Layer 2(과학의 세계, 「꺼진 관문 기지」) 추가. L2 한정 알려진 항목은 아래 "🔬 Layer 2 (v0.6.0)" 절 참조.
 갱신: 2026-07-06 · v0.6.1 — 안정화 스윕. 릴리스-경로 정적 감사(assert 0건·set_script 타입정합·FileAccess null가드·export 필터) 클린 + 버그 2건 수정(아래 "✅ 해결됨(v0.6.1)" 참조). 신규 sweep_harness로 비정규 경로(클리어 전 귀환/컷신 중 이동/G3·G4 거부) 커버.
+갱신: 2026-07-07 · v1.0.4 — P0 핫픽스: L2~L5 조합대 인터랙티브화(진행 블로커 해결). 아래 "✅ 해결됨(v1.0.4)" 절 참조.
+
+---
+
+## ✅ 해결됨 (v1.0.4) — P0 핫픽스: L2~L5 조합대 진행 블로커
+
+- 🔴 **[해결] L2~L5 조합대에서 조합창(Fusion UI)이 열리지 않던 진행 블로커.** 제2~제5 세계의 조합대(정비대/기어조립대/룬 제단/봉헌대)가 단순 `Sprite2D + set_meta`로 배치돼 있어, 실플레이에서 E-조합이 Fusion UI를 열 수 없었다(조합창은 `Cauldron.interacted` 시그널에서만 개방). 게이트 조합물을 만들 수 없어 L2~L5 진행이 막힘. **수정**: 각 세션의 `_spawn_workbench()`가 조합대를 실제 `Cauldron` 인스턴스로 스폰(gatherable 그룹 참여 → InteractionController가 E-타겟으로 '조합' 프롬프트 해석 → `_do_interact()`가 Fusion UI 개방). `_bind_fusion_ui()`는 `owner ?? current_scene`로 씬 루트를 해석해 테스트 하네스 부모화 상황에서도 동작. **회귀 방어**: E2E가 이 버그를 놓친 근본 원인 = `Fusion.fuse()` API 직접 호출로 월드 상호작용 경로를 우회한 것. 이를 막기 위해 (1) 신규 `interaction_fusion_harness`가 6레이어(home/grove/L2~L5) 전부에서 실 E-조합→Fusion UI 실제 개방→UI 슬롯+조합 버튼 제작을 `Fusion.fuse()` 없이 검증, (2) e2e에 `_l2_ui_path_first_craft()` NO-API-우회 스텝 추가. 전 하네스 35/35 그린 + 실 PCK PASS.
+- 🟡 **[해결] 세계수 진상 조각 카드 잔류 모달.** 세계수 조사 시 뜨는 진상 카드가 닫히지 않고 `truth_card` 모달로 GameState에 남아, 이후 월드 상호작용(`ui_modal_open()` 게이트)을 침묵으로 억제하던 문제. e2e가 `_close_shard_card()`로 명시적으로 dismiss하도록 보강(실플레이는 E/ESC로 이미 닫힘 — 하네스 커버리지 갭 해소).
 
 심각도 태그
 - 🔴 **게임진행** — 클리어/저장 등 진행에 영향을 줄 수 있음
