@@ -8,6 +8,9 @@
 const zlib = require('zlib'), fs = require('fs'), path = require('path');
 const OUT = path.join(process.env.ART_OUT_DIR || __dirname, 'assets', 'objects');
 
+// AP-2 (v1.2.0 아트 정합): 정면뷰 제단/기둥/문 → 3/4 아이소 박스/실린더. 공용 헬퍼.
+const ISO = require('./tools_iso_lib.js');
+const { isoBox, isoCylinder, topDiamond, isoEllipseTop, darker: dk } = ISO;
 function crc32(b){let c=~0;for(let i=0;i<b.length;i++){c^=b[i];for(let k=0;k<8;k++)c=(c>>>1)^(0xEDB88320&-(c&1));}return(~c)>>>0;}
 function chunk(t,d){const l=Buffer.alloc(4);l.writeUInt32BE(d.length,0);const tb=Buffer.from(t,'ascii');const body=Buffer.concat([tb,d]);const cr=Buffer.alloc(4);cr.writeUInt32BE(crc32(body),0);return Buffer.concat([l,body,cr]);}
 function enc(w,h,px){const sig=Buffer.from([137,80,78,71,13,10,26,10]);const ih=Buffer.alloc(13);ih.writeUInt32BE(w,0);ih.writeUInt32BE(h,4);ih[8]=8;ih[9]=6;const st=w*4;const raw=Buffer.alloc((st+1)*h);for(let y=0;y<h;y++){raw[y*(st+1)]=0;px.copy(raw,y*(st+1)+1,y*st,y*st+st);}return Buffer.concat([sig,chunk('IHDR',ih),chunk('IDAT',zlib.deflateSync(raw,{level:9})),chunk('IEND',Buffer.alloc(0))]);}
@@ -138,7 +141,10 @@ runeBridge('l4_rune_bridge_off.png',false);
 runeBridge('l4_rune_bridge_on.png',true);
 
 // ---- G2. 결계 밸브문 (ward blast-door) closed/open. 128×128. ----
-function wardDoor(name,open){const W=128,H=128,cv=C(W,H);ao(cv,W/2,120,30,8,70);
+function wardDoor(name,open){const W=128,H=128,cv=C(W,H);const cx=W/2;ao(cv,cx,120,32,9,72);
+  // AP-2: 아이소 문턱 플린스 — 벽형 결계문 접지.
+  topDiamond(cv,cx,116,30,P_SH);
+  for(let t=0;t<=30;t++){const yy=15*(1-t/30);px(cv,cx-t,116-yy,dk(P_SH,0.5));px(cv,cx+t,116-yy,dk(P_SH,0.5));px(cv,cx-t,116+yy,dk(P_SH,0.5));px(cv,cx+t,116+yy,dk(P_SH,0.5));}
   if(!open){
     rect(cv,30,36,64,116,P_MID);rect(cv,64,36,98,116,mix(P_MID,P_SH,0.25));
     rect(cv,30,36,98,40,mix(P_MID,P_HI,0.45));
@@ -165,14 +171,14 @@ wardDoor('l4_ward_door_closed.png',false);
 wardDoor('l4_ward_door_open.png',true);
 
 // ---- G2 landmark. 마력샘/결계 분수 (mana spring / ward fountain, 2×3) off/on. 176×160. ----
-function manaSpring(name,on){const W=176,H=160,cv=C(W,H);ao(cv,W/2,H-8,46,11,74);
-  const cx=W/2;
-  // stone basin (three tiers)
-  rect(cv,cx-52,H-40,cx+52,H-14,mix(STONE,P_SH,0.4));rect(cv,cx-52,H-40,cx+52,H-36,mix(STONE,P_HI,0.3));
-  rect(cv,cx-38,H-70,cx+38,H-40,mix(STONE,P_SH,0.3));
-  rect(cv,cx-24,H-96,cx+24,H-70,mix(STONE,P_SH,0.3));
-  // central pillar
-  rect(cv,cx-8,54,cx+8,H-96,mix(STONE,P_MID,0.3));
+function manaSpring(name,on){const W=176,H=160,cv=C(W,H);const cx=W/2;ao(cv,cx,H-8,46,11,74);
+  // AP-2: 3/4 아이소 3단 석재 분수 — 각 단을 아이소 실린더(윗면 타원)로 적층.
+  // 하단(넓음) → 중단 → 상단(좁음) + 중앙 기둥. 윗면 타원이 바닥 다이아와 평행.
+  isoCylinder(cv,cx,H-46,52,26,mix(STONE,P_HI,0.2),mix(STONE,P_MID,0.3),mix(STONE,P_SH,0.4),0.96);
+  isoCylinder(cv,cx,H-74,38,24,mix(STONE,P_HI,0.2),mix(STONE,P_MID,0.3),mix(STONE,P_SH,0.4),0.96);
+  isoCylinder(cv,cx,H-100,24,22,mix(STONE,P_HI,0.2),mix(STONE,P_MID,0.3),mix(STONE,P_SH,0.4),0.96);
+  // 중앙 기둥(상단 위로) — 아이소 실린더 소형
+  isoCylinder(cv,cx,52,9,H-152,mix(STONE,P_HI,0.15),mix(STONE,P_MID,0.3),mix(STONE,P_SH,0.35),1.0);
   const wcx=cx,wcy=H-58;
   if(on){// clear water + rotating golden ward + violet-gold mana particles
     for(let y=-8;y<=6;y++)for(let x=-34;x<=34;x++){const d=(x/34)**2+(y/9)**2;if(d<=1)px(cv,wcx+x,wcy+y,hex('#3a4a8a'),210);}
@@ -192,8 +198,10 @@ manaSpring('l4_mana_spring.png',false);
 manaSpring('l4_mana_spring_on.png',true);
 
 // ---- G3. 거대 균열 / 봉인 균열문 (great crack / sealed rift, 2×2) closed/warded. 128×160. ----
-function crackGate(name,warded){const W=128,H=160,cv=C(W,H);ao(cv,W/2,H-8,30,8,60);
-  const cx=W/2;
+function crackGate(name,warded){const W=128,H=160,cv=C(W,H);const cx=W/2;ao(cv,cx,H-8,32,9,62);
+  // AP-2: 아이소 문턱 플린스 — 균열문(벽형 수직 리프트) 접지.
+  topDiamond(cv,cx,H-14,30,mix(AME,P_SH,0.5));
+  for(let t=0;t<=30;t++){const yy=15*(1-t/30);px(cv,cx-t,H-14-yy,dk(P_SH,0.5));px(cv,cx+t,H-14-yy,dk(P_SH,0.5));px(cv,cx-t,H-14+yy,dk(P_SH,0.5));px(cv,cx+t,H-14+yy,dk(P_SH,0.5));}
   // torn amethyst frame around a jagged vertical rift
   rect(cv,18,20,34,150,mix(AME,P_MID,0.4));rect(cv,94,20,110,150,mix(AME,P_MID,0.4));
   rect(cv,18,20,110,30,mix(AME,P_HI,0.3));
@@ -213,11 +221,11 @@ crackGate('l4_crack_gate.png',false);
 crackGate('l4_crack_gate_on.png',true);
 
 // ---- G1 mount. 룬 제단 (rune altar, place slot) off/on. 96×96. ----
-function runeAltar(name,on){const W=96,H=96,cv=C(W,H);ao(cv,W/2,88,24,7,66);
-  // a stone altar pedestal with a rune slot on top
-  rect(cv,30,60,66,86,mix(STONE,P_SH,0.4));rect(cv,30,60,66,64,mix(STONE,P_HI,0.3));rect(cv,62,60,66,86,P_SH);
-  rect(cv,26,84,70,90,P_SH);// footing
-  const sx=48,sy=52;
+function runeAltar(name,on){const W=96,H=96,cv=C(W,H);const cx=W/2;ao(cv,cx,88,24,7,66);
+  // AP-2: 3/4 아이소 석재 제단 + 룬 슬롯은 윗면 마름모 중앙.
+  const rx=24,h=28,ry=rx/2,topY=88-h-ry;
+  isoBox(cv,cx,topY,rx,h,mix(STONE,P_HI,0.15),mix(STONE,P_MID,0.35),P_SH);
+  const sx=cx,sy=topY;
   // rune slot ring
   for(let a=0;a<360;a+=30){const x=sx+Math.cos(a*Math.PI/180)*13,y=sy+Math.sin(a*Math.PI/180)*8;px(cv,x,y,on?GOLD:GOLD_DK,on?230:170);px(cv,x,y+1,P_SH,180);}
   if(on){// bridge-stone installed — golden runes radiate + a light-bridge fan
@@ -233,53 +241,50 @@ runeAltar('l4_rune_altar.png',false);
 runeAltar('l4_rune_altar_on.png',true);
 
 // ---- G3 mount. 결계석 / 부적 제단 (ward pillar / charm altar) off/on. 80×96. ----
-function wardPillar(name,on){const W=80,H=96,cv=C(W,H);ao(cv,W/2,88,20,6,60);
-  const bx=24,by=30,bw=32,bh=54;
-  rect(cv,bx,by,bx+bw,by+bh,mix(STONE,P_MID,0.3));rect(cv,bx,by,bx+bw,by+3,mix(STONE,P_HI,0.4));rect(cv,bx+bw-3,by,bx+bw,by+bh,P_SH);
-  rect(cv,bx+4,by+5,bx+bw-4,by+bh-6,DKPANEL);
-  const hx=bx+bw/2,hy=by+24;
+function wardPillar(name,on){const W=80,H=96,cv=C(W,H);const cx=W/2;ao(cv,cx,88,20,6,60);
+  // AP-2: 3/4 아이소 석재 기둥 + 결계 소켓은 우측 광원면.
+  const rx=19,h=50,ry=rx/2,topY=88-h-ry;
+  isoBox(cv,cx,topY,rx,h,mix(STONE,P_HI,0.2),mix(STONE,P_MID,0.35),P_SH);
+  const hx=cx+5,hy=topY+ry+22;
   // ward inset ring
   for(let a=0;a<360;a+=30){const x=hx+Math.cos(a*Math.PI/180)*11,y=hy+Math.sin(a*Math.PI/180)*11;px(cv,x,y,on?GOLD:GOLD_DK,on?220:160);}
   if(on){glow(cv,hx,hy,20,GOLD,160);glow(cv,hx,hy,10,hex('#fff0c8'),150);
     for(let a=0;a<360;a+=6)px(cv,hx+Math.cos(a*Math.PI/180)*6,hy+Math.sin(a*Math.PI/180)*6,mix(GOLD,hex('#fff0c8'),0.4),235);
     px(cv,hx,hy,hex('#fff0d0'),255);
-    rect(cv,bx+6,by+bh-12,bx+bw-8,by+bh-9,GOLD,230);
+    for(let x=0;x<12;x++)px(cv,hx-6+x,hy+16+(x)*0.4,GOLD,230);
   } else {
     for(let y=-8;y<=8;y++)for(let x=-8;x<=8;x++){if(x*x+y*y<=64)px(cv,hx+x,hy+y,DEEP,235);}
-    rect(cv,bx+6,by+bh-12,bx+10,by+bh-9,GOLD_DK,180);
+    for(let x=0;x<4;x++)px(cv,hx-6+x,hy+16+(x)*0.4,GOLD_DK,180);
   }
   save(cv,name);}
 wardPillar('l4_ward_pillar.png',false);
 wardPillar('l4_ward_pillar_on.png',true);
 
 // ---- G4 mount. 봉인 코어 배전반 (seal-core mount, place slot) off/on. 80×96. ----
-function sealMount(name,on){const W=80,H=96,cv=C(W,H);ao(cv,W/2,88,20,6,60);
-  const bx=22,by=30,bw=36,bh=54;
-  rect(cv,bx,by,bx+bw,by+bh,mix(STONE,P_MID,0.3));rect(cv,bx,by,bx+bw,by+3,mix(STONE,P_HI,0.4));rect(cv,bx+bw-3,by,bx+bw,by+bh,P_SH);
-  rect(cv,bx+4,by+5,bx+bw-4,by+bh-6,DKPANEL);
-  const hx=bx+bw/2,hy=by+26;
-  // seal socket — a ring of rune petals framing the core cavity
-  for(let a=0;a<360;a+=30){const x=hx+Math.cos(a*Math.PI/180)*13,y=hy+Math.sin(a*Math.PI/180)*13;px(cv,x,y,on?GOLD:GOLD_DK,on?220:170);px(cv,x,y+1,P_SH,180);}
-  if(on){// seal orb installed — golden rune rings radiating
-    glow(cv,hx,hy,22,GOLD,180);glow(cv,hx,hy,12,hex('#fff0c8'),160);
-    for(let a=0;a<360;a+=6)px(cv,hx+Math.cos(a*Math.PI/180)*7,hy+Math.sin(a*Math.PI/180)*7,mix(GOLD,hex('#fff0c8'),0.4),235);
+function sealMount(name,on){const W=80,H=96,cv=C(W,H);const cx=W/2;ao(cv,cx,88,20,6,60);
+  // AP-2: 3/4 아이소 석재 마운트 + 봉인 소켓은 우측 광원면.
+  const rx=19,h=50,ry=rx/2,topY=88-h-ry;
+  isoBox(cv,cx,topY,rx,h,mix(STONE,P_HI,0.2),mix(STONE,P_MID,0.35),P_SH);
+  const hx=cx+6,hy=topY+ry+22;
+  for(let a=0;a<360;a+=30){const x=hx+Math.cos(a*Math.PI/180)*11,y=hy+Math.sin(a*Math.PI/180)*11;px(cv,x,y,on?GOLD:GOLD_DK,on?220:170);px(cv,x,y+1,P_SH,180);}
+  if(on){glow(cv,hx,hy,20,GOLD,180);glow(cv,hx,hy,11,hex('#fff0c8'),160);
+    for(let a=0;a<360;a+=6)px(cv,hx+Math.cos(a*Math.PI/180)*6,hy+Math.sin(a*Math.PI/180)*6,mix(GOLD,hex('#fff0c8'),0.4),235);
     px(cv,hx,hy,hex('#fff0d0'),255);
-    for(let a=0;a<360;a+=45)for(let i=8;i<16;i++)px(cv,hx+Math.cos(a*Math.PI/180)*i,hy+Math.sin(a*Math.PI/180)*i,GOLD,150);
-    rect(cv,bx+6,by+bh-12,bx+bw-8,by+bh-9,GOLD,230);
+    for(let a=0;a<360;a+=45)for(let i=7;i<13;i++)px(cv,hx+Math.cos(a*Math.PI/180)*i,hy+Math.sin(a*Math.PI/180)*i,GOLD,150);
+    for(let x=0;x<12;x++)px(cv,hx-6+x,hy+16+(x)*0.4,GOLD,230);
   } else {
-    for(let y=-8;y<=8;y++)for(let x=-8;x<=8;x++){if(x*x+y*y<=64)px(cv,hx+x,hy+y,DEEP,235);}
-    rect(cv,bx+6,by+bh-12,bx+10,by+bh-9,GOLD_DK,180);
+    for(let y=-7;y<=7;y++)for(let x=-7;x<=7;x++){if(x*x+y*y<=49)px(cv,hx+x,hy+y,DEEP,235);}
+    for(let x=0;x<4;x++)px(cv,hx-6+x,hy+16+(x)*0.4,GOLD_DK,180);
   }
   save(cv,name);}
 sealMount('l4_seal_mount.png',false);
 sealMount('l4_seal_mount_on.png',true);
 
 // ---- G4 landmark. 봉인 코어 (SEAL CORE, 3×3 tall) off/on. 256×320. ----
-function sealCore(name,lit){const W=256,H=320,cv=C(W,H);ao(cv,W/2,306,66,14,80);
-  const cx=W/2;
-  // stepped amethyst base
-  rect(cv,cx-70,278,cx+70,306,P_SH);rect(cv,cx-70,278,cx+70,282,mix(P_SH,P_HI,0.3));
-  rect(cv,cx-58,250,cx+58,280,mix(AME,P_MID,0.4));rect(cv,cx-58,250,cx+58,254,mix(P_MID,P_HI,0.4));
+function sealCore(name,lit){const W=256,H=320,cv=C(W,H);const cx=W/2;ao(cv,cx,306,66,14,80);
+  // AP-2: 계단형 받침을 아이소 마름모 2단으로 (윗면 다이아 || 바닥). 첨탑 샤프트는 유지(랜드마크).
+  isoBox(cv,cx,286,70,20,mix(P_SH,P_HI,0.2),mix(P_SH,P_MID,0.4),dk(P_SH,0.2));
+  isoBox(cv,cx,258,58,22,mix(AME,P_HI,0.2),mix(AME,P_MID,0.4),P_SH);
   // tapering shaft
   for(let y=110;y<252;y++){const t=(y-110)/142;const hw=Math.round(30+t*24);const c=mix(mix(AME,P_MID,0.4),P_SH,t*0.4);
     rect(cv,cx-hw,y,cx+hw,y+1,c);rect(cv,cx-hw,y,cx-hw+3,y+1,mix(c,P_HI,0.35));rect(cv,cx+hw-3,y,cx+hw,y+1,P_SH);}
@@ -317,11 +322,13 @@ sealCore('l4_seal_core_on.png',true);
 
 // ---- 룬 기둥 (rune pillar cluster, blocks). 112×96. ----
 (function runePillars(){const W=112,H=96,cv=C(W,H);ao(cv,W/2,90,32,8,68);
+  // AP-2: 각 기둥 상단에 2:1 아이소 캡(윗면 타원) — 3/4 뷰로 접지. 광원 우상단 3톤.
   const runs=[[24,10],[40,14],[58,10],[74,16],[92,8]];
-  for(const [px0,w] of runs){for(let y=24;y<88;y++)for(let x=0;x<w;x++){const t=x/w;const c=t<0.3?P_HI:(t<0.7?P_MID:P_SH);px(cv,px0+x,y,c,240);}
-    rect(cv,px0-1,22,px0+w+1,26,P_SH);rect(cv,px0-1,22,px0+w+1,23,mix(P_SH,P_HI,0.4));
-    // a golden rune band around each pillar
-    for(let x=0;x<w;x++)px(cv,px0+x,48,GOLD,160);}
+  for(const [px0,w] of runs){const pcx=px0+w/2;
+    for(let y=24;y<88;y++)for(let x=0;x<w;x++){const t=x/w;const c=t>0.6?mix(P_MID,P_HI,0.4):(t>0.25?P_MID:P_SH);px(cv,px0+x,y,c,240);}
+    // 상단 아이소 캡(타원 윗면)
+    isoEllipseTop(cv,pcx,24,w/2+1,mix(P_HI,P_MID,0.3),240,dk(P_MID,0.5));
+    for(let x=0;x<w;x++)px(cv,px0+x,48,GOLD,160);}   // 금 룬 밴드
   glow(cv,W/2,50,18,GOLD,40);
   save(cv,'l4_rune_pillars.png');})();
 
@@ -395,31 +402,29 @@ mageGhost('l4_mage_ghost_reaching.png','reaching');
 mageGhost('l4_mage_ghost_kneeling.png','kneeling');
 
 // ---- 봉인 제단 데코 (broken seal altar, deco). 128×112. ----
-(function brokenAltar(){const W=128,H=112,cv=C(W,H);ao(cv,W/2,104,34,9,70);
-  const bx=30,by=54,bw=68,bh=46;
-  rect(cv,bx,by,bx+bw,by+bh,mix(STONE,P_MID,0.3));rect(cv,bx,by,bx+bw,by+4,mix(STONE,P_HI,0.4));rect(cv,bx+bw-3,by,bx+bw,by+bh,P_SH);
-  // a cracked seal disc on top, dark leak
-  const ax=bx+bw/2,ay=by-4;
+(function brokenAltar(){const W=128,H=112,cv=C(W,H);const cx=W/2;ao(cv,cx,104,34,9,70);
+  // AP-2: 3/4 아이소 석재 제단 + 윗면 마름모 위 금 간 봉인 디스크.
+  const rx=34,h=40,ry=rx/2,topY=104-h-ry;
+  isoBox(cv,cx,topY,rx,h,mix(STONE,P_HI,0.15),mix(STONE,P_MID,0.3),P_SH);
+  const ax=cx,ay=topY;
   for(let a=0;a<360;a+=8)px(cv,ax+Math.cos(a*Math.PI/180)*16,ay+Math.sin(a*Math.PI/180)*8,GOLD_DK,180);
-  // crack across it + dark seep
   for(let i=-14;i<14;i++)px(cv,ax+i,ay+Math.round(Math.sin(i*0.5)*2),hex('#1a0a24'),200);
   glow(cv,ax,ay,10,hex('#3a1a4a'),70);
-  rect(cv,bx+4,by+bh,bx+9,by+bh+8,P_SH);rect(cv,bx+bw-9,by+bh,bx+bw-4,by+bh+8,P_SH);
   save(cv,'l4_broken_altar.png');})();
 
 // ---- L4 정비대 (workbench, amethyst with GOLD fusion aperture). 128×112. ----
-(function workbench(){const W=128,H=112,cv=C(W,H);ao(cv,W/2,104,34,9,70);
-  const bx=28,by=54,bw=72,bh=46;
-  rect(cv,bx,by,bx+bw,by+bh,P_MID);rect(cv,bx,by,bx+bw,by+4,mix(P_MID,P_HI,0.5));rect(cv,bx+bw-3,by,bx+bw,by+bh,P_SH);
-  for(let rx=bx+6;rx<bx+bw-4;rx+=12)px(cv,rx,by+20,P_HI,190);rect(cv,bx,by+18,bx+bw,by+21,P_SH,160);
-  rect(cv,bx+2,by-8,bx+bw-2,by+2,P_SH);
-  const ax=bx+bw/2,ay=by-4;
-  glow(cv,ax,ay,26,GOLD_DK,110);glow(cv,ax,ay,16,GOLD,140);
-  for(let a=0;a<360;a+=24)px(cv,ax+Math.cos(a*Math.PI/180)*9,ay+Math.sin(a*Math.PI/180)*4.5,mix(GOLD_DK,GOLD,0.6),220);
+(function workbench(){const W=128,H=112,cv=C(W,H);const cx=W/2;ao(cv,cx,104,34,9,70);
+  // AP-2: 3/4 아이소 박스 + 윗면 worktop에 금색 융합 개구부.
+  const rx=34,h=40,ry=rx/2,topY=104-h-ry;
+  isoBox(cv,cx,topY,rx,h,P_MID,mix(P_MID,P_HI,0.4),P_SH);
+  const ax=cx,ay=topY;
+  glow(cv,ax,ay,24,GOLD_DK,110);glow(cv,ax,ay,15,GOLD,140);
+  for(let a=0;a<360;a+=20)px(cv,ax+Math.cos(a*Math.PI/180)*10,ay+Math.sin(a*Math.PI/180)*5,mix(GOLD_DK,GOLD,0.6),220);
   px(cv,ax,ay,hex('#fff0d0'),245);
-  for(let i=0;i<18;i++)px(cv,bx+14+i,by-6-i*0.4,P_HI);px(cv,bx+32,by-13,GOLD,210);
-  rect(cv,bx+bw-16,by+10,bx+bw-6,by+30,DKPANEL);rect(cv,bx+bw-14,by+12,bx+bw-8,by+16,GOLD,210);
-  rect(cv,bx+4,by+bh,bx+9,by+bh+8,P_SH);rect(cv,bx+bw-9,by+bh,bx+bw-4,by+bh+8,P_SH);
+  for(let i=0;i<18;i++)px(cv,cx-14+i,topY-6-i*0.3,P_HI);px(cv,cx+4,topY-12,GOLD,210);
+  const gx=cx+rx-14,gy=topY+ry+12;
+  for(let y=0;y<18;y++)for(let x=0;x<8;x++)px(cv,gx+x,gy+y+(x)*0.5,DKPANEL,255);
+  for(let x=0;x<6;x++)px(cv,gx+1+x,gy+3+(1+x)*0.5,GOLD,210);
   save(cv,'l4_workbench.png');})();
 
 // =========================================================================
