@@ -84,6 +84,7 @@ func _run() -> void:
 	await _stepL4_magic_journey()           # (L4) enter magic portal → mage_tower → G1..G4 → 정화 → re-enter persist
 	await _stepL5_divine_journey()          # (L5-6) enter divinity portal → cathedral → G1..G4 봉헌/응답 → 정화 → 다섯 포탈 전점등 → re-enter persist
 	await _stepEG_door_of_light()           # (EG) 다섯 포탈 전점등 후 홈 → 빛의 문 스폰 → [들어간다] → E1 완주
+	await _stepGP_npc_and_hint()            # (v1.1.0 GP-6) grove NPC 의뢰 1개(실 E경로) + 결과-우선 힌트 1회 발견(실 조합 실패)
 	await _step7_save_load_persist()
 	await _step8_ng_plus()
 	_cleanup()
@@ -2005,6 +2006,102 @@ func _l2_g3_passable(gates: Node) -> bool:
 	if col is CollisionShape2D:
 		return (col as CollisionShape2D).disabled
 	return true
+
+
+# ==== STEP GP: (v1.1.0) grove NPC 의뢰 1개 + 결과-우선 힌트 1회 발견 (실경로) ====
+##
+## (GP-6 §3) The E2E must exercise the two v1.1.0 gameplay-pass additions through their REAL
+## world paths at least once in the continuous run — NOT via QuestManager/Codex API shortcuts:
+##   * NPC 의뢰 1개: park the player adjacent to the grove's 노목(oak) QuestNPC and press E through
+##     the actual InteractionController resolver → its sub-chain goes ACTIVE (real activation path,
+##     the same the npc_quest harness proves per-layer). Whisper-보조 only (can_gather()==false).
+##   * 힌트 발견 1회: drive REAL Fusion.fuse() on non-recipe pairs (NO Codex.register_failed_fusion
+##     shortcut) until the gauge trips → a result-first 힌트 becomes active (hint_revealed observed,
+##     revealed_hint_count grows). This is the GP-2 결과-우선 힌트 pipeline end-to-end.
+## Runs in the grove EG re-booted at its tail; leaves the world intact for STEP 7's save/load.
+func _stepGP_npc_and_hint() -> void:
+	_banner(66, "(v1.1.0) grove 노목 NPC 의뢰 E-활성 + 결과-우선 힌트 실 발견 (실 조합 실패)")
+
+	# ---- NPC 의뢰 1개: real E-path activation of the grove 노목(oak) sub-chain --------------
+	var oak: Node = null
+	for n in get_tree().get_nodes_in_group("gatherable"):
+		if n is QuestNPC and String(n.get("object_id")) == "npc_oak":
+			oak = n
+			break
+	_check("GP: 노목(oak) QuestNPC가 grove에 스폰", oak != null)
+	if oak != null:
+		_check("GP: NPC는 Whisper-보조 only — can_gather()==false (맵 획득처 무변경)",
+			oak.has_method("can_gather") and oak.can_gather() == false)
+		var oak_cell := _loader.local_to_map(_loader.to_local(oak.target_point()))
+		var adj := Vector2i(-999, -999)
+		for d in ([Vector2i(0,1), Vector2i(1,0), Vector2i(-1,0), Vector2i(0,-1),
+				Vector2i(1,1), Vector2i(-1,1), Vector2i(1,-1), Vector2i(-1,-1)] as Array[Vector2i]):
+			if _loader.is_cell_walkable(oak_cell + d):
+				adj = oak_cell + d
+				break
+		_check("GP: 노목 인접 워커블 셀 확보", adj != Vector2i(-999, -999))
+		if adj != Vector2i(-999, -999):
+			_check("GP: 사전 — oak 서브체인 휴면(비활성)", QuestManager.npc_active_id("oak") == "")
+			_player.clear_path()
+			_player.velocity = Vector2.ZERO
+			_player.global_position = _loader.to_global(_loader.map_to_local(adj))
+			await _frames(2)
+			_interaction._process(0.016)
+			print("DBG GP modal_open=%s pl=%s tm=%s oak_cell=%s adj=%s ppos=%s target=%s" % [
+				GameState.ui_modal_open(), _interaction._player != null, _interaction._tilemap != null,
+				str(oak_cell), str(adj), str(_player.global_position), str(_interaction._target_object)])
+			_check("GP: InteractionController가 노목을 E-타겟으로 해석",
+				_interaction._target_object == oak, "target=%s" % str(_interaction._target_object))
+			# E through the REAL resolver (NOT QuestManager.activate_npc_line) → sub-chain active.
+			_interaction._do_interact()
+			await _frames(2)
+			_check("GP: E 상호작용 → 노목 서브체인 활성 (N-oak-Q1, 실 경로)",
+				QuestManager.npc_active_id("oak") == "N-oak-Q1",
+				"active=%s" % QuestManager.npc_active_id("oak"))
+			if oak.has_method("_close_card"):
+				oak.call("_close_card")
+			await _frames(2)
+
+	# ---- 힌트 발견 1회: real Fusion.fuse() on non-recipe pairs until a 힌트 trips ------------
+	# Use a pool of items and fuse only pairs RecipeDB confirms have NO recipe, through the REAL
+	# Fusion path (which routes to Codex.register_failed_fusion internally). No API shortcut here.
+	var reveals: Array[String] = []
+	var hint_cb := func(rid: String, _ing: String, _stage: int): reveals.append(rid)
+	Codex.hint_revealed.connect(hint_cb)
+	var hints_before := Codex.revealed_hint_count()
+	var pool: Array[String] = ["I1", "I2", "I3", "I4", "I5", "I6", "I7", "I8"]
+	var real_fails := 0
+	var any_reveal := false
+	for i in range(pool.size()):
+		if any_reveal:
+			break
+		for j in range(i + 1, pool.size()):
+			# Skip pairs that ARE a recipe (we only want authentic FAILED fuses).
+			if not RecipeDB.find_recipe([pool[i], pool[j]]).is_empty():
+				continue
+			Inventory.add(pool[i], 1)
+			Inventory.add(pool[j], 1)
+			var res: Dictionary = Fusion.fuse(pool[i], pool[j])
+			if not bool(res.get("matched", false)):
+				real_fails += 1
+				if bool(res.get("hint_revealed", false)) or Codex.revealed_hint_count() > hints_before:
+					any_reveal = true
+					break
+	_check("GP: 실 조합 실패로 힌트 게이지 진행 (Fusion.fuse 실경로, API 우회 없음)", real_fails >= 1,
+		"real_fails=%d" % real_fails)
+	_check("GP: 결과-우선 힌트 1회 발견 (hint_revealed 관찰 + 활성 힌트 증가)",
+		any_reveal and reveals.size() >= 1 and Codex.revealed_hint_count() > hints_before,
+		"reveals=%s active=%d→%d" % [str(reveals), hints_before, Codex.revealed_hint_count()])
+	# The revealed hint is result-first (stage 1): its output silhouette resolves.
+	if reveals.size() >= 1:
+		var focus := reveals[0]
+		_check("GP: 발견 힌트가 결과-우선(stage≥1) + 출력 실루엣 해석",
+			Codex.hint_stage(focus) >= 1 and Codex.hint_output_for_recipe(focus) != "",
+			"focus=%s stage=%d out=%s" % [focus, Codex.hint_stage(focus), Codex.hint_output_for_recipe(focus)])
+	Codex.hint_revealed.disconnect(hint_cb)
+	# Clean the junk items we added for the failed fuses so STEP 7's inventory assertions stay honest.
+	for it in pool:
+		Inventory.remove(it, Inventory.count(it))
 
 
 # ==== STEP 7: save → load → cleared state persists =========================
