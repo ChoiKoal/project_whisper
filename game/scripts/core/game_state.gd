@@ -289,6 +289,11 @@ var truth_final_seen: bool = false
 signal truth_shard_collected(shard_id: String, count: int)
 ## (EG-2) Emitted once when the 5th shard completes the set (the final 회수 카드 beat).
 signal truth_shards_complete()
+## (v1.1.0 GP-4 §1) Emitted on EVERY 진상 조각 조사 (E-interact), including re-investigation of an
+## already-collected shard. NPC 회고 quests listen to THIS (not truth_shard_collected) so a player
+## who collected the shard BEFORE taking the quest can still complete it by looking again —
+## 부록B #2: shards are never quest-gated; the quest only decorates the investigation.
+signal truth_shard_investigated(shard_id: String)
 
 ## (EG-2) Collect a truth shard (idempotent). Records it, announces it, and — when this
 ## completes all five — sets truth_final_seen and fires truth_shards_complete. Returns true iff

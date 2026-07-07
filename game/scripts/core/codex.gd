@@ -61,17 +61,29 @@ func record_truth_log(shard_id: String, title: String, text: String) -> void:
 	if shard_id == "":
 		return
 	_truth_logs[shard_id] = {"title": title, "text": text}
-	if _truth_logs.size() >= GameState.TRUTH_SHARD_IDS.size():
+	# (v1.1.0 GP-4) NPC 회고 logs (non-canonical ids like "npc_oak") also land here; only the
+	# CANONICAL five may trip the final card, so NPC logs can never fake-complete the set.
+	var canon := 0
+	for sid in GameState.TRUTH_SHARD_IDS:
+		if _truth_logs.has(sid):
+			canon += 1
+	if canon >= GameState.TRUTH_SHARD_IDS.size():
 		_truth_final_seen = true
 	truth_log_recorded.emit(shard_id)
 
-## (EG-2) All recorded truth logs, in canonical shard order → [{id,title,text}]. For the 도감 탭.
+## (EG-2) All recorded truth logs → [{id,title,text}]. Canonical shards first (narrative order),
+## then any extra logs (v1.1.0 GP-4 NPC 회고 기록) in insertion order. For the 도감 탭.
 func truth_logs_ordered() -> Array:
 	var out: Array = []
 	for sid in GameState.TRUTH_SHARD_IDS:
 		if _truth_logs.has(sid):
 			var e: Dictionary = _truth_logs[sid]
 			out.append({"id": sid, "title": String(e.get("title", "")), "text": String(e.get("text", ""))})
+	for sid in _truth_logs.keys():
+		if String(sid) in GameState.TRUTH_SHARD_IDS:
+			continue
+		var e2: Dictionary = _truth_logs[sid]
+		out.append({"id": String(sid), "title": String(e2.get("title", "")), "text": String(e2.get("text", ""))})
 	return out
 
 func truth_log_count() -> int:

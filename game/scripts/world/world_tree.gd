@@ -72,6 +72,8 @@ func on_interact() -> void:
 func _collect_shard() -> void:
 	if GameState != null:
 		GameState.collect_truth_shard(SHARD_ID)
+		# (v1.1.0 GP-4) every investigation announces itself for NPC 회고 quests (부록B #2).
+		GameState.truth_shard_investigated.emit(SHARD_ID)
 	if Codex != null:
 		Codex.record_truth_log(SHARD_ID, SHARD_TITLE, SHARD_LOG)
 

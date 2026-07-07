@@ -63,6 +63,10 @@ func on_interact() -> void:
 	var newly := false
 	if GameState != null:
 		newly = GameState.collect_truth_shard(shard_id)
+		# (v1.1.0 GP-4) EVERY investigation announces itself (re-looks included) so NPC 회고
+		# quests can complete even if the shard was already collected beforehand (부록B #2).
+		if shard_id != "":
+			GameState.truth_shard_investigated.emit(shard_id)
 	if Codex != null:
 		Codex.record_truth_log(shard_id, title, log_text)
 	_show_card(newly)
