@@ -414,6 +414,9 @@ func _play_ending(ending_id: String) -> void:
 # ---- CS-05 return & ignition ---------------------------------------------
 
 func _play_return_ignition() -> void:
+	# (CS-05 G10) 카메라 팬: 옆의 과학 포탈이 처음 깜빡이기 시작할 때 그쪽으로 시선을 옮긴다. Runs in
+	# parallel with the cutscene cards (which flip science→flickering on the second card).
+	_pan_to_side_portal()
 	if _portal_cutscene != null and _portal_cutscene.has_method("play_return_ignition"):
 		await _portal_cutscene.play_return_ignition()
 	# The state changes (nature→open, science→flickering) + grass tufts + quest advance are
@@ -421,6 +424,32 @@ func _play_return_ignition() -> void:
 	# a few Layer-1 grass tufts near the arrival point as the "가져온 세계의 흔적".
 	_sprout_arrival_grass()
 	SaveManager.save_game()
+
+
+## (CS-05 G10) Pan the camera toward the 과학(science) portal ~mid-cutscene (as it begins to
+## flicker), then ease back. Best-effort; skips if the portal / camera aren't found (headless).
+func _pan_to_side_portal() -> void:
+	if _player == null:
+		return
+	var cam := _player.get_node_or_null("Camera2D") as Camera2D
+	if cam == null or not is_instance_valid(cam):
+		return
+	var science: Portal = null
+	for p in _portals:
+		if p is Portal and String((p as Portal).layer) == "science":
+			science = p as Portal
+			break
+	if science == null or not is_instance_valid(science):
+		return
+	# Wait for the first card (~nature opens) before drawing the eye to the next door.
+	await get_tree().create_timer(3.2, true, false, true).timeout
+	if not (is_instance_valid(cam) and is_instance_valid(science)):
+		return
+	var to := (science.global_position - _player.global_position) * 0.20
+	CutsceneDirector.camera_pan_offset(self, cam, to, 1.4)
+	await get_tree().create_timer(2.2, true, false, true).timeout
+	if is_instance_valid(cam):
+		CutsceneDirector.camera_pan_offset(self, cam, Vector2.ZERO, 1.3)
 
 
 ## A few grass tufts grow near the player's arrival point on the home island (the trace of
@@ -737,14 +766,48 @@ class _TraceDrawer extends Node2D:
 			draw_line(pts[i], pts[i + 1], col, 2.0, true)
 
 
-## Play the new-game awakening camera reveal (start zoomed on the dais, ease out to the arc).
-## Finds the Player's Camera2D and calls its reveal beat. Safe no-op if not present (headless).
+## Play the new-game awakening camera reveal (start zoomed on the dais, ease out to the arc =
+## CS-01 G3: 줌아웃으로 꺼진 포탈 다섯 리빌). Then (CS-01 G4) the one live portal (자연) 맥동 + a
+## gentle camera pan toward it. Safe no-op if not present (headless).
 func _play_awakening_reveal() -> void:
 	if _player == null:
 		return
 	var cam := _player.get_node_or_null("Camera2D")
 	if cam != null and cam.has_method("play_awakening_reveal"):
 		cam.play_awakening_reveal()
+	# (CS-01 G4) After the zoom-out reveal settles, pulse the nature portal + pan toward it —
+	# "문 하나가, 숨을 쉬고 있었다." Runs as a detached coroutine so boot isn't blocked.
+	_reveal_nature_portal_pulse(cam as Camera2D)
+
+
+## (CS-01 G4) The lone breathing portal: a soft repeating glow pulse on the 자연 portal + a small
+## camera pan toward it once the reveal has eased out. Best-effort; skips cleanly if headless.
+func _reveal_nature_portal_pulse(cam: Camera2D) -> void:
+	var nature: Portal = null
+	for p in _portals:
+		if p is Portal and String((p as Portal).layer) == "nature":
+			nature = p as Portal
+			break
+	if nature == null or not is_instance_valid(nature):
+		return
+	# Wait for the awakening reveal (zoom-out) to mostly settle before drawing the eye.
+	await get_tree().create_timer(3.4, true, false, true).timeout
+	if not is_instance_valid(nature):
+		return
+	# A gentle camera pan toward the portal (offset nudge), then back — draws the eye, keeps follow.
+	if cam != null and is_instance_valid(cam):
+		var to := (nature.global_position - _player.global_position) * 0.18
+		CutsceneDirector.camera_pan_offset(self, cam, to, 1.6)
+		await get_tree().create_timer(2.0, true, false, true).timeout
+		if is_instance_valid(cam):
+			CutsceneDirector.camera_pan_offset(self, cam, Vector2.ZERO, 1.4)
+	# A soft heartbeat glow pulse on the portal sprite (a couple of breaths).
+	if not is_instance_valid(nature):
+		return
+	var base := nature.modulate
+	var tw := create_tween().set_loops(2)
+	tw.tween_property(nature, "modulate", Color(base.r * 1.3 + 0.15, base.g * 1.3 + 0.15, base.b * 1.3 + 0.2, base.a), 0.9).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(nature, "modulate", base, 0.9).set_trans(Tween.TRANS_SINE)
 
 
 ## Land the player near the dais on return (a walkable cell just south of the spawn).

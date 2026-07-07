@@ -333,9 +333,10 @@ func _f_cutscenes() -> void:
 	GameState.world_tree_planted.emit(Vector2i(10, 10))
 	await _frames(2)
 	_check("CS-04 purification active on plant", clear.is_active())
-	# Let the tween-driven CS-04 sequence run to completion (~10.5s of tweens: flash + ring +
-	# dim + 3 text cards). Advance generously so headless frame timing can't clip the tail.
-	var budget := 1400
+	# Let the tween-driven CS-04 sequence run to completion (~18s of tweens now: flash + ring +
+	# dim + 3 cards + v1.3.0 CQ-4 broken-birdsong + 3s silence + rising light). Advance
+	# generously so headless frame timing can't clip the tail.
+	var budget := 3000
 	while not cleared_fired[0] and budget > 0:
 		await _frames(1)
 		budget -= 1
