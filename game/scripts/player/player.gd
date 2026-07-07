@@ -1,9 +1,15 @@
 extends CharacterBody2D
 class_name Player
-## 4-directional isometric player.
+## 8-directional isometric player (AP-3; extended from the original 4-dir, backward
+## compatible).
 ## Movement is mapped to iso screen axes: the input vector is transformed so that
 ## pressing "up" moves toward screen-up-along-the-iso-grid, giving the diagonal
 ## screen motion that matches a 2:1 diamond grid.
+##
+## Facing is one of eight compass headings. The four GRID-diagonal headings
+## (SE/SW/NE/NW) are produced by single-axis input exactly as the legacy 4-dir code
+## did, so the interaction system (facing_cell_step) is unchanged for them. The four
+## SCREEN-cardinal headings (S/E/N/W) are the new diagonal-input poses.
 ##
 ## Tile-driven speed/collision: instead of hardcoding tile ids, we sample the
 ## TileMapLayer's custom data (`walkable`, `speed_mod`) under the target position.
@@ -12,8 +18,24 @@ class_name Player
 @export var tilemap_path: NodePath
 
 var _tilemap: TileMapLayer
-var _facing: String = "SE"  # SE, SW, NE, NW
+var _facing: String = "SE"  # one of: N NE E SE S SW W NW
 var _anim: AnimatedSprite2D
+
+## Screen-space heading (degrees, atan2(y,x) with +x=right, +y=down) at the CENTRE
+## of each facing's 45°-wide sector. The four grid-diagonal facings land on the four
+## screen cardinals (SE=right, SW=down, NW=left, NE=up) — identical to the legacy
+## 4-dir mapping — and the four screen-cardinal facings fill the 45° diagonals
+## between them. _update_facing snaps the input/travel vector to the nearest entry.
+const FACING_ANGLES := {
+	"SE": 0.0,     # screen →  (input +x)      [legacy]
+	"S": 45.0,     # screen ↘  (input +x +y)
+	"SW": 90.0,    # screen ↓  (input +y)      [legacy]
+	"W": 135.0,    # screen ↙  (input -x +y)
+	"NW": 180.0,   # screen ←  (input -x)      [legacy]
+	"N": -135.0,   # screen ↖  (input -x -y)
+	"NE": -90.0,   # screen ↑  (input -y)      [legacy]
+	"E": -45.0,    # screen ↗  (input +x -y)
+}
 
 ## (v0.4.0-C) Footstep SFX cadence. Accumulates while moving; every FOOTSTEP_INTERVAL of
 ## movement plays an alternating grass footstep through AudioManager.
@@ -218,11 +240,19 @@ func _speed_mod_at(world_pos: Vector2) -> float:
 
 
 func _update_facing(input_vec: Vector2) -> void:
-	# Choose iso facing from dominant screen axis.
-	if abs(input_vec.x) >= abs(input_vec.y):
-		_facing = "SE" if input_vec.x > 0 else "NW"
-	else:
-		_facing = "SW" if input_vec.y > 0 else "NE"
+	# Snap the screen-space input/travel vector to the nearest of the eight facings
+	# by angle. A zero vector leaves the current facing unchanged (idle keeps its pose).
+	if input_vec == Vector2.ZERO:
+		return
+	var ang := rad_to_deg(atan2(input_vec.y, input_vec.x))
+	var best := _facing
+	var best_diff := 999.0
+	for name in FACING_ANGLES:
+		var d: float = abs(wrapf(ang - FACING_ANGLES[name], -180.0, 180.0))
+		if d < best_diff:
+			best_diff = d
+			best = name
+	_facing = best
 
 
 ## Current cardinal facing string (SE/SW/NE/NW), read by the interaction system.
@@ -231,16 +261,20 @@ func get_facing() -> String:
 
 
 ## Grid-space step for the current facing, used to find the facing-adjacent cell.
-## In this iso setup the four cardinal inputs map to the four diagonal-screen
-## directions; the corresponding tile-grid neighbor is:
-##   SE (input +x) -> +x,  NW (input -x) -> -x,
-##   SW (input +y) -> +y,  NE (input -y) -> -y.
+## The four grid-diagonal facings map to single-axis grid neighbours exactly as the
+## legacy 4-dir code did (SE=+x, NW=-x, SW=+y, NE=-y — screen right/left/down/up).
+## The four screen-cardinal facings map to the grid diagonals between them, so an
+## E-facing / interaction still resolves the cell the wanderer is looking at.
 func facing_cell_step() -> Vector2i:
 	match _facing:
 		"SE": return Vector2i(1, 0)
 		"NW": return Vector2i(-1, 0)
 		"SW": return Vector2i(0, 1)
 		"NE": return Vector2i(0, -1)
+		"S": return Vector2i(1, 1)
+		"W": return Vector2i(-1, 1)
+		"N": return Vector2i(-1, -1)
+		"E": return Vector2i(1, -1)
 	return Vector2i(1, 0)
 
 

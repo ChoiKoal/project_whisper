@@ -1,65 +1,118 @@
-[gd_resource type="SpriteFrames" load_steps=14 format=3 uid="uid://bwhisperpf0001"]
+[gd_resource type="SpriteFrames" load_steps=26 format=3 uid="uid://bwhisperpf0001"]
 
 [ext_resource type="Texture2D" uid="uid://byecmrank2dep" path="res://assets/character/character_sheet.png" id="1_sheet"]
 
-[sub_resource type="AtlasTexture" id="se_idle"]
+[sub_resource type="AtlasTexture" id="s_idle"]
 atlas = ExtResource("1_sheet")
 region = Rect2(0, 0, 96, 96)
 
-[sub_resource type="AtlasTexture" id="se_w0"]
+[sub_resource type="AtlasTexture" id="s_w0"]
 atlas = ExtResource("1_sheet")
 region = Rect2(96, 0, 96, 96)
 
-[sub_resource type="AtlasTexture" id="se_w1"]
+[sub_resource type="AtlasTexture" id="s_w1"]
 atlas = ExtResource("1_sheet")
 region = Rect2(192, 0, 96, 96)
 
-[sub_resource type="AtlasTexture" id="sw_idle"]
+[sub_resource type="AtlasTexture" id="se_idle"]
 atlas = ExtResource("1_sheet")
 region = Rect2(0, 96, 96, 96)
 
-[sub_resource type="AtlasTexture" id="sw_w0"]
+[sub_resource type="AtlasTexture" id="se_w0"]
 atlas = ExtResource("1_sheet")
 region = Rect2(96, 96, 96, 96)
 
-[sub_resource type="AtlasTexture" id="sw_w1"]
+[sub_resource type="AtlasTexture" id="se_w1"]
 atlas = ExtResource("1_sheet")
 region = Rect2(192, 96, 96, 96)
 
-[sub_resource type="AtlasTexture" id="ne_idle"]
+[sub_resource type="AtlasTexture" id="e_idle"]
 atlas = ExtResource("1_sheet")
 region = Rect2(0, 192, 96, 96)
 
-[sub_resource type="AtlasTexture" id="ne_w0"]
+[sub_resource type="AtlasTexture" id="e_w0"]
 atlas = ExtResource("1_sheet")
 region = Rect2(96, 192, 96, 96)
 
-[sub_resource type="AtlasTexture" id="ne_w1"]
+[sub_resource type="AtlasTexture" id="e_w1"]
 atlas = ExtResource("1_sheet")
 region = Rect2(192, 192, 96, 96)
 
-[sub_resource type="AtlasTexture" id="nw_idle"]
+[sub_resource type="AtlasTexture" id="ne_idle"]
 atlas = ExtResource("1_sheet")
 region = Rect2(0, 288, 96, 96)
 
-[sub_resource type="AtlasTexture" id="nw_w0"]
+[sub_resource type="AtlasTexture" id="ne_w0"]
 atlas = ExtResource("1_sheet")
 region = Rect2(96, 288, 96, 96)
 
-[sub_resource type="AtlasTexture" id="nw_w1"]
+[sub_resource type="AtlasTexture" id="ne_w1"]
 atlas = ExtResource("1_sheet")
 region = Rect2(192, 288, 96, 96)
 
+[sub_resource type="AtlasTexture" id="n_idle"]
+atlas = ExtResource("1_sheet")
+region = Rect2(0, 384, 96, 96)
+
+[sub_resource type="AtlasTexture" id="n_w0"]
+atlas = ExtResource("1_sheet")
+region = Rect2(96, 384, 96, 96)
+
+[sub_resource type="AtlasTexture" id="n_w1"]
+atlas = ExtResource("1_sheet")
+region = Rect2(192, 384, 96, 96)
+
+[sub_resource type="AtlasTexture" id="nw_idle"]
+atlas = ExtResource("1_sheet")
+region = Rect2(0, 480, 96, 96)
+
+[sub_resource type="AtlasTexture" id="nw_w0"]
+atlas = ExtResource("1_sheet")
+region = Rect2(96, 480, 96, 96)
+
+[sub_resource type="AtlasTexture" id="nw_w1"]
+atlas = ExtResource("1_sheet")
+region = Rect2(192, 480, 96, 96)
+
+[sub_resource type="AtlasTexture" id="w_idle"]
+atlas = ExtResource("1_sheet")
+region = Rect2(0, 576, 96, 96)
+
+[sub_resource type="AtlasTexture" id="w_w0"]
+atlas = ExtResource("1_sheet")
+region = Rect2(96, 576, 96, 96)
+
+[sub_resource type="AtlasTexture" id="w_w1"]
+atlas = ExtResource("1_sheet")
+region = Rect2(192, 576, 96, 96)
+
+[sub_resource type="AtlasTexture" id="sw_idle"]
+atlas = ExtResource("1_sheet")
+region = Rect2(0, 672, 96, 96)
+
+[sub_resource type="AtlasTexture" id="sw_w0"]
+atlas = ExtResource("1_sheet")
+region = Rect2(96, 672, 96, 96)
+
+[sub_resource type="AtlasTexture" id="sw_w1"]
+atlas = ExtResource("1_sheet")
+region = Rect2(192, 672, 96, 96)
+
 [resource]
 animations = [{
+"frames": [{"duration": 1.0, "texture": SubResource("s_idle")}],
+"loop": true,
+"name": &"idle_S",
+"speed": 6.0
+}, {
 "frames": [{"duration": 1.0, "texture": SubResource("se_idle")}],
 "loop": true,
 "name": &"idle_SE",
 "speed": 6.0
 }, {
-"frames": [{"duration": 1.0, "texture": SubResource("sw_idle")}],
+"frames": [{"duration": 1.0, "texture": SubResource("e_idle")}],
 "loop": true,
-"name": &"idle_SW",
+"name": &"idle_E",
 "speed": 6.0
 }, {
 "frames": [{"duration": 1.0, "texture": SubResource("ne_idle")}],
@@ -67,19 +120,39 @@ animations = [{
 "name": &"idle_NE",
 "speed": 6.0
 }, {
+"frames": [{"duration": 1.0, "texture": SubResource("n_idle")}],
+"loop": true,
+"name": &"idle_N",
+"speed": 6.0
+}, {
 "frames": [{"duration": 1.0, "texture": SubResource("nw_idle")}],
 "loop": true,
 "name": &"idle_NW",
 "speed": 6.0
+}, {
+"frames": [{"duration": 1.0, "texture": SubResource("w_idle")}],
+"loop": true,
+"name": &"idle_W",
+"speed": 6.0
+}, {
+"frames": [{"duration": 1.0, "texture": SubResource("sw_idle")}],
+"loop": true,
+"name": &"idle_SW",
+"speed": 6.0
+}, {
+"frames": [{"duration": 1.0, "texture": SubResource("s_w0")}, {"duration": 1.0, "texture": SubResource("s_w1")}],
+"loop": true,
+"name": &"walk_S",
+"speed": 10.0
 }, {
 "frames": [{"duration": 1.0, "texture": SubResource("se_w0")}, {"duration": 1.0, "texture": SubResource("se_w1")}],
 "loop": true,
 "name": &"walk_SE",
 "speed": 10.0
 }, {
-"frames": [{"duration": 1.0, "texture": SubResource("sw_w0")}, {"duration": 1.0, "texture": SubResource("sw_w1")}],
+"frames": [{"duration": 1.0, "texture": SubResource("e_w0")}, {"duration": 1.0, "texture": SubResource("e_w1")}],
 "loop": true,
-"name": &"walk_SW",
+"name": &"walk_E",
 "speed": 10.0
 }, {
 "frames": [{"duration": 1.0, "texture": SubResource("ne_w0")}, {"duration": 1.0, "texture": SubResource("ne_w1")}],
@@ -87,8 +160,23 @@ animations = [{
 "name": &"walk_NE",
 "speed": 10.0
 }, {
+"frames": [{"duration": 1.0, "texture": SubResource("n_w0")}, {"duration": 1.0, "texture": SubResource("n_w1")}],
+"loop": true,
+"name": &"walk_N",
+"speed": 10.0
+}, {
 "frames": [{"duration": 1.0, "texture": SubResource("nw_w0")}, {"duration": 1.0, "texture": SubResource("nw_w1")}],
 "loop": true,
 "name": &"walk_NW",
+"speed": 10.0
+}, {
+"frames": [{"duration": 1.0, "texture": SubResource("w_w0")}, {"duration": 1.0, "texture": SubResource("w_w1")}],
+"loop": true,
+"name": &"walk_W",
+"speed": 10.0
+}, {
+"frames": [{"duration": 1.0, "texture": SubResource("sw_w0")}, {"duration": 1.0, "texture": SubResource("sw_w1")}],
+"loop": true,
+"name": &"walk_SW",
 "speed": 10.0
 }]
