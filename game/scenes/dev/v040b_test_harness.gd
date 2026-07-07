@@ -72,8 +72,10 @@ func _test_character_art() -> void:
 	var img := _load_image(SHEET)
 	_check("character_sheet.png present", img != null)
 	if img != null:
-		_check("character_sheet is the production layout (288×384)",
-			img.get_width() == 288 and img.get_height() == 384,
+		# AP-3: 8-direction production layout is 3 cols × 8 rows of 96px = 288×768
+		# (was 288×384 for the legacy 4-dir sheet). Art coherence pass v1.2.0.
+		_check("character_sheet is the production layout (288×768)",
+			img.get_width() == 288 and img.get_height() == 768,
 			"%dx%d" % [img.get_width(), img.get_height()])
 		var dom := _dominant_color(img)
 		_check("character sheet dominant color is DARK cloak family (not cream)",
