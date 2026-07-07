@@ -128,8 +128,11 @@ func _spawn_workbench() -> void:
 	# never joined the gatherable group as a Cauldron and never emitted `interacted`; the Fusion UI
 	# (which only opens on Cauldron.interacted) was UNREACHABLE in real play → L2-L5 gate crafting
 	# was impossible. Skinning keeps the workbench art; binding wires E-조합 → Fusion.
+	# (v1.1.0 GP-1) UNIFIED 솥단지: the station is the shared cauldron art with live brew animation
+	# (same as home/L1). Layer identity is the FLAME color only (cyan pool below). The v1.0.4 fix
+	# already made this a real Cauldron; here we drop the l2_workbench skin per §5 스킨 통일.
 	var s := Cauldron.new()
-	s.configure(load("res://assets/objects/l2_workbench.png"), Vector2(0, -44))
+	s.configure_shared(Vector2(0, -64))
 	s.y_sort_enabled = true
 	var world := _loader.cell_center_world(cell)
 	var ys := _loader.get_node_or_null(_loader.ysort_layer_path) as Node2D
@@ -140,8 +143,8 @@ func _spawn_workbench() -> void:
 	s.global_position = world
 	_loader.l2_workbench_cell = cell
 	_bind_fusion_ui(s)
-	# violet-cyan fusion glow at the aperture (reparents onto the glow layer at night).
-	_add_pool(s, "res://assets/objects/light_pool_cyan.png", Vector2(0, -46), 0.7)
+	# L2 flame = 시안 (정전된 문명). Pool offset matches the shared cauldron footprint (home uses -8).
+	_add_pool(s, "res://assets/objects/light_pool_cyan.png", Vector2(0, -8), 0.85)
 
 
 ## (v1.0.4) Explicitly bind the crafting station to the scene's FusionUI so interacting opens it.

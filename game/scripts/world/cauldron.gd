@@ -51,6 +51,18 @@ func configure(skin_texture: Texture2D, skin_offset: Vector2, object_id_val: Str
 	_static_skin = true
 
 
+## (v1.1.0 GP-1) Configure this station as the SHARED 솥단지 — same cauldron art + live brew
+## animation as home/L1, so the wanderer "summons their own pot" in every layer. Layer identity
+## is expressed only by the flame (light pool) color, assigned by the session. Unlike configure()
+## this KEEPS the bubbling/breathing animation on (no static skin). Call BEFORE adding to the tree.
+func configure_shared(cauldron_offset: Vector2 = Vector2(0, -64), object_id_val: String = "cauldron") -> void:
+	texture = load(TEX_CALM)
+	offset = cauldron_offset
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	object_id = object_id_val
+	_static_skin = false
+
+
 func _ready() -> void:
 	add_to_group(GROUP)
 	# Skinned crafting stations (L2-L5) keep their static workbench art — no brew frames.

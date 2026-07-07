@@ -119,8 +119,9 @@ func _spawn_workbench() -> void:
 		return
 	# (v1.0.4 P0 hotfix) Real Cauldron wearing the L4 workbench skin — see terminal_station.gd for
 	# why: a plain Sprite2D never emitted `interacted`, so Fusion was unreachable in real play.
+	# (v1.1.0 GP-1) UNIFIED 솥단지 — shared cauldron art + live brew. Layer identity = 금색 flame.
 	var s := Cauldron.new()
-	s.configure(load("res://assets/objects/l4_workbench.png"), Vector2(0, -44))
+	s.configure_shared(Vector2(0, -64))
 	s.y_sort_enabled = true
 	var world := _loader.cell_center_world(cell)
 	var ys := _loader.get_node_or_null(_loader.ysort_layer_path) as Node2D
@@ -131,8 +132,8 @@ func _spawn_workbench() -> void:
 	s.global_position = world
 	_loader.l2_workbench_cell = cell
 	_bind_fusion_ui(s)
-	# gold fusion glow at the aperture.
-	_add_pool(s, "res://assets/objects/light_pool_gold.png", Vector2(0, -46), 0.7)
+	# L4 flame = 금색 (아케인/봉인). Pool offset matches the shared cauldron footprint.
+	_add_pool(s, "res://assets/objects/light_pool_gold.png", Vector2(0, -8), 0.85)
 
 
 ## (v1.0.4) Bind the crafting station to the scene FusionUI (order-independent; see terminal_station).
