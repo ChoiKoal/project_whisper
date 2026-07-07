@@ -22,12 +22,21 @@ var _on_skip: Callable = Callable()
 ## 콜백 중복 발화 방지(성공/스킵은 정확히 한 번).
 var _resolved: bool = false
 
+## 오답 누적 횟수(감점 없음, 무한 재시도). N회 이상이면 스킵을 제안.
+var _fail_count: int = 0
+## 이 횟수 이상 틀리면 스킵 힌트를 노출("건너뛸 수 있어요").
+const SKIP_SUGGEST_AT := 3
+
 ## 퍼즐 제목/부제(서브클래스가 지정).
 var puzzle_title: String = "게이트"
 var puzzle_subtitle: String = ""
 
 var _root: Control = null
 var _status: Label = null
+var _skip_hint: Label = null
+
+## v0.6.1 페어링: 모달 진입 시 멈춘 time_running 을 teardown 에서 원상복구하기 위한 스냅샷.
+var _time_was_running: bool = true
 
 
 ## 정적 팩토리 — 씬 루트 아래에 퍼즐 모달을 붙이고 반환. `puzzle_type` ∈
@@ -62,6 +71,10 @@ func _ready() -> void:
 	if typeof(GameState) != TYPE_NIL:
 		GameState.push_modal(MODAL_KEY)
 		GameState.set_control_lock(true)
+		# v0.6.1 페어링 규칙: control_lock 과 time_running 을 함께 잠그고, teardown 의 모든
+		# 출구에서 함께 복구한다(멈춘 곳에서 반드시 되살림). 이전 값을 스냅샷해 중첩 안전.
+		_time_was_running = GameState.time_running
+		GameState.time_running = false
 	_build_shell()
 	if has_viewport():
 		get_viewport().size_changed.connect(_clamp)
@@ -130,6 +143,15 @@ func _build_shell() -> void:
 	_status.add_theme_font_size_override("font_size", 14)
 	col.add_child(_status)
 
+	# 3회 이상 틀리면 노출되는 스킵 제안(진행 차단 회피 — 접근성). 처음엔 숨김.
+	_skip_hint = Label.new()
+	_skip_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_skip_hint.add_theme_color_override("font_color", Color("#f0c674"))
+	_skip_hint.add_theme_font_size_override("font_size", 13)
+	_skip_hint.visible = false
+	_skip_hint.text = "막히셨나요? 아래 버튼으로 건너뛸 수 있어요."
+	col.add_child(_skip_hint)
+
 	var skip := Button.new()
 	skip.text = _skip_label()
 	skip.add_theme_font_size_override("font_size", 15)
@@ -151,6 +173,24 @@ func _skip_label() -> String:
 func _set_status(t: String) -> void:
 	if _status != null and is_instance_valid(_status):
 		_status.text = t
+
+
+## 오답 1회 기록(감점·차단 없음, §3: 무한 재시도). 서브클래스가 오답 분기에서 호출한다.
+## SKIP_SUGGEST_AT 회 이상 누적되면 스킵 제안 라벨을 노출한다(진행 차단 방지 — 접근성).
+func _note_fail() -> void:
+	_fail_count += 1
+	if _fail_count >= SKIP_SUGGEST_AT and _skip_hint != null and is_instance_valid(_skip_hint):
+		_skip_hint.visible = true
+
+
+## 현재까지 누적된 오답 횟수(하네스 편의).
+func fail_count() -> int:
+	return _fail_count
+
+
+## 스킵 제안이 노출된 상태인지(하네스 편의).
+func skip_suggested() -> bool:
+	return _skip_hint != null and is_instance_valid(_skip_hint) and _skip_hint.visible
 
 
 ## Puzzle solved — fire success exactly once, then close.
@@ -179,6 +219,8 @@ func _teardown() -> void:
 	if typeof(GameState) != TYPE_NIL:
 		GameState.pop_modal(MODAL_KEY)
 		GameState.set_control_lock(false)
+		# v0.6.1 페어링: 진입 시 멈춘 time_running 을 스냅샷 값으로 반드시 복구.
+		GameState.time_running = _time_was_running
 	queue_free()
 
 
@@ -212,6 +254,12 @@ func solve_for_test() -> void:
 ## Take the skip path (그냥 장착). Same as pressing the skip button.
 func skip_for_test() -> void:
 	_skip()
+
+
+## Register one wrong attempt (harness). Base has no puzzle logic, so drive the fail counter
+## directly. Subclasses inherit this; their real wrong-input branch calls _note_fail().
+func fail_for_test() -> void:
+	_note_fail()
 
 
 ## True once success/skip has fired (harness convenience).

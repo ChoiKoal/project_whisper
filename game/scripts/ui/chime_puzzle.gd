@@ -61,6 +61,7 @@ func _ring(idx: int) -> void:
 					b.modulate = Color.WHITE)
 	var pos := _entered.size()
 	if idx != _target[pos]:
+		_note_fail()
 		_entered.clear()
 		_set_status("어긋났습니다. 소절: " + _seq_str(_target))
 		return
@@ -74,3 +75,9 @@ func _ring(idx: int) -> void:
 func solve_for_test() -> void:
 	for idx in _target:
 		_ring(idx)
+
+
+## Ring a wrong bell first through the real _ring path (harness) — exercises the fail branch.
+func fail_for_test() -> void:
+	var wrong := (_target[0] + 1) % BELL_COLORS.size()
+	_ring(wrong)

@@ -51,9 +51,11 @@ func _run() -> void:
 
 	for t in TYPES:
 		await _test_solve(root, t)
+		await _test_fail(root, t)
 		await _test_skip(root, t)
 		await _test_skip_fallback(root, t)
 		await _test_accessibility(root, t)
+		await _test_time_pairing(root, t)
 
 	root.queue_free()
 	print("=== RESULT: %s (%d failures) ===" % ["PASS" if _fail == 0 else "FAIL", _fail])
@@ -79,6 +81,66 @@ func _test_solve(root: Node, t: String) -> void:
 	_check("%s: modal freed after solve" % t, not is_instance_valid(p))
 	_check("%s: control_lock released after solve" % t,
 		(GameState.control_locked() if GameState.has_method("control_locked") else false) == lock_before)
+
+
+# ---- fail path → retry, no resolve; 3회 실패 → 스킵 제안 --------------------
+
+func _test_fail(root: Node, t: String) -> void:
+	print("--- %s: fail → retry (무한 재시도) + 3회 실패 스킵 제안 ---" % t)
+	_succ = 0
+	_skip = 0
+	var p := GatePuzzle.open(root, t, _on_success, _on_skip)
+	if p == null:
+		_check("%s: modal opened (fail test)" % t, false)
+		return
+	await _frames(2)
+	# One wrong input through the real puzzle path: fail counter ticks, nothing resolves.
+	p.fail_for_test()
+	await _frames(1)
+	_check("%s: 1 fail counted (감점 없음)" % t, p.fail_count() == 1, "fails=%d" % p.fail_count())
+	_check("%s: success NOT fired on wrong input" % t, _succ == 0, "succ=%d" % _succ)
+	_check("%s: skip NOT fired on wrong input" % t, _skip == 0, "skip=%d" % _skip)
+	_check("%s: modal still open after fail (무한 재시도)" % t, is_instance_valid(p) and not p.is_resolved())
+	_check("%s: skip NOT suggested before threshold" % t, not p.skip_suggested())
+	# Two more fails → reaches SKIP_SUGGEST_AT (3) → skip suggestion surfaces.
+	p.fail_for_test()
+	p.fail_for_test()
+	await _frames(1)
+	_check("%s: 3 fails counted" % t, p.fail_count() == 3, "fails=%d" % p.fail_count())
+	_check("%s: skip suggested after 3 fails (진행 차단 회피)" % t, p.skip_suggested())
+	# Still solvable after failures (재시도로 클리어 가능).
+	p.solve_for_test()
+	await _frames(2)
+	_check("%s: solvable after fails → success once" % t, _succ == 1, "succ=%d" % _succ)
+	_check("%s: modal freed after post-fail solve" % t, not is_instance_valid(p))
+
+
+# ---- time_running pairing: locked on open, restored on both exits ----------
+
+func _test_time_pairing(root: Node, t: String) -> void:
+	print("--- %s: time_running·control_lock 페어링 (v0.6.1) ---" % t)
+	# Ensure a known baseline: time running, no lock.
+	GameState.time_running = true
+	# (a) solve exit path.
+	var p := GatePuzzle.open(root, t, _on_success, _on_skip)
+	if p == null:
+		_check("%s: modal opened (time test)" % t, false)
+		return
+	await _frames(2)
+	_check("%s: time_running paused while modal open" % t, GameState.time_running == false)
+	_check("%s: control_lock set while modal open" % t, GameState.control_locked() == true)
+	p.solve_for_test()
+	await _frames(2)
+	_check("%s: time_running restored after solve" % t, GameState.time_running == true)
+	_check("%s: control_lock released after solve (pairing)" % t, GameState.control_locked() == false)
+	# (b) skip exit path also restores.
+	var p2 := GatePuzzle.open(root, t, _on_success, _on_skip)
+	await _frames(2)
+	_check("%s: time_running paused again (skip path)" % t, GameState.time_running == false)
+	p2.skip_for_test()
+	await _frames(2)
+	_check("%s: time_running restored after skip (pairing)" % t, GameState.time_running == true)
+	_check("%s: control_lock released after skip (pairing)" % t, GameState.control_locked() == false)
 
 
 # ---- skip → skip callback (그냥 장착) --------------------------------------

@@ -90,7 +90,8 @@ func _place(idx: int) -> void:
 		return
 	# Correct so far?
 	if idx != _target[pos]:
-		# 틀림 — 슬롯 빨강 점멸 + 초기화.
+		# 틀림 — 슬롯 빨강 점멸 + 초기화(감점 없음, 무한 재시도). 누적 시 스킵 제안.
+		_note_fail()
 		_flash_reset()
 		return
 	_entered.append(idx)
@@ -122,3 +123,10 @@ func _flash_reset() -> void:
 func solve_for_test() -> void:
 	for idx in _target:
 		_place(idx)
+
+
+## Drive one genuinely wrong input through the real _place path (harness) — exercises the
+## fail branch (_note_fail) rather than the base counter directly.
+func fail_for_test() -> void:
+	# _target[0] == 0, so index 1 is wrong at pos 0.
+	_place(1 if _target[0] != 1 else 2)

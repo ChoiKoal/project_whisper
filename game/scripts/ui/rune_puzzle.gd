@@ -48,7 +48,8 @@ func _seq_str(seq: Array) -> String:
 func _touch(idx: int) -> void:
 	var pos := _entered.size()
 	if idx != _target[pos]:
-		# 틀림 — 전체 소등 후 재표시(패널티 없음).
+		# 틀림 — 전체 소등 후 재표시(패널티 없음). 누적 시 스킵 제안.
+		_note_fail()
 		_entered.clear()
 		_dim_all()
 		_set_status("틀렸습니다. 다시: " + _seq_str(_target))
@@ -75,3 +76,9 @@ func _dim_all() -> void:
 func solve_for_test() -> void:
 	for idx in _target:
 		_touch(idx)
+
+
+## Touch a wrong rune first through the real _touch path (harness) — exercises the fail branch.
+func fail_for_test() -> void:
+	var wrong := (_target[0] + 1) % RUNE_GLYPHS.size()
+	_touch(wrong)

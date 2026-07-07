@@ -81,9 +81,15 @@ func _place(size_idx: int) -> void:
 		_set_status("맞물렸습니다 — 회전 전달.")
 		_succeed()
 	else:
+		_note_fail()
 		_set_status("크기가 맞지 않아 헛돕니다.")
 
 
 ## Place the correct gear programmatically (harness).
 func solve_for_test() -> void:
 	_place(CORRECT)
+
+
+## Place a wrong-size gear through the real _place path (harness) — exercises the fail branch.
+func fail_for_test() -> void:
+	_place(0 if CORRECT != 0 else 2)
