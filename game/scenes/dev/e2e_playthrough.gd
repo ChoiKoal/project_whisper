@@ -1178,6 +1178,9 @@ func _stepL3_machine_journey() -> void:
 	if assembly != null:
 		Inventory.remove("D104", 1)
 		GameState.item_used_on_object.emit("D104", assembly)
+	await _frames(1)
+	# (GP-5 §3) 장착 → 톱니 맞물림 퍼즐 모달 → 스킵(=그냥 장착=동일 개방)으로 energize 실경로 완주.
+	_check("G1 승격 퍼즐(gear) 모달 개방 + 스킵 경로 해소 (실 계약)", _resolve_gate_puzzle_if_open())
 	await get_tree().create_timer(1.2).timeout   # staggered gear-mesh light timers use real time
 	var gear_walk := gear_cells.size() > 0
 	for c in gear_cells:
@@ -1418,6 +1421,9 @@ func _stepL4_magic_journey() -> void:
 	if altar != null:
 		Inventory.remove("D141", 1)
 		GameState.item_used_on_object.emit("D141", altar)
+	await _frames(1)
+	# (GP-5 §3) 장착 → 룬 점등 퍼즐 모달 → 스킵(=그냥 장착=동일 개방)으로 energize 실경로 완주.
+	_check("G1 승격 퍼즐(rune) 모달 개방 + 스킵 경로 해소 (실 계약)", _resolve_gate_puzzle_if_open())
 	await get_tree().create_timer(1.4).timeout   # staggered bridge-deck light timers use real time
 	var bridge_walk := bridge_cells.size() > 0
 	for c in bridge_cells:
@@ -1692,6 +1698,9 @@ func _stepL5_divine_journey() -> void:
 	if lantern != null:
 		Inventory.remove("D178", 1)
 		GameState.item_used_on_object.emit("D178", lantern)
+	await _frames(1)
+	# (GP-5 §3) 봉헌 → 음(chime) 순서 퍼즐 모달 → 스킵(=그냥 장착=동일 개방)으로 energize 실경로 완주.
+	_check("G1 승격 퍼즐(chime) 모달 개방 + 스킵 경로 해소 (실 계약)", _resolve_gate_puzzle_if_open())
 	await get_tree().create_timer(1.4).timeout   # staggered 참배길 light timers use real time
 	var bridge_walk := bridge_cells.size() > 0
 	for c in bridge_cells:
@@ -1972,6 +1981,25 @@ func _search_button(node: Node, text: String) -> Button:
 		if r != null:
 			return r
 	return null
+
+
+# ---- gate-puzzle bridge (v1.1.0 GP-5) -------------------------------------
+##
+## (GP-6 §2 정합) The L3~L5 G1 승격 now routes 장착(item_used_on_object) through a GatePuzzle
+## modal before energizing (GP-5 §3). In the continuous E2E we can't hand-play the mini-puzzle, so
+## we drive its REAL headless契약 hook: find the open GatePuzzle and take the skip path
+## (skip == 그냥 장착 == 동일 개방, by design). This exercises the puzzle→energize contract for real
+## instead of API-poking the power node. Returns true if a puzzle was found + resolved (or if none
+## was open, meaning the gate energized directly — both are valid pass states).
+func _resolve_gate_puzzle_if_open(use_skip: bool = true) -> bool:
+	var puzzle := _find(GatePuzzle) as GatePuzzle
+	if puzzle == null:
+		return false
+	if use_skip:
+		puzzle.skip_for_test()   # 스킵 = 그냥 장착 = 동일 energize (진행 차단 아님)
+	else:
+		puzzle.solve_for_test()
+	return true
 
 
 # ---- L2 helpers -----------------------------------------------------------
