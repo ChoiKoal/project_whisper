@@ -18,6 +18,11 @@ const SHARD_LOG := "…잎 뒤에 새겨진 글: 나를 심은 이도 '완성하
 
 var _shard_card: CanvasLayer = null
 
+## (CQ-3 G7) CS-03 「세계수 앞에서」 first-encounter beat: fires ONCE when the player first comes
+## near the tree. Transient session guard (WorldContext) so it never repeats within a run.
+const CS03_CARDS := ["이 세계에서 유일하게, 따뜻한 것.", "…방금, 나를 본 건가?"]
+var _cs03_playing: bool = false
+
 
 func _ready() -> void:
 	super._ready()
@@ -36,6 +41,76 @@ func _ready() -> void:
 	glow.offset = offset
 	glow.scale = scale
 	add_child(glow)
+
+	# (CQ-3 G7) CS-03 proximity trigger — an Area2D around the trunk; first entry plays the beat.
+	_setup_cs03_trigger()
+
+
+## An Area2D around the tree; the first time the player's body enters, play CS-03 (once/session).
+func _setup_cs03_trigger() -> void:
+	var area := Area2D.new()
+	area.name = "CS03Trigger"
+	area.monitoring = true
+	var col := CollisionShape2D.new()
+	var shape := CircleShape2D.new()
+	shape.radius = 150.0
+	col.shape = shape
+	area.add_child(col)
+	add_child(area)
+	area.body_entered.connect(_on_cs03_body_entered)
+
+
+func _on_cs03_body_entered(body: Node) -> void:
+	if _cs03_playing or not (body is Player):
+		return
+	if WorldContext == null or WorldContext.cs03_encounter_seen:
+		return
+	# Don't overlap the plant/clear or a modal; keep it to the quiet first approach.
+	if GameState != null and (GameState.control_locked() or not GameState.time_running):
+		return
+	WorldContext.cs03_encounter_seen = true
+	_play_cs03(body as Node2D)
+
+
+## CS-03: 카메라 아래→위 틸트 + BGM 페이드아웃(저음) + 잎 기욺 + 2 cards. Low-cost, high-impact.
+func _play_cs03(player: Node2D) -> void:
+	_cs03_playing = true
+	if GameState != null:
+		GameState.set_control_lock(true)
+	# BGM 페이드아웃 → 심장박동 같은 저음만 (best-effort: duck the BGM bus).
+	if AudioManager != null and AudioManager.has_method("duck_bgm"):
+		AudioManager.duck_bgm(true)
+	# Card overlay layer (freed after).
+	var cl := CanvasLayer.new()
+	cl.layer = 11
+	add_child(cl)
+	var label := CutsceneDirector.make_card_label(30)
+	cl.add_child(label)
+	# 카메라 아래→위 틸트 (sweep the tree from base to canopy).
+	var cam := player.get_node_or_null("Camera2D") as Camera2D
+	if cam != null:
+		# fire-and-forget the tilt sweep in parallel with the cards.
+		CutsceneDirector.camera_tilt_sweep(self, cam, 90.0, -140.0, 2.4, 0.9)
+	await CutsceneDirector.play_card(self, label, CS03_CARDS[0], CutsceneDirector.CREAM)
+	if not is_instance_valid(self):
+		return
+	# 세계수 잎이 플레이어 쪽으로 아주 살짝 기운다 (a small trunk-sprite tilt, once).
+	_tilt_leaf()
+	await CutsceneDirector.play_card(self, label, CS03_CARDS[1], CutsceneDirector.CREAM)
+	if AudioManager != null and AudioManager.has_method("duck_bgm"):
+		AudioManager.duck_bgm(false)
+	if is_instance_valid(cl):
+		cl.queue_free()
+	if GameState != null:
+		GameState.set_control_lock(false)
+	_cs03_playing = false
+
+
+## A hair of rotation on the tree sprite — "…방금, 나를 본 건가?"
+func _tilt_leaf() -> void:
+	var tw := create_tween()
+	tw.tween_property(self, "rotation", 0.05, 0.7).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(self, "rotation", 0.0, 0.9).set_trans(Tween.TRANS_SINE)
 
 	# Trunk collision.
 	var body := StaticBody2D.new()

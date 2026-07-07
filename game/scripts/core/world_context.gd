@@ -46,6 +46,15 @@ var arrival_mode: String = ""
 ## destination scene / return portal know which world it belongs to. "" when not travelling.
 var travel_layer: String = ""
 
+## (CQ-3 G6) True once the CS-02 「첫 입장」 landing beat (3s lock + repeated birdsong) has
+## played this session. Transient (not saved) — the beat is a one-time first-arrival flourish;
+## re-entering the grove within a run skips it. Cleared by reset() (new game / NG+).
+var cs02_landing_seen: bool = false
+
+## (CQ-3 G7) True once the CS-03 「세계수 앞에서」 first-encounter beat has played this session.
+## Transient (not saved) — a one-time flourish on the first approach to the world tree.
+var cs03_encounter_seen: bool = false
+
 
 ## Map a scene id to its .tscn path.
 func scene_path(scene_id: String) -> String:
@@ -76,6 +85,8 @@ func reset() -> void:
 	current_scene = SCENE_HOME
 	arrival_mode = ""
 	travel_layer = ""
+	cs02_landing_seen = false
+	cs03_encounter_seen = false
 
 
 func to_dict() -> Dictionary:

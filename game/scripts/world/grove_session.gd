@@ -62,6 +62,30 @@ func _setup() -> void:
 		AudioManager.start_world_audio()
 		AudioManager.set_home_ambience(false)  # full BGM in the grove (Layer 1)
 
+	# (CQ-3 G6) CS-02 「첫 입장」 landing beat: on the FIRST portal arrival into the grove (not a
+	# load, grove not yet cleared), lock control for 3s and loop the SAME birdsong twice — the
+	# world is beautiful yet "wrong": 같은 새가, 같은 노래를, 같은 자리에서.
+	if WorldContext.arrival_mode == "portal_arrival" and not WorldContext.cs02_landing_seen \
+			and not (SaveManager != null and SaveManager.cleared):
+		WorldContext.cs02_landing_seen = true
+		_play_cs02_landing()
+
+
+## CS-02 landing lock: freeze control ~3s (world time keeps running so BGM/day-night flow), and
+## play the same bird chirp twice at the SAME pitch (a broken record). Best-effort, headless-safe.
+func _play_cs02_landing() -> void:
+	if GameState == null:
+		return
+	GameState.set_control_lock(true)
+	if AudioManager != null and AudioManager.has_method("play_sfx"):
+		AudioManager.play_sfx("bird")
+	await get_tree().create_timer(1.5, true, false, true).timeout
+	if AudioManager != null and AudioManager.has_method("play_sfx"):
+		AudioManager.play_sfx("bird")   # 같은 새소리, 같은 자리 — the loop that shouldn't be
+	await get_tree().create_timer(1.5, true, false, true).timeout
+	if GameState != null:
+		GameState.set_control_lock(false)
+
 
 ## (v0.6.0 rework) Build the return portal near the grove spawn using the shared
 ## ReturnPortalController, so it matches the home gates EXACTLY: real monumental Portal (state

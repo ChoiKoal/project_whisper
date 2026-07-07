@@ -281,6 +281,11 @@ func _boot_scene() -> void:
 	# we're in the "grove" world so the scene-keyed snapshot is stored/restored under that id.
 	WorldContext.current_scene = WorldContext.SCENE_GROVE
 	SaveManager.pending_load = false
+	# (v1.3.0 CQ-3) The grove now plays a CS-02 landing beat (3s control lock + birdsong) on a
+	# genuine portal arrival. This harness drives movement synthetically right after boot, so
+	# mark the beat as seen (skip it) — the beat itself is covered by the cutscene harness.
+	WorldContext.cs02_landing_seen = true
+	WorldContext.cs03_encounter_seen = true   # (CQ-3) skip the world-tree encounter beat too
 	var packed: PackedScene = load(GROVE)
 	_scene = packed.instantiate()
 	add_child(_scene)
