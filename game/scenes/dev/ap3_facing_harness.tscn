@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bwhisperap3fac0"]
+
+[ext_resource type="Script" path="res://scenes/dev/ap3_facing_harness.gd" id="1_ap3"]
+
+[node name="AP3FacingHarness" type="Node"]
+script = ExtResource("1_ap3")
