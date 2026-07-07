@@ -122,6 +122,14 @@ func _test_layer(layer: Dictionary) -> void:
 		return
 	_check("%s: NPC object_id = npc_%s" % [lid, key], String(npc.object_id) == "npc_" + key,
 		"object_id=%s" % String(npc.object_id))
+	# 부록B #1: NPC is Whisper-보조 only — it is NOT a map 획득처. It shares the gatherable group for
+	# E-targeting, but can_gather() must be false / gather() empty, so it can never supply a map
+	# ingredient nor move an acquisition point. (Rewards travel _grant_reward: recipe선공개/소량 whisper/
+	# placeable/log — never a gated material.)
+	_check("%s: NPC is Whisper-보조 only — can_gather()==false (맵 획득처 무변경)" % lid,
+		npc.has_method("can_gather") and npc.can_gather() == false)
+	_check("%s: NPC.gather() yields nothing (not a map source)" % lid,
+		npc.has_method("gather") and String(npc.gather()) == "")
 
 	# 2. Park the player on a walkable cell adjacent to the NPC → it resolves as the E-target.
 	var npc_cell := ground.local_to_map(ground.to_local(npc.target_point()))
