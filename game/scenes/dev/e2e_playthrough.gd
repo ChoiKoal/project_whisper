@@ -585,6 +585,15 @@ func _step4_night_gate_and_world_tree() -> void:
 	await _frames(1)
 	_check("World Tree not re-gatherable (I9 stays unique = 1)", Inventory.count("I9") == 1,
 		"I9=%d" % Inventory.count("I9"))
+	# Dismiss the 진상 조각 card the World Tree investigation opened, exactly as the player would
+	# (E/ESC → _close_shard_card). Otherwise its "truth_card" modal lingers on the GameState
+	# autoload for the ENTIRE rest of the run, silently suppressing world interaction (the L2
+	# UI-경유 조합 step below reads ui_modal_open()).
+	if tree.has_method("_close_shard_card"):
+		tree.call("_close_shard_card")
+	await _frames(1)
+	_check("World Tree 진상 카드 dismiss → 모달 클린 (후속 스텝 상호작용 가능)",
+		not GameState.ui_modal_open(), "modals=%s" % str(GameState._modal_keys.keys()))
 
 
 # ==== STEP 5: 생명수 chain (R33 → R03 → R34 → R36) =========================
@@ -843,6 +852,15 @@ func _stepL2_science_journey() -> void:
 		QuestManager.active_id == "P2" and QuestManager.l2_active_id == "L2-Q1",
 		"L1=%s L2=%s" % [QuestManager.active_id, QuestManager.l2_active_id])
 
+	# ---- (v1.0.4) UI-경유 조합: FIRST L2 craft goes through the REAL world path ----------------
+	# ⚠️ NO-API-우회 구간: this block MUST NOT call Fusion.fuse() — that shortcut is exactly what let
+	# the P0 bug (L2-L5 조합대가 조합창을 못 여는 진행 블로커) ship undetected through the E2E. Here we
+	# drive the actual crafting station: player walks adjacent → InteractionController resolves the
+	# 정비대 as the E-target → E(_do_interact) OPENS the Fusion UI → fill the two slots + press 조합
+	# (fusion_ui._on_strip_pressed/_on_fuse_pressed). If the station were a plain Sprite2D again, this
+	# step FAILS (UI never opens), catching the regression the API path masks.
+	await _l2_ui_path_first_craft()
+
 	# ---- real gate-key craft chain (discovers L2 recipes into the SAME codex) --------------
 	# 전지 D64 = 구리도선(J1+J2, R09→D62) + 정류회로(J4+J5, R10→D63), then D62+D63 (R11→D64).
 	Inventory.clear()
@@ -1015,6 +1033,75 @@ func _stepL2_science_journey() -> void:
 	_respawn = _scene.get_node("ObjectRespawn") as ObjectRespawn
 	SaveManager.register_world(_loader, _player, _respawn)
 	SaveManager.load_game()
+	await _frames(2)
+
+
+# ==== (v1.0.4) L2 UI-경유 첫 조합 — REAL interaction path, NO Fusion.fuse() ====
+##
+## ⚠️ NO-API-우회 구간. This is the single E2E step that goes through the actual world crafting path
+## the P0 hotfix restored: it deliberately does NOT call Fusion.fuse(). It moves the player adjacent
+## to the L2 정비대, confirms the InteractionController targets it with a 조합 prompt, presses E via
+## _do_interact() (which must OPEN the Fusion UI — the assertion the API path can't make), then fuses
+## 구리도선(J1+J2→D62) through the UI's own slots + 조합 button. A regression to a plain-Sprite2D
+## station makes the UI never open → this step FAILS loudly.
+func _l2_ui_path_first_craft() -> void:
+	var interaction := _scene.get_node_or_null("Interaction") as InteractionController
+	var player := _scene.get_node_or_null("YSortLayer/Player") as Player
+	var ground := _scene.get_node_or_null("Ground") as MapLoader
+	var fusion := _scene.get_node_or_null("FusionUI")
+	if interaction == null or player == null or ground == null or fusion == null:
+		_check("L2 UI-조합: 씬 핸들(Interaction/Player/Ground/FusionUI) 확보", false)
+		return
+	# The 정비대 is a real Cauldron in the gatherable group.
+	var caul: Cauldron = null
+	for n in get_tree().get_nodes_in_group("gatherable"):
+		if n is Cauldron:
+			caul = n
+			break
+	_check("L2 UI-조합: 정비대가 실제 Cauldron (gatherable 그룹)", caul != null)
+	if caul == null:
+		return
+	# Park the player on a walkable cell adjacent to the station.
+	var caul_cell := ground.local_to_map(ground.to_local(caul.target_point()))
+	var adj := Vector2i(-999, -999)
+	for d in ([Vector2i(0,1), Vector2i(1,0), Vector2i(-1,0), Vector2i(0,-1),
+			Vector2i(1,1), Vector2i(-1,1), Vector2i(1,-1), Vector2i(-1,-1)] as Array[Vector2i]):
+		if ground.is_cell_walkable(caul_cell + d):
+			adj = caul_cell + d
+			break
+	_check("L2 UI-조합: 정비대 인접 워커블 셀 확보", adj != Vector2i(-999, -999))
+	if adj == Vector2i(-999, -999):
+		return
+	player.clear_path()
+	player.velocity = Vector2.ZERO
+	player.global_position = ground.to_global(ground.map_to_local(adj))
+	await _frames(2)
+	interaction._process(0.016)
+	print("DBG modal_open=%s pl_wired=%s tm_wired=%s caul_cell=%s player_pos=%s target=%s prompt='%s'" % [
+		GameState.ui_modal_open(), interaction._player != null, interaction._tilemap != null,
+		str(caul_cell), str(player.global_position), str(interaction._target_object), interaction._prompt_text()])
+	_check("L2 UI-조합: InteractionController가 정비대를 E-타겟으로 해석 + '조합' 프롬프트",
+		interaction._target_object == caul and interaction._prompt_text() == "E 조합")
+	# Press E through the REAL resolver (NOT caul.on_interact()/Fusion.fuse()) → Fusion UI opens.
+	interaction._do_interact()
+	await _frames(2)
+	_check("L2 UI-조합: E 조합 → Fusion UI 실제로 열림 (API 우회 시 놓쳤던 어서션)",
+		bool(fusion.get("_open")))
+	if not bool(fusion.get("_open")):
+		return
+	# Fuse 구리도선 THROUGH the UI: fill both slots + press 조합. (No Fusion.fuse() here.)
+	Inventory.add("J1", 1); Inventory.add("J2", 1)
+	fusion._rebuild_strip()
+	var before := Inventory.count("D62")
+	fusion._on_strip_pressed("J1")
+	fusion._on_strip_pressed("J2")
+	fusion._on_fuse_pressed()
+	if fusion.has_method("_skip_sequence"):
+		fusion._skip_sequence()
+	await _frames(2)
+	_check("L2 UI-조합: UI 슬롯+조합 버튼으로 구리도선 D62 제작 (+1, Fusion.fuse 미호출)",
+		Inventory.count("D62") == before + 1, "count=%d" % Inventory.count("D62"))
+	fusion.close()
 	await _frames(2)
 
 

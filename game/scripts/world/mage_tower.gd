@@ -137,7 +137,9 @@ func _spawn_workbench() -> void:
 
 ## (v1.0.4) Bind the crafting station to the scene FusionUI (order-independent; see terminal_station).
 func _bind_fusion_ui(caul: Cauldron) -> void:
-	var root := get_tree().current_scene
+	# Resolve the scene root via `owner` (works whether this scene is current_scene in real play
+	# OR parented under a test harness like e2e), falling back to current_scene.
+	var root: Node = owner if owner != null else get_tree().current_scene
 	if root == null:
 		return
 	var fusion := root.get_node_or_null("FusionUI")
