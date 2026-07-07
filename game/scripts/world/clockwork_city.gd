@@ -116,11 +116,10 @@ func _spawn_workbench() -> void:
 	var cell := _loader.l2_workbench_special_cell()
 	if cell == Vector2i(-1, -1):
 		return
-	var s := Sprite2D.new()
-	s.texture = load("res://assets/objects/l3_workbench.png")
-	s.offset = Vector2(0, -44)
-	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	s.set_meta("object_id", "workbench")
+	# (v1.0.4 P0 hotfix) Real Cauldron wearing the L3 workbench skin — see terminal_station.gd for
+	# why: a plain Sprite2D never emitted `interacted`, so Fusion was unreachable in real play.
+	var s := Cauldron.new()
+	s.configure(load("res://assets/objects/l3_workbench.png"), Vector2(0, -44))
 	s.y_sort_enabled = true
 	var world := _loader.cell_center_world(cell)
 	var ys := _loader.get_node_or_null(_loader.ysort_layer_path) as Node2D
@@ -130,8 +129,19 @@ func _spawn_workbench() -> void:
 		_loader.add_child(s)
 	s.global_position = world
 	_loader.l2_workbench_cell = cell
+	_bind_fusion_ui(s)
 	# orange fusion glow at the aperture.
 	_add_pool(s, "res://assets/objects/light_pool_orange.png", Vector2(0, -46), 0.7)
+
+
+## (v1.0.4) Bind the crafting station to the scene FusionUI (order-independent; see terminal_station).
+func _bind_fusion_ui(caul: Cauldron) -> void:
+	var root := get_tree().current_scene
+	if root == null:
+		return
+	var fusion := root.get_node_or_null("FusionUI")
+	if fusion != null and fusion.has_method("bind_cauldron"):
+		fusion.bind_cauldron(caul)
 
 
 func _add_pool(parent: Node2D, tex_path: String, off: Vector2, strength: float) -> void:

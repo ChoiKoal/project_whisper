@@ -123,11 +123,13 @@ func _spawn_workbench() -> void:
 	var cell := _loader.l2_workbench_special_cell()
 	if cell == Vector2i(-1, -1):
 		return
-	var s := Sprite2D.new()
-	s.texture = load("res://assets/objects/l2_workbench.png")
-	s.offset = Vector2(0, -44)
-	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	s.set_meta("object_id", "workbench")
+	# (v1.0.4 P0 hotfix) The 정비대 is a REAL Cauldron (scripts/world/cauldron.gd) wearing the L2
+	# workbench skin — NOT a plain Sprite2D. Before the fix it was a bare Sprite2D+set_meta, so it
+	# never joined the gatherable group as a Cauldron and never emitted `interacted`; the Fusion UI
+	# (which only opens on Cauldron.interacted) was UNREACHABLE in real play → L2-L5 gate crafting
+	# was impossible. Skinning keeps the workbench art; binding wires E-조합 → Fusion.
+	var s := Cauldron.new()
+	s.configure(load("res://assets/objects/l2_workbench.png"), Vector2(0, -44))
 	s.y_sort_enabled = true
 	var world := _loader.cell_center_world(cell)
 	var ys := _loader.get_node_or_null(_loader.ysort_layer_path) as Node2D
@@ -137,8 +139,22 @@ func _spawn_workbench() -> void:
 		_loader.add_child(s)
 	s.global_position = world
 	_loader.l2_workbench_cell = cell
+	_bind_fusion_ui(s)
 	# violet-cyan fusion glow at the aperture (reparents onto the glow layer at night).
 	_add_pool(s, "res://assets/objects/light_pool_cyan.png", Vector2(0, -46), 0.7)
+
+
+## (v1.0.4) Explicitly bind the crafting station to the scene's FusionUI so interacting opens it.
+## We do NOT rely on FusionUI._autobind_cauldrons (a one-shot deferred scan from ITS _ready) —
+## the session spawns its cauldron on a later deferred frame, which the one-shot scan can miss.
+## Explicit binding is order-independent and idempotent (bind_cauldron guards double-connects).
+func _bind_fusion_ui(caul: Cauldron) -> void:
+	var root := get_tree().current_scene
+	if root == null:
+		return
+	var fusion := root.get_node_or_null("FusionUI")
+	if fusion != null and fusion.has_method("bind_cauldron"):
+		fusion.bind_cauldron(caul)
 
 
 func _add_pool(parent: Node2D, tex_path: String, off: Vector2, strength: float) -> void:

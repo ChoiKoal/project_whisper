@@ -31,9 +31,34 @@ var _bubble_t: float = 0.0
 var _bubble_on: bool = false
 var _pulse_t: float = 0.0
 
+## v1.0.4 P0 hotfix: L2-L5 crafting stations reuse the Cauldron class (so E → Fusion
+## works in real play — see interaction_controller.gd on_interact hook) but keep their own
+## workbench ART. When `configure()` supplies a static skin, the calm/bubble frame-swap and
+## breathing pulse are DISABLED so the layer's workbench sprite stays put; only the interaction
+## contract (group membership + `interacted`) matters here. Home/grove never call configure(),
+## so their bubbling cauldron is untouched.
+var _static_skin: bool = false
+
+
+## (v1.0.4) Skin this cauldron with a layer-specific workbench texture/offset and turn OFF the
+## brew animation. Call BEFORE adding to the tree (so _ready sees the assigned texture as calm).
+func configure(skin_texture: Texture2D, skin_offset: Vector2, object_id_val: String = "workbench") -> void:
+	if skin_texture != null:
+		texture = skin_texture
+	offset = skin_offset
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	object_id = object_id_val
+	_static_skin = true
+
 
 func _ready() -> void:
 	add_to_group(GROUP)
+	# Skinned crafting stations (L2-L5) keep their static workbench art — no brew frames.
+	if _static_skin:
+		_tex_calm = texture
+		_tex_bubble = null
+		set_process(false)
+		return
 	_tex_calm = load(TEX_CALM)
 	_tex_bubble = load(TEX_BUBBLE)
 	# Cache the base texture actually assigned by the loader as the "calm" frame in
