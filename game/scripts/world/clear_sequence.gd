@@ -98,11 +98,8 @@ func play() -> void:
 
 
 func _run() -> void:
-	# 1. white flash.
-	var tw := create_tween()
-	tw.tween_property(_flash, "color:a", 0.9, 0.08)
-	tw.tween_property(_flash, "color:a", 0.0, 0.8)
-	await tw.finished
+	# 1. white flash (CQ-2: shared Director flash).
+	await CutsceneDirector.flash(self, _flash, 0.9, 0.08, 0.8)
 
 	# 2. expanding ripple ring + green-tint the hollow cells (visual, best-effort).
 	_spawn_ring()
@@ -112,8 +109,17 @@ func _run() -> void:
 	var dtw := create_tween()
 	dtw.tween_property(_dim, "color:a", 0.55, 1.0)
 	await dtw.finished
-	for card in CARDS:
-		await _card(card)
+	# Card 1 — "세계가, 숨을 뱉었다."
+	await _card(CARDS[0])
+	# (CQ-4 G8) 새소리 — 이번엔 다른 멜로디. 반복이 깨졌다 (CS-04 핵심 모티프): 두 번,
+	# 두 번째는 살짝 다른 피치로 재생해 '같은 새·같은 노래'의 루프가 깨졌음을 소리로.
+	await _broken_birdsong()
+	# Card 2 — "…들려? 방금, 세계가 대답했어."
+	await _card(CARDS[1])
+	# (CQ-4 G9) 3초 정적 — 대사도 소리도 없이. 그리고 발밑에서 보라 빛이 차오른다.
+	await _silence_then_rising_light()
+	# Card 3 — "돌아갈 시간이야. 나의 세계로."
+	await _card(CARDS[2])
 
 	# 4. hand off to the auto-return.
 	# (v0.6.1) Restore time BEFORE emitting cleared. GameState.time_running is an autoload
@@ -136,40 +142,64 @@ func _card(text: String) -> void:
 	await tw.finished
 
 
-## A light ripple ring expanding from the planted cell (world space, on a glow layer feel).
+## (CQ-4 G8) The world's answer: birdsong that is no longer the same loop. Two calls, the
+## second faintly pitch-shifted (playback via a temp player) so the "반복이 깨졌다" reads by ear.
+func _broken_birdsong() -> void:
+	if AudioManager != null and AudioManager.has_method("play_sfx"):
+		AudioManager.play_sfx("bird")
+	await get_tree().create_timer(0.9, true, false, true).timeout
+	_play_bird_shifted(1.18)
+	await get_tree().create_timer(0.9, true, false, true).timeout
+
+
+## Play the bird stream at a shifted pitch (a different melody) via a one-shot temp player.
+## Best-effort: falls back to the plain sfx if the stream isn't loaded.
+func _play_bird_shifted(pitch: float) -> void:
+	if AudioManager == null or not AudioManager.has_method("has_stream"):
+		return
+	if not AudioManager.has_stream("bird"):
+		return
+	var p := AudioStreamPlayer.new()
+	p.stream = AudioManager._streams.get("bird")
+	p.pitch_scale = pitch
+	p.bus = "SFX"
+	add_child(p)
+	p.finished.connect(func():
+		if is_instance_valid(p):
+			p.queue_free())
+	p.play()
+
+
+## (CQ-4 G9) 3초 정적 → 발밑에서 보라 빛이 상승 (플레이어가 빛에 감싸이며 떠오르는 예고).
+## A full-screen violet ColorRect rising from the bottom, deepening as the beat holds.
+func _silence_then_rising_light() -> void:
+	await get_tree().create_timer(3.0, true, false, true).timeout
+	var rise := ColorRect.new()
+	rise.color = Color(0.42, 0.28, 0.62, 0.0)
+	rise.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	rise.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	rise.custom_minimum_size = Vector2(0, 0)
+	rise.size.y = 0
+	rise.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(rise)
+	var vp := get_viewport()
+	var full_h: float = vp.get_visible_rect().size.y if vp != null else 900.0
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(rise, "size:y", full_h, 1.4).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(rise, "color:a", 0.55, 1.4)
+	await tw.finished
+
+
+## A light ripple ring expanding from the planted cell (CQ-2: shared Director ring).
 func _spawn_ring() -> void:
 	if _loader == null:
 		return
 	var ysort := _loader.get_node_or_null(_loader.ysort_layer_path) as Node2D
 	if ysort == null:
 		return
-	# Build a thin bright ring texture once.
-	var s := 128
-	var img := Image.create(s, s, false, Image.FORMAT_RGBA8)
-	img.fill(Color(0, 0, 0, 0))
-	var c := Vector2(s / 2.0, s / 2.0)
-	for y in range(s):
-		for x in range(s):
-			var d := Vector2(x + 0.5, y + 0.5).distance_to(c) / (s / 2.0)
-			# a soft ring peaking near the rim
-			var ring := clampf(1.0 - absf(d - 0.85) / 0.15, 0.0, 1.0)
-			if ring > 0.0:
-				img.set_pixel(x, y, Color(0.8, 1.0, 0.85, ring * 0.9))
-	_ring = Sprite2D.new()
-	_ring.texture = ImageTexture.create_from_image(img)
-	_ring.centered = true
-	_ring.position = _loader.cell_center_world(_planted_cell)
-	_ring.z_index = 50
-	var mat := CanvasItemMaterial.new()
-	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-	_ring.material = mat
-	ysort.add_child(_ring)
-	var rtw := create_tween().set_parallel(true)
-	rtw.tween_property(_ring, "scale", Vector2(16, 16), 1.6).set_trans(Tween.TRANS_SINE)
-	rtw.tween_property(_ring, "modulate:a", 0.0, 1.6)
-	rtw.chain().tween_callback(func():
-		if is_instance_valid(_ring):
-			_ring.queue_free())
+	_ring = CutsceneDirector.spawn_ripple_ring(
+		self, ysort, _loader.cell_center_world(_planted_cell),
+		Color(0.8, 1.0, 0.85), 16.0, 1.6, 50)
 
 
 ## Faintly green-tint every HOLLOW (빈 자국) cell — the world healing as the ripple passes.

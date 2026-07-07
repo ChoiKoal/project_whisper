@@ -113,11 +113,12 @@ func _test_clear_restores_time() -> void:
 	clear.play()
 	await _frames(2)
 	_check("A: time frozen DURING clear cutscene", not GameState.time_running)
-	# The beat is ~a few seconds of tweens/cards. Wait for `cleared`, then assert restore.
+	# The beat is now ~18s of tweens/cards (v1.3.0 CQ-4 added the 3s silence + broken-birdsong
+	# beats per CS-04). Wait for `cleared`, then assert restore.
 	var got := [false]
 	clear.cleared.connect(func(): got[0] = true, CONNECT_ONE_SHOT)
 	var waited := 0.0
-	while not got[0] and waited < 12.0:
+	while not got[0] and waited < 26.0:
 		await _wait(0.25)
 		waited += 0.25
 	_check("A: clear cutscene emitted `cleared`", got[0], "waited=%.1fs" % waited)
