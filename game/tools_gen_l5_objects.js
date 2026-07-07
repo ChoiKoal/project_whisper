@@ -8,6 +8,9 @@
 const zlib = require('zlib'), fs = require('fs'), path = require('path');
 const OUT = path.join(process.env.ART_OUT_DIR || __dirname, 'assets', 'objects');
 
+// AP-2 (v1.2.0 아트 정합): 정면뷰 제단/성물/문 → 3/4 아이소 박스/실린더. 공용 헬퍼.
+const ISO = require('./tools_iso_lib.js');
+const { isoBox, isoCylinder, topDiamond, isoEllipseTop, darker: dk } = ISO;
 function crc32(b){let c=~0;for(let i=0;i<b.length;i++){c^=b[i];for(let k=0;k<8;k++)c=(c>>>1)^(0xEDB88320&-(c&1));}return(~c)>>>0;}
 function chunk(t,d){const l=Buffer.alloc(4);l.writeUInt32BE(d.length,0);const tb=Buffer.from(t,'ascii');const body=Buffer.concat([tb,d]);const cr=Buffer.alloc(4);cr.writeUInt32BE(crc32(body),0);return Buffer.concat([l,body,cr]);}
 function enc(w,h,px){const sig=Buffer.from([137,80,78,71,13,10,26,10]);const ih=Buffer.alloc(13);ih.writeUInt32BE(w,0);ih.writeUInt32BE(h,4);ih[8]=8;ih[9]=6;const st=w*4;const raw=Buffer.alloc((st+1)*h);for(let y=0;y<h;y++){raw[y*(st+1)]=0;px.copy(raw,y*(st+1)+1,y*st,y*st+st);}return Buffer.concat([sig,chunk('IHDR',ih),chunk('IDAT',zlib.deflateSync(raw,{level:9})),chunk('IEND',Buffer.alloc(0))]);}
@@ -134,7 +137,10 @@ lanternPath('l5_lantern_path_off.png',false);
 lanternPath('l5_lantern_path_on.png',true);
 
 // ---- G2. 생명의 샘 밸브문 (life-spring valve door) closed/open. 128×128. ----
-function lifeDoor(name,open){const W=128,H=128,cv=C(W,H);ao(cv,W/2,120,30,8,66);
+function lifeDoor(name,open){const W=128,H=128,cv=C(W,H);const cx=W/2;ao(cv,cx,120,32,9,68);
+  // AP-2: 아이소 문턱 플린스 — 벽형 밸브문 접지.
+  topDiamond(cv,cx,116,30,I_SH);
+  for(let t=0;t<=30;t++){const yy=15*(1-t/30);px(cv,cx-t,116-yy,dk(I_SH,0.5));px(cv,cx+t,116-yy,dk(I_SH,0.5));px(cv,cx-t,116+yy,dk(I_SH,0.5));px(cv,cx+t,116+yy,dk(I_SH,0.5));}
   if(!open){
     rect(cv,30,36,64,116,mix(STONE,I_MID,0.3));rect(cv,64,36,98,116,mix(STONE,I_SH,0.25));
     rect(cv,30,36,98,40,mix(STONE,I_HI,0.4));
@@ -159,13 +165,12 @@ lifeDoor('l5_life_door_closed.png',false);
 lifeDoor('l5_life_door_open.png',true);
 
 // ---- G2 landmark. 생명의 샘 (life spring, 2×3) off/on. 176×160. ----
-function lifeSpring(name,on){const W=176,H=160,cv=C(W,H);ao(cv,W/2,H-8,46,11,72);
-  const cx=W/2;
-  // ivory stone basin (three tiers)
-  rect(cv,cx-52,H-40,cx+52,H-14,mix(STONE,I_SH,0.3));rect(cv,cx-52,H-40,cx+52,H-36,mix(STONE,I_HI,0.3));
-  rect(cv,cx-38,H-70,cx+38,H-40,mix(STONE,I_SH,0.25));
-  rect(cv,cx-24,H-96,cx+24,H-70,mix(STONE,I_SH,0.25));
-  rect(cv,cx-8,54,cx+8,H-96,mix(STONE,I_MID,0.25));
+function lifeSpring(name,on){const W=176,H=160,cv=C(W,H);const cx=W/2;ao(cv,cx,H-8,46,11,72);
+  // AP-2: 3/4 아이소 3단 아이보리 석재 분수 — 아이소 실린더 적층 (윗면 타원 || 바닥).
+  isoCylinder(cv,cx,H-46,52,26,mix(STONE,I_HI,0.2),mix(STONE,I_MID,0.3),mix(STONE,I_SH,0.3),0.96);
+  isoCylinder(cv,cx,H-74,38,24,mix(STONE,I_HI,0.2),mix(STONE,I_MID,0.3),mix(STONE,I_SH,0.3),0.96);
+  isoCylinder(cv,cx,H-100,24,22,mix(STONE,I_HI,0.2),mix(STONE,I_MID,0.3),mix(STONE,I_SH,0.3),0.96);
+  isoCylinder(cv,cx,54,9,H-152,mix(STONE,I_HI,0.15),mix(STONE,I_MID,0.3),mix(STONE,I_SH,0.3),1.0);
   const wcx=cx,wcy=H-58;
   if(on){// clear silver water rising + green-ivory life particles
     for(let y=-8;y<=6;y++)for(let x=-34;x<=34;x++){const d=(x/34)**2+(y/9)**2;if(d<=1)px(cv,wcx+x,wcy+y,hex('#b8ccc4'),210);}
@@ -184,8 +189,10 @@ lifeSpring('l5_life_spring.png',false);
 lifeSpring('l5_life_spring_on.png',true);
 
 // ---- G3. 침묵의 회랑 입구 (silence corridor mouth, 2×2) closed/passed. 128×160. ----
-function silenceGate(name,passed){const W=128,H=160,cv=C(W,H);ao(cv,W/2,H-8,30,8,58);
-  const cx=W/2;
+function silenceGate(name,passed){const W=128,H=160,cv=C(W,H);const cx=W/2;ao(cv,cx,H-8,32,9,60);
+  // AP-2: 아이소 문턱 플린스 — 회랑 입구(벽형 콜로네이드) 접지.
+  topDiamond(cv,cx,H-14,30,mix(STONE,I_SH,0.4));
+  for(let t=0;t<=30;t++){const yy=15*(1-t/30);px(cv,cx-t,H-14-yy,dk(I_SH,0.5));px(cv,cx+t,H-14-yy,dk(I_SH,0.5));px(cv,cx-t,H-14+yy,dk(I_SH,0.5));px(cv,cx+t,H-14+yy,dk(I_SH,0.5));}
   // ivory colonnade arch framing a hushed dark passage
   rect(cv,18,20,34,150,mix(STONE,I_MID,0.3));rect(cv,94,20,110,150,mix(STONE,I_MID,0.3));
   rect(cv,18,20,110,32,mix(STONE,I_HI,0.35));
@@ -204,10 +211,11 @@ silenceGate('l5_silence_gate.png',false);
 silenceGate('l5_silence_gate_on.png',true);
 
 // ---- G1 mount. 성소 등불 제단 (lantern altar, place slot) off/on. 96×96. ----
-function lanternAltar(name,on){const W=96,H=96,cv=C(W,H);ao(cv,W/2,88,24,7,64);
-  rect(cv,30,60,66,86,mix(STONE,I_SH,0.3));rect(cv,30,60,66,64,mix(STONE,I_HI,0.3));rect(cv,62,60,66,86,I_SH);
-  rect(cv,26,84,70,90,I_SH);// footing
-  const sx=48,sy=52;
+function lanternAltar(name,on){const W=96,H=96,cv=C(W,H);const cx=W/2;ao(cv,cx,88,24,7,64);
+  // AP-2: 3/4 아이소 석재 제단 + 등불 받침은 윗면 마름모 중앙.
+  const rx=24,h=28,ry=rx/2,topY=88-h-ry;
+  isoBox(cv,cx,topY,rx,h,mix(STONE,I_HI,0.15),mix(STONE,I_MID,0.3),I_SH);
+  const sx=cx,sy=topY;
   // the lantern cradle
   for(let a=0;a<360;a+=30){const x=sx+Math.cos(a*Math.PI/180)*13,y=sy+Math.sin(a*Math.PI/180)*8;px(cv,x,y,on?AMBER:AMBER_DK,on?230:160);px(cv,x,y+1,I_SH,180);}
   if(on){// lantern lit — warm amber radiating
@@ -222,13 +230,13 @@ lanternAltar('l5_lantern_altar.png',false);
 lanternAltar('l5_lantern_altar_on.png',true);
 
 // ---- G3 mount. 성가대 제단 (choir stand / lectern) off/on. 80×96. ----
-function choirStand(name,on){const W=80,H=96,cv=C(W,H);ao(cv,W/2,88,20,6,58);
-  // a slanted lectern on a stem
-  rect(cv,36,44,44,86,mix(STONE,I_MID,0.3));rect(cv,30,84,50,90,I_SH);// stem + base
-  // slanted music desk
-  for(let i=0;i<32;i++){const x=24+i,y=44-Math.round(i*0.3);rect(cv,x,y,x+1,y+18,mix(STONE,I_HI,0.2),230);}
-  rect(cv,24,44,56,46,I_HI,220);
-  const hx=40,hy=42;
+function choirStand(name,on){const W=80,H=96,cv=C(W,H);const cx=W/2;ao(cv,cx,88,20,6,58);
+  // AP-2: 아이소 박스 받침 스템 + 그 위 경사 성가 데스크(윗면 마름모 각도).
+  isoBox(cv,cx,66,10,16,mix(STONE,I_HI,0.15),mix(STONE,I_MID,0.3),I_SH);
+  // 경사 성가 데스크 — 마름모 윗면처럼 2:1 각도로 기운 판
+  for(let i=0;i<34;i++){const x=cx-17+i,y=42-Math.round((i-17)*0.5);rect(cv,x,y,x+1,y+16,mix(STONE,I_HI,0.2),230);}
+  for(let i=0;i<34;i++){const x=cx-17+i,y=42-Math.round((i-17)*0.5);px(cv,x,y,I_HI,220);}
+  const hx=cx,hy=40;
   if(on){// hymn glyphs rise from the open sheet
     glow(cv,hx,hy,16,AMBER,120);
     for(const [nx,ny] of [[hx-6,hy-6],[hx+4,hy-10],[hx-2,hy-14]]){px(cv,nx,ny,AMBER_HI,230);px(cv,nx,ny+2,AMBER,190);}
@@ -242,65 +250,51 @@ choirStand('l5_choir_stand.png',false);
 choirStand('l5_choir_stand_on.png',true);
 
 // ---- G4 mount. 대제단 봉헌대 (offering altar, place slot) off/on. 80×96. ----
-function offeringAltar(name,on){const W=80,H=96,cv=C(W,H);ao(cv,W/2,88,20,6,58);
-  const bx=22,by=30,bw=36,bh=54;
-  rect(cv,bx,by,bx+bw,by+bh,mix(STONE,I_MID,0.3));rect(cv,bx,by,bx+bw,by+3,mix(STONE,I_HI,0.4));rect(cv,bx+bw-3,by,bx+bw,by+bh,I_SH);
-  rect(cv,bx+4,by+5,bx+bw-4,by+bh-6,DKPANEL);
-  const hx=bx+bw/2,hy=by+26;
-  // offering socket — a ring of petals framing the cavity
-  for(let a=0;a<360;a+=30){const x=hx+Math.cos(a*Math.PI/180)*13,y=hy+Math.sin(a*Math.PI/180)*13;px(cv,x,y,on?AMBER:AMBER_DK,on?220:160);px(cv,x,y+1,I_SH,180);}
-  if(on){// response offered — amber rings radiating (세계가 대답을 들었다)
-    glow(cv,hx,hy,22,AMBER,180);glow(cv,hx,hy,12,AMBER_HI,160);
-    for(let a=0;a<360;a+=6)px(cv,hx+Math.cos(a*Math.PI/180)*7,hy+Math.sin(a*Math.PI/180)*7,mix(AMBER,hex('#fff0c8'),0.4),235);
+function offeringAltar(name,on){const W=80,H=96,cv=C(W,H);const cx=W/2;ao(cv,cx,88,20,6,58);
+  // AP-2: 3/4 아이소 석재 봉헌대 + 봉헌 소켓은 우측 광원면.
+  const rx=19,h=50,ry=rx/2,topY=88-h-ry;
+  isoBox(cv,cx,topY,rx,h,mix(STONE,I_HI,0.2),mix(STONE,I_MID,0.3),I_SH);
+  const hx=cx+6,hy=topY+ry+22;
+  for(let a=0;a<360;a+=30){const x=hx+Math.cos(a*Math.PI/180)*11,y=hy+Math.sin(a*Math.PI/180)*11;px(cv,x,y,on?AMBER:AMBER_DK,on?220:160);px(cv,x,y+1,I_SH,180);}
+  if(on){glow(cv,hx,hy,20,AMBER,180);glow(cv,hx,hy,11,AMBER_HI,160);
+    for(let a=0;a<360;a+=6)px(cv,hx+Math.cos(a*Math.PI/180)*6,hy+Math.sin(a*Math.PI/180)*6,mix(AMBER,hex('#fff0c8'),0.4),235);
     px(cv,hx,hy,hex('#fff0d0'),255);
-    for(let a=0;a<360;a+=45)for(let i=8;i<16;i++)px(cv,hx+Math.cos(a*Math.PI/180)*i,hy+Math.sin(a*Math.PI/180)*i,AMBER,150);
-    rect(cv,bx+6,by+bh-12,bx+bw-8,by+bh-9,AMBER,230);
+    for(let a=0;a<360;a+=45)for(let i=7;i<13;i++)px(cv,hx+Math.cos(a*Math.PI/180)*i,hy+Math.sin(a*Math.PI/180)*i,AMBER,150);
+    for(let x=0;x<12;x++)px(cv,hx-6+x,hy+16+(x)*0.4,AMBER,230);
   } else {
-    for(let y=-8;y<=8;y++)for(let x=-8;x<=8;x++){if(x*x+y*y<=64)px(cv,hx+x,hy+y,DEEP,235);}
-    rect(cv,bx+6,by+bh-12,bx+10,by+bh-9,AMBER_DK,170);
+    for(let y=-7;y<=7;y++)for(let x=-7;x<=7;x++){if(x*x+y*y<=49)px(cv,hx+x,hy+y,DEEP,235);}
+    for(let x=0;x<4;x++)px(cv,hx-6+x,hy+16+(x)*0.4,AMBER_DK,170);
   }
   save(cv,name);}
 offeringAltar('l5_offering_altar.png',false);
 offeringAltar('l5_offering_altar_on.png',true);
 
 // ---- 순례자의 발전 제단 A (pilgrim dynamo, energy re-grant) off/on. 80×96. ----
-function pilgrimDynamo(name,on){const W=80,H=96,cv=C(W,H);ao(cv,W/2,88,20,6,58);
-  const bx=24,by=32,bw=32,bh=52;
-  rect(cv,bx,by,bx+bw,by+bh,mix(STONE,I_MID,0.3));rect(cv,bx,by,bx+bw,by+3,mix(STONE,I_HI,0.4));rect(cv,bx+bw-3,by,bx+bw,by+bh,I_SH);
-  rect(cv,bx+4,by+5,bx+bw-4,by+bh-6,DKPANEL);
-  const hx=bx+bw/2,hy=by+24;
-  // a cyan energy dial (에너지 재화 색 계승 — L2 시안)
-  const cy_col=on?hex('#5ad0e0'):hex('#3a6a72');
-  for(let a=0;a<360;a+=30){const x=hx+Math.cos(a*Math.PI/180)*11,y=hy+Math.sin(a*Math.PI/180)*11;px(cv,x,y,cy_col,on?220:150);}
-  if(on){glow(cv,hx,hy,18,hex('#5ad0e0'),150);px(cv,hx,hy,hex('#d0f4ff'),240);
-    rect(cv,bx+6,by+bh-12,bx+bw-8,by+bh-9,hex('#5ad0e0'),220);}
-  else {for(let y=-7;y<=7;y++)for(let x=-7;x<=7;x++){if(x*x+y*y<=49)px(cv,hx+x,hy+y,DEEP,230);}}
+function reliquaryBox(name,on,coreCol,coreDk,coreHi){const W=80,H=96,cv=C(W,H);const cx=W/2;ao(cv,cx,88,20,6,58);
+  // AP-2: 3/4 아이소 석재 함체 + 발전/성물 다이얼은 우측 광원면.
+  const rx=18,h=48,ry=rx/2,topY=88-h-ry;
+  isoBox(cv,cx,topY,rx,h,mix(STONE,I_HI,0.2),mix(STONE,I_MID,0.3),I_SH);
+  const hx=cx+5,hy=topY+ry+20;
+  const col=on?coreCol:coreDk;
+  for(let a=0;a<360;a+=30){const x=hx+Math.cos(a*Math.PI/180)*10,y=hy+Math.sin(a*Math.PI/180)*10;px(cv,x,y,col,on?220:150);}
+  if(on){glow(cv,hx,hy,16,coreCol,150);px(cv,hx,hy,coreHi,240);for(let x=0;x<12;x++)px(cv,hx-6+x,hy+15+(x)*0.4,coreCol,220);}
+  else for(let y=-7;y<=7;y++)for(let x=-7;x<=7;x++){if(x*x+y*y<=49)px(cv,hx+x,hy+y,DEEP,230);}
   save(cv,name);}
+// 순례자 발전 제단 (에너지 재화 색 계승 — L2 시안)
+const pilgrimDynamo=(name,on)=>reliquaryBox(name,on,hex('#5ad0e0'),hex('#3a6a72'),hex('#d0f4ff'));
 pilgrimDynamo('l5_pilgrim_dynamo.png',false);
 pilgrimDynamo('l5_pilgrim_dynamo_on.png',true);
 
-// ---- 마력 성물함 B (mana reliquary, mana re-grant) off/on. 80×96. ----
-function manaReliquary(name,on){const W=80,H=96,cv=C(W,H);ao(cv,W/2,88,20,6,58);
-  const bx=24,by=32,bw=32,bh=52;
-  rect(cv,bx,by,bx+bw,by+bh,mix(STONE,I_MID,0.3));rect(cv,bx,by,bx+bw,by+3,mix(STONE,I_HI,0.4));rect(cv,bx+bw-3,by,bx+bw,by+bh,I_SH);
-  rect(cv,bx+4,by+5,bx+bw-4,by+bh-6,DKPANEL);
-  const hx=bx+bw/2,hy=by+24;
-  // a violet mana crystal in the reliquary (마력 재화 색 계승 — L4 보라)
-  const vi_col=on?hex('#a878e0'):hex('#5a4670');
-  for(let a=0;a<360;a+=30){const x=hx+Math.cos(a*Math.PI/180)*11,y=hy+Math.sin(a*Math.PI/180)*11;px(cv,x,y,vi_col,on?220:150);}
-  if(on){glow(cv,hx,hy,18,hex('#a878e0'),150);px(cv,hx,hy,hex('#e0d0ff'),240);
-    rect(cv,bx+6,by+bh-12,bx+bw-8,by+bh-9,hex('#a878e0'),220);}
-  else {for(let y=-7;y<=7;y++)for(let x=-7;x<=7;x++){if(x*x+y*y<=49)px(cv,hx+x,hy+y,DEEP,230);}}
-  save(cv,name);}
+// ---- 마력 성물함 B (mana reliquary, mana re-grant) off/on. 80×96. (마력 재화 색 계승 — L4 보라)
+const manaReliquary=(name,on)=>reliquaryBox(name,on,hex('#a878e0'),hex('#5a4670'),hex('#e0d0ff'));
 manaReliquary('l5_mana_reliquary.png',false);
 manaReliquary('l5_mana_reliquary_on.png',true);
 
 // ---- G4 landmark. 대제단 (GREAT ALTAR, 3×3 tall) off/on. 256×320. ----
-function greatAltar(name,lit){const W=256,H=320,cv=C(W,H);ao(cv,W/2,306,66,14,78);
-  const cx=W/2;
-  // stepped ivory base
-  rect(cv,cx-70,278,cx+70,306,I_SH);rect(cv,cx-70,278,cx+70,282,mix(I_SH,I_HI,0.3));
-  rect(cv,cx-58,250,cx+58,280,mix(IV,I_MID,0.4));rect(cv,cx-58,250,cx+58,254,mix(I_MID,I_HI,0.4));
+function greatAltar(name,lit){const W=256,H=320,cv=C(W,H);const cx=W/2;ao(cv,cx,306,66,14,78);
+  // AP-2: 계단형 받침을 아이소 마름모 2단으로. 첨탑 샤프트는 유지(랜드마크).
+  isoBox(cv,cx,286,70,20,mix(I_HI,I_MID,0.2),mix(I_SH,I_MID,0.5),dk(I_SH,0.2));
+  isoBox(cv,cx,258,58,22,mix(IV,I_HI,0.2),mix(IV,I_MID,0.4),I_SH);
   // tapering shaft (a great pale altar/pillar)
   for(let y=110;y<252;y++){const t=(y-110)/142;const hw=Math.round(30+t*24);const c=mix(mix(IV,I_MID,0.3),I_SH,t*0.4);
     rect(cv,cx-hw,y,cx+hw,y+1,c);rect(cv,cx-hw,y,cx-hw+3,y+1,mix(c,I_HI,0.35));rect(cv,cx+hw-3,y,cx+hw,y+1,I_SH);}
@@ -347,12 +341,12 @@ greatAltar('l5_great_altar_on.png',true);
   save(cv,'l5_ruined_columns.png');})();
 
 // ---- 생명의 샘 랜드마크 (life spring silhouette landmark, dry). 176×160. ----
-(function springLandmark(){const W=176,H=160,cv=C(W,H);ao(cv,W/2,H-8,46,11,72);
-  const cx=W/2;
-  rect(cv,cx-54,H-40,cx+54,H-14,mix(STONE,I_SH,0.4));
-  rect(cv,cx-40,H-72,cx+40,H-40,mix(STONE,I_SH,0.35));
-  rect(cv,cx-26,H-100,cx+26,H-72,mix(STONE,I_SH,0.35));
-  rect(cv,cx-8,50,cx+8,H-100,mix(STONE,I_MID,0.25));
+(function springLandmark(){const W=176,H=160,cv=C(W,H);const cx=W/2;ao(cv,cx,H-8,46,11,72);
+  // AP-2: 마른 분수 랜드마크 — 아이소 3단 실린더(어두운 마른 톤).
+  isoCylinder(cv,cx,H-46,54,26,mix(STONE,I_MID,0.2),mix(STONE,I_SH,0.35),dk(mix(STONE,I_SH,0.4),0.15),0.96);
+  isoCylinder(cv,cx,H-76,40,26,mix(STONE,I_MID,0.2),mix(STONE,I_SH,0.35),dk(mix(STONE,I_SH,0.4),0.15),0.96);
+  isoCylinder(cv,cx,H-104,26,24,mix(STONE,I_MID,0.2),mix(STONE,I_SH,0.35),dk(mix(STONE,I_SH,0.4),0.15),0.96);
+  isoCylinder(cv,cx,50,9,H-154,mix(STONE,I_MID,0.15),mix(STONE,I_SH,0.3),dk(mix(STONE,I_SH,0.4),0.15),1.0);
   const wcy=H-58;
   for(let y=-8;y<=6;y++)for(let x=-36;x<=36;x++){const d=(x/36)**2+(y/9)**2;if(d<=1)px(cv,cx+x,wcy+y,hex('#c8c2b4'),210);}
   // white water-line stain (하얀 자국만 남았다)
@@ -360,9 +354,12 @@ greatAltar('l5_great_altar_on.png',true);
   save(cv,'l5_spring_landmark.png');})();
 
 // ---- 꺼진 등불 (extinguished lantern deco, blocks small). 90×110. ----
-(function deadLantern(){const W=90,H=110,cv=C(W,H);ao(cv,W/2,102,22,7,60);
+(function deadLantern(){const W=90,H=110,cv=C(W,H);const cx=W/2;ao(cv,cx,102,22,7,60);
+  // AP-2: 아이소 받침 플린스 위 등불 기둥 — 접지 정합.
+  topDiamond(cv,cx,100,16,I_SH);
+  for(let t=0;t<=16;t++){const yy=8*(1-t/16);px(cv,cx-t,100-yy,dk(I_SH,0.5));px(cv,cx+t,100-yy,dk(I_SH,0.5));px(cv,cx-t,100+yy,dk(I_SH,0.5));px(cv,cx+t,100+yy,dk(I_SH,0.5));}
   // a tall lantern post, dark and cold
-  rect(cv,42,40,48,100,mix(STONE,I_MID,0.3));rect(cv,42,40,44,100,mix(STONE,I_HI,0.2));rect(cv,34,98,56,104,I_SH);
+  rect(cv,42,40,48,98,mix(STONE,I_MID,0.3));rect(cv,42,40,44,98,mix(STONE,I_HI,0.2));
   // lantern housing (unlit)
   rect(cv,36,20,54,42,mix(STONE,I_SH,0.3));rect(cv,36,20,54,23,mix(STONE,I_HI,0.3));
   for(let y=23;y<40;y++)for(let x=38;x<52;x++)px(cv,x,y,DEEP,220);// dark glass
@@ -411,18 +408,18 @@ petrified('l5_petrified_standing.png','standing');
   save(cv,'l5_choir_seats.png');})();
 
 // ---- L5 봉헌대/정비대 (workbench, ivory with AMBER fusion aperture). 128×112. ----
-(function workbench(){const W=128,H=112,cv=C(W,H);ao(cv,W/2,104,34,9,66);
-  const bx=28,by=54,bw=72,bh=46;
-  rect(cv,bx,by,bx+bw,by+bh,mix(STONE,I_MID,0.3));rect(cv,bx,by,bx+bw,by+4,mix(STONE,I_HI,0.4));rect(cv,bx+bw-3,by,bx+bw,by+bh,I_SH);
-  for(let rx=bx+6;rx<bx+bw-4;rx+=12)px(cv,rx,by+20,I_HI,180);rect(cv,bx,by+18,bx+bw,by+21,I_SH,140);
-  rect(cv,bx+2,by-8,bx+bw-2,by+2,I_SH);
-  const ax=bx+bw/2,ay=by-4;
-  glow(cv,ax,ay,26,AMBER_DK,100);glow(cv,ax,ay,16,AMBER,130);
-  for(let a=0;a<360;a+=24)px(cv,ax+Math.cos(a*Math.PI/180)*9,ay+Math.sin(a*Math.PI/180)*4.5,mix(AMBER_DK,AMBER,0.6),210);
+(function workbench(){const W=128,H=112,cv=C(W,H);const cx=W/2;ao(cv,cx,104,34,9,66);
+  // AP-2: 3/4 아이소 박스 + 윗면 worktop에 앰버 융합 개구부.
+  const rx=34,h=40,ry=rx/2,topY=104-h-ry;
+  isoBox(cv,cx,topY,rx,h,mix(STONE,I_HI,0.15),mix(STONE,I_MID,0.3),I_SH);
+  const ax=cx,ay=topY;
+  glow(cv,ax,ay,24,AMBER_DK,100);glow(cv,ax,ay,15,AMBER,130);
+  for(let a=0;a<360;a+=20)px(cv,ax+Math.cos(a*Math.PI/180)*10,ay+Math.sin(a*Math.PI/180)*5,mix(AMBER_DK,AMBER,0.6),210);
   px(cv,ax,ay,hex('#fff0d0'),240);
-  for(let i=0;i<18;i++)px(cv,bx+14+i,by-6-i*0.4,I_HI);px(cv,bx+32,by-13,AMBER,200);
-  rect(cv,bx+bw-16,by+10,bx+bw-6,by+30,DKPANEL);rect(cv,bx+bw-14,by+12,bx+bw-8,by+16,AMBER,200);
-  rect(cv,bx+4,by+bh,bx+9,by+bh+8,I_SH);rect(cv,bx+bw-9,by+bh,bx+bw-4,by+bh+8,I_SH);
+  for(let i=0;i<18;i++)px(cv,cx-14+i,topY-6-i*0.3,I_HI);px(cv,cx+4,topY-12,AMBER,200);
+  const gx=cx+rx-14,gy=topY+ry+12;
+  for(let y=0;y<18;y++)for(let x=0;x<8;x++)px(cv,gx+x,gy+y+(x)*0.5,DKPANEL,255);
+  for(let x=0;x<6;x++)px(cv,gx+1+x,gy+3+(1+x)*0.5,AMBER,200);
   save(cv,'l5_workbench.png');})();
 
 // =========================================================================
