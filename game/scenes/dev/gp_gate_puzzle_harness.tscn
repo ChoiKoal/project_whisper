@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cgp5puzzle00001"]
+
+[ext_resource type="Script" path="res://scenes/dev/gp_gate_puzzle_harness.gd" id="1_gp5p"]
+
+[node name="GpGatePuzzleHarness" type="Node"]
+script = ExtResource("1_gp5p")

@@ -198,7 +198,8 @@ func _on_item_used(item: String, obj: Node) -> void:
 		"rune_altar":
 			if item == "D141":
 				_spark_at(obj)
-				GameState.energize_power_node("rune_bridge")
+				# (v1.1.0 GP-5 §3) G1 승격 = 룬 점등 순서 퍼즐 → 성공/스킵 모두 기존 개방.
+				_puzzle_then_energize("rune", "rune_bridge")
 		"mana_spring":
 			if item == "D143":
 				_spark_at(obj)
@@ -207,6 +208,14 @@ func _on_item_used(item: String, obj: Node) -> void:
 			if item == "D148":
 				_spark_at(obj)
 				GameState.energize_power_node("seal_core")
+
+
+## (v1.1.0 GP-5 §3) 승격 게이트: 퍼즐 모달 → 성공/스킵 모두 기존 개방(진행 차단 아님). 씬 루트 없으면 直行.
+func _puzzle_then_energize(puzzle_type: String, node_id: String) -> void:
+	var root: Node = get_tree().current_scene if get_tree() != null else null
+	var energize := func(): GameState.energize_power_node(node_id)
+	if root == null or GatePuzzle.open(root, puzzle_type, energize, energize) == null:
+		GameState.energize_power_node(node_id)
 
 
 func _on_power_node(node_id: String) -> void:

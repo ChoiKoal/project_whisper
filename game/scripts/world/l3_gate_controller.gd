@@ -152,7 +152,8 @@ func _on_item_used(item: String, obj: Node) -> void:
 		"gear_assembly":
 			if item == "D104":
 				_spark_at(obj)
-				GameState.energize_power_node("gate_gear")
+				# (v1.1.0 GP-5 §3) G1 승격 = 톱니 맞물림 퍼즐 → 성공/스킵 모두 기존 개방.
+				_puzzle_then_energize("gear", "gate_gear")
 		"boiler":
 			# G2 needs the valve D105 used on the boiler AND 젖은 석탄 D106 in hand.
 			if item == "D105" and _has_coal():
@@ -166,6 +167,14 @@ func _on_item_used(item: String, obj: Node) -> void:
 			if item == "D111":
 				_spark_at(obj)
 				GameState.energize_power_node("clock_core")
+
+
+## (v1.1.0 GP-5 §3) 승격 게이트: 퍼즐 모달 → 성공/스킵 모두 기존 개방(진행 차단 아님). 씬 루트 없으면 直行.
+func _puzzle_then_energize(puzzle_type: String, node_id: String) -> void:
+	var root: Node = get_tree().current_scene if get_tree() != null else null
+	var energize := func(): GameState.energize_power_node(node_id)
+	if root == null or GatePuzzle.open(root, puzzle_type, energize, energize) == null:
+		GameState.energize_power_node(node_id)
 
 
 func _on_power_node(node_id: String) -> void:

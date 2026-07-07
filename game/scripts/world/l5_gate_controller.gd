@@ -227,7 +227,8 @@ func _on_item_used(item: String, obj: Node) -> void:
 		"lantern_altar":
 			if item == G1_LANTERN:
 				_spark_at(obj)
-				GameState.energize_power_node("lantern_path")
+				# (v1.1.0 GP-5 §3) G1 승격 = 성가 음 순서 퍼즐 → 성공/스킵 모두 기존 개방.
+				_puzzle_then_energize("chime", "lantern_path")
 		"life_spring":
 			if item == G2_SEED:
 				_spark_at(obj)
@@ -240,6 +241,14 @@ func _on_item_used(item: String, obj: Node) -> void:
 			_grant_reacquire_a(obj)
 		"mana_reliquary":
 			_grant_reacquire_b(obj)
+
+
+## (v1.1.0 GP-5 §3) 승격 게이트: 퍼즐 모달 → 성공/스킵 모두 기존 개방(진행 차단 아님). 씬 루트 없으면 直行.
+func _puzzle_then_energize(puzzle_type: String, node_id: String) -> void:
+	var root: Node = get_tree().current_scene if get_tree() != null else null
+	var energize := func(): GameState.energize_power_node(node_id)
+	if root == null or GatePuzzle.open(root, puzzle_type, energize, energize) == null:
+		GameState.energize_power_node(node_id)
 
 
 func _on_power_node(node_id: String) -> void:

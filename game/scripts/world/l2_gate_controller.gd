@@ -157,13 +157,23 @@ func _on_item_used(item: String, obj: Node) -> void:
 			node_id = _nearest_breaker_node_id(obj)
 		if node_id == "bridge" and item == "D64":
 			_spark_at(obj)
-			GameState.energize_power_node("bridge")
+			# (v1.1.0 GP-5 §3) G1 = 승격 게이트. 장착 순간 퓨즈 순서 퍼즐 모달 → 성공/스킵 모두 기존 개방.
+			_puzzle_then_energize("fuse", "bridge")
 		elif node_id == "control_core" and item == "D69":
 			_spark_at(obj)
 			GameState.energize_power_node("control_core")
 	elif oid == "gen_sub" and item == "D66":
 		_spark_at(obj)
 		_energize_gen_sub(obj)
+
+
+## (v1.1.0 GP-5 §3) 승격 게이트: open a mini-puzzle modal, then energize on success OR skip (스킵 =
+## 그냥 장착 = 동일 개방; 진행 차단 아님). If no scene tree/root (headless-less context) energize直行.
+func _puzzle_then_energize(puzzle_type: String, node_id: String) -> void:
+	var root: Node = get_tree().current_scene if get_tree() != null else null
+	var energize := func(): GameState.energize_power_node(node_id)
+	if root == null or GatePuzzle.open(root, puzzle_type, energize, energize) == null:
+		GameState.energize_power_node(node_id)
 
 
 ## A power node became energized (also fires on load re-apply). Drive the visible effect.
