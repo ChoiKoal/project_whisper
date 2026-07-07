@@ -2156,5 +2156,34 @@
       "hint": "응답의 불씨에 재의 날개를 비추면",
       "layer": 5
     }
+  ],
+  "fail_recipes": [
+    {
+      "id": "F01",
+      "inputs": [
+        "I2",
+        "I4"
+      ],
+      "fail_output": "D219",
+      "flavor": "…늪이 됐다."
+    },
+    {
+      "id": "F02",
+      "inputs": [
+        "I5",
+        "I6"
+      ],
+      "fail_output": "D220",
+      "flavor": "…뭉개졌다."
+    },
+    {
+      "id": "F03",
+      "inputs": [
+        "I5",
+        "I8"
+      ],
+      "fail_output": "D221",
+      "flavor": "…얼룩만 남았다."
+    }
   ]
 }

@@ -15,12 +15,17 @@ signal item_discovered(id: String)
 signal recipe_discovered(id: String)
 ## Emitted when the hint gauge changes (0..HINT_THRESHOLD) so UI can draw dots.
 signal hint_gauge_changed(value: int)
-## Emitted when a gauge reveal exposes one ingredient of a recipe.
-## `recipe_id` = target recipe, `ingredient_id` = the revealed input id.
-signal hint_revealed(recipe_id: String, ingredient_id: String)
+## Emitted when a gauge reveal advances a recipe's hint stage.
+## `recipe_id` = target recipe, `ingredient_id` = the revealed input id ("" until stage 3),
+## `stage` = 1 (result silhouette + poetic name) / 2 (ingredient categories) / 3 (one ingredient).
+signal hint_revealed(recipe_id: String, ingredient_id: String, stage: int)
 
-## Failed fusions needed to trigger a hint reveal.
-const HINT_THRESHOLD := 5
+## Failed fusions needed to advance ONE hint stage (v1.1.0 GP-2: was a single 5-fail reveal;
+## now each threshold hit advances the *result-first* hint by one stage, 1→2→3).
+const HINT_THRESHOLD := 3
+
+## Highest hint stage (§2.2): 1 result-first, 2 ingredient categories, 3 one ingredient.
+const HINT_STAGE_MAX := 3
 
 ## Canonical item ids discovered (as a set: id -> true).
 var _items: Dictionary = {}
@@ -28,7 +33,9 @@ var _items: Dictionary = {}
 var _recipes: Dictionary = {}
 ## Failed-fusion counter, 0..HINT_THRESHOLD.
 var _hint_gauge: int = 0
-## recipe_id -> revealed ingredient id (canonical), for hints surfaced in the 도감.
+## (v1.1.0 GP-2) recipe_id -> {stage:int, ingredient:String}. Result-first staged hints:
+##   stage 1 = result silhouette + poetic name (§2.2), 2 = ingredient categories, 3 = one ingredient.
+## `ingredient` is only filled at stage 3. Legacy saves (String value) migrate to {stage:3, ...}.
 var _hints: Dictionary = {}
 ## Set of already-attempted failed pairs (order-independent key -> true). Used to
 ## suppress brute-force gauge farming: repeating an already-failed pair does NOT
@@ -129,17 +136,80 @@ func hint_gauge() -> int:
 	return _hint_gauge
 
 
-## Revealed ingredient id for a recipe, or "" if that recipe has no active hint.
+## (GP-2) Current hint STAGE for a recipe (0 = no active hint, 1..3 = revealed stage).
+func hint_stage(recipe_id: String) -> int:
+	var e: Variant = _hints.get(recipe_id, null)
+	if e == null:
+		return 0
+	return int((e as Dictionary).get("stage", 0))
+
+
+## Revealed ingredient id for a recipe, or "" if not yet at stage 3 / no active hint.
 func hint_for_recipe(recipe_id: String) -> String:
-	return _hints.get(recipe_id, "")
+	var e: Variant = _hints.get(recipe_id, null)
+	if e == null:
+		return ""
+	return String((e as Dictionary).get("ingredient", ""))
 
 
-## (v0.4.0-B B3.4) All ACTIVE gauge-revealed hints: recipe_id -> revealed ingredient id.
-## A recipe drops out of this map once it is discovered (see mark_recipe: _hints.erase).
-## The 도감 "힌트" filter chip lists these as "? + [재료] = ?" so revealed hints are findable
-## ("도감 힌트도 안보인다"). Returns a copy.
+## (GP-2) The output item id whose silhouette+poetic name the stage-1 hint reveals for `recipe_id`.
+## "" if the recipe is unknown to RecipeDB.
+func hint_output_for_recipe(recipe_id: String) -> String:
+	var rec: Dictionary = RecipeDB.get_recipe(recipe_id)
+	if rec.is_empty():
+		return ""
+	return ItemDB.resolve_id(String(rec.get("output", "")))
+
+
+## (GP-2) The poetic name fragment for a recipe's result (stage-1 hint text). Uses the recipe's
+## own `hint` (already poetic) framed as a result whisper. Falls back to a generic fragment.
+func hint_poetic_name(recipe_id: String) -> String:
+	var rec: Dictionary = RecipeDB.get_recipe(recipe_id)
+	if rec.is_empty():
+		return "?무언가?"
+	var h := String(rec.get("hint", "")).strip_edges()
+	if h == "":
+		return "?무언가 태어날 수 있다?"
+	return "?%s…?" % h
+
+
+## (GP-2) The two ingredient CATEGORY labels for a recipe (stage-2 hint), e.g. ["물 계열","광물 계열"].
+func hint_categories(recipe_id: String) -> Array:
+	var rec: Dictionary = RecipeDB.get_recipe(recipe_id)
+	if rec.is_empty():
+		return []
+	var inputs: Array = rec.get("inputs", [])
+	if inputs.size() != 2:
+		return []
+	return [_category_of(String(inputs[0])), _category_of(String(inputs[1]))]
+
+
+## (GP-2) Keyword-based category classifier over an item's name/layer — data-light (no taxonomy
+## field exists in items.json). Used only for the stage-2 "재료 카테고리" hint (fuzzy on purpose).
+func _category_of(item_id: String) -> String:
+	var id := ItemDB.resolve_id(item_id)
+	var nm := ItemDB.item_name(id)
+	var pairs := [
+		["물 계열", ["물", "수", "이슬", "샘", "액", "젖", "냉각", "증류"]],
+		["불 계열", ["불", "화", "숯", "재", "잔불", "불씨", "열"]],
+		["흙 계열", ["흙", "토", "진흙", "모래", "점토", "땅"]],
+		["광물 계열", ["돌", "석", "철", "금속", "구리", "황동", "대리석", "결정", "광", "쇠", "고철"]],
+		["식물 계열", ["풀", "잎", "꽃", "씨", "나무", "이끼", "덩굴", "가지", "줄기", "뿌리"]],
+		["기계 계열", ["톱니", "태엽", "회로", "전선", "부품", "기어", "벨트", "나사", "배터리", "전지"]],
+		["빛 계열", ["빛", "등", "성물", "촛", "성수", "신성", "룬", "마력"]],
+	]
+	for p in pairs:
+		for kw: String in p[1]:
+			if nm.contains(kw):
+				return String(p[0])
+	# Fallback by layer flavor.
+	return "미지의 계열"
+
+
+## (v0.4.0-B B3.4) All ACTIVE staged hints: recipe_id -> {stage,ingredient}. Findable in the
+## 도감 "힌트" filter + fusion inline list. Drops out once the recipe is discovered. Returns a copy.
 func revealed_hints() -> Dictionary:
-	return _hints.duplicate()
+	return _hints.duplicate(true)
 
 
 ## Count of active revealed hints (for the chip badge).
@@ -170,32 +240,54 @@ func register_failed_fusion(a_id: String = "", b_id: String = "") -> bool:
 	_hint_gauge += 1
 	hint_gauge_changed.emit(_hint_gauge)
 	if _hint_gauge >= HINT_THRESHOLD:
-		var revealed := _reveal_one_hint()
+		var revealed := _advance_hint_stage()
 		_hint_gauge = 0
 		hint_gauge_changed.emit(_hint_gauge)
 		return revealed
 	return false
 
 
-## Pick one still-undiscovered recipe that has no active hint yet, reveal one of
-## its ingredients (prefer the ingredient the player has already discovered, so
-## the hint reads as "known + ???"). Returns true if a hint was set.
-func _reveal_one_hint() -> bool:
+## (v1.1.0 GP-2) Advance ONE recipe's result-first hint by a single stage on each threshold hit.
+## Policy (§2.2 "한 레시피를 순차 공개"): a focus recipe climbs 1→2→3 before another opens.
+##   1. If an undiscovered recipe already has an active hint below HINT_STAGE_MAX → advance it.
+##   2. Otherwise open the first undiscovered recipe with no hint yet at stage 1 (result reveal).
+## Returns true if a stage was advanced/opened.
+func _advance_hint_stage() -> bool:
+	# 1. Advance an in-progress hint (deterministic: first undiscovered recipe with a sub-max hint).
+	for rec: Dictionary in RecipeDB.all_recipes():
+		var rid: String = rec["id"]
+		if _recipes.has(rid) or not _hints.has(rid):
+			continue
+		var entry: Dictionary = _hints[rid]
+		var stage := int(entry.get("stage", 0))
+		if stage < HINT_STAGE_MAX:
+			_set_hint_stage(rid, stage + 1)
+			return true
+	# 2. Open a fresh recipe at stage 1 (result silhouette + poetic name).
 	for rec: Dictionary in RecipeDB.all_recipes():
 		var rid: String = rec["id"]
 		if _recipes.has(rid) or _hints.has(rid):
 			continue
-		var inputs: Array = rec["inputs"]
-		var a := ItemDB.resolve_id(String(inputs[0]))
-		var b := ItemDB.resolve_id(String(inputs[1]))
-		# Prefer revealing an ingredient the player already knows.
-		var pick := a
-		if not is_item_discovered(a) and is_item_discovered(b):
-			pick = b
-		_hints[rid] = pick
-		hint_revealed.emit(rid, pick)
+		_set_hint_stage(rid, 1)
 		return true
 	return false
+
+
+## Set a recipe's hint to a specific stage, filling the ingredient id at stage 3, and emit.
+func _set_hint_stage(rid: String, stage: int) -> void:
+	var ingredient := ""
+	if stage >= HINT_STAGE_MAX:
+		var rec: Dictionary = RecipeDB.get_recipe(rid)
+		var inputs: Array = rec.get("inputs", [])
+		if inputs.size() == 2:
+			var a := ItemDB.resolve_id(String(inputs[0]))
+			var b := ItemDB.resolve_id(String(inputs[1]))
+			# Prefer revealing an ingredient the player already knows.
+			ingredient = a
+			if not is_item_discovered(a) and is_item_discovered(b):
+				ingredient = b
+	_hints[rid] = {"stage": stage, "ingredient": ingredient}
+	hint_revealed.emit(rid, ingredient, stage)
 
 
 # ---- persistence (M5) ----------------------------------------------------
@@ -206,7 +298,7 @@ func to_dict() -> Dictionary:
 		"items": _items.keys(),
 		"recipes": _recipes.keys(),
 		"hint_gauge": _hint_gauge,
-		"hints": _hints.duplicate(),
+		"hints": _hints.duplicate(true),
 		"attempted_pairs": _attempted_pairs.keys(),
 		"truth_logs": _truth_logs.duplicate(true),
 		"truth_final_seen": _truth_final_seen,
@@ -225,7 +317,15 @@ func from_dict(data: Dictionary) -> void:
 		_recipes[id] = true
 	for key: String in data.get("attempted_pairs", []):
 		_attempted_pairs[key] = true
-	_hints = (data.get("hints", {}) as Dictionary).duplicate()
+	# (GP-2) hints are now {stage,ingredient}. Migrate legacy saves where a hint was a bare
+	# ingredient String → treat as fully-revealed stage 3 (predates-safe, no data loss).
+	_hints.clear()
+	for rid: String in (data.get("hints", {}) as Dictionary).keys():
+		var v: Variant = data["hints"][rid]
+		if typeof(v) == TYPE_DICTIONARY:
+			_hints[rid] = {"stage": int(v.get("stage", HINT_STAGE_MAX)), "ingredient": String(v.get("ingredient", ""))}
+		else:
+			_hints[rid] = {"stage": HINT_STAGE_MAX, "ingredient": ItemDB.resolve_id(String(v))}
 	_hint_gauge = int(data.get("hint_gauge", 0))
 	# (EG-2) truth logs (기록 탭). Null-guarded — v0.9.0 saves lack the key.
 	_truth_logs = (data.get("truth_logs", {}) as Dictionary).duplicate(true)

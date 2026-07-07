@@ -26,13 +26,33 @@ func fuse(a_id: String, b_id: String) -> Dictionary:
 		"output": "",
 		"hint_revealed": false,
 		"failure_reason": "",
+		# (v1.1.0 GP-2 §2.3) 실패작: canonical id of a 실패 조합 output when a "그럴듯한 오답" pair is
+		# fused (else ""). The UI pops this into the result slot with a swamp-tone flavor; the item is
+		# recorded in the 도감 ("실패도 수집"). `fail_flavor` carries the short quip.
+		"fail_output": "",
+		"fail_flavor": "",
 	}
 	if a_id == "" or b_id == "":
 		return result
 
 	var recipe := RecipeDB.find_recipe([a_id, b_id])
 	if recipe.is_empty():
-		# Failed pair: gauge only credits a not-previously-attempted pair.
+		# (GP-2 §2.3) 실패 조합 branch: a plausible-wrong pair yields a 실패작 아이템 (consumes the two
+		# inputs, grants + discovers the junk output). Only pairs authored into fail_recipes trigger
+		# this; every other no-match just ticks the hint gauge as before.
+		var frec := RecipeDB.find_fail_recipe([a_id, b_id])
+		if not frec.is_empty() and _consume_inputs(a_id, b_id):
+			var fout := ItemDB.resolve_id(String(frec.get("fail_output", "")))
+			if fout != "":
+				Inventory.add(fout, 1)
+				Codex.discover_item(fout)
+				GameState.item_crafted.emit(fout, String(frec.get("id", "")))
+				result["fail_output"] = fout
+				result["fail_flavor"] = String(frec.get("flavor", ""))
+				# Still tick the hint gauge (a fail pair is a fail pair) for a first attempt.
+				result["hint_revealed"] = Codex.register_failed_fusion(a_id, b_id)
+				return result
+		# Plain failed pair: gauge only credits a not-previously-attempted pair.
 		result["hint_revealed"] = Codex.register_failed_fusion(a_id, b_id)
 		return result
 

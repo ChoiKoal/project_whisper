@@ -127,13 +127,15 @@ func _test_five_distinct_pairs_reveal_hint() -> void:
 		if res["hint_revealed"]:
 			revealed = true
 	_check("5 distinct wrong pairs revealed a hint", revealed)
-	_check("gauge reset to 0 after reveal", Codex.hint_gauge() == 0)
-	# A hint should now exist on some undiscovered recipe.
+	# (v1.1.0 GP-2) HINT_THRESHOLD is now 3 (staged reveals), so 5 distinct fails = 1 reveal at
+	# fail #3 (gauge→0) then 2 more accumulate → gauge sits at 5 % 3 = 2.
+	_check("gauge accumulates modulo threshold after reveal", Codex.hint_gauge() == 5 % Codex.HINT_THRESHOLD)
+	# (v1.1.0 GP-2) A result-first hint should now exist at stage 1+ on some undiscovered recipe.
 	var any_hint := false
 	for rid: String in RecipeDB.all_ids():
-		if Codex.hint_for_recipe(rid) != "":
+		if Codex.hint_stage(rid) >= 1:
 			any_hint = true
-	_check("a recipe now carries a revealed-ingredient hint", any_hint)
+	_check("a recipe now carries a result-first hint (stage 1+)", any_hint)
 
 
 # ---- order independence (via fuse) --------------------------------------

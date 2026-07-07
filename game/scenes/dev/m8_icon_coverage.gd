@@ -58,8 +58,9 @@ func _ready() -> void:
 	# (L3-4) Layer-3 clockwork items: K1-K7 (7 gather) + D103-D139 (37 craft) = 44 bespoke icons.
 	# (L4)   Layer-4 mage items:      P1-P7 (7 gather) + D140-D176 (37 craft) = 44 bespoke icons.
 	# (L5)   Layer-5 divinity items:  S1-S7 (7 gather) + D177-D218 (42 craft) = 49 bespoke icons.
-	_check("68 L1 + 48 L2 + 44 L3 + 44 L4 + 49 L5 canonical + 1 alias split",
-		canonical_ids.size() == 68 and l2_ids.size() == 48 and l3_ids.size() == 44 \
+	# (v1.1.0 GP-2 §2.3) +3 실패작 D219-D221 (no `layer` field → classified as canonical L1) = 71.
+	_check("71 L1 + 48 L2 + 44 L3 + 44 L4 + 49 L5 canonical + 1 alias split",
+		canonical_ids.size() == 71 and l2_ids.size() == 48 and l3_ids.size() == 44 \
 		and l4_ids.size() == 44 and l5_ids.size() == 49 and alias_ids.size() == 1)
 
 	# 1. every canonical id (Layer-1..-5) has a real icon FILE (present on disk).
@@ -100,8 +101,8 @@ func _ready() -> void:
 			dup_pairs.append([hashes[h], id])
 		else:
 			hashes[h] = id
-	_check("all 253 canonical icon files are byte-unique (dupes=%s)" % [dup_pairs], dup_pairs.is_empty())
-	_check("distinct icon hashes == 253", hashes.size() == 253)
+	_check("all 256 canonical icon files are byte-unique (dupes=%s)" % [dup_pairs], dup_pairs.is_empty())
+	_check("distinct icon hashes == 256", hashes.size() == 256)
 
 	# Sanity: the alias file, if present, equals I4's file (spec: D06 shares I4 art).
 	if ResourceLoader.exists(ICON_DIR + "D06.png"):

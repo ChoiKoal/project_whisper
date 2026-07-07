@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cgp2hint00000001"]
+
+[ext_resource type="Script" path="res://scenes/dev/gp_hint_harness.gd" id="1_gp2h"]
+
+[node name="GpHintHarness" type="Node"]
+script = ExtResource("1_gp2h")

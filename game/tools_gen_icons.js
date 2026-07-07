@@ -1712,6 +1712,30 @@ for (let i = 177; i <= 218; i++) {
   icons['D' + i] = ((n) => (cv) => paintL5Craft(cv, n))(i);
 }
 
+// ---------- D219..D221 (v1.1.0 GP-2 §2.3) 실패작 — junk outputs of 그럴듯한 오답 조합 ----------
+// A murky swamp/gray blob with per-id bubbles/specks so each is byte-unique. Intentionally dull
+// (실패도 수집: it belongs in the 도감 as a grimy trophy, not a proud craft).
+icons.D219 = (cv) => { // 미지근한 진흙 (풀+나무 → 늪)
+  ellipse(cv, 24, 31, 16, 11, C.greenD, darker(C.greenD, 8));
+  ellipse(cv, 24, 30, 12, 7, hexToRGB('#3a3a2e'), C.greenD);
+  disc(cv, 19, 30, 2, hexToRGB('#5a5a44')); disc(cv, 29, 32, 2, hexToRGB('#4a4a38'));
+  disc(cv, 25, 27, 1, hexToRGB('#6a6a50'));
+  outline(cv, '#14140e');
+};
+icons.D220 = (cv) => { // 짓무른 꽃 (꽃+바위 → 뭉개짐)
+  ellipse(cv, 24, 30, 14, 12, hexToRGB('#4a3540'), hexToRGB('#372836'));
+  disc(cv, 20, 26, 3, hexToRGB('#6a4a5a')); disc(cv, 29, 28, 3, hexToRGB('#5a3f4f'));
+  disc(cv, 24, 34, 2, hexToRGB('#3a2a34'));
+  disc(cv, 24, 22, 1, hexToRGB('#7a5a68'));
+  outline(cv, '#1e141b');
+};
+icons.D221 = (cv) => { // 돌에 낀 꽃물 (꽃+돌 → 얼룩)
+  ellipse(cv, 24, 30, 15, 11, hexToRGB('#4a4650'), hexToRGB('#35323a'));
+  disc(cv, 18, 31, 2, hexToRGB('#6a5a6a')); disc(cv, 27, 29, 3, hexToRGB('#5a4a5f'));
+  disc(cv, 31, 33, 1, hexToRGB('#4a3a4a'));
+  outline(cv, '#161318');
+};
+
 // ============================================================================
 // Emit all icon files. Item catalog = 9 gatherables (I1..I9) + crafts D01..D61
 // minus the retired 석기 D11 (removed v0.3.1) + Layer-2 J1..J7 + D62..D102 (L2-4).
@@ -1737,6 +1761,8 @@ for (let i = 140; i <= 176; i++) ALL_IDS.push('D' + i);
 // Layer-5 (L5): S1..S7 gather + D177..D218 craft.
 for (let i = 1; i <= 7; i++) ALL_IDS.push('S' + i);
 for (let i = 177; i <= 218; i++) ALL_IDS.push('D' + i);
+// v1.1.0 GP-2 §2.3: 실패작 D219..D221 (junk outputs of fail_recipes).
+for (let i = 219; i <= 221; i++) ALL_IDS.push('D' + i);
 
 let count = 0, total = 0;
 for (const id of ALL_IDS) {

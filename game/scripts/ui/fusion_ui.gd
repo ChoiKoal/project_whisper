@@ -53,6 +53,7 @@ var _fx: Control
 ## two-node banner+counter that overlapped/garbled at the panel top.
 var _banner: PanelContainer
 var _banner_name_lbl: Label
+var _banner_flavor_lbl: Label   # (v1.1.0 GP-5) 발견 카드 flavor line
 var _banner_count_lbl: Label
 var _banner_icon: TextureRect
 ## Discoveries that arrived while a banner was still animating; shown one at a time.
@@ -559,6 +560,20 @@ func _on_fuse_pressed() -> void:
 		}
 		_status.text = ""
 		_play_success_sequence(in_icons)
+	elif String(res.get("fail_output", "")) != "":
+		# (v1.1.0 GP-2 §2.3) 실패작: a plausible-wrong pair produced junk. Inputs WERE consumed, so
+		# clear the slots + strip, then pop the 실패작 into the result slot with its swamp-tone quip.
+		var fail_out := String(res["fail_output"])
+		_inputs = ["", ""]
+		_refresh_slots()
+		_rebuild_strip()
+		_result_icon.texture = ItemDB.icon(fail_out)
+		_result_icon.modulate = Color(0.7, 0.7, 0.72)   # gray-tone: it's junk
+		_result_name.text = ItemDB.item_name(fail_out)
+		_result_flavor.text = String(res.get("fail_flavor", ""))
+		_status.text = "…실패작이 나왔다  ·  도감에 기록되었다"
+		_pop_result_slot()
+		_burst_particles(_center_global(_cauldron), Color(0.72, 0.72, 0.76), 16)
 	else:
 		_status.text = "…반응이 없다"
 		_result_flavor.text = ""
@@ -637,6 +652,7 @@ func _reveal_result() -> void:
 	if _cauldron != null:
 		_cauldron.texture = _cauldron_calm
 	_result_icon.texture = ItemDB.icon(out)
+	_result_icon.modulate = Color.WHITE   # reset in case a prior 실패작 grayed it
 	_result_name.text = ItemDB.item_name(out)
 	_result_flavor.text = ItemDB.item_flavor(out)
 	_status.text = "새로운 것을 만들었다!"
@@ -783,6 +799,15 @@ func _show_next_discovery_banner() -> void:
 		_banner_name_lbl.add_theme_font_size_override("font_size", 20)
 		textcol.add_child(_banner_name_lbl)
 
+		# (v1.1.0 GP-5) 발견 카드 상향: a poetic flavor line under the name (아이콘+이름+flavor).
+		_banner_flavor_lbl = Label.new()
+		_banner_flavor_lbl.name = "DiscoveryFlavor"
+		_banner_flavor_lbl.add_theme_color_override("font_color", Color("#c8b0ec"))
+		_banner_flavor_lbl.add_theme_font_size_override("font_size", 13)
+		_banner_flavor_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_banner_flavor_lbl.custom_minimum_size = Vector2(260, 0)
+		textcol.add_child(_banner_flavor_lbl)
+
 		_banner_count_lbl = Label.new()
 		_banner_count_lbl.add_theme_color_override("font_color", Color("#faf5e6"))
 		_banner_count_lbl.add_theme_font_size_override("font_size", 14)
@@ -791,6 +816,8 @@ func _show_next_discovery_banner() -> void:
 	# Fill content for THIS discovery.
 	_banner_icon.texture = ItemDB.icon(output_id)
 	_banner_name_lbl.text = "✦ 새로운 발견! — %s" % ItemDB.item_name(output_id)
+	if _banner_flavor_lbl != null:
+		_banner_flavor_lbl.text = ItemDB.item_flavor(output_id)
 	_banner_count_lbl.text = "도감 %d / %d 종" % [
 		Codex.discovered_recipe_count(), RecipeDB.all_ids().size()]
 	_banner.visible = true
@@ -823,6 +850,7 @@ func _clear_fx() -> void:
 		c.queue_free()
 	_banner = null
 	_banner_name_lbl = null
+	_banner_flavor_lbl = null
 	_banner_count_lbl = null
 	_banner_icon = null
 	_banner_queue.clear()
@@ -876,29 +904,49 @@ func _rebuild_hint_list() -> void:
 		return
 	for c in _hint_list.get_children():
 		c.queue_free()
+	# (v1.1.0 GP-2/3) Result-first staged hints: each row leads with the poetic RESULT fragment;
+	# stage 2 adds ingredient categories; stage 3 adds the one revealed ingredient icon.
 	var hints: Dictionary = Codex.revealed_hints()
 	for rid: String in hints.keys():
-		var ingredient := String(hints[rid])
+		var stage := Codex.hint_stage(rid)
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 6)
 		row.alignment = BoxContainer.ALIGNMENT_CENTER
-		var icon := TextureRect.new()
-		icon.custom_minimum_size = Vector2(22, 22)
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		icon.texture = ItemDB.icon(ingredient)
-		var pre := Label.new()
-		pre.text = "?  +"
-		pre.add_theme_color_override("font_color", ACCENT)
-		pre.add_theme_font_size_override("font_size", 14)
-		var post := Label.new()
-		post.text = "=  ?  (%s)" % ItemDB.item_name(ingredient)
-		post.add_theme_color_override("font_color", TEXT)
-		post.add_theme_font_size_override("font_size", 14)
-		row.add_child(pre)
-		row.add_child(icon)
-		row.add_child(post)
+		# Result silhouette icon (stage 1+).
+		var out_id := Codex.hint_output_for_recipe(rid)
+		var out_icon := TextureRect.new()
+		out_icon.custom_minimum_size = Vector2(22, 22)
+		out_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		out_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		out_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		out_icon.texture = ItemDB.icon(out_id)
+		out_icon.modulate = Color(0.16, 0.15, 0.2, 1.0)   # silhouette until crafted
+		row.add_child(out_icon)
+		var text := Codex.hint_poetic_name(rid)
+		if stage >= 2:
+			var cats: Array = Codex.hint_categories(rid)
+			if cats.size() == 2:
+				text += "  —  %s + %s" % [String(cats[0]), String(cats[1])]
+		var lbl := Label.new()
+		lbl.text = text
+		lbl.add_theme_color_override("font_color", ACCENT)
+		lbl.add_theme_font_size_override("font_size", 14)
+		row.add_child(lbl)
+		if stage >= 3:
+			var ing := Codex.hint_for_recipe(rid)
+			if ing != "":
+				var ing_icon := TextureRect.new()
+				ing_icon.custom_minimum_size = Vector2(22, 22)
+				ing_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+				ing_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+				ing_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+				ing_icon.texture = ItemDB.icon(ing)
+				row.add_child(ing_icon)
+				var ing_lbl := Label.new()
+				ing_lbl.text = "(%s)" % ItemDB.item_name(ing)
+				ing_lbl.add_theme_color_override("font_color", TEXT)
+				ing_lbl.add_theme_font_size_override("font_size", 14)
+				row.add_child(ing_lbl)
 		_hint_list.add_child(row)
 	_hint_list.visible = _hints_expanded and _hint_list.get_child_count() > 0
 

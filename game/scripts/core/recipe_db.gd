@@ -16,6 +16,9 @@ const RECIPES_PATH := "res://data/recipes.json"
 var _recipes: Dictionary = {}
 ## sorted-canonical-key "a|b" -> recipe id, for O(1) order-independent lookup.
 var _by_inputs: Dictionary = {}
+## (v1.1.0 GP-2 §2.3) 실패 조합: sorted-canonical-key "a|b" -> fail record {id,inputs,fail_output,flavor}.
+## Only "그럴듯한 오답" pairs that are NOT real recipes map here; the rest just tick the hint gauge.
+var _fail_by_inputs: Dictionary = {}
 
 
 func _ready() -> void:
@@ -41,6 +44,18 @@ func _load() -> void:
 			continue
 		_recipes[id] = rec
 		_by_inputs[_input_key(inputs[0], inputs[1])] = id
+	# (v1.1.0 GP-2 §2.3) optional 실패 조합 table (predates-safe: absent in older data).
+	for frec: Dictionary in parsed.get("fail_recipes", []):
+		var fid: String = frec.get("id", "")
+		var finputs: Array = frec.get("inputs", [])
+		if fid == "" or finputs.size() != 2:
+			continue
+		var key := _input_key(finputs[0], finputs[1])
+		# A fail pair must NOT shadow a real recipe (safety — data authored to avoid this).
+		if _by_inputs.has(key):
+			push_warning("RecipeDB: fail recipe '%s' collides with a real recipe; ignored" % fid)
+			continue
+		_fail_by_inputs[key] = frec
 
 
 ## Build the order-independent lookup key from two ids (canonicalized + sorted).
@@ -76,6 +91,15 @@ func get_recipe(recipe_id: String) -> Dictionary:
 func whisper_cost(recipe: Dictionary) -> Dictionary:
 	var c: Variant = recipe.get("whisper_cost", {})
 	return c if typeof(c) == TYPE_DICTIONARY else {}
+
+
+## (v1.1.0 GP-2 §2.3) The 실패 조합 record for an unordered pair, or {} if the pair has no fail
+## mapping. Fusion consults this on a no-match to produce a 실패작 아이템 instead of a bare no-op.
+func find_fail_recipe(ids: Array) -> Dictionary:
+	if ids.size() != 2:
+		return {}
+	var key := _input_key(String(ids[0]), String(ids[1]))
+	return _fail_by_inputs.get(key, {})
 
 
 ## All recipe records (order not guaranteed).

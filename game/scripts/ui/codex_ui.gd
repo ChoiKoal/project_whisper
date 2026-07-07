@@ -69,7 +69,7 @@ func _ready() -> void:
 	_build_ui()
 	Codex.item_discovered.connect(func(_id): if _open: _rebuild())
 	Codex.recipe_discovered.connect(func(_id): if _open: _rebuild())
-	Codex.hint_revealed.connect(func(_r, _i): if _open: _rebuild())
+	Codex.hint_revealed.connect(func(_r, _i, _s): if _open: _rebuild())
 	Codex.truth_log_recorded.connect(func(_s): if _open: _rebuild())
 	_set_visible(false)
 
@@ -83,7 +83,9 @@ func _build_output_index() -> void:
 
 
 func _build_catalog_order() -> void:
-	_all_ids = _ids_for_category("gather") + _ids_for_category("craft")
+	# (v1.1.0 GP-2 §2.3) 실패작(category "fail") also belongs in the 도감 ("실패도 수집") — appended
+	# after gather + craft so the catalog order stays stable for pre-fail items.
+	_all_ids = _ids_for_category("gather") + _ids_for_category("craft") + _ids_for_category("fail")
 
 
 func _ids_for_category(cat: String) -> Array:
@@ -397,27 +399,58 @@ func _fill_hint_grid() -> void:
 		_grid.add_child(none)
 		return
 	for rid: String in hints.keys():
-		var ingredient := String(hints[rid])
-		_grid.add_child(_hint_row(ingredient))
+		_grid.add_child(_hint_row(rid))
 
 
-## A single "? + [재료] = ?" hint row.
-func _hint_row(ingredient_id: String) -> Control:
+## (v1.1.0 GP-2/3) A single RESULT-FIRST staged hint row for a recipe:
+##   stage 1 → result silhouette + poetic name ("무언가 빛나는 걸 만들 수 있다").
+##   stage 2 → + 재료 카테고리 두 개 ("물 계열 + 광물 계열").
+##   stage 3 → + 재료 한 개 실제 아이콘/이름 (마지막 안전망).
+## The result icon is shown as a near-black SILHOUETTE until the recipe is discovered.
+func _hint_row(recipe_id: String) -> Control:
+	var stage := Codex.hint_stage(recipe_id)
+	var out_id := Codex.hint_output_for_recipe(recipe_id)
 	var box := PanelContainer.new()
 	box.add_theme_stylebox_override("panel", _cell_style(false))
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 6)
-	box.add_child(row)
-	row.add_child(_op_label("?"))
-	row.add_child(_op_label("+"))
-	row.add_child(_mini_icon(ingredient_id))
-	row.add_child(_op_label("="))
-	row.add_child(_op_label("?"))
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 2)
+	box.add_child(col)
+
+	# Row 1: result silhouette + poetic name (stage 1+).
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 6)
+	var out_icon := _mini_icon(out_id)
+	out_icon.modulate = SILHOUETTE_TINT   # result stays a silhouette until crafted
+	top.add_child(out_icon)
 	var name_lbl := Label.new()
-	name_lbl.text = "  (%s ?)" % ItemDB.item_name(ingredient_id)
-	name_lbl.add_theme_color_override("font_color", DIM)
+	name_lbl.text = Codex.hint_poetic_name(recipe_id)
+	name_lbl.add_theme_color_override("font_color", VIOLET_SOFT)
 	name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	row.add_child(name_lbl)
+	top.add_child(name_lbl)
+	col.add_child(top)
+
+	# Row 2: ingredient categories (stage 2+).
+	if stage >= 2:
+		var cats: Array = Codex.hint_categories(recipe_id)
+		if cats.size() == 2:
+			var cat_lbl := Label.new()
+			cat_lbl.text = "   %s  +  %s" % [String(cats[0]), String(cats[1])]
+			cat_lbl.add_theme_color_override("font_color", DIM)
+			col.add_child(cat_lbl)
+
+	# Row 3: one revealed ingredient (stage 3).
+	if stage >= 3:
+		var ing := Codex.hint_for_recipe(recipe_id)
+		if ing != "":
+			var ing_row := HBoxContainer.new()
+			ing_row.add_theme_constant_override("separation", 6)
+			ing_row.add_child(_mini_icon(ing))
+			var ing_lbl := Label.new()
+			ing_lbl.text = "  %s + ?" % ItemDB.item_name(ing)
+			ing_lbl.add_theme_color_override("font_color", DIM)
+			ing_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			ing_row.add_child(ing_lbl)
+			col.add_child(ing_row)
 	return box
 
 
@@ -521,6 +554,17 @@ func truth_row_count() -> int:
 	return n
 
 
+## (v1.1.0 GP-3) If `output_id` is produced by a recipe with an active (stage 1+) result-first
+## hint, return its poetic name fragment; else "". Used to light up undiscovered 도감 slots.
+func _active_poetic_for_output(output_id: String) -> String:
+	var recs: Array = _output_to_recipes.get(ItemDB.resolve_id(output_id), [])
+	for rec: Dictionary in recs:
+		var rid := String(rec.get("id", ""))
+		if Codex.hint_stage(rid) >= 1:
+			return Codex.hint_poetic_name(rid)
+	return ""
+
+
 func _make_cell(id: String) -> Control:
 	var discovered := Codex.is_item_discovered(id)
 	var box := PanelContainer.new()
@@ -538,10 +582,15 @@ func _make_cell(id: String) -> Control:
 	box.add_child(icon)
 
 	if not discovered:
+		# (v1.1.0 GP-3) Result-first hint: if this item is the OUTPUT of a recipe whose hint has
+		# reached stage 1+, show its poetic name fragment instead of a blank "???" — the 도감 slot
+		# becomes a wishlist ("저 빛나는 걸 만들고 싶다") rather than an opaque unknown.
+		var poetic := _active_poetic_for_output(id)
 		var q := Label.new()
-		q.text = "???"
-		q.add_theme_color_override("font_color", DIM)
-		q.add_theme_font_size_override("font_size", 12)
+		q.text = poetic if poetic != "" else "???"
+		q.add_theme_color_override("font_color", VIOLET_SOFT if poetic != "" else DIM)
+		q.add_theme_font_size_override("font_size", 10 if poetic != "" else 12)
+		q.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		q.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		q.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 		q.mouse_filter = Control.MOUSE_FILTER_IGNORE
