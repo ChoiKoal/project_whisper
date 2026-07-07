@@ -8,6 +8,31 @@
 - 게임 프로젝트 경로: `/workspace/group/project-whisper/game/`
 - 검증 명령: `cd /workspace/group/project-whisper/game && /workspace/group/tools/Godot_v4.5-stable_linux.arm64 --headless --import . 2>&1 | tail -5` (임포트+파스 체크)
 
+## v1.3.0 컷신 퀄업 (CQ) — 진행
+
+### CQ-1 갭 감사 (CS 문서 연출 지시 vs 현 구현) — done
+정본 `docs/project-whisper-cutscenes-v2.md` (CS-01~06)를 현 코드(opening.gd / clear_sequence.gd / portal_cutscene.gd / ending_sequence.gd / l2~l5 gate_controller `_run_purification`)와 대조. **총 갭 항목: 14.**
+
+| CS | 지시 요소 | 현 구현 | 갭 |
+|---|---|---|---|
+| CS-01 | 검은 화면 보라 점 **심장박동 2회** + 낮은 단음 | opening.gd = 텍스트 카드 4장만 (보라 점/박동/실루엣/포탈 리빌 전무) | **G1** 보라 점 2회 심장박동 신설 |
+| CS-01 | 점→부유섬 실루엣, 별하늘 | 없음 (틴트 드리프트만) | **G2** 섬 실루엣/별하늘 비트 (저비용: 카드 배경) |
+| CS-01 | 줌아웃으로 꺼진 포탈 5개 반원 리빌 | home_island 진입 후 `camera_zoom.play_awakening_reveal()`(줌2.4→1.5)는 있으나 opening 카드와 **미연결**, 포탈 리빌 연출 없음 | **G3** 오프닝→홈 각성 리빌 연계(카드에서 줌아웃 리빌 비트 or 홈 리빌 강화) |
+| CS-01 | 자연 포탈만 맥동 + 카메라 팬 | 홈 포탈 상태는 맞으나 **팬/맥동 강조 연출 없음** | **G4** 자연 포탈 맥동+팬 |
+| CS-02 | 포탈 통과 보라 스웰 + 물결 왜곡 + 숨 스웰음 | portal_cutscene `play_travel` = 보라 ColorRect 페이드(스웰음 travel_whoosh O) | **G5** 물결 왜곡(셰이더/디스토션) 부재 — 스웰만 |
+| CS-02 | 연못가 착지 **3초 잠금** + 같은 새소리 **2회 루프** | 착지 후 카드만; 3초 락/새소리 루프 **전무** (`bird` SFX 미등록·에셋 부재) | **G6** 착지 3초 락+새소리 2회 루프 신설 |
+| CS-03 | 세계수 아래→위 **카메라 틸트**, BGM 페이드아웃+저음, 잎 기욺 | **CS-03 미구현** (세계수 조우 컷신 자체 없음) | **G7** CS-03 신설(카메라 틸트+BGM 저음+잎 기욺 — 저비용) |
+| CS-04 | 1프레임 화이트 → 링 파문이 VOID 자국 초록 물듦 | clear_sequence: 화이트 플래시 O, 링 스프라이트 O, hollow 셀 green 오버레이 O | **부분 OK** (링 있음 — G13 공통부품으로 상향) |
+| CS-04 | **다른 멜로디** 새소리 (반복 깨짐) | 카드만; 새소리 없음 | **G8** 정화 후 "다른" 새소리 (반복 깨짐 모티프) |
+| CS-04 | 3초 정적 → 보라 빛 상승 | 카드 3장 후 즉시 cleared; 3초 정적/상승광 없음 | **G9** 3초 정적+보라 상승광 |
+| CS-05 | 착지점 풀 몇 포기 + 포탈 완전 점등 + 옆 포탈 스파크 팬 | `_sprout_arrival_grass` O, nature OPEN O, science flickering O — **카메라 팬 없음** | **G10** 옆 포탈로 카메라 팬(스파크 강조) |
+| L2~L5 | 각 세계 톤 정화 set piece (도시 점등/대시계 틱+톱니/봉인 수축/잔불→온기) | 각 gate_controller가 **로컬 카드+웨이브 점등** 재구현 (공통 부품 없음, 링/플래시/카메라 없음) | **G11** 공통 CutsceneDirector 부품화 + 각 톤 차별화 상향 |
+| CS-06 E1 | 몽타주 카드에 **각 세계 프리뷰 톤 배경** + 새소리 정지 프레임 | ending_sequence E1: 카드 5장(플레인) + birdsong 2회(`bird` 미등록=무음) | **G12** 몽타주 카드 톤 배경 + 새소리 실제화 |
+| CS-06 E2 | 크레딧 후 보라 점 2회(오프닝과 **같은 리듬**) | E2 `_purple_dot_twice` O (리듬 튜닝 여지) | **부분 OK** — G1과 리듬 상수 공유 |
+| 공통 | **컷신 재감상** 메뉴(도감 「기록」 탭) | codex_ui 「기록」=진상 조각만; 재감상 **전무** | **G14** 재감상 갤러리 신설 |
+
+**공통 부품 부재(CQ-2 대상):** CutsceneDirector 유틸 없음 — 카메라 팬/줌/틸트 Tween, 레터박스 바, 화이트 플래시, **확장 링 파문**, 카드 타이포(v0.4.0b 규격)가 opening/clear/portal/ending/l2~l5에 **5중 중복**. `camera_zoom.play_awakening_reveal` 외 카메라 연출 유틸 없음. `bird` SFX **미등록+에셋 부재**(CS-02/04/E1 새소리 모티프 무음).
+
 ## 마일스톤 상태
 | 마일스톤 | 상태 | 검수 | 비고 |
 |---|---|---|---|
