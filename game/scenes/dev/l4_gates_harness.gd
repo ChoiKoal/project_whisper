@@ -112,6 +112,9 @@ func _test_g1_rune_bridge(loader: MapLoader) -> void:
 	if target != null:
 		Inventory.remove("D141", 1)
 		GameState.item_used_on_object.emit("D141", target)
+	# (GP-6 §2) 장착 → 룬 점등 퍼즐 모달 → 스킵(=그냥 장착=동일 energize)으로 급전 실경로 완주.
+	await get_tree().process_frame
+	_check("G1 승격 퍼즐(rune) 모달 개방 + 스킵 경로 해소", _resolve_gate_puzzle_if_open())
 	_check("power_node 'rune_bridge' recorded in powered_nodes",
 		GameState.is_power_node_energized("rune_bridge"))
 	# Staggered light timers fire (0.12s * up to N cells). SceneTreeTimer uses REAL time.
@@ -394,3 +397,13 @@ func _all_nodes(root: Node) -> Array:
 	for c in root.get_children():
 		out += _all_nodes(c)
 	return out
+
+
+## (GP-6 §2 정합) G1 승격이 GatePuzzle 모달(GP-5 §3)을 거쳐 energize — skip == 그냥 장착 == 동일 개방.
+## current_scene 아래로 붙은 열린 퍼즐을 찾아 스킵 경로로 해소. 열린 퍼즐 없음(직행 energize)도 valid.
+func _resolve_gate_puzzle_if_open() -> bool:
+	for n in _all_nodes(get_tree().root):
+		if n is GatePuzzle:
+			(n as GatePuzzle).skip_for_test()
+			return true
+	return false

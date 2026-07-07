@@ -128,6 +128,9 @@ func _test_g1_lantern_offering(loader: MapLoader) -> void:
 	if target != null:
 		Inventory.remove("D178", 1)
 		GameState.item_used_on_object.emit("D178", target)
+	# (GP-6 §2) 봉헌 → 음 순서 퍼즐 모달 → 스킵(=그냥 봉헌=동일 energize)으로 급전 실경로 완주.
+	await get_tree().process_frame
+	_check("G1 승격 퍼즐(chime) 모달 개방 + 스킵 경로 해소", _resolve_gate_puzzle_if_open())
 	_check("power_node 'lantern_path' recorded in powered_nodes",
 		GameState.is_power_node_energized("lantern_path"))
 	# Staggered light timers fire (0.12s * up to N cells). SceneTreeTimer uses REAL time.
@@ -446,3 +449,20 @@ func _find_use_target(loader: MapLoader, object_id: String) -> Node:
 						return ch
 				return child
 	return null
+
+
+func _all_nodes(root: Node) -> Array:
+	var out: Array = [root]
+	for c in root.get_children():
+		out += _all_nodes(c)
+	return out
+
+
+## (GP-6 §2 정합) G1 승격이 GatePuzzle 모달(GP-5 §3)을 거쳐 energize—skip==그냥 장착==동일 개방.
+## current_scene 아래로 붙은 열린 퍼즐을 찾아 스킵 경로로 해소.
+func _resolve_gate_puzzle_if_open() -> bool:
+	for n in _all_nodes(get_tree().root):
+		if n is GatePuzzle:
+			(n as GatePuzzle).skip_for_test()
+			return true
+	return false

@@ -106,6 +106,9 @@ func _test_g1_gear_bridge(loader: MapLoader) -> void:
 	if target != null:
 		Inventory.remove("D104", 1)
 		GameState.item_used_on_object.emit("D104", target)
+	# (GP-6 §2) 장착 → 톱니 맞물림 퍼즐 모달 → 스킵(=그냥 장착=동일 energize)으로 급전 실경로 완주.
+	await get_tree().process_frame
+	_check("G1 승격 퍼즐(gear) 모달 개방 + 스킵 경로 해소", _resolve_gate_puzzle_if_open())
 	_check("power_node 'gate_gear' recorded in powered_nodes",
 		GameState.is_power_node_energized("gate_gear"))
 	# Staggered light timers fire (0.12s * up to 4 cells). SceneTreeTimer uses REAL time.
@@ -366,3 +369,16 @@ func _all_nodes(root: Node) -> Array:
 	for c in root.get_children():
 		out += _all_nodes(c)
 	return out
+
+
+## (GP-6 §2 정합) The G1 승격 now routes item_used_on_object(D104, gear_assembly) through a GatePuzzle
+## modal (GP-5 §3) before energizing — skip == 그냥 장착 == 동일 energize. Find the open puzzle
+## (parented to current_scene by the gate controller) and take the skip path so the standalone gate
+## harness exercises the puzzle→energize contract instead of stalling on the open modal. Returns true
+## if a puzzle was found+resolved (or none open, meaning it energized directly — both valid).
+func _resolve_gate_puzzle_if_open() -> bool:
+	for n in _all_nodes(get_tree().root):
+		if n is GatePuzzle:
+			(n as GatePuzzle).skip_for_test()
+			return true
+	return false
