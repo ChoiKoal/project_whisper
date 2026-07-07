@@ -103,6 +103,47 @@ func fuse(a_id: String, b_id: String) -> Dictionary:
 	return result
 
 
+## (v1.1.0 GP-3 §4.3-A) PEEK — a pure, side-effect-FREE preview of what fusing (a_id, b_id) would
+## produce. Consumes nothing, mutates no Codex/Inventory/Whisper state. Used by the Fusion UI to
+## fill the result slot the moment both input slots are filled (실시간 결과 미리보기). The real
+## transaction is still `fuse()` on the 조합 button — LOGIC UNCHANGED (문서 §4.4 로직 불변 원칙).
+##
+## Result shape:
+##   state: "empty" | "known" | "unknown" | "fail" | "none"
+##     empty   → one/both ids missing.
+##     known   → a real recipe the player HAS already discovered → show确정 output.
+##     unknown → a real recipe NOT yet discovered → show result silhouette (+ staged poetic hint).
+##     fail    → a 실패 조합 mapping (그럴듯한 오답) → show gray fail_output preview.
+##     none    → no recipe and no fail mapping → "?".
+##   output: canonical output id ("" unless known/unknown/fail).
+##   recipe_id: the matched recipe id ("" for fail/none).
+##   hint_stage: for an unknown recipe, its current codex hint stage (0..3) so the UI can decide how
+##               much of the result to reveal (silhouette vs poetic vs categories). 0 otherwise.
+func peek(a_id: String, b_id: String) -> Dictionary:
+	var out := {"state": "empty", "output": "", "recipe_id": "", "hint_stage": 0}
+	if a_id == "" or b_id == "":
+		return out
+	var recipe := RecipeDB.find_recipe([a_id, b_id])
+	if not recipe.is_empty():
+		var rid := String(recipe["id"])
+		var output := ItemDB.resolve_id(String(recipe["output"]))
+		out["output"] = output
+		out["recipe_id"] = rid
+		if Codex.is_recipe_discovered(rid):
+			out["state"] = "known"
+		else:
+			out["state"] = "unknown"
+			out["hint_stage"] = Codex.hint_stage(rid)
+		return out
+	var frec := RecipeDB.find_fail_recipe([a_id, b_id])
+	if not frec.is_empty():
+		out["state"] = "fail"
+		out["output"] = ItemDB.resolve_id(String(frec.get("fail_output", "")))
+		return out
+	out["state"] = "none"
+	return out
+
+
 ## Consume the recipe inputs from the Inventory.
 ##
 ## UNIQUE-AS-CATALYST rule (M3 refinement): an input item marked `unique` in

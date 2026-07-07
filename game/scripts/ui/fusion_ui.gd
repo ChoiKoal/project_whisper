@@ -36,6 +36,30 @@ var _hint_toggle: Button
 var _hint_list: VBoxContainer
 var _hints_expanded: bool = false
 
+# ---- v1.1.0 GP-3 §4 조합 UI 리워크 ----------------------------------------
+## (§4.3-B) Active ingredient-category filter for the strip ("" = 전체).
+var _strip_filter: String = ""
+## Category filter chip buttons (label -> Button), so the active one can be highlighted.
+var _filter_chips: Dictionary = {}
+## Row hosting the "최근 조합" one-tap re-craft buttons.
+var _recent_row: HFlowContainer
+## Recent SUCCESSFUL fusions as [a_id, b_id] pairs (most-recent first, capped).
+var _recent: Array = []
+const RECENT_MAX := 6
+## (§4.3-D) 도감 연결 라벨 ("도감 N/M 발견").
+var _codex_link_lbl: Label
+## The (label -> [keywords]) category table shared with the codex classifier vibe. Chips use these.
+const FILTER_CATEGORIES := [
+	["전체", []],
+	["물", ["물", "수", "이슬", "샘", "액", "냉각", "증류", "젖"]],
+	["불", ["불", "화", "숯", "재", "잔불", "불씨", "열", "용암"]],
+	["흙", ["흙", "토", "진흙", "모래", "점토", "땅"]],
+	["광물", ["돌", "석", "철", "금속", "구리", "황동", "대리석", "결정", "광", "쇠", "고철", "바위"]],
+	["식물", ["풀", "잎", "꽃", "씨", "나무", "이끼", "덩굴", "가지", "줄기", "뿌리"]],
+	["기계", ["톱니", "태엽", "회로", "전선", "부품", "기어", "벨트", "나사", "전지", "배터리"]],
+	["빛", ["빛", "등", "성물", "촛", "성수", "신성", "룬", "마력"]],
+]
+
 var _open: bool = false
 ## Two input slot ids ("" = empty).
 var _inputs: Array[String] = ["", ""]
@@ -70,8 +94,13 @@ const SUCCESS_TOTAL := 1.2  ## seconds, full success sequence
 
 func _ready() -> void:
 	_build_ui()
-	Inventory.changed.connect(func(): if _open: _rebuild_strip())
+	Inventory.changed.connect(func():
+		if _open:
+			_rebuild_strip()
+			_rebuild_recent())   # refresh 최근 조합 in-stock/disabled states
 	Codex.hint_gauge_changed.connect(_on_gauge_changed)
+	# (v1.1.0 GP-3 §4.3-D) keep the 도감 연결 count live on new discoveries.
+	Codex.recipe_discovered.connect(func(_id): if _open: _refresh_codex_link())
 	# v0.3.1 R1: clamp the panel to the viewport on every resize so the ingredient
 	# strip + 조합 button stay reachable at small window sizes (owner's top pain).
 	get_viewport().size_changed.connect(_clamp_to_viewport)
@@ -253,10 +282,31 @@ func _build_ui() -> void:
 	outer.add_child(_hint_list)
 
 	# --- inventory strip ---
+	outer.add_child(_divider())
 	var strip_lbl := Label.new()
 	strip_lbl.text = "재료 선택"
 	strip_lbl.add_theme_color_override("font_color", TEXT)
 	outer.add_child(strip_lbl)
+
+	# (v1.1.0 GP-3 §4.3-B) category filter chips — tap to narrow the strip by ingredient family.
+	var filter_row := HFlowContainer.new()
+	filter_row.name = "FilterRow"
+	filter_row.add_theme_constant_override("h_separation", 4)
+	filter_row.add_theme_constant_override("v_separation", 4)
+	outer.add_child(filter_row)
+	_filter_chips.clear()
+	for entry in FILTER_CATEGORIES:
+		var label: String = entry[0]
+		var chip := Button.new()
+		chip.text = label
+		chip.toggle_mode = true
+		chip.focus_mode = Control.FOCUS_NONE
+		chip.custom_minimum_size = Vector2(0, 44)   # ≥44px touch target (mobile)
+		chip.add_theme_font_size_override("font_size", 14)
+		chip.button_pressed = (label == "전체")
+		chip.pressed.connect(_on_filter_chip.bind(label))
+		filter_row.add_child(chip)
+		_filter_chips[label] = chip
 
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(484, 120)
@@ -266,6 +316,25 @@ func _build_ui() -> void:
 	_strip = HFlowContainer.new()
 	_strip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_strip)
+
+	# (v1.1.0 GP-3 §4.3-C) 최근 조합 — one-tap re-craft buttons for the last few successful fusions.
+	var recent_lbl := Label.new()
+	recent_lbl.name = "RecentLabel"
+	recent_lbl.text = "최근 조합"
+	recent_lbl.add_theme_color_override("font_color", TEXT)
+	outer.add_child(recent_lbl)
+	_recent_row = HFlowContainer.new()
+	_recent_row.name = "RecentRow"
+	_recent_row.add_theme_constant_override("h_separation", 4)
+	_recent_row.add_theme_constant_override("v_separation", 4)
+	outer.add_child(_recent_row)
+
+	# (v1.1.0 GP-3 §4.3-D) 도감 연결 — discovery count + [도감 열기 R] hint.
+	_codex_link_lbl = Label.new()
+	_codex_link_lbl.name = "CodexLink"
+	_codex_link_lbl.add_theme_color_override("font_color", ACCENT)
+	_codex_link_lbl.add_theme_font_size_override("font_size", 14)
+	outer.add_child(_codex_link_lbl)
 
 	# (B3.2) close affordance hint at the panel bottom — pairs with the ✕ button so it
 	# reads as closeable ("닫을 수 있어 보이지도 않고").
@@ -402,6 +471,9 @@ func open() -> void:
 	_result_flavor.text = ""
 	_rebuild_strip()
 	_refresh_dots()
+	# (v1.1.0 GP-3) reflect 최근 조합 + 도감 연결 on open.
+	_rebuild_recent()
+	_refresh_codex_link()
 	# (B3.4) reflect any hints revealed while the panel was closed; keep it collapsed
 	# on open so the panel opens compact.
 	_hints_expanded = false
@@ -469,7 +541,103 @@ func _rebuild_strip() -> void:
 	for c in _strip.get_children():
 		c.queue_free()
 	for id: String in Inventory.ids():
-		_add_strip_item(id)
+		if _matches_filter(id):
+			_add_strip_item(id)
+
+
+## (v1.1.0 GP-3 §4.3-B) True if `id`'s name matches the active category filter ("" / 전체 = all).
+func _matches_filter(id: String) -> bool:
+	if _strip_filter == "" or _strip_filter == "전체":
+		return true
+	var nm := ItemDB.item_name(id)
+	for entry in FILTER_CATEGORIES:
+		if String(entry[0]) == _strip_filter:
+			for kw: String in entry[1]:
+				if nm.contains(kw):
+					return true
+			return false
+	return true
+
+
+## Filter chip pressed: make it exclusive, set the active filter, rebuild the strip.
+func _on_filter_chip(label: String) -> void:
+	_strip_filter = label
+	for l: String in _filter_chips.keys():
+		(_filter_chips[l] as Button).button_pressed = (l == label)
+	_rebuild_strip()
+
+
+## (harness) Set the strip filter programmatically; returns the strip item count after filtering.
+func set_strip_filter(label: String) -> int:
+	_on_filter_chip(label)
+	return _strip.get_child_count()
+
+
+# ---- v1.1.0 GP-3 §4.3-C 최근 조합 + §4.3-D 도감 연결 -----------------------
+
+## Push a successful pair onto the recent queue (dedup order-independent, most-recent first, capped).
+func _record_recent(a_id: String, b_id: String) -> void:
+	var ca := ItemDB.resolve_id(a_id)
+	var cb := ItemDB.resolve_id(b_id)
+	# Remove an existing same (unordered) pair so it re-surfaces at the front.
+	for i in range(_recent.size() - 1, -1, -1):
+		var p: Array = _recent[i]
+		if (p[0] == ca and p[1] == cb) or (p[0] == cb and p[1] == ca):
+			_recent.remove_at(i)
+	_recent.push_front([ca, cb])
+	while _recent.size() > RECENT_MAX:
+		_recent.pop_back()
+	_rebuild_recent()
+
+
+## Rebuild the 최근 조합 row: one [재료A+재료B ⟳] button per remembered pair. Tapping auto-fills the
+## two slots IF both are in stock (else the button is disabled — can't craft what you don't have).
+func _rebuild_recent() -> void:
+	if _recent_row == null:
+		return
+	for c in _recent_row.get_children():
+		c.queue_free()
+	if _recent.is_empty():
+		var none := Label.new()
+		none.text = "—"
+		none.add_theme_color_override("font_color", DOT_OFF)
+		_recent_row.add_child(none)
+		return
+	for pair: Array in _recent:
+		var a: String = pair[0]
+		var b: String = pair[1]
+		var btn := Button.new()
+		btn.focus_mode = Control.FOCUS_NONE
+		btn.custom_minimum_size = Vector2(0, 44)   # ≥44px touch target
+		btn.add_theme_font_size_override("font_size", 13)
+		btn.text = "%s + %s ⟳" % [ItemDB.item_name(a), ItemDB.item_name(b)]
+		var in_stock := _pair_in_stock(a, b)
+		btn.disabled = not in_stock
+		btn.pressed.connect(_on_recent_pressed.bind(a, b))
+		_recent_row.add_child(btn)
+
+
+## True if the inventory can cover BOTH ingredients of a pair (2 of the same for a self-pair).
+func _pair_in_stock(a: String, b: String) -> bool:
+	if a == b:
+		return Inventory.count(a) >= 2 or ItemDB.is_unique(a)
+	return Inventory.count(a) >= 1 and Inventory.count(b) >= 1
+
+
+## One-tap re-craft: fill both slots from a recent pair (in-stock guaranteed by the disabled state).
+func _on_recent_pressed(a: String, b: String) -> void:
+	if _animating:
+		return
+	_inputs = [a, b]
+	_refresh_slots()
+
+
+## (§4.3-D) Update the 도감 연결 line ("도감 N / M 발견   ·   [도감 열기 R]").
+func _refresh_codex_link() -> void:
+	if _codex_link_lbl == null:
+		return
+	_codex_link_lbl.text = "도감  %d / %d 레시피 발견   ·   [도감 열기 R]" % [
+		Codex.discovered_recipe_count(), RecipeDB.all_ids().size()]
 
 
 func _add_strip_item(id: String) -> void:
@@ -527,6 +695,48 @@ func _refresh_slots() -> void:
 		else:
 			_slot_icons[i].texture = ItemDB.icon(id)
 			_slot_labels[i].text = ItemDB.item_name(id)
+	_refresh_preview()
+
+
+## (v1.1.0 GP-3 §4.3-A) 실시간 결과 미리보기 — the moment BOTH input slots are filled, peek (no
+## consume) and paint the result slot: known recipe → 확정 output; unknown valid recipe → result
+## silhouette (+ staged poetic hint); fail mapping → gray junk preview; else "?". LOGIC UNCHANGED:
+## `Fusion.peek` never mutates; the real transaction is still the 조합 button.
+func _refresh_preview() -> void:
+	# Never fight the success/failure juice — the sequence owns the result slot then.
+	if _animating or not _pending_result.is_empty():
+		return
+	if _result_icon == null:
+		return
+	if _inputs[0] == "" or _inputs[1] == "":
+		_result_icon.texture = null
+		_result_icon.modulate = Color.WHITE
+		_result_name.text = "???"
+		return
+	var pk := Fusion.peek(_inputs[0], _inputs[1])
+	var state := String(pk.get("state", "none"))
+	match state:
+		"known":
+			_result_icon.texture = ItemDB.icon(String(pk["output"]))
+			_result_icon.modulate = Color.WHITE
+			_result_name.text = ItemDB.item_name(String(pk["output"]))
+		"unknown":
+			# Reveal the result as a silhouette; if a staged poetic hint exists, name it poetically.
+			_result_icon.texture = ItemDB.icon(String(pk["output"]))
+			_result_icon.modulate = Color(0.16, 0.15, 0.2, 1.0)
+			var rid := String(pk.get("recipe_id", ""))
+			if int(pk.get("hint_stage", 0)) >= 1 and rid != "":
+				_result_name.text = Codex.hint_poetic_name(rid)
+			else:
+				_result_name.text = "? 무언가 만들어질 것 같다 ?"
+		"fail":
+			_result_icon.texture = ItemDB.icon(String(pk["output"]))
+			_result_icon.modulate = Color(0.7, 0.7, 0.72)
+			_result_name.text = "…?"
+		_:
+			_result_icon.texture = null
+			_result_icon.modulate = Color.WHITE
+			_result_name.text = "?"
 
 
 # ---- fuse ----------------------------------------------------------------
@@ -545,10 +755,13 @@ func _on_fuse_pressed() -> void:
 	# the real fuse, then drive the juice around the identical result payload. ---
 	var in_icons: Array[Texture2D] = [ItemDB.icon(_inputs[0]), ItemDB.icon(_inputs[1])]
 	var recipes_before := Codex.discovered_recipe_count()
+	# (v1.1.0 GP-3 §4.3-C) capture the pair BEFORE fuse() clears the slots, to log 최근 조합 on success.
+	var fused_pair := [_inputs[0], _inputs[1]]
 
 	var res := Fusion.fuse(_inputs[0], _inputs[1])
 	if res["matched"]:
 		var first_discovery := Codex.discovered_recipe_count() > recipes_before
+		_record_recent(fused_pair[0], fused_pair[1])
 		# Inputs are consumed by fuse(); clear the slots + strip now (as before).
 		_inputs = ["", ""]
 		_refresh_slots()
