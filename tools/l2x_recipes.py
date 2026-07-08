@@ -118,8 +118,8 @@ rec("EX-L2-R21", "지워진 로그", [d_shard_b, "J9"],  # 정합 조각 β(D260
     "정합 조각을 부식 코어에 겹쳐 읽으려 하면… 문자가 녹슬어 지워진다", "마지막 로그. 무엇을 기록하려 했는지, 녹 속으로 번져버렸다.", "decor")
 rec("EX-L2-R22", "굳은 관리 드론", [d_gel_slab, "J9"],  # 굳은 젤판(D255)+부식 코어
     "젤판에 부식 코어를 앉히면… 팔다리가 굳어 멈춘 드론이 된다", "성소를 지키던 관리 드론의 말로. 명령을 기다리는 자세로 굳었다.", "structure")
-rec("EX-L2-R23", "타버린 훈장 데이터", ["J12", "J9"],  # 코어 정수+부식 코어 = 뒤틀린 기억
-    "코어 정수를 부식 코어에 억지로 밀어넣으면… 새까맣게 탄다", "누군가는 이 기록을 자랑스러워했다. 이제는 탄 자국만 남았다.", "decor")
+rec("EX-L2-R23", "타버린 훈장 데이터", ["J10", "J9"],  # 광섬유+부식 코어 = 타버린 기록 (유니크 J12 미사용: EX-L1 QA 원칙)
+    "광섬유를 부식 코어에 억지로 이으면… 과부하로 새까맣게 탄다", "누군가는 이 기록을 자랑스러워했다. 이제는 탄 자국만 남았다.", "decor")
 
 
 def build():
@@ -244,7 +244,43 @@ def main():
             sl_ok = False
         print(f"  {g} {sorted(need)} ⊆ cum[{g}] : {status}")
 
-    passed = cont and not internal_dup and not ext_conflict and not l1_conflict and not dangling and sl_ok
+    # unique-drain 금지 (EX-L1 QA 원칙, R33 I14 전례):
+    #   유니크 채집물(J12)은 '게이트 체인 최종물'로 이어지는 레시피에서만 소비 가능.
+    #   막다른 데코/상호 leaf에서 유니크를 소비하면 먼저 만든 플레이어가 GB4 영구 softlock.
+    #   → 유니크를 입력으로 쓰는 모든 레시피는 반드시 게이트 최종물(복원 코어 D263)의 조상이어야 한다.
+    unique_gathers = {g[0] for g in GATHERS if g[3] == "gather_unique"}  # {"J12"}
+    def ancestors_of_final(final, idx):
+        """final 산출로 이어지는 모든 중간 산출 D + 그 레시피 집합."""
+        chain_recipes = set()
+        stack = [final]
+        seen3 = set()
+        while stack:
+            cur = stack.pop()
+            if cur in seen3:
+                continue
+            seen3.add(cur)
+            for r in R:
+                if r["output"] == cur:
+                    chain_recipes.add(r["id"])
+                    stack.extend(r["inputs"])
+        return chain_recipes
+    gate_final_recipes = ancestors_of_final(d_restored_core, idx)  # GB4 봉헌 체인 전체
+    unique_ok = True
+    unique_violations = []
+    for r in R:
+        if unique_gathers & set(r["inputs"]):
+            if r["id"] not in gate_final_recipes:
+                unique_ok = False
+                unique_violations.append((r["id"], r["name"], r["place"] or "leaf"))
+    print("--- unique-drain 금지 (유니크 J12 = 게이트 체인 전용, 막다른 데코 사용 금지) ---")
+    if unique_violations:
+        for uid, un, up in unique_violations:
+            print(f"  VIOLATION {uid} {un} ({up}) — 유니크를 막다른 레시피에서 소모")
+    else:
+        print(f"  유니크 {sorted(unique_gathers)} 소비 레시피 전부 게이트 체인(복원 코어 조상) : OK")
+
+    passed = (cont and not internal_dup and not ext_conflict and not l1_conflict
+              and not dangling and sl_ok and unique_ok)
     print(f"RESULT: {'PASS' if passed else 'FAIL'}")
 
     frag = {
