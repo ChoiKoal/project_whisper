@@ -58,6 +58,15 @@ func _setup() -> void:
 	# Register the live world so the station snapshots/restores like the other scenes.
 	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("register_world"):
 		SaveManager.register_world(_loader, _player, respawn)
+		# (v1.3.1 BUG B) 이어하기 load, or in-run RE-ENTRY (portal travel) — restore this station's
+		# snapshot (powered nodes / gathered tiles / placed objects) instead of rebuilding fresh.
+		if SaveManager.pending_load:
+			SaveManager.pending_load = false
+			SaveManager.load_game()
+		elif SaveManager.has_world_snapshot(WorldContext.current_scene):
+			SaveManager.restore_registered_world()
+		# (v1.3.1 BUG A) Self-heal the portal line from the progression flags on every boot.
+		GameState.reconcile_portal_line()
 	# Ambient audio (reuse the quieter home soundscape — a dead station is quiet too).
 	if typeof(AudioManager) != TYPE_NIL:
 		if AudioManager.has_method("start_world_audio"):

@@ -55,6 +55,14 @@ func _setup() -> void:
 	if SaveManager.pending_load:
 		SaveManager.pending_load = false
 		SaveManager.load_game()
+	# (v1.3.1 BUG B) In-run RE-ENTRY (portal travel, no 이어하기): restore this world's snapshot so
+	# a watered bush / gathered tiles / placed objects the player left behind come back instead of
+	# rebuilding fresh. Only when a snapshot already exists (a revisit, not the first entry).
+	elif SaveManager.has_world_snapshot(WorldContext.current_scene):
+		SaveManager.restore_registered_world()
+	# (v1.3.1 BUG A) Self-heal the portal line from the progression flags every boot so a stale
+	# snapshot can never leave a purified world's home portal re-locked.
+	GameState.reconcile_portal_line()
 
 	# Wire clear → CS-04 (handled by ClearSequence) → auto-return + CS-05 ignition.
 	var clear := get_node_or_null(clear_sequence_path) as ClearSequence

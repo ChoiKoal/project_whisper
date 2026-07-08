@@ -223,6 +223,42 @@ func set_portal_state(layer: String, state: String) -> void:
 func portal_state(layer: String) -> String:
 	return String(portal_states.get(layer, PORTAL_DORMANT))
 
+## Portal states ordered by "unlockedness" so reconcile can UPGRADE (never downgrade).
+const _PORTAL_RANK := {PORTAL_DORMANT: 0, PORTAL_FLICKERING: 1, PORTAL_OPEN: 2}
+
+## (v1.3.1) Reconcile the portal line against the authoritative progression flags
+## (SaveManager.cleared for L1, layer2~5_purified_flag for L2~L5) and UPGRADE each portal to at
+## least the state that progression guarantees. This is the single source-of-truth recompute that
+## makes the portal line self-healing: it runs on every world boot (after load / on re-entry) so a
+## stale or already-corrupted snapshot can never leave a purified world's portal re-locked.
+##
+## Rule (mirrors the CS-05 / *_purified cutscene hand-offs; each cleared layer OPENs its own portal
+## and at minimum FLICKERs the next):
+##   nature   : always ≥ flickering (the one live gate); OPEN once L1 cleared
+##   science  : ≥ flickering once L1 cleared; OPEN once L2 purified
+##   machine  : ≥ flickering once L2 purified; OPEN once L3 purified
+##   magic    : ≥ flickering once L3 purified; OPEN once L4 purified
+##   divinity : ≥ flickering once L4 purified; OPEN once L5 purified
+## Only ever raises a portal's state (an OPEN portal is never pushed back to flickering/dormant),
+## so it is safe to call unconditionally and idempotent.
+func reconcile_portal_line() -> void:
+	if portal_states.is_empty():
+		reset_portals()
+	var l1_cleared := typeof(SaveManager) != TYPE_NIL and bool(SaveManager.cleared)
+	# floor state each layer must be AT LEAST in, given the progression flags.
+	var floor := {
+		"nature": PORTAL_OPEN if l1_cleared else PORTAL_FLICKERING,
+		"science": PORTAL_OPEN if layer2_purified_flag else (PORTAL_FLICKERING if l1_cleared else PORTAL_DORMANT),
+		"machine": PORTAL_OPEN if layer3_purified_flag else (PORTAL_FLICKERING if layer2_purified_flag else PORTAL_DORMANT),
+		"magic": PORTAL_OPEN if layer4_purified_flag else (PORTAL_FLICKERING if layer3_purified_flag else PORTAL_DORMANT),
+		"divinity": PORTAL_OPEN if layer5_purified_flag else (PORTAL_FLICKERING if layer4_purified_flag else PORTAL_DORMANT),
+	}
+	for layer in floor:
+		var want: String = floor[layer]
+		var cur := portal_state(layer)
+		if int(_PORTAL_RANK.get(want, 0)) > int(_PORTAL_RANK.get(cur, 0)):
+			set_portal_state(layer, want)   # upgrade only (emits so live portal nodes refresh)
+
 # ---- (L5-5) 다섯 포탈 완결 → 빛의 문 예고 (§C-4) ---------------------------
 ## The five world layers, in portal order. Layer 1 (nature) clears via SaveManager.cleared;
 ## Layers 2~5 via their *_purified_flag. 진행 순서 무관 — the AND below only cares that all five

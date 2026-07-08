@@ -115,11 +115,11 @@ func _a_science_survives_l1_revisit() -> void:
 		"science=%s" % GameState.portal_state("science"))
 
 	# --- Travel into L1 (grove) exactly as HomeSession._travel_to_layer does: snapshot the home
-	#     world + save, then change scene. ---
+	#     world (current_scene=home) + save, then flip to grove + change scene. ---
 	WorldContext.travel_layer = "nature"
 	WorldContext.arrival_mode = "portal_arrival"
-	WorldContext.current_scene = WorldContext.SCENE_GROVE
 	SaveManager.save_game()
+	WorldContext.current_scene = WorldContext.SCENE_GROVE
 	await _teardown()
 
 	# Boot the grove as a portal arrival (already cleared → CS-02 landing skipped).
@@ -128,10 +128,11 @@ func _a_science_survives_l1_revisit() -> void:
 	_register(_scene)
 	await _frames(2)
 
-	# --- Return home exactly as GroveSession._return_home(false) does: save + change scene. ---
+	# --- Return home exactly as GroveSession._return_home(false) does: snapshot grove-as-grove,
+	#     then flip to home + change scene. ---
 	WorldContext.arrival_mode = "portal_arrival"
-	WorldContext.current_scene = WorldContext.SCENE_HOME
 	SaveManager.save_game()
+	WorldContext.current_scene = WorldContext.SCENE_HOME
 	await _teardown()
 
 	SaveManager.pending_load = false
@@ -181,19 +182,21 @@ func _b_bush_survives_grove_reentry() -> void:
 		await _frames(1)
 		_check("bush bloomed (watered) before leaving", bush.is_bloomed())
 
-	# Leave the grove for home (GroveSession._return_home path: save + change scene).
+	# Leave the grove for home (GroveSession._return_home path: snapshot the grove-as-grove FIRST,
+	# then flip current_scene to home + change scene — mirrors grove_session.gd ordering).
 	WorldContext.arrival_mode = "portal_arrival"
+	SaveManager.save_game()                                   # grove snapshot (current_scene=grove)
 	WorldContext.current_scene = WorldContext.SCENE_HOME
-	SaveManager.save_game()
 	await _teardown()
 	_scene = await _boot(HOME)
 	_register(_scene)
 	await _frames(1)
-	# Home → back into the grove (HomeSession._travel_to_layer path: save + change scene).
+	# Home → back into the grove (HomeSession._travel_to_layer path: snapshot home-as-home, then
+	# flip current_scene to grove + change scene).
 	WorldContext.travel_layer = "nature"
 	WorldContext.arrival_mode = "portal_arrival"
+	SaveManager.save_game()                                   # home snapshot (current_scene=home)
 	WorldContext.current_scene = WorldContext.SCENE_GROVE
-	SaveManager.save_game()
 	await _teardown()
 
 	SaveManager.pending_load = false

@@ -80,6 +80,14 @@ func _setup() -> void:
 	if SaveManager.pending_load:
 		SaveManager.pending_load = false
 		SaveManager.load_game()
+	# (v1.3.1 BUG B) In-run RE-ENTRY (returning from a world via a portal, no 이어하기): restore the
+	# home world's snapshot so placed structures/decor the player built survive the round-trip.
+	elif SaveManager.has_world_snapshot(WorldContext.current_scene):
+		SaveManager.restore_registered_world()
+	# (v1.3.1 BUG A) Self-heal the portal line from the progression flags on every home boot so a
+	# stale/already-corrupted snapshot can't leave a purified world's portal re-locked (KOAL's
+	# science relock). Runs BEFORE _wire_portals so the live gate nodes read the healed state.
+	GameState.reconcile_portal_line()
 
 	if fresh_awakening:
 		_play_awakening_reveal()

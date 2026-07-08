@@ -432,6 +432,29 @@ func _apply_core_state(data: Dictionary) -> void:
 	# Held item is applied in apply_world_state (needs the InteractionController).
 
 
+## True if we hold an in-memory snapshot for a scene id (visited earlier this run).
+func has_world_snapshot(scene_id: String) -> bool:
+	return _worlds.has(scene_id) and not (_worlds[scene_id] as Dictionary).is_empty()
+
+
+## (v1.3.1 BUG B) Restore the CURRENTLY-registered scene's world snapshot from the in-memory
+## `_worlds` cache, WITHOUT a full 이어하기 load. This is the missing re-entry path: in a live run
+## the player travels between worlds by change_scene (no `pending_load`), so a freshly-rebuilt
+## scene would otherwise drop its per-scene state (watered bushes, gathered tiles, placed objects,
+## stepping stones). Sessions call this on a portal ARRIVAL when a snapshot exists so re-entering a
+## world you already touched restores exactly what you left. Autoload-level state (portal line,
+## purification flags, inventory, codex) is NOT touched here — it lives in memory across the hop
+## and is reconciled separately. No-op if there's no snapshot / no live world.
+func restore_registered_world() -> bool:
+	if _loader == null:
+		return false
+	if not has_world_snapshot(WorldContext.current_scene):
+		return false
+	apply_world_state({})
+	game_loaded.emit()
+	return true
+
+
 ## Re-apply the map/object/gate/player state to a LIVE, already-built scene.
 ## The MapLoader has rebuilt the deterministic base map; we overlay the diff.
 func apply_world_state(data: Dictionary) -> void:
