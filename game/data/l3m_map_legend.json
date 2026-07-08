@@ -1,0 +1,287 @@
+{
+  "_comment": "EX-L3 태엽 광산 legend. Symbol->(source,object). map_loader 재사용(L3 파서). 게이트 강제=void+게이트셀+붕락 낙석 협곡(암반). 좌표 (col,row).",
+  "_coord_note": "row0=북(최심부 갱도/멈춘 대굴착기), row39=남(시계탑 도시 하강 스폰). col0=서.",
+  "tiles": {
+    "P": {
+      "source": 2,
+      "tile_id": "L3T-B",
+      "_note": "갱구 바닥(황동 격자 강판, 구리 리컬러)"
+    },
+    "G": {
+      "source": 2,
+      "tile_id": "L3T-G",
+      "variants": [
+        "L3T-G2",
+        "L3T-G3",
+        "L3T-G4"
+      ],
+      "variant_random": true,
+      "_note": "채굴 회랑(광차 궤도)"
+    },
+    "B": {
+      "source": 2,
+      "tile_id": "L3T-B",
+      "_note": "최심부 갱도 바닥(대굴착기 갱, 주황 발광 리컬러)"
+    },
+    "~": {
+      "source": 8,
+      "tile_id": "L3T-rubble",
+      "walkable": false,
+      "_note": "붕락 낙석 협곡(무너진 암반, GM1 협곡 밴드)"
+    },
+    "V": {
+      "source": 0,
+      "tile_id": "T0",
+      "walkable": false,
+      "void": true
+    },
+    "S": {
+      "source": 2,
+      "tile_id": "L3T-B",
+      "spawn": true
+    },
+    "C": {
+      "source": 2,
+      "tile_id": "L3T-B"
+    },
+    "K": {
+      "source": 8,
+      "tile_id": "L3T-rubble",
+      "walkable": false,
+      "gate": "GM1",
+      "place_slot": "D279",
+      "_note": "GM1 궤도판 배치 슬롯(붕락 궤도판)"
+    },
+    "D": {
+      "source": 2,
+      "tile_id": "L3T-B",
+      "gate": "GM2",
+      "walkable": false,
+      "_note": "막힌 통풍문(감압 밸브 사용 후 walkable)"
+    },
+    "M": {
+      "source": 2,
+      "tile_id": "L3T-B",
+      "gate": "GM3",
+      "walkable": false,
+      "_note": "광차문(3레버 전환 성공 후 walkable)"
+    },
+    "x": {
+      "source": 2,
+      "tile_id": "L3T-B",
+      "place_slot": "RAIL_LEVER",
+      "_note": "GM3 광차 레일 전환 레버 슬롯(3개)"
+    },
+    "H": {
+      "source": 2,
+      "tile_id": "L3T-B",
+      "gate": "GM4",
+      "_note": "태엽 노심 봉헌 목(구역 클리어)"
+    },
+    "N": {
+      "source": 2,
+      "tile_id": "L3T-B"
+    },
+    "1": {
+      "source": 2,
+      "tile_id": "L3T-B"
+    },
+    "2": {
+      "source": 2,
+      "tile_id": "L3T-B"
+    },
+    "3": {
+      "source": 2,
+      "tile_id": "L3T-B"
+    },
+    "4": {
+      "source": 2,
+      "tile_id": "L3T-B"
+    },
+    "E": {
+      "source": 2,
+      "tile_id": "L3T-B",
+      "_note": "잔류 태엽 발전기(에너지 Whisper 재획득처)"
+    },
+    "O": {
+      "source": 2,
+      "tile_id": "L3T-B"
+    },
+    "h": {
+      "source": 2,
+      "tile_id": "L3T-B"
+    },
+    "k": {
+      "source": 2,
+      "tile_id": "L3T-B"
+    },
+    "o": {
+      "source": 2,
+      "tile_id": "L3T-B"
+    },
+    "b": {
+      "source": 2,
+      "tile_id": "L3T-B"
+    }
+  },
+  "objects": {
+    "C": {
+      "scene": "workbench.tscn",
+      "object_id": "workbench",
+      "_note": "정비대(L3 crafting station)"
+    },
+    "N": {
+      "scene": "npc_remnant.tscn",
+      "object_id": "digger_bot",
+      "_note": "잔재 NPC: 갱도에 갇힌 줄 모르는 굴착 로봇(GP-4 NPC 라인)"
+    },
+    "D": {
+      "scene": "vent_door.tscn",
+      "object_id": "vent_door",
+      "gate": "GM2"
+    },
+    "H": {
+      "scene": "excavator_altar.tscn",
+      "object_id": "excavator_altar",
+      "gate": "GM4"
+    },
+    "E": {
+      "scene": "spring_dynamo.tscn",
+      "object_id": "mine_residual_dynamo",
+      "_note": "에너지 Whisper 재획득처(idempotent, add_energy)"
+    },
+    "O": {
+      "scene": "excavator_core.tscn",
+      "object_id": "excavator_core",
+      "gatherable": {
+        "item_id": "K12",
+        "unique": true
+      },
+      "gate": "GM4",
+      "_note": "멈춘 대굴착기 코어(심층 태엽정, 유니크)"
+    },
+    "h": {
+      "scene": "spring_ore.tscn",
+      "gatherable": {
+        "item_id": "K8"
+      },
+      "_note": "태엽 광석"
+    },
+    "k": {
+      "scene": "rusted_axle.tscn",
+      "gatherable": {
+        "item_id": "K9"
+      },
+      "_note": "녹슨 톱니축"
+    },
+    "o": {
+      "scene": "mine_coal.tscn",
+      "gatherable": {
+        "item_id": "K10"
+      },
+      "_note": "갱도 석탄"
+    },
+    "b": {
+      "scene": "condensate_crystal.tscn",
+      "gatherable": {
+        "item_id": "K11"
+      },
+      "_note": "응결 수정"
+    }
+  },
+  "landmarks": {
+    "1": "excavator",
+    "2": "excavator_silhouette",
+    "3": "miner_log_slab",
+    "4": "tutorial_ore_cart"
+  },
+  "gates": {
+    "GM1": {
+      "type": "placement",
+      "kind": "stepping",
+      "place_item": "D279",
+      "cells": [
+        [
+          18,
+          29
+        ],
+        [
+          19,
+          29
+        ]
+      ]
+    },
+    "GM2": {
+      "type": "use",
+      "item": "D281",
+      "target": "vent_door",
+      "cells": [
+        [
+          18,
+          17
+        ],
+        [
+          19,
+          17
+        ]
+      ]
+    },
+    "GM3": {
+      "type": "placement",
+      "kind": "puzzle",
+      "puzzle": "rail_route_3",
+      "slot_cells": [
+        [
+          14,
+          12
+        ],
+        [
+          19,
+          12
+        ],
+        [
+          24,
+          12
+        ]
+      ],
+      "cells": [
+        [
+          18,
+          6
+        ],
+        [
+          19,
+          6
+        ]
+      ]
+    },
+    "GM4": {
+      "type": "chain",
+      "kind": "offering",
+      "node_id": "excavator_altar",
+      "cells": [
+        [
+          19,
+          3
+        ]
+      ],
+      "mount": [
+        19,
+        3
+      ]
+    }
+  },
+  "special": {
+    "workbench_cell": [
+      20,
+      38
+    ],
+    "power_residue_cell": [
+      12,
+      22
+    ],
+    "_energy_note": "잔류 태엽 발전기 E = 에너지 Whisper 재획득처(idempotent add_energy). GM1 뒤·GM2 앞 회랑 유일 경로에 배치 → 엔딩 Balance 대비, 최초 획득처(L3 구역1 G2 보일러 보상)의 소진 세이브 안전망.",
+    "entry_from": "clockwork_city",
+    "entry_note": "시계탑 도시(l3 구역1) 대시계 광장 아래 낡은 광차 승강로에서 하강. 개방 조건 = L3 구역1 정화 완료(대시계 재가동/clock_restarted) 후 승강로 활성. 좌표: 대시계 광장(row0-3 O블록) 하부 → 광산 스폰 S(19,39)."
+  }
+}
