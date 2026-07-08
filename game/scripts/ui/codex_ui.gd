@@ -396,6 +396,10 @@ func _fill_grid() -> void:
 		_grid.columns = 1
 		_fill_hint_grid()
 		return
+	if _replay_mode:
+		_grid.columns = 1
+		_fill_replay_grid()
+		return
 	_grid.columns = COLS
 	_shown_ids = _filtered_ids()
 	for id: String in _shown_ids:
@@ -571,6 +575,120 @@ func truth_row_count() -> int:
 		if c is PanelContainer:
 			n += 1
 	return n
+
+
+func _on_replay_chip_toggled(pressed: bool) -> void:
+	_replay_mode = pressed
+	# 재감상 is mutually exclusive with the 힌트 + 기록 tabs.
+	if pressed:
+		if _hint_chip != null and _hint_chip.button_pressed:
+			_hint_chip.button_pressed = false
+		if _truth_chip != null and _truth_chip.button_pressed:
+			_truth_chip.button_pressed = false
+	# The detail pane + search are item-oriented; dim search out in replay mode.
+	if _search != null:
+		_search.editable = not pressed
+	_rebuild()
+
+
+## (CQ-5 G14) 재감상 view: one row per catalogued cutscene. SEEN → a 「재생」 button that closes the
+## codex and plays a side-effect-free CutsceneReplay. UNSEEN → a dim 🔒 잠김 row (no button).
+func _fill_replay_grid() -> void:
+	var entries: Array = Codex.cutscenes_ordered()
+	var seen: int = Codex.cutscene_seen_count()
+	var head := Label.new()
+	head.text = "컷신 재감상  %d / %d" % [seen, entries.size()]
+	head.add_theme_color_override("font_color", ACCENT)
+	head.add_theme_font_size_override("font_size", 18)
+	_grid.add_child(head)
+	for e: Dictionary in entries:
+		_grid.add_child(_replay_row(String(e.get("id", "")), String(e.get("title", "")), bool(e.get("seen", false))))
+
+
+func _replay_row(cutscene_id: String, title: String, seen: bool) -> Control:
+	var box := PanelContainer.new()
+	box.add_theme_stylebox_override("panel", _cell_style(false))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	box.add_child(row)
+
+	var id_lbl := Label.new()
+	id_lbl.text = cutscene_id
+	id_lbl.add_theme_color_override("font_color", VIOLET_SOFT if seen else DIM)
+	id_lbl.custom_minimum_size = Vector2(56, 0)
+	id_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(id_lbl)
+
+	var name_lbl := Label.new()
+	name_lbl.text = title if seen else "??? — 아직 보지 못한 컷신"
+	name_lbl.add_theme_color_override("font_color", TEXT if seen else DIM)
+	name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(name_lbl)
+
+	if seen:
+		var play := Button.new()
+		play.text = "재생"
+		play.focus_mode = Control.FOCUS_NONE
+		play.add_theme_color_override("font_color", TEXT)
+		play.pressed.connect(_on_replay_pressed.bind(cutscene_id))
+		row.add_child(play)
+	else:
+		var lock := Label.new()
+		lock.text = "🔒 잠김"
+		lock.add_theme_color_override("font_color", DIM)
+		lock.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		row.add_child(lock)
+	return box
+
+
+## Close the codex and play the selected cutscene's replay (side-effect-free). The replay overlay
+## is parented at the tree root so it outlives this window; on finish it frees itself and — through
+## GameState time/lock pairing — restores play. Idempotent if a replay is already up.
+func _on_replay_pressed(cutscene_id: String) -> void:
+	if not Codex.is_cutscene_seen(cutscene_id):
+		return
+	if _replay_layer != null and is_instance_valid(_replay_layer):
+		return
+	close()
+	var rep := CutsceneReplay.new()
+	_replay_layer = rep
+	var tree := get_tree()
+	if tree != null and tree.root != null:
+		tree.root.add_child(rep)
+	else:
+		add_child(rep)
+	rep.tree_exited.connect(func(): _replay_layer = null)
+	rep.play(cutscene_id)
+
+
+## Public (harness): toggle the 재감상 탭 + return the number of SEEN cutscenes.
+func set_replay_filter(on: bool) -> int:
+	if _replay_chip != null:
+		_replay_chip.button_pressed = on
+	else:
+		_replay_mode = on
+		if _open:
+			_rebuild()
+	return Codex.cutscene_seen_count() if on else 0
+
+
+## Public (harness): row panels in the 재감상 grid while the tab is active.
+func replay_row_count() -> int:
+	if not _replay_mode:
+		return 0
+	var n := 0
+	for c in _grid.get_children():
+		if c is PanelContainer:
+			n += 1
+	return n
+
+
+## Public (harness): start a replay for `cutscene_id` (as the 재생 button would) and return the
+## live CutsceneReplay overlay (or null if locked/unseen). Lets the harness drive play/skip.
+func start_replay(cutscene_id: String) -> Node:
+	_on_replay_pressed(cutscene_id)
+	return _replay_layer
 
 
 ## (v1.1.0 GP-3) If `output_id` is produced by a recipe with an active (stage 1+) result-first
