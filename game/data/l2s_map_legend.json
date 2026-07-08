@@ -1,0 +1,287 @@
+{
+  "_comment": "EX-L2 지하 데이터 성소 legend. Symbol->(source,object). map_loader 재사용(L2 파서). 게이트 강제=void+게이트셀+냉각 침수로(물). 좌표 (col,row).",
+  "_coord_note": "row0=북(코어 사원/마지막 백업), row39=남(터미널 스테이션 하강 스폰). col0=서.",
+  "tiles": {
+    "P": {
+      "source": 2,
+      "tile_id": "T2A",
+      "_note": "서버실 격자 강판 바닥(금속 리컬러)"
+    },
+    "G": {
+      "source": 2,
+      "tile_id": "T2A",
+      "variants": [
+        "T2B",
+        "T2C",
+        "T2D"
+      ],
+      "variant_random": true,
+      "_note": "랙 회랑(케이블 트레이)"
+    },
+    "B": {
+      "source": 2,
+      "tile_id": "T2A",
+      "_note": "코어 사원 바닥(백업 광장, 시안 발광 리컬러)"
+    },
+    "~": {
+      "source": 8,
+      "tile_id": "T5A",
+      "walkable": false,
+      "_note": "냉각 침수로(범람한 냉각수, GB1 물 밴드)"
+    },
+    "V": {
+      "source": 0,
+      "tile_id": "T0",
+      "walkable": false,
+      "void": true
+    },
+    "S": {
+      "source": 2,
+      "tile_id": "T2A",
+      "spawn": true
+    },
+    "C": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "K": {
+      "source": 8,
+      "tile_id": "T5A",
+      "walkable": false,
+      "gate": "GB1",
+      "place_slot": "D256",
+      "_note": "GB1 디딤돌 배치 슬롯(방수 디딤돌)"
+    },
+    "D": {
+      "source": 2,
+      "tile_id": "T2A",
+      "gate": "GB2",
+      "walkable": false,
+      "_note": "봉인 격벽(디코더 젤 사용 후 walkable)"
+    },
+    "M": {
+      "source": 2,
+      "tile_id": "T2A",
+      "gate": "GB3",
+      "walkable": false,
+      "_note": "데이터 문(3조각 정합 성공 후 walkable)"
+    },
+    "x": {
+      "source": 2,
+      "tile_id": "T2A",
+      "place_slot": "DATA_SHARD",
+      "_note": "GB3 데이터 조각 정합 슬롯(3개)"
+    },
+    "H": {
+      "source": 2,
+      "tile_id": "T2A",
+      "gate": "GB4",
+      "_note": "백업 봉헌 목(구역 클리어)"
+    },
+    "N": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "1": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "2": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "3": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "4": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "E": {
+      "source": 2,
+      "tile_id": "T2A",
+      "_note": "잔류 전력 노드(에너지 Whisper 재획득처)"
+    },
+    "O": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "h": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "k": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "o": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "b": {
+      "source": 2,
+      "tile_id": "T2A"
+    }
+  },
+  "objects": {
+    "C": {
+      "scene": "workbench.tscn",
+      "object_id": "workbench",
+      "_note": "정비대(L2 crafting station)"
+    },
+    "N": {
+      "scene": "npc_remnant.tscn",
+      "object_id": "archivist_drone",
+      "_note": "잔재 NPC: 마지막 백업을 지키는 관리 드론(GP-4 NPC 라인)"
+    },
+    "D": {
+      "scene": "sealed_bulkhead.tscn",
+      "object_id": "sealed_bulkhead",
+      "gate": "GB2"
+    },
+    "H": {
+      "scene": "backup_altar.tscn",
+      "object_id": "backup_altar",
+      "gate": "GB4"
+    },
+    "E": {
+      "scene": "power_residue.tscn",
+      "object_id": "sanctum_power_residue",
+      "_note": "에너지 Whisper 재획득처(idempotent, add_energy)"
+    },
+    "O": {
+      "scene": "backup_core.tscn",
+      "object_id": "backup_core",
+      "gatherable": {
+        "item_id": "J12",
+        "unique": true
+      },
+      "gate": "GB4",
+      "_note": "마지막 백업 코어(코어 정수, 유니크)"
+    },
+    "h": {
+      "scene": "data_crystal.tscn",
+      "gatherable": {
+        "item_id": "J8"
+      },
+      "_note": "데이터 결정"
+    },
+    "k": {
+      "scene": "corroded_core.tscn",
+      "gatherable": {
+        "item_id": "J9"
+      },
+      "_note": "부식 코어"
+    },
+    "o": {
+      "scene": "fiber_bundle.tscn",
+      "gatherable": {
+        "item_id": "J10"
+      },
+      "_note": "광섬유 다발"
+    },
+    "b": {
+      "scene": "coolant_gel.tscn",
+      "gatherable": {
+        "item_id": "J11"
+      },
+      "_note": "냉각 젤"
+    }
+  },
+  "landmarks": {
+    "1": "backup_core",
+    "2": "core_sanctum_silhouette",
+    "3": "war_record_terminal",
+    "4": "tutorial_server_rack"
+  },
+  "gates": {
+    "GB1": {
+      "type": "placement",
+      "kind": "stepping",
+      "place_item": "D256",
+      "cells": [
+        [
+          18,
+          29
+        ],
+        [
+          19,
+          29
+        ]
+      ]
+    },
+    "GB2": {
+      "type": "use",
+      "item": "D258",
+      "target": "sealed_bulkhead",
+      "cells": [
+        [
+          18,
+          17
+        ],
+        [
+          19,
+          17
+        ]
+      ]
+    },
+    "GB3": {
+      "type": "placement",
+      "kind": "puzzle",
+      "puzzle": "data_shard_3",
+      "slot_cells": [
+        [
+          14,
+          12
+        ],
+        [
+          19,
+          12
+        ],
+        [
+          24,
+          12
+        ]
+      ],
+      "cells": [
+        [
+          18,
+          6
+        ],
+        [
+          19,
+          6
+        ]
+      ]
+    },
+    "GB4": {
+      "type": "chain",
+      "kind": "offering",
+      "node_id": "backup_altar",
+      "cells": [
+        [
+          19,
+          3
+        ]
+      ],
+      "mount": [
+        19,
+        3
+      ]
+    }
+  },
+  "special": {
+    "workbench_cell": [
+      20,
+      38
+    ],
+    "power_residue_cell": [
+      12,
+      22
+    ],
+    "_energy_note": "잔류 전력 노드 E = 에너지 Whisper 재획득처(idempotent add_energy). GB1 뒤·GB2 앞 회랑 유일 경로에 배치 → 엔딩 Balance 대비, 최초 획득처(L2 구역1 G2 보상)의 소진 세이브 안전망.",
+    "entry_from": "terminal_station",
+    "entry_note": "터미널 스테이션(l2 구역1) 관제탑 아래 정비 승강로에서 하강. 개방 조건 = L2 구역1 정화 완료(control_core 급전) 후 승강로 활성. 좌표: 터미널 스테이션 관제탑단(row0-3 O블록) 하부 → 성소 스폰 S(19,39)."
+  }
+}
