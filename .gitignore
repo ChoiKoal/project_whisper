@@ -3,3 +3,4 @@ game/.godot/
 export/
 dist/
 game/.sweep_done
+tools/__pycache__/
