@@ -22,6 +22,10 @@ var _player: Node2D
 ## (v0.6.0) The reworked return portal (entry-zone prompt + E + click-walk-then-enter). Replaces
 ## the old bare Portal that only connected portal_interacted (the "weak interaction" owner report).
 var _return_portal: ReturnPortalController = null
+## True while the CS-02 landing beat holds the control lock. If the session is torn down
+## mid-beat (e.g. the player takes the spawn-adjacent return portal within the 3s hold),
+## the awaiting coroutine never resumes — _exit_tree() must release the lock instead.
+var _cs02_lock_held := false
 
 
 func _ready() -> void:
@@ -79,14 +83,27 @@ func _play_cs02_landing() -> void:
 	if Codex != null and Codex.has_method("mark_cutscene_seen"):
 		Codex.mark_cutscene_seen("CS-02")
 	GameState.set_control_lock(true)
+	_cs02_lock_held = true
 	if AudioManager != null and AudioManager.has_method("play_sfx"):
 		AudioManager.play_sfx("bird")
 	await get_tree().create_timer(1.5, true, false, true).timeout
 	if AudioManager != null and AudioManager.has_method("play_sfx"):
 		AudioManager.play_sfx("bird")   # 같은 새소리, 같은 자리 — the loop that shouldn't be
 	await get_tree().create_timer(1.5, true, false, true).timeout
+	_cs02_lock_held = false
 	if GameState != null:
 		GameState.set_control_lock(false)
+
+
+## (v1.3.0 sweep fix) If the grove is torn down while the CS-02 landing beat still holds the
+## control lock (pre-clear return portal is right at the spawn — reachable within the 3s hold),
+## the beat's awaited timers die with the scene and would leave the lock wedged forever.
+## Restore it on the way out.
+func _exit_tree() -> void:
+	if _cs02_lock_held:
+		_cs02_lock_held = false
+		if GameState != null:
+			GameState.set_control_lock(false)
 
 
 ## (v0.6.0 rework) Build the return portal near the grove spawn using the shared
