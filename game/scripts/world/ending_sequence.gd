@@ -42,6 +42,16 @@ const E1_CARDS := [
 ]
 const E2_CARD := "완성하지 않을 거야. 계속 말을 걸 거야."
 
+## (CQ-5 G12) Per-world preview tone behind each montage card — 자연 초록 / 과학 시안 / 기계 황동 /
+## 마법 자수정 / 신성 백금. Deep + desaturated so the cream text stays legible over each.
+const E1_MONTAGE_TINTS := [
+	Color(0.10, 0.16, 0.11, 1.0),   # 자연 — deep grove green
+	Color(0.09, 0.15, 0.18, 1.0),   # 과학 — cool cyan station
+	Color(0.16, 0.12, 0.07, 1.0),   # 기계 — warm brass city
+	Color(0.13, 0.09, 0.18, 1.0),   # 마법 — amethyst sanctum
+	Color(0.17, 0.16, 0.12, 1.0),   # 신성 — warm platinum cathedral
+]
+
 ## 크레딧 롤 (§6.5(d): 제작진). Kept short + skippable.
 const CREDITS := [
 	"— PROJECT WHISPER —",
@@ -141,10 +151,11 @@ func _run_e1() -> void:
 	_bg.color = Color(PLATINUM.r * 0.9, PLATINUM.g * 0.86, PLATINUM.b * 0.7, 1.0)
 	var ftw := create_tween()
 	ftw.tween_property(_flash, "color:a", 0.0, 0.6)
-	# 2. 완성 몽타주 5카드.
-	for card in E1_CARDS:
+	# 2. 완성 몽타주 5카드 — (CQ-5 G12) 각 세계의 프리뷰 톤 배경으로 크로스페이드하며 회상.
+	for i in range(E1_CARDS.size()):
 		if _done: return
-		await _card(card, CREAM)
+		_drift_bg(E1_MONTAGE_TINTS[i] if i < E1_MONTAGE_TINTS.size() else _bg.color)
+		await _card(E1_CARDS[i], CREAM)
 	if _done: return
 	# 3. 마지막 컷 — 내 섬 새소리 2회 (무음·무대사). 미세 채도 저하 = 배경을 회색으로 살짝.
 	_label.text = ""
@@ -193,9 +204,10 @@ func _run_e2() -> void:
 	# 5. 크레딧.
 	await _roll_credits()
 	if _done: return
-	# 6. 크레딧 후 — 검은 화면에 보라 점 2회 깜빡 (오프닝 CS-01 리듬 — 대답).
+	# 6. 크레딧 후 — 검은 화면에 보라 점 2회 깜빡 (오프닝 CS-01 리듬 — 대답). (CQ-5) 오프닝과
+	#    IDENTICAL 리듬을 위해 CutsceneDirector.purple_dot_heartbeat 공유.
 	_bg.color = Color(0.01, 0.01, 0.02, 1.0)
-	await _purple_dot_twice()
+	await CutsceneDirector.purple_dot_heartbeat(self, self, 2)
 	# 7. 기록 + 타이틀 (NG+ 제안).
 	_finish_ending()
 
@@ -227,28 +239,6 @@ func _tilt_world_tree_leaf() -> void:
 			tw.tween_property(wt, "rotation", 0.06, 0.6).set_trans(Tween.TRANS_SINE)
 			tw.tween_property(wt, "rotation", 0.0, 0.8).set_trans(Tween.TRANS_SINE)
 			return
-
-
-## 보라 점 하나가 두 번 깜빡 (CS-01 회수 — 이번엔 대답). A small violet dot centre-screen.
-func _purple_dot_twice() -> void:
-	var dot := ColorRect.new()
-	dot.color = Color(VIOLET.r, VIOLET.g, VIOLET.b, 0.0)
-	dot.custom_minimum_size = Vector2(18, 18)
-	dot.size = Vector2(18, 18)
-	dot.set_anchors_preset(Control.PRESET_CENTER)
-	dot.position = Vector2(-9, -9)
-	dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(dot)
-	for i in range(2):
-		if _done: break
-		var tw := create_tween()
-		tw.tween_property(dot, "color:a", 0.95, 0.35)
-		tw.tween_property(dot, "color:a", 0.0, 0.45)
-		await tw.finished
-		if _done: break
-		await _wait(0.35)
-	if is_instance_valid(dot):
-		dot.queue_free()
 
 
 # ---- credits + finish -----------------------------------------------------
@@ -336,6 +326,14 @@ func _card(text: String, col: Color, fin: float = 1.0, hold: float = 2.4, fout: 
 	tw.tween_interval(hold)
 	tw.tween_property(_label, "modulate:a", 0.0, fout)
 	await tw.finished
+
+
+## (CQ-5 G12) Crossfade the montage backdrop to a world's preview tone (1.2s SINE). Best-effort.
+func _drift_bg(to: Color) -> void:
+	if _bg == null or not is_instance_valid(_bg):
+		return
+	var tw := create_tween()
+	tw.tween_property(_bg, "color", to, 1.2).set_trans(Tween.TRANS_SINE)
 
 
 ## A plain wait that respects skip (returns immediately once _done). Uses a scene-tree timer so

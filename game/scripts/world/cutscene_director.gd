@@ -166,7 +166,7 @@ static func spawn_ripple_ring(host: Node, parent: Node2D, world_pos: Vector2,
 ## A small violet dot centre-screen that pulses `beats` times at a heartbeat rhythm. Shared by
 ## the opening (각성) and E2 (대답) so the rhythm is IDENTICAL. Awaitable; frees the dot after.
 ## Uses an unpausable tree timer so it plays even while GameState.time_running is false.
-static func purple_dot_heartbeat(host: CanvasItem, tween_host: Node, beats: int = 2,
+static func purple_dot_heartbeat(host: Node, tween_host: Node, beats: int = 2,
 		up: float = 0.30, down: float = 0.42, gap: float = 0.34) -> void:
 	if host == null or tween_host == null:
 		return
