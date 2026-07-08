@@ -33,25 +33,27 @@ by `tools_gen_audio.py` — no third-party source, no license obligation.
 
 ---
 
-## Tiles / Terrain / Object art (grassland + trees)
+## Tiles / Terrain art (grassland)
 
-The v0.5 terrain tileset (grass/dirt/water/mud/cliff diamonds), the CC0 iso trees, and the
-source rock/bush/foliage sheets are sliced from **rubberduck's** CC0 isometric asset packs
-on OpenGameArt.org. Source sheets are retained in `assets-src/grassland/` and
-`assets-src/trees/`.
+The v0.5 terrain tileset (grass/dirt/water/mud/cliff diamonds) is sliced from **rubberduck's**
+CC0 isometric asset packs on OpenGameArt.org. Source sheets are retained in
+`assets-src/grassland/` and `assets-src/trees/`.
 
 | Asset group | Author | Source | License |
 |---|---|---|---|
-| Isometric grassland tileset (grass/dirt/water/mud/cliff sheets, rock + foliage props) | **rubberduck** | OpenGameArt.org (rubberduck CC0 isometric packs) | CC0 |
-| Isometric trees (`isometric_trees_01.png`) | **rubberduck** | OpenGameArt.org (rubberduck CC0 isometric packs) | CC0 |
+| Isometric grassland tileset (grass/dirt/water/mud/cliff sheets) | **rubberduck** | OpenGameArt.org (rubberduck CC0 isometric packs) | CC0 |
 
 Sliced/derived in-game files (all CC0-derived): `assets/tiles/*` (t1–t5, cliff faces,
-ridge rock, edge overlays) and `assets/objects/tree_a/b/c.png`, `young_tree.png`,
-`world_tree.png`, `bush_dry.png`.
+ridge rock, edge overlays) and `assets/objects/bush_dry.png` (gate thornbush).
 
-> The grassland/tree source packs are rubberduck's CC0 isometric sets on OpenGameArt.
-> Confirm the specific pack URLs on rubberduck's OpenGameArt profile before shipping if an
+> The grassland tileset source pack is rubberduck's CC0 isometric set on OpenGameArt.
+> Confirm the specific pack URL on rubberduck's OpenGameArt profile before shipping if an
 > explicit per-pack link is required.
+
+> **v1.4.0 note:** the Layer-1 organic objects (`tree_a/b/c`, `young_tree`, `world_tree`
+> + `world_tree_glow`/`world_tree_dormant`, `bush_green`, `rock`, `flower*`, `rest_stump`)
+> were regenerated as fully procedural in-house art (`tools_gen_l1_objects.js`) in the L1 art
+> unification pass — they are no longer rubberduck-derived. See "Fully in-house" below.
 
 ---
 
@@ -59,7 +61,10 @@ ridge rock, edge overlays) and `assets/objects/tree_a/b/c.png`, `young_tree.png`
 
 Generated procedurally by the project's own tools — listed for completeness, no credit owed:
 - Character sheet + portrait (`tools_gen_char_v050b.js`, the 방랑자/wanderer).
-- Small ground-object repaints: rock, stone, grass tuft, green/bloom bush, flowers,
-  cauldron, rest stump (`tools_gen_objart_v050b.js`).
+- Small ground-object repaints: stone, grass tuft, bloom bush, cauldron (`tools_gen_objart_v050b.js`).
+- Layer-1 organic iso objects — `tree_a/b/c`, `young_tree`, `world_tree` (+ `world_tree_glow`,
+  `world_tree_dormant`), `bush_green`, `rock`, `flower`/`flower_violet`/`flower_pink`,
+  `rest_stump` — regenerated procedurally in the L2~L5 iso grammar (`tools_gen_l1_objects.js`,
+  v1.4.0 L1 art unification). Deterministic (fixed seeds → identical output, save-safe).
 - Programmatic cliff aprons / AO seats / ramps (`scripts/world/cliff_gen.gd`).
 - All UI, icons, light-pool decals, night buds, mystic-water glow.

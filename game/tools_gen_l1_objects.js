@@ -7,8 +7,9 @@
 //   REPLACES (identical dims, same bottom-center ground origin — save/anchoring safe):
 //     tree_a 226×232  tree_b 191×244  tree_c 214×222  young_tree 126×150
 //     bush_green 64×46  rock 84×70  flower/flower_violet/flower_pink 56×64
-//     rest_stump 108×96  world_tree 490×470  world_tree_glow 512×512
-//   NEW (unwired, pre-purification dead variant): world_tree_dormant 490×470
+//     rest_stump 108×96
+//   RESIZED (v1.4.0 세계수 redesign — bottom-center origin kept; world_tree.gd offset/scale bumped
+//     to match): world_tree 660×660  world_tree_glow 700×700  world_tree_dormant 660×660
 //   NOT TOUCHED: bush_dry / bush_bloom (gate thornbush harness → tools_gen_art.js owns them).
 //
 // Anchoring invariant (art-guide §1: "오브젝트 기준점 = 바닥 다이아몬드 중심, 접지면을 캔버스
@@ -383,46 +384,85 @@ flower('flower_pink.png', {sh:rgb(PK0),mid:rgb(PK1),hi:lighter(rgb(PK1),0.35)}, 
 // line up. glow is 512×512 (larger canvas) but the trunk base still lands on the canvas
 // bottom-center so it composites correctly under the same offset.
 // ════════════════════════════════════════════════════════════════════════════
+// curved trunk: a spine of stacked segments that LEAN + twist as they rise, so the trunk
+// is a gnarled S rather than a straight taper. `spine` = [ [t, dx, width], ... ] sampled
+// 0(base)..1(top); dx is the horizontal offset (px) of the centre-line at that height,
+// width the trunk width there. Bark grain + a shadow seam on the left (NE light).
+function curvedTrunk(cv,bx,byBottom,byTop,spine,ramp,salt){
+  const {sh,mid,hi}=ramp;const Hs=byBottom-byTop;
+  function sample(t){ // piecewise-linear interpolation over the spine control points
+    for(let i=0;i<spine.length-1;i++){const a=spine[i],b=spine[i+1];if(t>=a[0]&&t<=b[0]){const u=(t-a[0])/Math.max(1e-6,b[0]-a[0]);return[a[1]+(b[1]-a[1])*u,a[2]+(b[2]-a[2])*u];}}
+    const l=spine[spine.length-1];return[l[1],l[2]];}
+  for(let y=byTop;y<=byBottom;y++){
+    const t=(byBottom-y)/Hs;const[dx,w]=sample(t);const cx=bx+dx;const hw=w/2;
+    for(let x=Math.floor(cx-hw);x<=Math.ceil(cx+hw);x++){
+      const nx=(x-cx)/hw;let c;
+      if(nx>0.20)c=mix(mid,hi,clamp(nx,0,1)); else if(nx<-0.32)c=sh; else c=mid;
+      const n=smoothCell(x,y,4,salt+3);if(n<0.30)c=mix(c,sh,0.38);
+      // deep vertical bark furrows so the massive trunk reads as ancient/gnarled
+      const fur=smoothCell(x*2.4,y,7,salt+9);if(fur<0.22)c=mix(c,darker(sh,0.25),0.6);
+      setPx(cv,x,y,c);
+    }
+    setPx(cv,cx-hw,y,darker(sh,0.28));setPx(cv,cx+hw,y,darker(sh,0.28));
+  }
+}
+
 function worldTreeBody(dormant){
-  const W=490,H=470,cv=makeCanvas(W,H);const cx=W/2;const s=9090;
+  // ~2× the old 490×470 canvas so the 세계수 dwarfs ordinary trees (tree_a≈226×232). Silhouette
+  // redesigned per 검수: a twisted, off-centre thick trunk + a leaning heavy BOUGH, an
+  // ASYMMETRIC crown (canopy pushed up-left, a lower right shoulder), and a wide radiating root
+  // flare — so it never reads as "a normal tree that merely glows". Bottom-center ground origin
+  // preserved (base at canvas bottom-center) so world_tree.gd's centered offset/scale still ground it.
+  const W=660,H=660,cv=makeCanvas(W,H);const cx=W/2;const s=9090;
   // colour ramps: purified = living green + violet-lit; dormant = desaturated 중성/갈색, no violet.
   const bark = dormant ? {sh:rgb(N0),mid:rgb(B0),hi:rgb(N1)} : {sh:rgb(B0),mid:rgb(B1),hi:rgb(B2)};
   const foliage = dormant
     ? {sh:rgb(N0),mid:darker(rgb(N1),0.1),hi:rgb(N1)}
     : {sh:rgb(G0),mid:rgb(G2),hi:rgb(G3)};
-  // ── spreading roots at the base (visible, radiating from the trunk foot) ──
+  // ── wide radiating root flare at the base (long, asymmetric, gnarled) ──
   const rootDefs=[
-    [cx-30,H-40, cx-176,H-2, 12],
-    [cx-12,H-30, cx-96,H-1, 10],
-    [cx+30,H-40, cx+178,H-2, 12],
-    [cx+14,H-30, cx+104,H-1, 10],
-    [cx-2,H-24, cx-40,H-1, 8],
-    [cx+4,H-24, cx+52,H-1, 8],
+    [cx-40,H-56, cx-250,H-3, 20],
+    [cx-20,H-44, cx-150,H-2, 15],
+    [cx-8,H-34, cx-64,H-1, 11],
+    [cx+44,H-58, cx+256,H-3, 21],
+    [cx+22,H-46, cx+156,H-2, 16],
+    [cx+10,H-34, cx+72,H-1, 11],
+    [cx+2,H-30, cx+20,H-1, 9],
   ];
   for(let i=0;i<rootDefs.length;i++){const[bx,by,ex,ey,w]=rootDefs[i];root(cv,bx,by,ex,ey,w,bark,s+i);}
-  // ── massive trunk ──
-  trunk(cv,cx,H-30,H-300,68,40,-4,bark,s+20);
-  // trunk bark ridges
-  for(let y=H-300;y<H-30;y+=1){const n=smoothCell(cx,y,6,s+21);if(n<0.28){for(let x=cx-24;x<cx+24;x++)if(cv.data[(y*W+x)*4+3]>16&&smoothCell(x,y,3,s+22)<0.4)setPx(cv,x,y,darker(bark.sh,0.2));}}
-  // ── big ceremonial canopy: one huge crown + orbiting clumps ──
-  const cyTop=170;
-  blob(cv,cx,cyTop,208,176,foliage,s+30,{jitter:0.18,noise:0.22});
+  // ── massive twisted trunk: a gnarled S-lean, thick base, splitting toward the crown ──
+  // spine [t, dx, width]: base thick & centred, mid leans LEFT (twist), upper leans back RIGHT
+  // and narrows — an off-axis, characterful silhouette.
+  const trunkTop=210;
+  curvedTrunk(cv,cx,H-44,trunkTop,[
+    [0.00, 6, 118], [0.18, -6, 104], [0.40, -34, 84],
+    [0.62, -30, 62], [0.82, 8, 46], [1.00, 34, 34],
+  ],bark,s+20);
+  // ── a heavy secondary BOUGH branching low-right (silhouette differentiation) ──
+  curvedTrunk(cv,cx+30,H-190,H-330,[
+    [0.00,0,44],[0.5,40,32],[1.0,86,20],
+  ],bark,s+24);
+  // ── ASYMMETRIC ceremonial crown: main mass up-LEFT, a lower right shoulder over the bough ──
+  const cyTop=196, cxTop=cx-24;
+  blob(cv,cxTop,cyTop,244,196,foliage,s+30,{jitter:0.20,noise:0.22});
   const clumps=[
-    [cx-150,240,86,74],[cx+156,232,84,72],
-    [cx-90,86,96,84],[cx+96,96,92,80],
-    [cx,40,110,90],[cx-180,140,60,54],[cx+186,150,58,52],
+    [cxTop-196,196,104,88],[cxTop+210,214,96,82],   // wide shoulders (L bigger than R)
+    [cxTop-120,86,112,96],[cxTop+128,120,100,86],
+    [cxTop-16,34,128,104],                            // tall up-left peak
+    [cxTop-236,150,72,64],[cx+160,300,92,72],         // low-right shoulder over the bough
+    [cx+118,346,66,54],
   ];
-  for(let i=0;i<clumps.length;i++){const[bx,by,rx,ry]=clumps[i];blob(cv,bx,by,rx,ry,foliage,s+40+i,{jitter:0.2,noise:0.2});}
+  for(let i=0;i<clumps.length;i++){const[bx,by,rx,ry]=clumps[i];blob(cv,bx,by,rx,ry,foliage,s+40+i,{jitter:0.22,noise:0.2});}
   // NE rim-lit foliage highlights on the upper-right (purified only picks the brightest green)
   const litRamp = dormant ? {sh:rgb(N1),mid:rgb(N2),hi:rgb(N2)} : {sh:rgb(G2),mid:rgb(G3),hi:rgb(G4)};
-  const litClumps=[[cx+120,70,52,44],[cx+70,30,44,38],[cx+170,140,36,30],[cx+40,110,40,34]];
+  const litClumps=[[cxTop+150,88,64,54],[cxTop+92,40,54,46],[cxTop+220,168,44,36],[cxTop+50,120,50,42],[cx+180,300,44,34]];
   for(let i=0;i<litClumps.length;i++){const[bx,by,rx,ry]=litClumps[i];blob(cv,bx,by,rx,ry,litRamp,s+60+i,{jitter:0.18,noise:0.16});}
   if(!dormant){
     // purified: violet mystic accent blossoms glinting in the canopy edges + on the roots
     const r=det(s+80);
-    for(let i=0;i<90;i++){
+    for(let i=0;i<140;i++){
       const a=r()*Math.PI*2, rad=0.6+r()*0.5;
-      const bx=cx+Math.cos(a)*208*rad, by=cyTop+Math.sin(a)*176*rad;
+      const bx=cxTop+Math.cos(a)*244*rad, by=cyTop+Math.sin(a)*196*rad;
       if(bx<4||bx>W-4||by<4||by>H-4)continue;
       if(cv.data[((by|0)*W+(bx|0))*4+3]>16){setPx(cv,bx,by,r()<0.5?rgb(V2):rgb(V3),220);setPx(cv,bx,by-1,rgb(V3),160);}
     }
@@ -430,7 +470,7 @@ function worldTreeBody(dormant){
     for(let i=0;i<rootDefs.length;i++){const[,,ex,ey]=rootDefs[i];setPx(cv,ex+ (ex<cx?4:-4),ey-2,rgb(V3),160);}
   } else {
     // dormant: a few bare cracked branches poking through the thin dead canopy
-    for(let i=0;i<5;i++){const bx=cx-120+i*60, by=120;for(let k=0;k<40;k++){const x=bx+Math.sin(i)*k*0.4, y=by-k;setPx(cv,x,y,rgb(B0));setPx(cv,x+1,y,rgb(N0));}}
+    for(let i=0;i<6;i++){const bx=cxTop-150+i*60, by=140;for(let k=0;k<52;k++){const x=bx+Math.sin(i)*k*0.4, y=by-k;setPx(cv,x,y,rgb(B0));setPx(cv,x+1,y,rgb(N0));}}
   }
   save(cv, dormant?'world_tree_dormant.png':'world_tree.png');
 }
@@ -441,33 +481,38 @@ worldTreeBody(true);    // dormant / dead (pre-purification)
 // SAME bottom-center ground origin as world_tree.png so the GlowSprite child (same offset/scale)
 // registers over the canopy + roots. Blooms concentrated on canopy edges and the spreading roots.
 (function worldTreeGlow(){
-  const W=512,H=512,cv=makeCanvas(W,H);const cx=W/2;const s=9191;
-  // The body's bottom-center sits at the canvas bottom-center. world_tree.png is 490×470 and its
-  // trunk base is at its own bottom-center; here we align the base to (cx, H-1) and offset the
-  // body-space coordinates by the same delta so glow lands on canopy/roots.
-  const bodyH=470, bodyW=490;
+  const W=700,H=700,cv=makeCanvas(W,H);const cx=W/2;const s=9191;
+  // The body's bottom-center sits at the canvas bottom-center. world_tree.png is now 660×660 and
+  // its trunk base is at its own bottom-center; align the base to (cx, H-1) and offset the
+  // body-space coordinates by the same delta so glow lands on the ASYMMETRIC canopy + wide roots.
+  const bodyH=660, bodyW=660;
   const ox=cx-bodyW/2, oy=(H-1)-(bodyH-1); // map body(x,y) → glow canvas (x+ox, y+oy)
   function bloom(bx,by,r,col,peak){
     const gx=bx+ox, gy=by+oy;
     for(let y=-r;y<=r;y++)for(let x=-r;x<=r;x++){const d=Math.hypot(x,y)/r;if(d<=1)setPx(cv,gx+x,gy+y,col,Math.round((1-d)*(1-d)*peak));}
   }
-  // canopy-edge glow (ring of violet blooms around the crown)
-  const r=det(s+1);
-  const cyTop=170, crx=208, cry=176;
-  for(let i=0;i<46;i++){
-    const a=(i/46)*Math.PI*2;
-    const bx=490/2+Math.cos(a)*crx*0.92, by=cyTop+Math.sin(a)*cry*0.92;
-    bloom(bx,by,64,rgb(V2),70);
-    bloom(bx,by,34,rgb(V3),90);
+  // canopy INNER glow: violet blooms scattered THROUGH the crown mass (radius <1) so the canopy
+  // itself lights up from within — not a hard wreath floating around/above it (v1.4.0 review: the
+  // tight edge-ring read as a separate halo). Bloom softly, biased to the lit upper-right.
+  const bcx=660/2-24, cyTop=196, crx=244, cry=196;
+  const rr=det(s+2);
+  for(let i=0;i<64;i++){
+    const a=rr()*Math.PI*2, rad=0.35+rr()*0.5;      // inside the canopy, not on its rim
+    const bx=bcx+Math.cos(a)*crx*rad, by=cyTop+Math.sin(a)*cry*rad*0.9;
+    bloom(bx,by,58,rgb(V2),46);
+    bloom(bx,by,30,rgb(V3),58);
   }
-  // soft overall canopy halo
-  bloom(490/2,cyTop,240,rgb(V1),40);
-  bloom(490/2,cyTop-20,150,rgb(V2),46);
-  // root glow at the base spread
-  const rootTips=[[490/2-176,468],[490/2-96,469],[490/2+178,468],[490/2+104,469],[490/2,469]];
-  for(const [bx,by] of rootTips){bloom(bx,by,90,rgb(V2),60);bloom(bx,by,48,rgb(V3),80);}
+  // soft overall canopy halo (over the up-left crown mass) — the ambient bloom that reads as the
+  // grove's single luminous landmark, kept broad + gentle so it hugs the foliage.
+  bloom(bcx,cyTop+10,300,rgb(V1),34);
+  bloom(bcx-16,cyTop,200,rgb(V2),40);
+  // low-right shoulder bloom (over the leaning bough clump)
+  bloom(660/2+150,300,120,rgb(V2),44);
+  // root glow at the wide base spread
+  const rootTips=[[660/2-250,657],[660/2-150,658],[660/2+256,657],[660/2+156,658],[660/2,659]];
+  for(const [bx,by] of rootTips){bloom(bx,by,110,rgb(V2),60);bloom(bx,by,56,rgb(V3),80);}
   // trunk seam uplight
-  bloom(490/2,470-160,70,rgb(V2),50);
+  bloom(660/2,660-200,86,rgb(V2),50);
   save(cv,'world_tree_glow.png');
 })();
 

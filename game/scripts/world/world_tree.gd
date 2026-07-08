@@ -31,9 +31,11 @@ func _ready() -> void:
 	object_id = "world_tree"
 	if texture == null:
 		texture = load(TEX)
-	# 512×512 sprite, ground origin at bottom-center: offset up by half height.
-	offset = Vector2(0, -240)
-	scale = Vector2(0.5, 0.5)  # fit the canopy over the O cluster footprint
+	# 660×660 sprite (v1.4.0 redesign — ~2× the old canvas so the 세계수 dwarfs ordinary trees),
+	# ground origin at bottom-center. Centered sprite: base row (y=H) sits at the node origin when
+	# offset.y = -(H/2)*scale = -(330)*0.72 ≈ -238. scale 0.72 makes it read ~2× the old 0.5×490.
+	offset = Vector2(0, -238)
+	scale = Vector2(0.72, 0.72)  # ~2× presence; canopy still crowns the O cluster footprint
 
 	# Glow overlay (additive, night-reactive).
 	var glow := GlowSprite.new()
