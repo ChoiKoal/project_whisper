@@ -91,6 +91,8 @@ func _on_planted(cell: Vector2i) -> void:
 ## Public entry (also the harness hook). Plays the purification then emits `cleared`.
 func play() -> void:
 	_active = true
+	if Codex != null and Codex.has_method("mark_cutscene_seen"):
+		Codex.mark_cutscene_seen("CS-04")
 	GameState.time_running = false
 	if AudioManager != null and AudioManager.has_method("play_sfx"):
 		AudioManager.play_sfx("clear_fanfare")

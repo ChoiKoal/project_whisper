@@ -78,6 +78,8 @@ func _ready() -> void:
 ## (G2) 점이 커지며 흐릿한 부유섬 실루엣으로, 별하늘 배경. Then the cards proceed.
 func _play_intro() -> void:
 	_intro_playing = true
+	if Codex != null and Codex.has_method("mark_cutscene_seen"):
+		Codex.mark_cutscene_seen("CS-01")
 	# 낮은 톤의 단음 (best-effort — reuses the portal hum as a low single tone).
 	if AudioManager != null and AudioManager.has_method("play_sfx"):
 		AudioManager.play_sfx("portal_hum")

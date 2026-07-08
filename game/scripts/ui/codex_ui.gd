@@ -56,6 +56,11 @@ var _hint_mode: bool = false
 ## (EG-2) "기록(진상)" 탭 — lists collected truth-shard logs. Mutually exclusive with hint mode.
 var _truth_chip: Button
 var _truth_mode: bool = false
+## (CQ-5 G14) "재감상" 탭 — lists seen cutscenes with a play button. Mutually exclusive with the
+## hint + truth modes. Playing one closes the codex and runs a side-effect-free CutsceneReplay.
+var _replay_chip: Button
+var _replay_mode: bool = false
+var _replay_layer: CanvasLayer = null
 
 
 func set_hub(hub) -> void:
@@ -161,6 +166,20 @@ func _build_ui() -> void:
 	_truth_chip.add_theme_stylebox_override("pressed", _chip_style(true))
 	_truth_chip.toggled.connect(_on_truth_chip_toggled)
 	topbar.add_child(_truth_chip)
+
+	# (CQ-5 G14) "재감상" chip: toggles the 컷신 재감상 menu (본 컷신 목록 → 재생).
+	_replay_chip = Button.new()
+	_replay_chip.name = "ReplayChip"
+	_replay_chip.toggle_mode = true
+	_replay_chip.focus_mode = Control.FOCUS_NONE
+	_replay_chip.text = "재감상"
+	_replay_chip.add_theme_color_override("font_color", TEXT)
+	_replay_chip.add_theme_color_override("font_hover_color", VIOLET_SOFT)
+	_replay_chip.add_theme_stylebox_override("normal", _chip_style(false))
+	_replay_chip.add_theme_stylebox_override("hover", _chip_style(true))
+	_replay_chip.add_theme_stylebox_override("pressed", _chip_style(true))
+	_replay_chip.toggled.connect(_on_replay_chip_toggled)
+	topbar.add_child(_replay_chip)
 
 	var search_lbl := Label.new()
 	search_lbl.text = "검색"

@@ -123,6 +123,8 @@ func _build() -> void:
 func play(ending_id: String, gate: Portal = null) -> void:
 	_ending = ending_id
 	_gate = gate
+	if Codex != null and Codex.has_method("mark_cutscene_seen"):
+		Codex.mark_cutscene_seen(ending_id)
 	if GameState != null:
 		GameState.time_running = false
 		GameState.set_control_lock(true)

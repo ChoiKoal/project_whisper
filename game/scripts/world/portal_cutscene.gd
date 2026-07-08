@@ -91,6 +91,8 @@ const CS05_CARDS := [
 ## and open quest P2. Awaitable (the caller awaits the whole beat before saving).
 func play_return_ignition() -> void:
 	_active = true
+	if Codex != null and Codex.has_method("mark_cutscene_seen"):
+		Codex.mark_cutscene_seen("CS-05")
 	GameState.time_running = false
 	GameState.set_control_lock(true)   # (v0.5.1 BUG2a) lock control for the CS-05 beat
 	# Arrival lands from a violet swell; fade it down first.

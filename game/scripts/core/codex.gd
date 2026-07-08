@@ -93,6 +93,44 @@ func truth_final_seen() -> bool:
 	return _truth_final_seen
 
 
+# ---- (CQ-5 G14) cutscene 재감상 registry ----------------------------------
+## 도감 「기록」 탭의 컷신 재감상 메뉴 — which cutscenes the player has SEEN (id -> true), so they
+## can be replayed. Lifetime honor: preserved across NG+ (like truth logs). The canonical list +
+## display titles live here; cutscene code calls mark_cutscene_seen(id) when a beat first plays.
+const CUTSCENE_CATALOG := [
+	{"id": "CS-01", "title": "각성 — 제0세계에서 눈뜨다"},
+	{"id": "CS-02", "title": "첫 입장 — 시작의 숲 연못가"},
+	{"id": "CS-03", "title": "세계수 앞에서"},
+	{"id": "CS-04", "title": "정화 — 어린 세계수를 되심다"},
+	{"id": "CS-05", "title": "귀환과 점화"},
+	{"id": "E1", "title": "엔딩 「완성」"},
+	{"id": "E2", "title": "엔딩 「속삭임」"},
+]
+var _cutscenes_seen: Dictionary = {}
+signal cutscene_seen(cutscene_id: String)
+
+## Record that a cutscene has played (idempotent). Emits cutscene_seen on the first time.
+func mark_cutscene_seen(cutscene_id: String) -> void:
+	if cutscene_id == "" or _cutscenes_seen.get(cutscene_id, false):
+		return
+	_cutscenes_seen[cutscene_id] = true
+	cutscene_seen.emit(cutscene_id)
+
+func is_cutscene_seen(cutscene_id: String) -> bool:
+	return bool(_cutscenes_seen.get(cutscene_id, false))
+
+func cutscene_seen_count() -> int:
+	return _cutscenes_seen.size()
+
+## The catalog with a `seen` flag on each, in canonical order — for the 재감상 menu.
+func cutscenes_ordered() -> Array:
+	var out: Array = []
+	for e: Dictionary in CUTSCENE_CATALOG:
+		var cid := String(e.get("id", ""))
+		out.append({"id": cid, "title": String(e.get("title", "")), "seen": is_cutscene_seen(cid)})
+	return out
+
+
 func _ready() -> void:
 	# Discovering an item happens on gather (M2 signal) and on craft (fusion UI).
 	GameState.item_gathered.connect(_on_item_gathered)
@@ -314,6 +352,7 @@ func to_dict() -> Dictionary:
 		"attempted_pairs": _attempted_pairs.keys(),
 		"truth_logs": _truth_logs.duplicate(true),
 		"truth_final_seen": _truth_final_seen,
+		"cutscenes_seen": _cutscenes_seen.keys(),
 	}
 
 
@@ -342,6 +381,10 @@ func from_dict(data: Dictionary) -> void:
 	# (EG-2) truth logs (기록 탭). Null-guarded — v0.9.0 saves lack the key.
 	_truth_logs = (data.get("truth_logs", {}) as Dictionary).duplicate(true)
 	_truth_final_seen = bool(data.get("truth_final_seen", false))
+	# (CQ-5 G14) cutscenes seen (재감상). Null-guarded — pre-v1.3.0 saves lack the key.
+	_cutscenes_seen.clear()
+	for cid: String in data.get("cutscenes_seen", []):
+		_cutscenes_seen[cid] = true
 	hint_gauge_changed.emit(_hint_gauge)
 
 
@@ -353,5 +396,6 @@ func reset() -> void:
 	_attempted_pairs.clear()
 	_truth_logs.clear()
 	_truth_final_seen = false
+	_cutscenes_seen.clear()
 	_hint_gauge = 0
 	hint_gauge_changed.emit(_hint_gauge)

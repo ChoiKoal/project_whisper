@@ -75,6 +75,8 @@ func _on_cs03_body_entered(body: Node) -> void:
 ## CS-03: 카메라 아래→위 틸트 + BGM 페이드아웃(저음) + 잎 기욺 + 2 cards. Low-cost, high-impact.
 func _play_cs03(player: Node2D) -> void:
 	_cs03_playing = true
+	if Codex != null and Codex.has_method("mark_cutscene_seen"):
+		Codex.mark_cutscene_seen("CS-03")
 	if GameState != null:
 		GameState.set_control_lock(true)
 	# BGM 페이드아웃 → 심장박동 같은 저음만 (best-effort: duck the BGM bus).
