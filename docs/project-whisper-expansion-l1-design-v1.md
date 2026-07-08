@@ -146,4 +146,118 @@ col: 0         1         2         3
   - (B 배치) *"내가 보이는 곳에, 붉은 걸 하나 놓아줘. 오래 못 봤어, 그 색을."* → 붉은 계열 배치물 1회.
   - (C 회고) *"…저 석상, 낯이 익어. 손 모양이… 나랑 똑같잖아. 왜 저기 서 있지."* → 정원사 석상 진상 조사(자기가 석화된 걸 모르는 톤 = 마법사 잔영 계열의 화원판). 체인 마지막 = 화원과의 "작별".
 
+---
+
+# Part A(2) — 구역 3 「생명의 심장」 40×40 타일 설계
+
+## A-4. 컨셉
+
+시작의 숲에서 세계수를 정화하면, 세계수 **뿌리 아래로 내려가는 길**이 열린다 — 세계 나무의 심부, **생명의 심장**이다. L1의 **후반 구역**(정화 후 개방)이자, 시작의 숲이 시작한 "생명 되살리기"의 **근원에 닿는 곳**. level-design B-3의 "생명의 심장(허브)" 취지를 계승하되, 이 확장에서는 4방향 허브 분기 대신 **세계수 심부로 하강하는 수직 구역**으로 구체화(허브 분기는 L2~L5 실제 레이어가 대체하므로, L1 확장 내에서는 심부 서사·생명 재획득·진상 조각에 집중).
+
+세계수 뿌리 지형이 맵을 감싼다 — 뒤엉킨 뿌리, 뿌리를 타고 흐르는 생명수의 잔재(도랑), 가장 깊은 곳의 심장 코어 방. **고도 -1(지하 느낌)은 실제 고도가 아니라 틴트로** 표현한다(§A-6 아래 주석): 심부로 갈수록 화면이 어둑해지고 뿌리 사이 보라 발광이 강해지는 CanvasModulate 커브. L4/L5의 실제 고도 시스템은 쓰지 않는다(L1 확장은 평면 + 틴트로 충분, 로더 무수정).
+
+여기서 방랑자는 두 가지를 얻는다: (1) **생명(Vita) Whisper 재획득처**(생명의 샘물 E) — 엔딩 Balance 4축(자연/에너지/마력/생명) 중 생명을 L1 내부에서 재확보(§A-6.2). (2) **진상 조각 확장** — 「선배 컨스트럭터의 첫 실험 흔적」과, 세계수에 얽힌 **첫 컨스트럭터의 잔향**(잔재 NPC). 시작의 숲 세계수(EG 진상)의 이야기를 **심부에서 한 겹 더** 연다.
+
+무드: 시작의 숲 초록에 **심부의 어둠 + 뿌리 보라 발광**. 신비의 물(m, source10 T5M glow violet)을 뿌리 도랑에 재활용. 최심부는 심장 코어의 따뜻한 발광. **진입점**: 시작의 숲 세계수(북)에서 뿌리로 하강 → 심장 남쪽 스폰 (19,39). 시작의 숲 클리어가 개방 조건(세계수 정화 = 뿌리 길 열림).
+
+## A-5-map. ASCII 맵 (40행 × 40열)
+
+- **좌표 규약**: row 0 = **북(최심부/세계수 심장)**, row 39 = **남(시작의 숲 세계수 하강 스폰)**. col 0 = 서.
+- `tools/l1x_map_gen.py` 생성 → `game/data/l1h_map_layout.txt`. `l1h_map_height.txt`는 전 셀 0(뿌리 지하감은 틴트로만, 실제 고도 미사용) — L4/L5 로더가 height 파일을 요구하므로 균일 0으로 병렬 제공(무수정 재사용).
+
+```
+col: 0         1         2         3
+     0123456789012345678901234567890123456789
+  0  VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+  1  VVVVVVVVVVVVVVVVBBBBBBBBVVVVVVVVVVVVVVVV
+  2  VVVVVVVVVVVVVVVVBBBBBBBBVVVVVVVVVVVVVVVV
+  3  VVVVVVVVVVVVVVVVBBBOOBBBVVVVVVVVVVVVVVVV
+  4  VVVVVVVVVVVVVVVVBBBBBBBBVVVVVVVVVVVVVVVV
+  5  VVVVVVVVVVVVVVVVBBBBBBBBVVVVVVVVVVVVVVVV
+  6  VVVVVVVVVVBBBBBBBBBBBBBBBBBBBBVVVVVVVVVV
+  7  VVVVVVVVVVBBBBBBBBBBBBBBBBBBBBVVVVVVVVVV
+  8  VVVVVVVVVVBBBBBNBBB1BBBBBBBBBBVVVVVVVVVV
+  9  VVVVVVVVVVBBBBBBBBBBBBqBBBBBBBVVVVVVVVVV
+ 10  VVVVVVVVVVBBeBBBBBBBBBBBBBBeBBVVVVVVVVVV
+ 11  VVVVVVVVVVBBBBBBBBBBBBBBBBBBBBVVVVVVVVVV
+ 12  VVVVVVVVVVBBBBBBBBBeBBBBBBBBBBVVVVVVVVVV
+ 13  VVVVVVVVVVBjBBBBBBBBBBBBBBBBjBVVVVVVVVVV
+ 14  VVVVVVVVVVBBBBqBBBBBBBBBBqBBBBVVVVVVVVVV
+ 15  VVVVVVVVVVBBBBBBBBBBBBBBBBBBBBVVVVVVVVVV
+ 16  VVVVVVVVVVBBBBBBBBBBBBBBBBBBBBVVVVVVVVVV
+ 17  VVVVVVVVVVVVVVVVVVHHVVVVVVVVVVVVVVVVVVVV
+ 18  VVVVVVVVVVVVVVVVVVGGVVVVVVVVVVVVVVVVVVVV
+ 19  VVVVVVVVVVVVVVVVVVGGVVVVVVVVVVVVVVVVVVVV
+ 20  VVVVVVVVGGGGGGGGGGGGGGGGGGGGGGGGVVVVVVVV
+ 21  VVVVVVVVGGGGGGGGGGG2GGGGGGGGGGGGVVVVVVVV
+ 22  VVVVVVVVGGjGEGGGGGGGGGGGGGG3GGGGVVVVVVVV
+ 23  VVVVVVVVGGGGGGeGGGGGGGGGGGjGGGGGVVVVVVVV
+ 24  VVVVVVVVGGGeGGGGGGGGGGqGGGGGGGGGVVVVVVVV
+ 25  VVVVVVVVGGGGGGGGjGGGGGGGGGGGGeGGVVVVVVVV
+ 26  VVVVVVVVGGGGqGGGGGGGGGGGqGGGGGGGVVVVVVVV
+ 27  VVVVVVVVGeGGGGGGGGGGjGGGGGGGqGGGVVVVVVVV
+ 28  VVVVVVVVGGGGGGGGGGGGGGGGGGGGGGGGVVVVVVVV
+ 29  VVVVVVVV~~~~~~~~~~LL~~~~~~~~~~~~VVVVVVVV
+ 30  VVVVVVVV~~~~~~~~~~PP~~~~~~~~~~~~VVVVVVVV
+ 31  VVVVVVVVPPPPPPPPPPPPPPPPPPPPPPPPVVVVVVVV
+ 32  VVVVVVVVPPPjPPPPPPPPPPPPjPPPPPPPVVVVVVVV
+ 33  VVVVVVVVPPPPPPqPPPPPPPPPPPPPePPPVVVVVVVV
+ 34  VVVVVVVVPPePPPPPPPPPPPPPPPPPPPePVVVVVVVV
+ 35  VVVVVVVVPPPPPqPPPPPPPPPPPPPqPPPPVVVVVVVV
+ 36  VVVVVVVVPPPPPPPPjPPPPPPqPPPPPPPPVVVVVVVV
+ 37  VVVVVVVVPPPP4PPPPPPPPPPPPPjPPPPPVVVVVVVV
+ 38  VVVVVVVVPPPPPPPPPPPPCPPPPPPPPPPPVVVVVVVV
+ 39  VVVVVVVVVVVVVVVVVVPSPVVVVVVVVVVVVVVVVVVV
+```
+
+> 확정본(전 게이트 개방 walkable = **681칸**, orphan 0). `O`(세계수 심장, I14 유니크)는 GH2 최종 봉헌 대상 = 최심부 코어 방(row3). `E`(생명의 샘물)는 GH1 뒤 뿌리 회랑, `3`(첫 실험 흔적)·`N`(첫 컨스트럭터 잔향)도 회랑/최심부에 배치.
+
+### Legend
+
+| 기호 | 의미 | 타일/오브젝트 | walkable | 채집 |
+|---|---|---|---|---|
+| `P` | 뿌리 바닥(나무결, 진입 지대) | source2 T2A(리컬러) | O | — |
+| `G` | 뿌리 회랑(생명 이끼) | source2 T2A(+변형) | O | — |
+| `B` | 최심부 바닥(심장 광장, 발광 리컬러) | source2 T2A | O | — |
+| `~` | 뿌리 도랑(생명수 잔재, GH1 물 밴드) | source10 T5M glow violet | X | — |
+| `V` | 경계 void | source0 T0 | X | — |
+| `S` | 스폰(남, 세계수 하강) | T2A | O | — |
+| `C` | 솥단지 | cauldron.tscn | 인접 | — |
+| `L` | **GH1** 뒤엉킨 뿌리문 병목 | root_gate | X→소생의 수액 사용 후 O | — |
+| `H` | **GH2** 심장 봉인 목 병목 | heart_seal | X→되살아난 심장 봉헌 후 O | — |
+| `E` | 생명의 샘물(**생명 Whisper 재획득처**) | life_spring.tscn | X(인접) | — (add_vita) |
+| `O` | 세계수 심장(GH2 최종 봉헌 대상) | world_tree_heart.tscn | X(인접) | **I14 생명의 정수**(유니크) |
+| `N` | 잔재 NPC: 첫 컨스트럭터의 잔향 | npc_remnant.tscn | X(인접 대화) | — |
+| `j` | 뿌리 수액 | root_sap.tscn | X(인접) | **I15 뿌리 수액** |
+| `e` | 세계수 씨눈 | tree_bud.tscn | X(인접) | **I16 세계수 씨눈** |
+| `q` | 심장 이끼 | heart_moss.tscn | X(인접) | **I17 심장 이끼** |
+| `1`~`4` | 랜드마크(심장 코어/심장 실루엣/첫 실험 흔적/튜토리얼 뿌리) | — | 문맥별 | — |
+
+## A-6-heart. 게이트 / 랜드마크 / NPC 배치표 (생명의 심장)
+
+**게이트** (남→북 = GH1 → GH2). 2게이트 = level-design 스코프(구역 3 = 게이트 2개 + 최심부 이벤트). 타입 상이(사용→체인).
+
+| 게이트 | 타입 | 좌표(col,row) | 이름 | 열쇠(제작 체인) | 연출 | 플레이버 |
+|---|---|---|---|---|---|---|
+| **GH1** | 사용형 | 병목 L (18,29)(19,29) | **뒤엉킨 뿌리문** | **소생의 수액(D232)** = 맑은 수액(D231: 뿌리 수액 I15 + 심장 이끼 I17) + 세계수 씨눈(I16) → 마른 뿌리문에 사용 → 뿌리가 소생하며 갈라져 통로 개방. 도랑 물은 뿌리가 감기며 다리처럼 이어짐 | 마른 뿌리가 도랑을 가로막고 있다. 소생의 수액을 부으면 뿌리에 물기가 돌며 스스로 갈라진다. `item_used_on_object` | "뿌리가 다 말라 엉켜 있어. 문처럼 길을 막고 있어. …수액을 먹이면, 다시 움직일까." |
+| **GH2** | 체인형 | 봉인 목 H (18,17)(19,17), 세계수 심장 O (19,3)(20,3) | **심장 봉인 = 심장 정화** | **되살아난 심장(D235)** ← 심장의 고동물(D234) ← 생명의 씨눈(D233: **생명의 정수 I14**[유니크] + 씨눈 I16) → 심장 봉인 목에 봉헌 → 세계수 심장이 다시 뛰며 최심부 개방 + **컷신** | 봉헌하면 멈춰 있던 심장이 느리게, 그러다 크게 고동친다. 최심부에 온기가 번지는 컷신 | "세계수 심장이… 멈춰 있어. 여기가 시작이었는데. 다시 뛰게 하려면, 심장에서 꺼낸 걸 심장에 돌려줘야 해." |
+
+- **I14(생명의 정수)는 유니크** — 세계수 심장 O에서 1회 채집(시작의 숲 I9 세계수 정수 패턴 계승, `unique=true`). GH2 봉헌 체인의 최종 재료. GH1은 I14 불사용(뿌리 회랑의 I15/I16/I17만) → **GH2가 GH1보다 뒤이므로 유니크 재료가 앞 게이트를 막지 않음**(order-safe, §A-6.2).
+- **최심부 이벤트(컷신)** = GH2 봉헌 직후. 세계수 심장이 되살아나는 연출 + **첫 컨스트럭터의 잔향**이 마지막 말을 남기는 장면(Part C 컷신 명세).
+
+**랜드마크 / NPC**
+
+| 기호 | 좌표 | 이름 | 역할 | 플레이버 |
+|---|---|---|---|---|
+| `1` | (19,8) | **세계수 심장 코어** | 최북 시각 앵커. 최심부의 심장, 발광 맥동 | "가장 깊은 곳. 세계의 심장이, 아주 약하게 뛰고 있다." |
+| `2` | (19,21) | 심장 실루엣 | 중간 지대 방향 앵커(회랑에서 북쪽 심장이 보임) | "저 위, 어둠 속에서 무언가 희미하게 빛난다." |
+| `3` | (27,22) | **첫 실험 흔적**(진상 조각) | 회고 트리거 존. 선배 컨스트럭터가 남긴 첫 실험의 잔해 | "누군가 여기서 생명을 만들려 했던 흔적. …실패한 채로 굳어 있다." |
+| `N` | (15,8) | **잔재 NPC: 첫 컨스트럭터의 잔향** | 심장 NPC 라인(프리픽스 `N-`). 세계수(EG 진상) 계열 | "…너도, 왔구나. 나도 이걸 되살리려 했어. 오래전에. …왜 실패했는지, 이제 알겠어?" |
+
+- **첫 컨스트럭터의 잔향 NPC 체인 초안**(3유형):
+  - (A 제작) *"뿌리를 거른 맑은 물이 필요해. 이끼로 걸러 봐."* → 맑은 수액(D231) 제작.
+  - (B 배치) *"…빛나는 걸, 심장이 보이는 곳에 놓아줘. 혼자 두기엔, 너무 어두워."* → 발광 배치물 1회.
+  - (C 회고) *"저기, 내 첫 실험 흔적이 있어. 가서… 봐. 내가 어디서 틀렸는지."* → 첫 실험 흔적(3) 진상 조사 → **L1 심부 진상 조각 획득**(엔딩 5조각 구조에 L1 조각 = 세계수/EG 진상의 심화). 체인 마지막 = 심장과의 "작별".
+
+
 
