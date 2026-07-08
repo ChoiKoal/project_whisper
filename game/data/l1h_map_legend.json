@@ -1,0 +1,198 @@
+{
+  "_comment": "EX-L1 구역3 생명의 심장 legend. L1 정화 후 개방. 뿌리 지하감=틴트. 생명 Whisper 재획득처 E. 좌표 (col,row).",
+  "_coord_note": "row0=북(최심부/세계수 심장), row39=남(시작의 숲 세계수 하강 스폰).",
+  "tiles": {
+    "P": {
+      "source": 2,
+      "tile_id": "T2A",
+      "_note": "뿌리 바닥(나무결)"
+    },
+    "G": {
+      "source": 2,
+      "tile_id": "T2A",
+      "variants": [
+        "T2B",
+        "T2C",
+        "T2D"
+      ],
+      "variant_random": true,
+      "_note": "뿌리 회랑(생명 이끼)"
+    },
+    "B": {
+      "source": 2,
+      "tile_id": "T2A",
+      "_note": "최심부 바닥(심장 광장, 발광 리컬러)"
+    },
+    "~": {
+      "source": 10,
+      "tile_id": "T5M",
+      "walkable": false,
+      "glow": "violet",
+      "_note": "뿌리 도랑(생명수 잔재)"
+    },
+    "V": {
+      "source": 0,
+      "tile_id": "T0",
+      "walkable": false,
+      "void": true
+    },
+    "S": {
+      "source": 2,
+      "tile_id": "T2A",
+      "spawn": true
+    },
+    "C": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "L": {
+      "source": 2,
+      "tile_id": "T2A",
+      "gate": "GH1",
+      "walkable": false,
+      "_note": "뒤엉킨 뿌리문(수액 사용 후 walkable)"
+    },
+    "H": {
+      "source": 2,
+      "tile_id": "T2A",
+      "gate": "GH2",
+      "walkable": false,
+      "_note": "심장 봉인 목(정화 체인 후 walkable)"
+    },
+    "E": {
+      "source": 2,
+      "tile_id": "T2A",
+      "_note": "생명의 샘물(생명 Whisper 재획득처)"
+    },
+    "O": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "N": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "1": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "2": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "3": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "4": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "j": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "e": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "q": {
+      "source": 2,
+      "tile_id": "T2A"
+    }
+  },
+  "objects": {
+    "C": {
+      "scene": "cauldron.tscn",
+      "object_id": "cauldron"
+    },
+    "N": {
+      "scene": "npc_remnant.tscn",
+      "object_id": "first_constructor_echo",
+      "_note": "잔재 NPC: 선배 컨스트럭터의 잔향"
+    },
+    "E": {
+      "scene": "life_spring.tscn",
+      "object_id": "heart_life_spring",
+      "_note": "생명 Whisper 재획득처(idempotent, add_vita)"
+    },
+    "O": {
+      "scene": "world_tree_heart.tscn",
+      "object_id": "tree_heart",
+      "gatherable": {
+        "item_id": "I14",
+        "unique": true
+      },
+      "gate": "GH2",
+      "_note": "세계수 심장(생명의 정수, 유니크)"
+    },
+    "H": {
+      "scene": "heart_seal.tscn",
+      "object_id": "heart_seal",
+      "gate": "GH2"
+    },
+    "j": {
+      "scene": "root_sap.tscn",
+      "gatherable": {
+        "item_id": "I15"
+      },
+      "_note": "뿌리 수액"
+    },
+    "e": {
+      "scene": "tree_bud.tscn",
+      "gatherable": {
+        "item_id": "I16"
+      },
+      "_note": "세계수 씨눈"
+    },
+    "q": {
+      "scene": "heart_moss.tscn",
+      "gatherable": {
+        "item_id": "I17"
+      },
+      "_note": "심장 이끼"
+    }
+  },
+  "landmarks": {
+    "1": "tree_heart_core",
+    "2": "heart_silhouette",
+    "3": "first_experiment_shard",
+    "4": "tutorial_root"
+  },
+  "gates": {
+    "GH1": {
+      "type": "use",
+      "item": "D231",
+      "target": "root_gate",
+      "cells": [
+        [
+          18,
+          29
+        ],
+        [
+          19,
+          29
+        ]
+      ]
+    },
+    "GH2": {
+      "type": "chain",
+      "kind": "purify",
+      "node_id": "heart_seal",
+      "cells": [
+        [
+          18,
+          17
+        ],
+        [
+          19,
+          17
+        ]
+      ],
+      "mount": [
+        19,
+        3
+      ]
+    }
+  }
+}

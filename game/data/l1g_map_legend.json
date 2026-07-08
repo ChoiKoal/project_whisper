@@ -1,0 +1,253 @@
+{
+  "_comment": "EX-L1 구역2 고요의 화원 legend. Symbol->(source,object). map_loader 재사용(L1 파서). 게이트 강제=void+게이트셀. 좌표 (col,row).",
+  "_coord_note": "row0=북(신전), row39=남(시작의 숲 연결 스폰). col0=서.",
+  "tiles": {
+    "P": {
+      "source": 2,
+      "tile_id": "T2A",
+      "_note": "꽃잎 포장(안뜰)"
+    },
+    "G": {
+      "source": 2,
+      "tile_id": "T2A",
+      "variants": [
+        "T2B",
+        "T2C",
+        "T2D"
+      ],
+      "variant_random": true,
+      "_note": "화단 풀"
+    },
+    "B": {
+      "source": 2,
+      "tile_id": "T2A",
+      "_note": "신전 바닥(무지개, 리컬러)"
+    },
+    "~": {
+      "source": 8,
+      "tile_id": "T5A",
+      "walkable": false,
+      "_note": "색의 여울(꽃물)"
+    },
+    "V": {
+      "source": 0,
+      "tile_id": "T0",
+      "walkable": false,
+      "void": true
+    },
+    "S": {
+      "source": 2,
+      "tile_id": "T2A",
+      "spawn": true
+    },
+    "C": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "K": {
+      "source": 8,
+      "tile_id": "T5A",
+      "walkable": false,
+      "gate": "GA1",
+      "place_slot": "D223",
+      "_note": "GA1 디딤돌 배치 슬롯(꽃돌다리)"
+    },
+    "A": {
+      "source": 2,
+      "tile_id": "T2A",
+      "gate": "GA2",
+      "walkable": false,
+      "_note": "시든 아치 병목(사용 후 개화 walkable)"
+    },
+    "M": {
+      "source": 2,
+      "tile_id": "T2A",
+      "gate": "GA3",
+      "walkable": false,
+      "_note": "색의 문(3색 퍼즐 성공 후 walkable)"
+    },
+    "x": {
+      "source": 2,
+      "tile_id": "T2A",
+      "place_slot": "COLOR_BED",
+      "_note": "GA3 색맞춤 화단 슬롯(3개)"
+    },
+    "H": {
+      "source": 2,
+      "tile_id": "T2A",
+      "gate": "GA4",
+      "_note": "색의 봉헌 목(화원 클리어)"
+    },
+    "N": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "1": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "2": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "4": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "f": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "d": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "z": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "y": {
+      "source": 2,
+      "tile_id": "T2A"
+    }
+  },
+  "objects": {
+    "C": {
+      "scene": "cauldron.tscn",
+      "object_id": "cauldron"
+    },
+    "N": {
+      "scene": "npc_remnant.tscn",
+      "object_id": "gardener_statue",
+      "_note": "잔재 NPC: 색을 잃은 정원사 석상(GP-4 NPC 라인)"
+    },
+    "A": {
+      "scene": "wilted_arch.tscn",
+      "object_id": "wilted_arch",
+      "gate": "GA2"
+    },
+    "H": {
+      "scene": "color_font.tscn",
+      "object_id": "rainbow_font",
+      "gate": "GA4"
+    },
+    "f": {
+      "scene": "rare_flower.tscn",
+      "gatherable": {
+        "item_id": "I10"
+      },
+      "variants": [
+        "O1A",
+        "O1B",
+        "O1C",
+        "O1D",
+        "O1E"
+      ],
+      "_note": "희귀 꽃"
+    },
+    "d": {
+      "scene": "dew.tscn",
+      "gatherable": {
+        "item_id": "I11"
+      },
+      "_note": "꽃 이슬"
+    },
+    "z": {
+      "scene": "color_sand.tscn",
+      "gatherable": {
+        "item_id": "I12"
+      },
+      "_note": "색 모래"
+    },
+    "y": {
+      "scene": "pollen.tscn",
+      "gatherable": {
+        "item_id": "I13"
+      },
+      "_note": "꽃가루"
+    }
+  },
+  "landmarks": {
+    "1": "rainbow_font",
+    "2": "gardener_statue_silhouette",
+    "4": "tutorial_flower"
+  },
+  "gates": {
+    "GA1": {
+      "type": "placement",
+      "kind": "stepping",
+      "place_item": "D223",
+      "cells": [
+        [
+          18,
+          29
+        ],
+        [
+          19,
+          29
+        ],
+        [
+          18,
+          30
+        ],
+        [
+          19,
+          30
+        ]
+      ]
+    },
+    "GA2": {
+      "type": "use",
+      "item": "I7_or_D224",
+      "target": "wilted_arch",
+      "cells": [
+        [
+          18,
+          19
+        ],
+        [
+          19,
+          19
+        ]
+      ]
+    },
+    "GA3": {
+      "type": "placement",
+      "kind": "puzzle",
+      "puzzle": "color_bed_3",
+      "slot_cells": [
+        [
+          14,
+          14
+        ],
+        [
+          19,
+          14
+        ],
+        [
+          24,
+          14
+        ]
+      ],
+      "cells": [
+        [
+          18,
+          9
+        ],
+        [
+          19,
+          9
+        ]
+      ]
+    },
+    "GA4": {
+      "type": "chain",
+      "kind": "offering",
+      "node_id": "rainbow_font",
+      "mount": [
+        19,
+        4
+      ]
+    }
+  }
+}
