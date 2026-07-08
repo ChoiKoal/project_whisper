@@ -1,0 +1,313 @@
+{
+  "_comment": "EX-L4 부유 서고 legend. Symbol->(source,object). map_loader 재사용(L4 파서). 게이트 강제=void(갈라진 허공)+게이트셀+고도차. 좌표 (col,row).",
+  "_coord_note": "row0=북(최심부 금서고 코어/재봉인, +2), row39=남(마탑 연결 착지 스폰, 0). col0=서.",
+  "tiles": {
+    "A": {
+      "source": 4,
+      "tile_id": "L4T-A",
+      "_note": "착지 서가 바닥(자수정 포장, 고도 0)"
+    },
+    "M": {
+      "source": 4,
+      "tile_id": "L4T-M",
+      "_note": "부유 서가 파편 바닥(떠 있는 땅, 고도 +1)"
+    },
+    "O": {
+      "source": 4,
+      "tile_id": "L4T-O",
+      "_note": "최심부 금서고 코어 바닥(봉인실, 고도 +2)"
+    },
+    "V": {
+      "source": 0,
+      "tile_id": "T0",
+      "walkable": false,
+      "void": true,
+      "_note": "갈라진 허공/부유 파편 사이"
+    },
+    "S": {
+      "source": 4,
+      "tile_id": "L4T-A",
+      "spawn": true
+    },
+    "C": {
+      "source": 4,
+      "tile_id": "L4T-A"
+    },
+    "/": {
+      "source": 4,
+      "tile_id": "L4T-ramp",
+      "ramp": true,
+      "_note": "경사로(부유 파편 +1 진입 / 코어 +2 오름)"
+    },
+    "g": {
+      "source": 4,
+      "tile_id": "L4T-A",
+      "gate": "GW1",
+      "walkable": false,
+      "place_slot": "D302",
+      "_note": "GW1 부유 서가 다리 잔교 슬롯(허공 위, 다리석 설치 후 walkable)"
+    },
+    "v": {
+      "source": 4,
+      "tile_id": "L4T-A",
+      "gate": "GW2",
+      "walkable": false,
+      "_note": "흐려진 열람 결계문(정화의 물 사용 후 walkable)"
+    },
+    "L": {
+      "source": 4,
+      "tile_id": "L4T-A",
+      "gate": "GW3",
+      "walkable": false,
+      "_note": "금서고 통로문(봉인 순서 퍼즐 성공 후 walkable)"
+    },
+    "z": {
+      "source": 4,
+      "tile_id": "L4T-A",
+      "place_slot": "SEAL_TABLET",
+      "_note": "GW3 금서 봉인 서판 슬롯(3개, 순서 있음: seal_ordered)"
+    },
+    "x": {
+      "source": 4,
+      "tile_id": "L4T-crack",
+      "walkable": false,
+      "crack": true,
+      "_note": "균열 타일(부적 소지 시 통과 = 지름길/연출, 지대 단절 아님). L4 구역1 균열 재사용"
+    },
+    "H": {
+      "source": 4,
+      "tile_id": "L4T-O",
+      "gate": "GW4",
+      "_note": "금기 봉인구 봉헌 목(구역 클리어)"
+    },
+    "N": {
+      "source": 4,
+      "tile_id": "L4T-M"
+    },
+    "1": {
+      "source": 4,
+      "tile_id": "L4T-O"
+    },
+    "2": {
+      "source": 4,
+      "tile_id": "L4T-M"
+    },
+    "3": {
+      "source": 4,
+      "tile_id": "L4T-M"
+    },
+    "4": {
+      "source": 4,
+      "tile_id": "L4T-A"
+    },
+    "5": {
+      "source": 4,
+      "tile_id": "L4T-M"
+    },
+    "W": {
+      "source": 4,
+      "tile_id": "L4T-M",
+      "_note": "잔류 열람 결계정(마력 Whisper 재획득처)"
+    },
+    "E": {
+      "source": 4,
+      "tile_id": "L4T-M",
+      "_note": "흐려진 열람 결계 본체(GW2 사용 대상)"
+    },
+    "o": {
+      "source": 4,
+      "tile_id": "L4T-O"
+    },
+    "q": {
+      "source": 4,
+      "tile_id": "L4T-A"
+    },
+    "r": {
+      "source": 4,
+      "tile_id": "L4T-A"
+    },
+    "c": {
+      "source": 4,
+      "tile_id": "L4T-A"
+    },
+    "i": {
+      "source": 4,
+      "tile_id": "L4T-A"
+    }
+  },
+  "objects": {
+    "C": {
+      "scene": "workbench.tscn",
+      "object_id": "bindery",
+      "_note": "정비대(제본대, L4 crafting station)"
+    },
+    "N": {
+      "scene": "npc_remnant.tscn",
+      "object_id": "archivist_shade",
+      "_note": "잔재 NPC: 아직도 책을 정리하는 사서 잔영(GP-4 NPC 라인)"
+    },
+    "E": {
+      "scene": "mana_spring.tscn",
+      "object_id": "reading_ward",
+      "gate": "GW2",
+      "_note": "흐려진 열람 결계(정화의 물 사용 대상)"
+    },
+    "H": {
+      "scene": "seal_altar.tscn",
+      "object_id": "archive_core_altar",
+      "gate": "GW4",
+      "_note": "금기 봉인구 봉헌 목(재봉인 = 구역 정화)"
+    },
+    "W": {
+      "scene": "mana_residue.tscn",
+      "object_id": "archive_residual_ward",
+      "_note": "마력 Whisper 재획득처(idempotent, add_mana)"
+    },
+    "o": {
+      "scene": "archive_core.tscn",
+      "object_id": "archive_core",
+      "gatherable": {
+        "item_id": "P12",
+        "unique": true
+      },
+      "gate": "GW4",
+      "_note": "최심부 금서고 코어(금기 정수, 유니크)"
+    },
+    "q": {
+      "scene": "forbidden_page.tscn",
+      "gatherable": {
+        "item_id": "P8"
+      },
+      "_note": "금서 조각"
+    },
+    "r": {
+      "scene": "archive_rune_slab.tscn",
+      "gatherable": {
+        "item_id": "P9"
+      },
+      "_note": "서고 룬판"
+    },
+    "c": {
+      "scene": "reading_wax.tscn",
+      "gatherable": {
+        "item_id": "P10"
+      },
+      "_note": "열람 촛농"
+    },
+    "i": {
+      "scene": "starpage_ink.tscn",
+      "gatherable": {
+        "item_id": "P11"
+      },
+      "_note": "별지 잉크"
+    }
+  },
+  "landmarks": {
+    "1": "archive_core",
+    "2": "archive_core_silhouette",
+    "3": "forbidden_log_slab",
+    "4": "tutorial_drifting_book",
+    "5": "great_forbidden_shelf"
+  },
+  "gates": {
+    "GW1": {
+      "type": "placement",
+      "kind": "bridge",
+      "place_item": "D302",
+      "cells": [
+        [
+          18,
+          29
+        ],
+        [
+          19,
+          29
+        ],
+        [
+          18,
+          30
+        ],
+        [
+          19,
+          30
+        ]
+      ],
+      "altar": [
+        17,
+        31
+      ]
+    },
+    "GW2": {
+      "type": "use",
+      "item": "D304",
+      "target": "reading_ward",
+      "cells": [
+        [
+          18,
+          17
+        ],
+        [
+          19,
+          17
+        ]
+      ]
+    },
+    "GW3": {
+      "type": "placement",
+      "kind": "puzzle",
+      "puzzle": "seal_ordered_3",
+      "slot_cells": [
+        [
+          14,
+          12
+        ],
+        [
+          19,
+          12
+        ],
+        [
+          24,
+          12
+        ]
+      ],
+      "cells": [
+        [
+          18,
+          6
+        ],
+        [
+          19,
+          6
+        ]
+      ]
+    },
+    "GW4": {
+      "type": "chain",
+      "kind": "offering",
+      "node_id": "archive_core_altar",
+      "cells": [
+        [
+          19,
+          3
+        ]
+      ],
+      "mount": [
+        19,
+        3
+      ]
+    }
+  },
+  "special": {
+    "bindery_cell": [
+      20,
+      38
+    ],
+    "mana_residue_cell": [
+      12,
+      22
+    ],
+    "_mana_note": "잔류 열람 결계정 W = 마력 Whisper 재획득처(idempotent add_mana). GW1 뒤·GW2 앞 회랑 유일 경로에 배치 → 엔딩 Balance(4축) 대비. 최초 획득처(L4 구역1 G2 마력샘 재정화)의 소진 세이브 안전망.",
+    "entry_from": "sealed_tower",
+    "entry_note": "마탑(l4 구역1) 최심부 봉인실 곁, 봉인이 풀릴 때 찢겨 나간 서고 통로 → 부유 파편 착지. 개방 조건 = L4 구역1 정화 완료(최심부 봉인 재구축/seal_core_restored) 후 통로 활성. 좌표: 마탑 최심부(row0-3 O블록) 곁 → 부유 서고 스폰 S(19,39)."
+  }
+}
