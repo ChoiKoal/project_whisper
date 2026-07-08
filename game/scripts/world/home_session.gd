@@ -84,10 +84,16 @@ func _setup() -> void:
 	# home world's snapshot so placed structures/decor the player built survive the round-trip.
 	elif SaveManager.has_world_snapshot(WorldContext.current_scene):
 		SaveManager.restore_registered_world()
-	# (v1.3.1 BUG A) Self-heal the portal line from the progression flags on every home boot so a
-	# stale/already-corrupted snapshot can't leave a purified world's portal re-locked (KOAL's
-	# science relock). Runs BEFORE _wire_portals so the live gate nodes read the healed state.
-	GameState.reconcile_portal_line()
+
+	# (v1.3.1 BUG A) Whether a first-clear return-ignition (CS-05) is queued for this boot. When it
+	# is, that cutscene visually OPENs the freshly-cleared portal itself — so we defer the portal-
+	# line self-heal until AFTER it plays, keeping the ignition beat crisp (reconcile would have
+	# pre-opened the gate, no-oping the cutscene's set_portal_state). In every other boot we heal
+	# immediately below so a stale/corrupted snapshot can't leave a purified portal re-locked.
+	var ignition_pending := WorldContext.arrival_mode == "portal_arrival" \
+		and SaveManager.pending_return_ignition
+	if not ignition_pending:
+		GameState.reconcile_portal_line()
 
 	if fresh_awakening:
 		_play_awakening_reveal()
@@ -99,6 +105,11 @@ func _setup() -> void:
 		_place_at_arrival()
 		if SaveManager.consume_pending_return_ignition():
 			await _play_return_ignition()
+
+	# (v1.3.1 BUG A) Heal the portal line after the ignition beat (if one played), so the final
+	# home portal states always match progression regardless of which boot path we took.
+	if ignition_pending:
+		GameState.reconcile_portal_line()
 
 	if AudioManager != null:
 		AudioManager.start_world_audio()
