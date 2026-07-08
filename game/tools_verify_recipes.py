@@ -19,7 +19,12 @@ import json, os, sys
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 items = json.load(open(os.path.join(ROOT, "data/items.json"), encoding="utf-8"))["items"]
-recipes = json.load(open(os.path.join(ROOT, "data/recipes.json"), encoding="utf-8"))["recipes"]
+_recipes_doc = json.load(open(os.path.join(ROOT, "data/recipes.json"), encoding="utf-8"))
+recipes = _recipes_doc["recipes"]
+# fail_recipes (v1.1.0 GP-2): no-match pairs mapped to 실패작 items. Their fail_output is
+# obtainable in game (failed fusion consumes the inputs and grants the 실패작), so the
+# orphan check below must treat those outputs as produced.
+fail_recipes = _recipes_doc.get("fail_recipes", [])
 
 # ---- item registry (alias-aware) ----
 alias = {}            # id -> canonical
@@ -144,21 +149,28 @@ for r in recipes:
 check("석기 D11 not referenced by any recipe", not D11_refs, "refs=%s" % D11_refs)
 check("석기 D11 not an item", "D11" not in canonical and "D11" not in alias)
 
-# an item is "used" if it is gatherable, a recipe output, or a recipe input.
+# an item is "used" if it is gatherable, a recipe output, a fail-craft output, or a
+# recipe input. Fail outputs (D219~D221, category "fail") are granted by Fusion's
+# no-match branch when their (gatherable) input pair is fused, so they are obtainable.
 used_as_input = set()
 for r in recipes:
     used_as_input.add(resolve(r["inputs"][0]))
     used_as_input.add(resolve(r["inputs"][1]))
+fail_outputs = set()
+for fr in fail_recipes:
+    a, b = resolve(fr["inputs"][0]), resolve(fr["inputs"][1])
+    if a in reachable and b in reachable:
+        fail_outputs.add(resolve(fr["fail_output"]))
 orphans = []
 for i in canonical:
     is_seed = category.get(i) == "gather"
-    is_output = i in outputs
+    is_output = i in outputs or i in fail_outputs
     is_input = i in used_as_input
     if not (is_seed or is_output or is_input):
         orphans.append(i)
 # Terminal craft items (outputs never used as an input) are allowed — they're the goal
 # products. A true orphan is an item that is neither obtainable nor used anywhere.
-check("no orphaned items (every item is gatherable, an output, or an input)",
+check("no orphaned items (every item is gatherable, an output/fail-output, or an input)",
       not orphans, "orphans=%s" % [(i, name.get(i, "?")) for i in orphans])
 
 # input-only-of-removed-recipes: every item used as an input must itself be reachable,
