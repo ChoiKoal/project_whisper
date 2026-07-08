@@ -264,6 +264,12 @@ def main():
         print(f"  {g} {sorted(need)} ⊆ cum[{g}] : {status}")
 
     # unique-drain 금지 (EX-L1 QA 원칙, R33 I14 전례):
+    # (QA ㉓ 촉매 정정) 이 검사는 '유니크가 게이트 체인에만 쓰이는가'(멤버십)만 본다 —
+    #   '몇 번 소모되는가'는 세지 않는다. 엔진 fusion.gd unique-as-catalyst 규칙
+    #   (game/scripts/core/fusion.gd:158~178, _consume_inputs)상 S12는 존재만 요구·소모 0인
+    #   촉매이므로, R09=D331²·D331=R08(S12+S8)이라도 S12 1개로 R08을 2회 제작해 최종키에 도달한다
+    #   (유니크×2 표면 모순은 런타임 softlock 아님). 따라서 아래 로직은 S12가 R08(체인 조상)에만
+    #   등장함을 확인하면 PASS이며, '소모 2회'로 집계해 FAIL하지 않는다(설계 정본과 일치).
     unique_gathers = {gg[0] for gg in GATHERS if gg[3] == "gather_unique"}  # {"S12"}
 
     def ancestors_of_final(final):
