@@ -206,16 +206,26 @@ makeTile('t5m_mystic.png', V1, V0, (x,y,base)=>{
 // ── VOID (T0) — deep night-void diamond. NO purple zigzag: a clean dark diamond
 //    with a subtle violet rim that reads as the floating-island silhouette edge, matching
 //    the backdrop gradient so the top edge no longer "뚫린다". ──────────────
+//    FULL-RECT FILL (v1.4.0 배경 뚫림 수리): the 4 corner triangles OUTSIDE the diamond
+//    are filled with the deep void tone (not left transparent). On interior cells a
+//    neighbour diamond covers them anyway; on the MAP BORDER there is no neighbour, so
+//    leaving them transparent let the backdrop navy-violet gradient bleed through as a
+//    zigzag sawtooth ("가장자리 결손"). Filling them with the deep void colour — which
+//    already matches the backdrop top (#12121c) — seals the border with no visible seam.
 (function voidTile(){
   const W=128,H=64,cv=makeCanvas(W,H);
   const base=hexToRGB('#141422'), rim=hexToRGB(V0), deep=hexToRGB('#0d0d17');
+  const corner=hexToRGB('#101019');           // matches backdrop top gradient → invisible seam
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){
-    if(!inDiamond(x,y,W,H))continue;
-    let c=base;
+    let c;
     const cx=(W-1)/2,cy=(H-1)/2;const d=Math.abs(x-cx)/(W/2)+Math.abs(y-cy)/(H/2);
-    c=mix(deep,base,clamp(1-d,0,1));            // darker toward centre → soft depth
-    // faint violet inner rim (soft, not a hard zigzag)
-    if(d>0.82&&d<=1.0)c=mix(c,rim,(d-0.82)/0.18*0.5);
+    if(inDiamond(x,y,W,H)){
+      c=mix(deep,base,clamp(1-d,0,1));         // darker toward centre → soft depth
+      // faint violet inner rim (soft, not a hard zigzag)
+      if(d>0.82&&d<=1.0)c=mix(c,rim,(d-0.82)/0.18*0.5);
+    } else {
+      c=corner;                                // opaque corner fill — no backdrop bleed at borders
+    }
     setPx(cv,x,y,c,255);
   }
   save(cv,'t0_void.png');
