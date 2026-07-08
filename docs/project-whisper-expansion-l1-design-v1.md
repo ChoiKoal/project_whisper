@@ -27,3 +27,94 @@
 | 7 | 플레이타임: L1 합계 **30~40분 → 70~90분** (시작의 숲 40~60 + 화원 ~20 + 심장 ~15) | KOAL 확장 목표. 게이트 밀도·채집 분량으로 환산(§A-7) |
 
 ---
+
+# Part A — 구역 2 「고요의 화원」 40×40 타일 설계
+
+## A-1. 컨셉
+
+시작의 숲에서 세계수를 정화한 방랑자가, 숲 북쪽 오솔길을 따라 다다르는 곳. **반쯤 무너진 꽃의 신전과 그 안뜰**이다. 한때 온갖 색으로 피어 있던 정원은 색을 잃었다 — 꽃은 형태만 남고 잿빛으로 바랬으며, 벽화는 가루가 되어 색 모래로 흩어졌고, 물감을 개던 정원사는 손을 멈춘 채 석상이 되었다. 이 세계에 **색을 돌려주는 것**이 화원의 정화다.
+
+시작의 숲이 "생명(자연)을 되살리는 곳"이었다면, 화원은 그 자연에 **색을 입히는 곳** — 물감·꽃즙 계열이 주역이 되는, L1 안의 작은 색채 챕터다. level-design B-3의 "붉은 꽃 신전·나비 추적·물 반사 눈속임" 취지를 계승하되, MVP 부담이 큰 나비 추적·왜곡 연출은 빼고 **색 조합(물감) 퍼즐**로 구체화한다(정적 스프라이트 눈속임 전제, GDD §3.2 경고 준수).
+
+무드: 시작의 숲 초록 base 위에 **바랜 파스텔**(잿빛 섞인 분홍·연보라). 정화가 진행될수록(게이트를 풀수록) 채도가 돌아온다 — GA1 앞은 거의 무채색, 신전(최북)은 무지개. **엔진 틴트(CanvasModulate) + 리컬러**로 팔레트를 늘리지 않고 표현(아트가이드 §2·§3). 시작의 숲과 뚜렷이 구분되는 **"색이 빠졌다가 돌아오는" 구역**.
+
+**진입점**: 시작의 숲 세계수 구역(북쪽)에서 오솔길로 연결 → 화원 남쪽 스폰 (19,39). 시작의 숲 클리어(G4) 후 개방(북쪽 오솔길에 색이 어렴풋이 비치기 시작 = 개방 신호). 왕래는 홈/구역 포탈 패턴 재사용(§Part C).
+
+## A-2. ASCII 맵 (40행 × 40열)
+
+- **좌표 규약**: `(col, row)`, 좌상단 = (0,0). row 0 = **북(무지개 신전)**, row 39 = **남(시작의 숲 연결 스폰)**. col 0 = 서.
+- **읽는 방향**: 플레이어는 아래(남, 숲에서 진입)에서 위(북, 신전)로 올라가며 **색을 되찾는다**. 시작의 숲의 수직 여정 문법 계승.
+- 아래 40자×40행은 **`tools/l1x_map_gen.py`가 생성**(구역 사각형·병목·채집 배치를 코드화, 손 타이핑 금지) → 그대로 `game/data/l1g_map_layout.txt`가 된다. ruler/행번호는 문서 표기용, 파일엔 제외.
+
+```
+col: 0         1         2         3
+     0123456789012345678901234567890123456789
+  0  VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+  1  VVVVVVVVVVVVBBBBBBBBBBBBBBBBVVVVVVVVVVVV
+  2  VVVVVVVVVVVVBBByBBBBBBByBBBBVVVVVVVVVVVV
+  3  VVVVVVVVVVVVBBBBBBB1BBBBBBBBVVVVVVVVVVVV
+  4  VVVVVVVVVVVVBBBBBBBHBBBBBBBBVVVVVVVVVVVV
+  5  VVVVVVVVVVVVBfBBBBBBBBBBBBfBVVVVVVVVVVVV
+  6  VVVVVVVVVVVVBBzBBBBBBBBBzBBBVVVVVVVVVVVV
+  7  VVVVVVVVVVVVBBBBBBBBBBBBBBBBVVVVVVVVVVVV
+  8  VVVVVVVVVVVVBBBBBBBBBBBBBBBBVVVVVVVVVVVV
+  9  VVVVVVVVVVVVVVVVVVMMVVVVVVVVVVVVVVVVVVVV
+ 10  VVVVVVVVVVVVVVVVVVGGVVVVVVVVVVVVVVVVVVVV
+ 11  VVVVVVVVGGGGGGGGGGGGGGGGGGGGGGGGVVVVVVVV
+ 12  VVVVVVVVGGGGGGGGGGGNGGGGGGGGGGGGVVVVVVVV
+ 13  VVVVVVVVGGGGyGGGGGGGGGGGGGGyGGGGVVVVVVVV
+ 14  VVVVVVVVGGGGGGxGGGGxGGGGxGGGGGGGVVVVVVVV
+ 15  VVVVVVVVGGGGGGGGGGGGGGGGGGGGGGGGVVVVVVVV
+ 16  VVVVVVVVGGGfGGGGGGGGGGGGGGGGfGGGVVVVVVVV
+ 17  VVVVVVVVGGdGGGGGzGGGGGGzGGGGGdGGVVVVVVVV
+ 18  VVVVVVVVGGGGGGGGGGGGGGGGGGGGGGGGVVVVVVVV
+ 19  VVVVVVVVVVVVVVVVVVAAVVVVVVVVVVVVVVVVVVVV
+ 20  VVVVVVVVVVVVVVVVVVPPVVVVVVVVVVVVVVVVVVVV
+ 21  VVVVVVVVGGGGGGGGGGG2GGGGGGGzGGGGVVVVVVVV
+ 22  VVVVVVVVGGfGGGGGGGfGGyGGGGGGGGGGVVVVVVVV
+ 23  VVVVVVVVGGGGGGfGGGGGGGGGGGfGGGGGVVVVVVVV
+ 24  VVVVVVVVGGGzGGGGGGGGGGfGGGGGGGGGVVVVVVVV
+ 25  VVVVVVVVGGGGGGGGyGGGGGGGGGGGGfGGVVVVVVVV
+ 26  VVVVVVVVGyGGdGGGGGGGGGGGzGGGGGGGVVVVVVVV
+ 27  VVVVVVVVGGGGGGGGGGGGdGGGGGGGdGGGVVVVVVVV
+ 28  VVVVVVVVGGGGGGGGGGGGGGGGGGGGGGGGVVVVVVVV
+ 29  VVVVVVVV~~~~~~~~~~KK~~~~~~~~~~~~VVVVVVVV
+ 30  VVVVVVVV~~~~~~~~~~KK~~~~~~~~~~~~VVVVVVVV
+ 31  VVVVVVVVPPPPPPPPPPPPPPPPPPPPPPPPVVVVVVVV
+ 32  VVVVVVVVPPPfPPPPPPPPPPPPfPPPPPdPVVVVVVVV
+ 33  VVVVVVVVPPPPPPyPPPPPPPPPPPPPdPPPVVVVVVVV
+ 34  VVVVVVVVPPdPPPPPPPPPPPPPPPPPPPPPVVVVVVVV
+ 35  VVVVVVVVPPPPPfPPPPPPPPPPPPPfPPPPVVVVVVVV
+ 36  VVVVVVVVPPPPPPPPzPPPPPPzPPPPPPPPVVVVVVVV
+ 37  VVVVVVVVPzPP4PPPPPPPPPPPPPyPPPPPVVVVVVVV
+ 38  VVVVVVVVPPPPPPPPPPPPCPPPPPPPPPPPVVVVVVVV
+ 39  VVVVVVVVVVVVVVVVVVPSPVVVVVVVVVVVVVVVVVVV
+```
+
+> 위 맵은 §A-5 BFS 검증 통과 확정본(전 게이트 개방 walkable = **719칸**, orphan 0). `x`(색맞춤 화단 슬롯 3개)·`N`(정원사 석상)은 GA3 앞 안뜰 지대에 놓여 인접 상호작용.
+
+### Legend
+
+| 기호 | 의미 | 타일/오브젝트 | walkable | 채집 |
+|---|---|---|---|---|
+| `P` | 꽃잎 포장(안뜰 바닥) | source2 T2A(리컬러) | O | — |
+| `G` | 화단 풀 | source2 T2A(+변형) | O | — |
+| `B` | 신전 바닥(무지개, 리컬러) | source2 T2A | O | — |
+| `~` | 색의 여울(꽃물, GA1 물 밴드) | source8 T5A | X | — |
+| `V` | 경계 void | source0 T0 | X | — |
+| `S` | 스폰(남, 시작의 숲 연결) | T2A | O | — |
+| `C` | 솥단지 | cauldron.tscn | 인접 | — |
+| `K` | **GA1** 색의 여울 디딤돌 배치 슬롯 | 물 위 배치 슬롯(place_slot D223) | X→꽃돌다리 배치 후 O | — |
+| `A` | **GA2** 시든 아치 병목 | wilted_arch.tscn | X→개화 물감 사용 후 O | — |
+| `x` | **GA3** 색맞춤 화단 슬롯(3개, 미니 퍼즐) | 배치 슬롯(빨/노/파) | 배치 대상 | — |
+| `M` | **GA3** 색의 문 병목 | 문(3색 완성 후 walkable) | X→퍼즐 성공 후 O | — |
+| `H` | **GA4** 색의 봉헌 목(무지개 분수) | color_font.tscn | 인접(봉헌=클리어) | — |
+| `N` | 잔재 NPC: 색을 잃은 정원사 석상 | npc_remnant.tscn | X(인접 대화) | — |
+| `f` | 희귀 꽃 | rare_flower.tscn | X(인접) | **I10 희귀 꽃** |
+| `d` | 꽃 이슬 | dew.tscn | X(인접) | **I11 꽃 이슬** |
+| `z` | 색 모래 | color_sand.tscn | X(인접) | **I12 색 모래** |
+| `y` | 꽃가루 | pollen.tscn | X(인접) | **I13 꽃가루** |
+| `1`~`4` | 랜드마크(무지개 분수/정원사 석상 실루엣/튜토리얼 꽃) | — | 문맥별 | — |
+
+- **오브젝트 walkable 규약**(시작의 숲 계승): 채집/기능 오브젝트는 셀이 충돌체(X)지만 인접 칸에서 `OBJECT_REACH`로 채집·상호작용. §A-5 BFS의 **게이트 강제는 순수하게 void(V)·물(~)·게이트 병목 셀(K/A/M)로만** 이뤄지며, 채집 오브젝트는 리스폰되므로 게이트로 안 쓴다(orphan 0 확인).
+
