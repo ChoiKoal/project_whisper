@@ -2,3 +2,4 @@ game/.godot/
 *.tmp
 export/
 dist/
+game/.sweep_done
