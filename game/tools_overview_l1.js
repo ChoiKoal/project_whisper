@@ -263,9 +263,13 @@ for (let r = 0; r < H; r++) for (let c = 0; c < layout[r].length; c++) {
         const cx = OX + lx, cy = OY + ly + 32;
         // large violet light pool washing the base (light_pool_violet_lg).
         if (VIOLET_POOL_LG) blit(VIOLET_POOL_LG, Math.round(cx - VIOLET_POOL_LG.width / 2), Math.round(cy - VIOLET_POOL_LG.height / 2), { additive: true, alpha: 0.9 });
-        // world tree body: 490×470 @ scale .5, offset (0,-240) from world_tree.gd. Dormant
-        // baseline is the pre-purification look; the grove first shows the world tree asleep.
-        const body = objArt("world_tree_dormant") || objArt("world_tree");
+        // radial violet ground bloom so the world-tree base reads as the single luminous
+        // landmark of the grove (art-guide §3: "world tree the single violet landmark").
+        glow(Math.round(cx), Math.round(cy - HH * 0.4), 190, [0x6b, 0x4a, 0x9e], 0.5);
+        // world tree body: 490×470 @ scale .5, offset (0,-240) from world_tree.gd. Match the
+        // RUNTIME render (world_tree.gd loads world_tree.png — the living violet-lit tree — plus
+        // an additive glow child). The dormant variant stays unwired (future pre-purification).
+        const body = objArt("world_tree") || objArt("world_tree_dormant");
         const sc = 0.5, o = [0, -240];
         if (body) {
           const sw = body.width * sc, sh = body.height * sc;
@@ -283,9 +287,16 @@ for (const d of draws) {
   blit(d.src, d.sx, d.sy, { scale: d.scale });
   if (d.isWorldTree && WORLD_GLOW) {
     // additive violet bloom, same bottom-center origin/scale as the body (world_tree.gd glow child).
+    // Layered twice — a wide soft halo + a tighter core — so the canopy glows as the grove's one
+    // luminous landmark against the navy void (matches the L2~L5 lit-landmark bloom strength).
     const sc = 0.5, o = [0, -240];
     const gw = WORLD_GLOW.width * sc, gh = WORLD_GLOW.height * sc;
-    blit(WORLD_GLOW, Math.round(d.gx - gw / 2 + o[0] * sc), Math.round(d.gy - gh + HH + o[1] * sc), { additive: true, alpha: 0.55, scale: sc });
+    const gx = Math.round(d.gx - gw / 2 + o[0] * sc), gy = Math.round(d.gy - gh + HH + o[1] * sc);
+    // soft oversized halo
+    const hsc = sc * 1.6, hgw = WORLD_GLOW.width * hsc, hgh = WORLD_GLOW.height * hsc;
+    blit(WORLD_GLOW, Math.round(d.gx - hgw / 2 + o[0] * sc), Math.round(d.gy - hgh + HH + o[1] * sc), { additive: true, alpha: 0.4, scale: hsc });
+    // core bloom over the canopy
+    blit(WORLD_GLOW, gx, gy, { additive: true, alpha: 0.85, scale: sc });
   }
 }
 
