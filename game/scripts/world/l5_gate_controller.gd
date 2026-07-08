@@ -475,6 +475,8 @@ func _start_purification(instant: bool = false) -> void:
 
 
 func _run_purification() -> void:
+	# 0. (CQ-4 G11) 빛 파문 — a warm platinum flash + ripple ring from the great altar (첫 응답의 빛).
+	_purify_flash_ring(Color(1.0, 0.94, 0.75), _l5_core_pos())
 	_light_altar()
 	await get_tree().create_timer(0.5).timeout
 	_wave_cathedral()
@@ -487,6 +489,32 @@ func _run_purification() -> void:
 	_finish_purification()
 	if GameState != null and GameState.get("light_gate_previewed_flag") == true:
 		await _portal_completion_cutscene()
+
+
+## (CQ-4 G11) Shared purify flash + ripple ring, warm platinum for the divine sanctum.
+func _purify_flash_ring(tint: Color, origin: Vector2) -> void:
+	var cl := CanvasLayer.new()
+	cl.layer = 12
+	add_child(cl)
+	var flash := CutsceneDirector.make_flash(Color(tint.r, tint.g, tint.b))
+	cl.add_child(flash)
+	CutsceneDirector.flash(self, flash, 0.85, 0.1, 1.0)
+	var ys := _loader.get_node_or_null(_loader.ysort_layer_path) as Node2D if _loader != null else null
+	if ys != null:
+		CutsceneDirector.spawn_ripple_ring(self, ys, origin, tint, 18.0, 1.8, 60)
+	get_tree().create_timer(1.3, true, false, true).timeout.connect(func():
+		if is_instance_valid(cl):
+			cl.queue_free())
+
+
+func _l5_core_pos() -> Vector2:
+	if _mount_node != null and is_instance_valid(_mount_node) and _mount_node is Node2D:
+		return (_mount_node as Node2D).global_position
+	if _loader != null and _mount_cell != Vector2i(-1, -1):
+		return _loader.cell_center_world(_mount_cell)
+	if _loader != null:
+		return _loader.cell_center_world(Vector2i(int(_loader.width / 2), int(_loader.height / 2)))
+	return Vector2.ZERO
 
 
 ## (L5-5 §C-4) 다섯 포탈 완결 컷신 — 다섯 포탈 전점등 (비주얼: 대성당 위 다섯 빛기둥 순차 점화) +

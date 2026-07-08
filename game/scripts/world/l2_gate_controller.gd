@@ -494,6 +494,9 @@ func _start_purification(instant: bool = false) -> void:
 
 
 func _run_purification() -> void:
+	# 0. (CQ-4 G11) 빛 파문 — a cyan light flash + expanding ripple ring from the control tower
+	#    (shared CutsceneDirector set-piece; each world tinted to its palette).
+	_purify_flash_ring(Color(0.5, 0.85, 1.0), _l2_core_pos())
 	# 1. control tower screen 점등.
 	_light_tower_screen()
 	await get_tree().create_timer(0.5).timeout
@@ -505,6 +508,32 @@ func _run_purification() -> void:
 	# 4. text card.
 	await _purify_card("…기계들이, 숨을 쉬기 시작했다.")
 	_finish_purification()
+
+
+## (CQ-4 G11) A tinted white flash + expanding ripple ring from `origin` — the shared purification
+## "빛 파문" set-piece. Best-effort/headless-safe (missing loader/ysort = flash only).
+func _purify_flash_ring(tint: Color, origin: Vector2) -> void:
+	var cl := CanvasLayer.new()
+	cl.layer = 12
+	add_child(cl)
+	var flash := CutsceneDirector.make_flash(Color(tint.r, tint.g, tint.b))
+	cl.add_child(flash)
+	CutsceneDirector.flash(self, flash, 0.85, 0.1, 1.0)
+	var ys := _loader.get_node_or_null(_loader.ysort_layer_path) as Node2D if _loader != null else null
+	if ys != null:
+		CutsceneDirector.spawn_ripple_ring(self, ys, origin, tint, 18.0, 1.8, 60)
+	get_tree().create_timer(1.3, true, false, true).timeout.connect(func():
+		if is_instance_valid(cl):
+			cl.queue_free())
+
+
+## World-space origin for the L2 purify ring (control tower, else map centre).
+func _l2_core_pos() -> Vector2:
+	if _tower_node != null and is_instance_valid(_tower_node) and _tower_node is Node2D:
+		return (_tower_node as Node2D).global_position
+	if _loader != null:
+		return _loader.cell_center_world(Vector2i(int(_loader.width / 2), int(_loader.height / 2)))
+	return Vector2.ZERO
 
 
 func _finish_purification() -> void:

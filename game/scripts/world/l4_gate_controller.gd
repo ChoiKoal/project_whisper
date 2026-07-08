@@ -389,6 +389,8 @@ func _start_purification(instant: bool = false) -> void:
 
 
 func _run_purification() -> void:
+	# 0. (CQ-4 G11) 빛 파문 — a golden rune flash + ripple ring from the seal core (봉인이 다시 짜인다).
+	_purify_flash_ring(Color(0.95, 0.8, 0.45), _l4_core_pos())
 	_light_core()
 	await get_tree().create_timer(0.5).timeout
 	_wave_seal_tower()
@@ -396,6 +398,32 @@ func _run_purification() -> void:
 	_darken_base_tone()
 	await _purify_card("…풀려난 것이, 마지막으로 한 번 더 잠들었다.")
 	_finish_purification()
+
+
+## (CQ-4 G11) Shared purify flash + ripple ring, gold rune-tinted for the sealing sanctum.
+func _purify_flash_ring(tint: Color, origin: Vector2) -> void:
+	var cl := CanvasLayer.new()
+	cl.layer = 12
+	add_child(cl)
+	var flash := CutsceneDirector.make_flash(Color(tint.r, tint.g, tint.b))
+	cl.add_child(flash)
+	CutsceneDirector.flash(self, flash, 0.85, 0.1, 1.0)
+	var ys := _loader.get_node_or_null(_loader.ysort_layer_path) as Node2D if _loader != null else null
+	if ys != null:
+		CutsceneDirector.spawn_ripple_ring(self, ys, origin, tint, 18.0, 1.8, 60)
+	get_tree().create_timer(1.3, true, false, true).timeout.connect(func():
+		if is_instance_valid(cl):
+			cl.queue_free())
+
+
+func _l4_core_pos() -> Vector2:
+	if _core_node != null and is_instance_valid(_core_node) and _core_node is Node2D:
+		return (_core_node as Node2D).global_position
+	if _loader != null and _mount_cell != Vector2i(-1, -1):
+		return _loader.cell_center_world(_mount_cell)
+	if _loader != null:
+		return _loader.cell_center_world(Vector2i(int(_loader.width / 2), int(_loader.height / 2)))
+	return Vector2.ZERO
 
 
 func _finish_purification() -> void:
