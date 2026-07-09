@@ -18,7 +18,7 @@
 - 🟡 **[해결] BUG 2: 솥단지 발광 오브 "동그라미 둥둥".** v1.4.0 솥 리사이즈 후 개구부(림)+발광 링이 몸통 위로 떠서 detached halo로 보였다. **원인**: `tools_gen_home_objects.js` cauldron 지오메트리에서 몸통 어깨 반경이 림(rx)보다 좁고 몸통 시작 y가 림 아래(목 간극)라 개구부가 공중에 뜸. **수정**: 어깨 반경=림 폭(base 0.86→1.00), 몸통 시작을 개구부(topY)에 붙임(구: shoulderY+ry), botY 정합 → cauldron.png/cauldron_bubble.png 재생성. **전 레이어 커버**: L2~L5 조합대는 동일 솥 아트 + 색만 다른 light_pool(시안/주황/금/앰버) 재사용이라 단일 아트 픽스로 4종 불꽃색 전부 해결(라이트풀 오프셋 (0,-8) 개구부 정렬 유지).
 - 🔴 **[해결] BUG 3: 벽 뒤 나무 뚫림 (y-sort).** 벽(내부 릿지 바위벽) 북쪽(뒤)에 있어야 할 나무가 벽을 뚫고 앞에 그려졌다. **원인**: 릿지 벽 스프라이트가 고정 z(`RIDGE_Z=3`)에 있어 YSortLayer(z5)의 나무/오브젝트에게 **위치와 무관하게 항상** 짐. **수정**: `map_loader.gd` `_build_ridges`가 릿지 벽을 **YSortLayer에 편입**하고 노드 `position.y = 셀 중심`(접지점 = 나무 발밑과 동일 기준)으로 배치 → 벽·나무가 화면 Y로 올바르게 정렬(벽 북쪽=뒤/가려짐, 벽 남쪽=앞/보임). 하네스 없을 때(테스트) 고정-z 오버레이 폴백 유지. **가림 하네스 신설**: `v141_ysort_harness`(YSort 편입·접지 앵커·가림 불변식 북=뒤/남=앞 + 나무 발밑 앵커) 9/9 PASS.
 - 검증: 전 하네스 스위프 그린 + 프리뷰 6종 재렌더(방위 정합) + 솥 아트 재생성. **세이브 100% 호환**(게임 로직 변경은 릿지 벽 시각 정렬뿐, 데이터/충돌 무변경).
-- 릴리스: v1.4.1 — URL: (아래 STATUS 참조)
+- 릴리스: v1.4.1 (win64 39,712,436 / macos 68,044,592 bytes, mac ad-hoc 서명 verify OK: 2슬라이스 ADHOC + CodeResources sealed). URL: https://github.com/ChoiKoal/project_whisper/releases/tag/v1.4.1
 
 ---
 

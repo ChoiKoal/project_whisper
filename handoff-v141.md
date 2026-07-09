@@ -1,7 +1,18 @@
 # Handoff — v1.4.1 (KOAL 실플레이 리포트 3건: 렌더 방위·솥 이펙트·가림 순서)
 
-Status: DONE(코드/아트/하네스/프리뷰). 세이브 100% 호환(게임 로직 변경 = 릿지 벽 시각 정렬뿐,
-데이터/충돌 스키마 무변경). 릴리스 빌드/업로드 상태는 STATUS.md 최신 항목 참조.
+Status: DONE(코드/아트/하네스/프리뷰/릴리스). 세이브 100% 호환(게임 로직 변경 = 릿지 벽 시각 정렬뿐,
+데이터/충돌 스키마 무변경).
+
+## 릴리스 (v1.4.1 — 완료 2026-07-10)
+- HEAD=8615958(b743f5c 픽스 + ysort 하네스 uid 커밋). 태그 v1.4.1 푸시 완료.
+- 실 PCK 검증: dev포함 linux PCK(6.83MB) → `--main-pack` v141_ysort_harness(9 PASS)·e2e_playthrough(PASS)·
+  interaction_fusion_harness(RESULT PASS 0 fail). 프리셋 원복(3 preset 모두 exclude scenes/dev/*), 클린 PCK
+  6.42MB 대비 dev 컨텐츠 401KB 제외 확인(잔여는 uid/class-cache 메타 문자열뿐).
+- 프리뷰 재렌더: `/workspace/group/preview-home.png`(1600×853)·`/workspace/group/preview-l1.png`(5304×1860) —
+  정합 STACKED 컴포지터(방위 = 인게임 일치).
+- 빌드: win/mac 클린 빌드(build_exports.sh) + mac ad-hoc 서명 verify OK(2슬라이스 ADHOC + CodeResources sealed).
+  산출: ProjectWhisper-win64-v1.4.1.zip(39,712,436 bytes) + ProjectWhisper-macos-v1.4.1.zip(68,044,592 bytes).
+- GitHub 릴리스: https://github.com/ChoiKoal/project_whisper/releases/tag/v1.4.1 (한국어 노트, zip 2종 uploaded).
 
 ## 무엇을 했나
 KOAL 실플레이에서 발견된 3건 수정.
