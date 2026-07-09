@@ -238,14 +238,19 @@ func _test_border_and_ridge_pieces(loader: MapLoader) -> void:
 	# Interior ridge walls: rock-pillar pieces (continuous wall, not tent cones).
 	_check("interior ridge walls use rock pieces", loader.ridge_sprite_count > 0,
 		"n=%d" % loader.ridge_sprite_count)
-	var ridges := loader.get_node_or_null("Ridges")
+	# (v1.4.1 bug3) Ridge wall sprites moved from the fixed-z Ridges overlay into the YSortLayer
+	# (y-sorted, foot-anchored) so trees behind a wall are occluded by it. Look for a rock-wall
+	# textured sprite on a ridge cell inside the YSortLayer.
+	var ysort := loader.get_node_or_null("../YSortLayer") as Node2D
 	var ridge_tex_ok := false
-	if ridges != null:
-		for s in ridges.get_children():
-			if s is Sprite2D and (s as Sprite2D).texture != null:
+	if ysort != null:
+		for s in ysort.get_children():
+			if s is Sprite2D and (s as Sprite2D).texture != null \
+					and (s as Sprite2D).texture.get_height() >= 180 \
+					and loader.ridge_cells.has(loader.world_to_cell((s as Sprite2D).global_position)):
 				ridge_tex_ok = true
 				break
-	_check("ridge sprites carry a rock-wall texture", ridge_tex_ok)
+	_check("ridge wall sprites carry a rock-wall texture (in YSortLayer)", ridge_tex_ok)
 
 
 # ---- 7. new CC0 tileset wiring -------------------------------------------

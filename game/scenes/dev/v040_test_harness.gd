@@ -79,12 +79,21 @@ func _test_ridge_classification(loader: MapLoader) -> void:
 	_check("ridge sprites placed for every ridge cell",
 		loader.ridge_sprite_count == loader.ridge_cells.size(),
 		"sprites=%d cells=%d" % [loader.ridge_sprite_count, loader.ridge_cells.size()])
+	# (v1.4.1 bug3) Ridge WALL sprites now live in the YSortLayer (y-sorted, foot-anchored at the
+	# cell centre) instead of the fixed-z Ridges overlay, so a tree NORTH of a wall is occluded BY
+	# the wall (previously the fixed z=3 always lost to the YSortLayer z5 → tree poked through).
 	var ridges := loader.get_node_or_null("Ridges")
-	_check("Ridges overlay node exists with sprite children",
-		ridges != null and ridges.get_child_count() > 0)
-	_check("Ridges sit below the YSort object layer (terrain z)",
-		ridges != null and ridges.z_index < MapLoader.YSORT_Z,
-		"ridge_z=%d ysort_z=%d" % [ridges.z_index if ridges else -99, MapLoader.YSORT_Z])
+	_check("Ridges overlay node still present (holds CorridorTrail)", ridges != null)
+	var ysort := loader.get_node_or_null("../YSortLayer") as Node2D
+	var wall_sprites_in_ysort := 0
+	if ysort != null:
+		for ch in ysort.get_children():
+			if ch is Sprite2D and (ch as Sprite2D).texture != null \
+					and (ch as Sprite2D).texture.get_height() >= 180 \
+					and loader.ridge_cells.has(loader.world_to_cell((ch as Sprite2D).global_position)):
+				wall_sprites_in_ysort += 1
+	_check("ridge walls are y-sorted in the YSortLayer (bug3 occlusion fix)",
+		wall_sprites_in_ysort > 0, "walls_in_ysort=%d" % wall_sprites_in_ysort)
 	# G2 corridor trail-hint decals present (worn-dirt patches south of the bush gap).
 	_check("corridor worn-dirt trail decals placed", loader.trail_decal_count > 0,
 		"n=%d" % loader.trail_decal_count)
