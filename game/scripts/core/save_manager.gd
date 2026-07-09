@@ -491,7 +491,13 @@ func apply_world_state(data: Dictionary) -> void:
 	# Player position (now stored inside the per-scene world dict).
 	if _player != null and m.has("player"):
 		var p: Dictionary = m["player"]
-		_player.global_position = Vector2(float(p.get("x", 0.0)), float(p.get("y", 0.0)))
+		var pos := Vector2(float(p.get("x", 0.0)), float(p.get("y", 0.0)))
+		# (v1.4.2) Save-compat guard: the home island was re-authored (staggered layout,
+		# 21×17) in v1.4.2. A pre-v1.4.2 home snapshot stored the player at OLD-layout world
+		# coords that may now fall on a VOID cell (unwalkable border) or off the new slab —
+		# the player would spawn stuck inside border collision. Clamp the restored position to
+		# the nearest walkable cell so any legacy home coordinate lands on solid ground.
+		_player.global_position = _nearest_walkable_world(pos)
 	# Held item (per-scene).
 	var ic := _find_interaction()
 	if ic != null:
@@ -521,6 +527,44 @@ func _apply_placed_objects(states: Array) -> void:
 		obj.global_position = _loader.cell_center_world(cell)
 		if ItemDB.placement_blocks(item_id):
 			GameState.tile_walkable_changed.emit(cell)
+
+
+## (v1.4.2) Return the nearest walkable-cell CENTER world position to `world`. If the cell the
+## point already lands in is walkable, the point is returned UNCHANGED (no snapping when the save
+## is fine). Otherwise a bounded ring search around that cell picks the closest walkable cell and
+## returns its centre — so a legacy home save whose coords now fall on a re-authored VOID cell (or
+## off the new slab) is corrected to solid ground instead of leaving the player stuck in the border
+## collision body. Falls back to the spawn cell (then the raw point) if nothing walkable is found.
+func _nearest_walkable_world(world: Vector2) -> Vector2:
+	if _loader == null:
+		return world
+	var cell := _loader.world_to_cell(world)
+	if _loader.is_cell_walkable(cell):
+		return world
+	# Expand a square ring outward; first walkable cell found (smallest Chebyshev radius) wins,
+	# picking the one whose centre is closest to the original point among that ring.
+	var max_r := maxi(_loader.width, _loader.height)
+	for radius in range(1, max_r + 1):
+		var best := Vector2i(-1, -1)
+		var best_d := INF
+		for dy in range(-radius, radius + 1):
+			for dx in range(-radius, radius + 1):
+				# only the ring perimeter at this radius (interior already scanned)
+				if maxi(absi(dx), absi(dy)) != radius:
+					continue
+				var cand := cell + Vector2i(dx, dy)
+				if not _loader.is_cell_walkable(cand):
+					continue
+				var d := _loader.cell_center_world(cand).distance_squared_to(world)
+				if d < best_d:
+					best_d = d
+					best = cand
+		if best != Vector2i(-1, -1):
+			return _loader.cell_center_world(best)
+	# Nothing walkable near the point — fall back to the authored spawn, else the raw point.
+	if _loader.spawn_cell != Vector2i(-1, -1):
+		return _loader.cell_center_world(_loader.spawn_cell)
+	return world
 
 
 ## Find the YSortLayer node (placed objects' parent) in the live scene, or null.
