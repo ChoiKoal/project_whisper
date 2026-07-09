@@ -54,7 +54,11 @@ const ROCK_TEX = tile("cliff_face_a");   // real rock material sampled into the 
 const TONE = [0x8a / 255 * 1.28, 0x86 / 255 * 1.28, 0xb8 / 255 * 1.20];
 
 // ---------------- iso projection --------------------------------------------
-function cellLocal(c, r) { return [(c - r) * HW, (c + r) * HH]; }
+// STACKED isometric projection — mirrors the GAME's real map_to_local (whisper TileSet:
+// ISOMETRIC, tile_layout=0 STACKED, tile_offset_axis=0 HORIZONTAL, 128×64). The old
+// (c-r,c+r) diamond formula rotated the map ~45° vs in-game (bug: 렌더↔인게임 방위 불일치).
+// x = (col + 0.5·(row odd))·TW ; y = row·(TH/2). See tools_overview_l1.js for full note.
+function cellLocal(c, r) { return [(c + ((r & 1) ? 0.5 : 0)) * TW, r * HH]; }
 function isIsland(c, r) { return r >= 0 && r < H && c >= 0 && c < layout[r].length && layout[r][c] !== "V"; }
 
 // ---------------- hash / rock (cliff_gen.gd mirror) -------------------------
@@ -466,7 +470,8 @@ for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
 }
 
 // Pass -2: debris islets.
-const centerLX = OX + (W / 2 - H / 2) * HW, centerLY = OY + (W / 2 + H / 2) * HH;
+const [_clx, _cly] = cellLocal(Math.floor(W / 2), Math.floor(H / 2));
+const centerLX = OX + _clx, centerLY = OY + _cly;
 const debris = [[-980, 120, 78, 0], [1020, 40, 64, 1], [-620, 560, 52, 2], [760, 600, 70, 3], [120, -560, 46, 4]];
 for (const [ox, oy, w, k] of debris) { const d = makeDebris(w, 900 + k); blit(d, centerLX + ox - w / 2, centerLY + oy - d.height / 2); }
 

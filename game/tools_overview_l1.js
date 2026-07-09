@@ -91,7 +91,16 @@ function variantSource(c, r) {
 const GRASS_VARIANT_SYMS = new Set(["g"]);
 
 // ---- iso projection ----------------------------------------------------------
-function cellLocal(c, r) { return [(c - r) * HW, (c + r) * HH]; }
+// MUST mirror the GAME's real projection. The whisper TileSet is ISOMETRIC with
+// tile_layout=0 (TILE_LAYOUT_STACKED) + tile_offset_axis=0 (HORIZONTAL) at 128×64, so
+// Godot's map_to_local is a STAGGERED/OFFSET layout — NOT a (c-r,c+r) diamond. The old
+// diamond formula rotated the whole map ~45° vs in-game (bug: 렌더↔인게임 방위 불일치).
+// Godot: local = ((col + 0.5·(row&1) + 0.5)·TW, (row·0.5 + 0.5)·TH). The constant
+// +0.5·TW / +0.5·TH is absorbed by the OX/OY recentre, so we drop it here:
+//   x = (col + 0.5·(row odd)) · TW ,  y = row · (TH/2)
+// col-axis runs screen-horizontal (east); each row steps down half a tile, odd rows
+// shifted right by half a tile — exactly the runtime TileMapLayer.
+function cellLocal(c, r) { return [(c + ((r & 1) ? 0.5 : 0)) * TW, r * HH]; }
 function symAt(c, r) {
   if (r < 0 || r >= H) return "";
   const row = layout[r]; if (c < 0 || c >= row.length) return "";
@@ -416,7 +425,7 @@ function pushObj(c, r, art, off, extra = {}) {
   const sw = src.width * scale, sh = src.height * scale;
   const sx = Math.round(baseX - sw / 2 + off[0]);
   const sy = Math.round(baseY - sh + HH + off[1]);
-  draws.push({ depth: c + r, sx, sy, src, scale, gx: baseX, gy: baseY, off, ...extra });
+  draws.push({ depth: (typeof baseY !== "undefined" ? baseY : sy), sx, sy, src, scale, gx: baseX, gy: baseY, off, ...extra });
 }
 
 // track world-tree O block for a single centroid placement (matches _spawn: first O cell only).
@@ -456,7 +465,7 @@ for (let r = 0; r < H; r++) for (let c = 0; c < layout[r].length; c++) {
         const sc = 0.72, o = [0, -238];
         if (body) {
           const sw = body.width * sc, sh = body.height * sc;
-          draws.push({ depth: c + r + 100, isWorldTree: true, src: body, scale: sc,
+          draws.push({ depth: cy + 100, isWorldTree: true, src: body, scale: sc,
             sx: Math.round(cx - sw / 2 + o[0] * sc), sy: Math.round(cy - sh + HH + o[1] * sc),
             gx: cx, gy: cy });
         }

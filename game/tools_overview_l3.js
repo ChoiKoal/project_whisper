@@ -108,7 +108,11 @@ function drawApron(baseX, baseY, drop, exposeSE, exposeSW, salt, fade) {
 }
 
 // ---------------- iso projection --------------------------------------------
-function cellLocal(c, r) { return [(c - r) * HW, (c + r) * HH]; }
+// STACKED isometric projection — mirrors the GAME's real map_to_local (whisper TileSet:
+// ISOMETRIC, tile_layout=0 STACKED, tile_offset_axis=0 HORIZONTAL, 128×64). The old
+// (c-r,c+r) diamond formula rotated the map ~45° vs in-game (bug: 렌더↔인게임 방위 불일치).
+// x = (col + 0.5·(row odd))·TW ; y = row·(TH/2). See tools_overview_l1.js for full note.
+function cellLocal(c, r) { return [(c + ((r & 1) ? 0.5 : 0)) * TW, r * HH]; }
 function heightAt(c, r) {
   if (r < 0 || r >= height.length) return 0;
   const row = height[r]; if (c < 0 || c >= row.length) return 0;
@@ -288,7 +292,7 @@ for (let r = 0; r < H; r++) for (let c = 0; c < layout[r].length; c++) {
   const baseX = OX + lx, baseY = OY + ly - liftAt(c, r);
   const sx = Math.round(baseX - src.width / 2 + off[0]);
   const sy = Math.round(baseY - src.height + HH + off[1]);
-  draws.push({ depth: c + r, sx, sy, src, glowStrength, steam: STEAM_SYMS.has(sym),
+  draws.push({ depth: (typeof baseY !== "undefined" ? baseY : sy), sx, sy, src, glowStrength, steam: STEAM_SYMS.has(sym),
     gx: baseX, gy: baseY - src.height * 0.4 + off[1] * 0.4 + HH, seed: hash2(c, r, 41) });
 }
 draws.sort((a, b) => a.depth - b.depth);
