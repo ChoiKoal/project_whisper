@@ -383,14 +383,24 @@ func _build_ridges() -> void:
 			var t: Texture2D = tex_b if use_b else tex_a
 			s.texture = t
 			s.centered = false
-			# Anchor the sprite's BOTTOM (the wall base) at the cell's lower rim so the
-			# rock rises up out of the diamond. The piece is 128 wide; left edge at
-			# center.x-64, bottom at center.y + TILE_HALF_H.
-			var center: Vector2 = map_to_local(cell)
+			# (v1.4.1 bug3) Y-SORT the wall against trees/objects instead of a fixed z that
+			# always lost to the YSortLayer (a tree NORTH of / behind a wall poked THROUGH it).
+			# The wall node's sort key is its position.y — set that to the cell CENTRE (the wall's
+			# ground contact / 접지점), exactly like a tree's foot, and lift the ART up via `offset`
+			# so the rock rises out of the diamond. Anchor the sprite BOTTOM at the cell's lower rim:
+			# left edge at center.x-64, bottom at center.y + TILE_HALF_H → offset.y = TILE_HALF_H - th.
 			var th: float = float(t.get_height())
-			s.position = center + Vector2(-64.0, TILE_HALF_H - th)
+			s.offset = Vector2(-64.0, TILE_HALF_H - th)
+			s.position = cell_center_world(cell)
 			s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			_ridge_overlay.add_child(s)
+			if _ysort != null:
+				s.y_sort_enabled = true
+				_ysort.add_child(s)
+			else:
+				# No YSortLayer (test harness): fall back to the fixed-z overlay so ridges still show.
+				s.offset = Vector2.ZERO
+				s.position = map_to_local(cell) + Vector2(-64.0, TILE_HALF_H - th)
+				_ridge_overlay.add_child(s)
 			ridge_sprite_count += 1
 
 	_build_corridor_trail()
