@@ -30,17 +30,19 @@ function cauldron(name, bubble){
   const topY=54, rx=30, h=52;   // topY 개구부(어깨) 중심, rx=어깨 반경, h=몸통 높이
   const ry=rx/2;
   const shoulderY = topY;       // 어깨(개구부 테두리) y
-  // 볼록 배 프로파일: 어깨 0.82 → 중배(t≈0.42) 1.30 → 바닥 0.42. 사인 부풀림.
+  // 볼록 배 프로파일: 어깨 1.0(립과 동일 폭) → 중배(t≈0.42) 1.30 → 바닥 0.56. 사인 부풀림.
+  // v1.4.1 bug2: 어깨 반경을 립(rx)과 동일하게 맞춰 개구부가 몸통 위에 얹히도록(둥둥 뜨는 halo 제거).
   function bellyR(t){ // t: 0(어깨)~1(바닥)
     const bulge = Math.sin(Math.min(1,t*1.15)*Math.PI); // 0→1→0 형태
-    const base = 0.86 + 0.06*t;            // 어깨→바닥 기저 (바닥 덜 뾰족)
-    return rx*(base + 0.46*bulge - 0.30*t*t); // 배 부풀림 - 완만한 바닥 수렴
+    const base = 1.00 + 0.02*t;            // 어깨=립폭에서 시작 → 바닥 덜 뾰족
+    return rx*(base + 0.34*bulge - 0.30*t*t); // 배 부풀림 - 완만한 바닥 수렴
   }
   // 몸통 채우기: 각 높이 라인마다 좌우 반경만큼 3톤 곡면 셰이딩(광원 우상단).
+  // v1.4.1 bug2: 몸통 시작을 개구부(topY)에 붙여(구: shoulderY+ry) 립↔몸통 사이 목 간극을 없앤다.
   for(let s=0;s<=h;s++){
     const t=s/h;
     const rr=bellyR(t);
-    const yline=shoulderY+ry+ s; // 어깨 앞쪽 하단부터 아래로
+    const yline=shoulderY+ s; // 개구부 중심부터 아래로 (립 밑면과 연속)
     for(let x=-rr;x<=rr;x++){
       const xr=x/rr;
       // 원통 곡면 램버트: 광원 우상단 → 우측/윗쪽 밝고 좌하단 어둡게. 연속 그라데이션.
@@ -74,7 +76,7 @@ function cauldron(name, bubble){
   glow(cv,cx,topY,brx-2,glowV,70);
   // 다리 3개 복원 (아이소 배치: 앞-좌, 앞-우, 뒤 중앙 살짝 위/가림).
   // 배불뚝 바닥(t=1 반경 ≈ bellyR(1))에서 짧게 뻗음.
-  const botY = shoulderY+ry+h;  // 몸통 바닥 y
+  const botY = shoulderY+h;  // 몸통 바닥 y (v1.4.1: 몸통 시작을 topY로 올린 것과 정합)
   for(const [fx,fy,fw] of [[cx-16,botY-4,8],[cx+16,botY-4,8],[cx,botY-1,7]]){
     rect(cv,fx-fw/2,fy,fx+fw/2,fy+9,bodyDk);
     rect(cv,fx-fw/2,fy,fx+fw/2-2,fy+3,bodyD);            // 다리 윗면 광원 하이라이트
