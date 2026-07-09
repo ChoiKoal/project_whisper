@@ -208,7 +208,8 @@ func _stepH_home_awakening() -> void:
 	var hrespawn := _scene.get_node("ObjectRespawn") as ObjectRespawn
 	SaveManager.register_world(hloader, hplayer, hrespawn)
 
-	_check("home island booted (22×22 floating isle)", hloader.width == 22 and hloader.height == 22,
+	# (v1.4.2) 홈 섬 = staggered 투영 기준으로 재저작된 21×17 floating isle (포탈 아치 구도).
+	_check("home island booted (21×17 floating isle, v1.4.2 재저작)", hloader.width == 21 and hloader.height == 17,
 		"%d×%d" % [hloader.width, hloader.height])
 	_check("5 portals stand around the dais", _count_portals() == 5, "n=%d" % _count_portals())
 	_check("quest line begins at P0 (여기가… 나의 세계)", QuestManager.active_id == "P0",

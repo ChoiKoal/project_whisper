@@ -144,7 +144,8 @@ func _b_home() -> void:
 	_scene = await _boot(HOME)
 	var loader := _scene.get_node("Ground") as MapLoader
 
-	_check("home map built (22×22)", loader.width == 22 and loader.height == 22,
+	# (v1.4.2) 홈 섬 staggered 재저작 → 21×17 (포탈 아치 구도).
+	_check("home map built (21×17)", loader.width == 21 and loader.height == 17,
 		"%d×%d" % [loader.width, loader.height])
 	_check("home has a spawn (dais) cell", loader.spawn_cell != Vector2i(-1, -1),
 		"spawn=%s" % loader.spawn_cell)
