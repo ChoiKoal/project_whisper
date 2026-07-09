@@ -34,7 +34,7 @@ func _run() -> void:
 		GameState.set_portal_state(lay, GameState.PORTAL_DORMANT)
 
 	# Reframe: drop the player's follow-camera and add a static camera centred on the island,
-	# zoomed out to show the whole 22×22 slab + starfield.
+	# zoomed out to show the whole 21×17 slab + starfield.
 	var loader := scene.get_node("Ground") as MapLoader
 	var center := loader.cell_center_world(Vector2i(loader.width / 2, loader.height / 2))
 	var pcam := scene.get_node_or_null("YSortLayer/Player/Camera2D") as Camera2D
