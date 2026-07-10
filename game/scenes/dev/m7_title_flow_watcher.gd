@@ -171,8 +171,8 @@ func _current() -> Node:
 
 ## (v0.5.0 phase C) A world is healthy if the current scene is the HOME island (or grove)
 ## and its MapLoader built a non-empty map. New game / continue now land on the home island
-## (제0세계, 22×22); the check accepts either world so the flow harness stays a scene-change
-## survival test regardless of which world the save was in.
+## (제0세계). v1.4.2에서 홈은 staggered 재저작으로 21×17 (기존 22×22) — 임계값을 넉넉히
+## 낮춰 두 세계 모두 통과(홈 최소변 17, 그로브 40). 씬 체인지 생존 테스트라 세계 무관.
 func _grove_ok() -> bool:
 	var cs := _current()
 	if cs == null or (cs.name != "HomeIsland" and cs.name != "StartingGrove"):
@@ -180,7 +180,7 @@ func _grove_ok() -> bool:
 	var ground := cs.get_node_or_null("Ground")
 	if ground == null:
 		return false
-	return int(ground.get("width")) >= 20 and int(ground.get("height")) >= 20
+	return int(ground.get("width")) >= 15 and int(ground.get("height")) >= 15
 
 
 func _tiles_ok() -> bool:
@@ -188,7 +188,8 @@ func _tiles_ok() -> bool:
 	if cs == null:
 		return false
 	var tm := _find_tilemap(cs)
-	# Home island is 22×22 (~300 island cells); grove is 40×40. Either has ≥ 300 used cells.
+	# Home island (v1.4.2) is 21×17 = 357 used cells (VOID cells are set_cell'd to source 0 too);
+	# grove is 40×40. Either comfortably exceeds 300. (Pre-v1.4.2 home was 22×22 = 484.)
 	return tm != null and tm.get_used_cells().size() >= 300
 
 
