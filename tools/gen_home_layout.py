@@ -27,28 +27,34 @@ def setc(c, r, new, expect="VD"):
 
 # ---- 1. GROUND expansion (V->D). Grow the silhouette asymmetrically around the fixed core.
 #      Listed as (row, [cols]) — every one must currently be V.
+# NOTE (v1.10.0 ratio fix): staggered projection spreads 128px/col but only 32px/row, so
+# an over-wide slab blows the screen bbox ratio past 2.6:1. Silhouette is trimmed to cols
+# 4..17 and grown taller (south promontory to r24) → ratio 2.42:1 (in the 1.7~2.6 band).
+# Core cells never move (arch invariant unaffected — indices unchanged).
 GROUND = {
     2:  [15],                                   # top ridge widen (right)
     3:  [5, 15, 16],                            # arch band flanks
     4:  [5, 15, 16],
     5:  [4, 5, 15, 16],                          # left promontory begins
-    6:  [4, 5, 6, 15, 16, 17],                   # widen both flanks
-    7:  [5, 6, 15, 16, 17, 18],                  # right terrace grows
-    8:  [4, 5, 15, 16, 17, 18],
-    9:  [4, 5, 15, 16, 17, 18],
-    10: [3, 4, 5, 6, 15, 16, 17, 18, 19],        # widest belt (dais plaza)
-    11: [4, 5, 15, 16, 17, 18, 19],              # (Y at 14 stays; terrace east of it)
-    12: [3, 4, 5, 15, 16, 17, 18, 19],
-    13: [4, 5, 6, 14, 15, 16, 17, 18],           # cauldron work zone / SE forecourt
-    14: [5, 6, 14, 15, 16, 17],
-    15: [6, 7, 12, 13, 14, 15, 16],              # forecourt taper
-    16: [7, 8, 12, 13, 14, 15],
+    6:  [4, 5, 6, 15, 16],                       # widen both flanks
+    7:  [5, 6, 15, 16, 17],                      # right terrace (tighter)
+    8:  [4, 5, 15, 16, 17],
+    9:  [4, 5, 15, 16, 17],
+    10: [4, 5, 6, 15, 16, 17],                   # dais plaza belt
+    11: [4, 5, 15, 16, 17],                      # (Y at 14 stays; terrace east of it)
+    12: [4, 5, 15, 16, 17],
+    13: [4, 5, 6, 14, 15, 16, 17],               # cauldron work zone / SE forecourt
+    14: [5, 6, 14, 15, 16],
+    15: [6, 7, 12, 13, 14, 15],                  # forecourt taper
+    16: [7, 8, 11, 12, 13, 14],
     17: [8, 9, 10, 11, 12, 13, 14],              # new rows: south forecourt
-    18: [9, 10, 11, 12, 13, 14],
-    19: [10, 11, 12, 13, 14],
-    20: [11, 12, 13, 14],
-    21: [12, 13],
-    22: [13],
+    18: [8, 9, 10, 11, 12, 13, 14],
+    19: [9, 10, 11, 12, 13, 14],
+    20: [9, 10, 11, 12, 13],
+    21: [10, 11, 12, 13],
+    22: [10, 11, 12, 13],
+    23: [11, 12, 13],                            # south promontory grows taller (ratio band)
+    24: [11, 12],
 }
 for r, cols in GROUND.items():
     for c in cols:
