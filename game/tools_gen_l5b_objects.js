@@ -540,4 +540,165 @@ function greatBellSilhouette() {
 }
 greatBellSilhouette();
 
+// ── FIELD RUIN DECOR (QA §㉙ 실루엣 변주) ─────────────────────────────────────
+// The 종의 들판 (bell fields) read as an over-repeated grid of the same gatherable stamps.
+// These 5 non-gatherable decoratives break the silhouette so the field reads as a
+// '침묵한 종들의 무덤'(graveyard of silenced bells) — 폐허의 리듬, not random scatter.
+// All DEAD/silent (no living amber glow, or only a faint dead ember on the tilted bell) so
+// they contrast the living amber of the gatherables/great bell. 3 baked shape/size variants
+// each (base + _b + _c) → the loader hash-picks via art_variants so a field of stamps varies.
+
+// l5b_broken_plinth — 깨진 받침: a cracked/toppled ivory bell-plinth, its bell long gone. A
+//   snapped stump of a pedestal, a fracture line, chips at the foot. No glow (dead).
+function brokenPlinth(name, cfg) {
+  const W = 88, H = 92, cv = C(W, H), cx = W / 2, s = cfg.seed;
+  ao(cv, cx, H - 8, 24, 7, 60);
+  // the snapped pedestal stump (a short iso box, sheared off at an angle)
+  const topY = H - 26 - cfg.h, rx = cfg.rx;
+  isoBox(cv, cx, topY, rx, cfg.h, mix(IVO, S_HI, 0.18), S_MID, S_SH);
+  // sheared/jagged top edge — eat into the crown so it reads as broken, not built
+  const rnd = deterministic(s + 1);
+  for (let x = -rx; x <= rx; x++) {
+    const bite = Math.floor(rnd() * cfg.jag);
+    for (let k = 0; k < bite; k++) px(cv, cx + x, topY + Math.round(Math.abs(x) * 0.5) + k, VOID, 0);   // clear (ragged)
+  }
+  // a dark fracture running down the shaft
+  let fx = cx + cfg.crackX;
+  for (let y = topY + cfg.h * 0.3; y < H - 24; y += 1) { fx += (rnd() - 0.5) * 1.2; px(cv, fx, y, S_SH, 220); px(cv, fx + 1, y, darker(S_SH, 0.25), 180); }
+  // toppled cap block + chips lying at the foot
+  for (const [dx, dy, r] of cfg.chips) {
+    blob(cv, cx + dx, H - 20 + dy, r, Math.round(r * 0.6), IVO, s + 3 + r, 0.2);
+    px(cv, cx + dx + Math.round(r * 0.4), H - 20 + dy - Math.round(r * 0.4), S_HI, 200);
+  }
+  selout(cv, S_SH);
+  save(cv, name);
+}
+brokenPlinth('l5b_broken_plinth.png',   { seed: 85410, rx: 18, h: 34, jag: 5, crackX: 2,  chips: [[-15, 6, 7], [16, 3, 6]] });
+brokenPlinth('l5b_broken_plinth_b.png', { seed: 85411, rx: 14, h: 44, jag: 7, crackX: -3, chips: [[-13, 5, 6], [14, 6, 5], [3, 8, 5]] });
+brokenPlinth('l5b_broken_plinth_c.png', { seed: 85412, rx: 21, h: 26, jag: 4, crackX: 4,  chips: [[-17, 6, 8], [17, 4, 7]] });
+
+// l5b_empty_plinth — 빈 받침: an intact ivory bell-plinth with an EMPTY mounting socket on top
+//   (the bell it was cast for never came, or was taken). Faint dead amber ring in the socket.
+function emptyPlinth(name, cfg) {
+  const W = 88, H = 100, cv = C(W, H), cx = W / 2;
+  ao(cv, cx, H - 8, 24, 7, 62);
+  // pedestal base + a taller drum so the empty socket reads at bell-mouth height
+  isoBox(cv, cx, H - 34, cfg.rx, 16, mix(IVO, S_HI, 0.22), S_MID, S_SH);
+  isoCylinder(cv, cx, H - 34 - cfg.drum, cfg.rx - 4, cfg.drum, mix(IVO, S_HI, 0.26), S_MID, S_SH, 0.92);
+  // the recessed empty socket on the top face — dark, a faint cold amber outline (no bell)
+  const topCy = H - 34 - cfg.drum;
+  isoEllipseTop(cv, cx, topCy, cfg.rx - 6, darker(S_SH, 0.25), 255, S_SH);
+  for (let a = 0; a < 360; a += 22) px(cv, cx + Math.cos(a * Math.PI / 180) * (cfg.rx - 8), topCy + Math.sin(a * Math.PI / 180) * (cfg.rx - 8) * 0.5, AMB_DK, 130);
+  glow(cv, cx, topCy, cfg.rx - 8, AMB, 22);   // very faint dead shimmer, awaiting a bell
+  // a couple of ribbed stone bands
+  for (let y = 6; y < cfg.drum; y += 7) { const yy = topCy + 6 + y; for (let x = -(cfg.rx - 5); x <= cfg.rx - 5; x++) px(cv, cx + x, yy, darker(S_MID, 0.2), 130); }
+  selout(cv, S_SH);
+  save(cv, name);
+}
+emptyPlinth('l5b_empty_plinth.png',   { seed: 85430, rx: 18, drum: 30 });
+emptyPlinth('l5b_empty_plinth_b.png', { seed: 85431, rx: 15, drum: 40 });
+emptyPlinth('l5b_empty_plinth_c.png', { seed: 85432, rx: 21, drum: 24 });
+
+// l5b_tilted_bell — 기울어진 종: a bronze bell that has FALLEN off its mount and lies tilted on
+//   the ground, silent. Rendered leaning, mouth agape sideways, only a faint DEAD ember (dim).
+function tiltedBell(name, cfg) {
+  const W = 96, H = 88, cv = C(W, H), cx = W / 2, s = cfg.seed;
+  ao(cv, cx + cfg.lean, H - 6, 26, 8, 62);
+  // a low rubble rest the bell leans against
+  blob(cv, cx - cfg.lean, H - 16, 12, 6, IVO, s + 1, 0.22);
+  // the tilted bell body — a skewed bell profile (crown pushed to one side)
+  const footY = H - 18, h = cfg.h, w = cfg.w, topY = footY - h;
+  for (let y = 0; y < h; y++) {
+    const t = y / h;
+    const prof = 0.30 + 0.70 * Math.pow(t, 1.35);
+    const half = Math.max(1, Math.round((w / 2) * prof));
+    const skew = Math.round(cfg.lean * (1 - t));   // lean the crown over
+    for (let x = -half; x <= half; x++) {
+      const lit = (x - (h - y) * 0.18 + skew) > -half * 0.2;
+      let c = lit ? BRZ_HI : (x < -half * 0.45 ? BRZ_DK : BRZ);
+      if (t > 0.80 && t < 0.90 && x > 0) c = mix(c, [255, 255, 255], 0.18);
+      // patina/verdigris streaks on the dead metal
+      if (hcell(cx + x, topY + y, s & 255) < 0.10) c = mix(c, [90, 130, 110], 0.4);
+      px(cv, cx + x + skew, topY + y, c, 255);
+    }
+  }
+  // the mouth gapes to one side (dark ellipse, tilted)
+  const mHalf = Math.round((w / 2) * 0.9);
+  for (let x = -mHalf; x <= mHalf; x++) {
+    const yy = footY - Math.round(Math.sqrt(Math.max(0, 1 - (x / mHalf) ** 2)) * (mHalf * 0.4));
+    px(cv, cx + x + Math.round(cfg.lean * 0.2), yy, darker(BRZ_DK, 0.4), 230);
+  }
+  // crown loop, knocked askew
+  rect(cv, cx + cfg.lean - 1, topY - 4, cx + cfg.lean + 2, topY + 1, BRZ_DK, 230);
+  // a faint DEAD ember (barely alive — this bell is silent), dimmer than any gatherable
+  glow(cv, cx + Math.round(cfg.lean * 0.2), footY - Math.round(h * 0.3), cfg.glow, AMB, 34);
+  px(cv, cx + Math.round(cfg.lean * 0.2), footY - Math.round(h * 0.3), AMB_DK, 170);
+  selout(cv, BRZ_DK);
+  save(cv, name);
+}
+tiltedBell('l5b_tilted_bell.png',   { seed: 85450, w: 32, h: 30, lean: 7,  glow: 9 });
+tiltedBell('l5b_tilted_bell_b.png', { seed: 85451, w: 26, h: 36, lean: -9, glow: 8 });
+tiltedBell('l5b_tilted_bell_c.png', { seed: 85452, w: 36, h: 24, lean: 10, glow: 10 });
+
+// l5b_low_rubble — 낮은 잔해: a low, flat pile of fallen stone + bronze debris (belfry collapse).
+//   Reads short/wide — a horizontal silhouette to break the vertical plinths/bells. No glow.
+function lowRubble(name, cfg) {
+  const W = 96, H = 72, cv = C(W, H), cx = W / 2, s = cfg.seed;
+  ao(cv, cx, H - 6, 30, 8, 58);
+  // scattered stone lumps + a few bronze chunks, kept low to the ground
+  for (const [dx, dy, r, kind] of cfg.lumps) {
+    const col = kind === 'brz' ? BRZ : IVO;
+    blob(cv, cx + dx, H - 16 + dy, r, Math.round(r * 0.55), col, s + 3 + r, 0.2);
+    px(cv, cx + dx + Math.round(r * 0.4), H - 16 + dy - Math.round(r * 0.4), kind === 'brz' ? BRZ_HI : S_HI, 200);
+    // a shadowed underside crease
+    for (let x = -r; x <= r; x++) px(cv, cx + dx + x, H - 16 + dy + Math.round(r * 0.5), darker(kind === 'brz' ? BRZ_DK : S_SH, 0.15), 120);
+  }
+  // a broken bronze rim shard poking out (a slice of a fallen bell wall)
+  const rnd = deterministic(s + 7);
+  const ax = cx + cfg.arc[0], ay = H - 18 + cfg.arc[1];
+  for (let a = cfg.arc[2]; a < cfg.arc[3]; a += 4) {
+    const rad = a * Math.PI / 180, ar = cfg.arc[4];
+    px(cv, ax + Math.cos(rad) * ar, ay + Math.sin(rad) * ar * 0.6, a % 24 < 12 ? BRZ : BRZ_DK, 235);
+    px(cv, ax + Math.cos(rad) * (ar - 2), ay + Math.sin(rad) * (ar - 2) * 0.6, BRZ_HI, 180);
+  }
+  selout(cv, S_SH);
+  save(cv, name);
+}
+lowRubble('l5b_low_rubble.png',   { seed: 85470, lumps: [[-16, 4, 9, 'ivo'], [0, 2, 11, 'ivo'], [15, 5, 8, 'brz'], [6, -4, 6, 'ivo']], arc: [12, -2, 200, 320, 14] });
+lowRubble('l5b_low_rubble_b.png', { seed: 85471, lumps: [[-18, 5, 8, 'ivo'], [-4, 3, 10, 'brz'], [13, 4, 9, 'ivo'], [22, 6, 6, 'ivo']], arc: [-14, 0, 220, 340, 12] });
+lowRubble('l5b_low_rubble_c.png', { seed: 85472, lumps: [[-14, 4, 10, 'ivo'], [4, 2, 12, 'ivo'], [18, 5, 7, 'brz']], arc: [10, -3, 190, 310, 16] });
+
+// l5b_nameless_stone — 무명석: a small unmarked grave-marker stone leaning in the field, ivory,
+//   worn smooth, a single faint eroded groove where a name/inscription has faded. No glow (silent).
+function namelessStone(name, cfg) {
+  const W = 80, H = 96, cv = C(W, H), cx = W / 2, s = cfg.seed;
+  ao(cv, cx + Math.round(cfg.tilt * 0.5), H - 8, 18, 6, 60);
+  // a rounded standing marker, tilted, tapering upward like a worn headstone
+  const footY = H - 18, h = cfg.h, w = cfg.w, topY = footY - h;
+  for (let y = 0; y < h; y++) {
+    const t = y / h;
+    // taper + rounded shoulder near the top
+    let half = Math.round((w / 2) * (1 - 0.18 * t));
+    if (t > 0.82) half = Math.round(half * Math.sqrt(Math.max(0, 1 - ((t - 0.82) / 0.18) ** 2)));
+    const skew = Math.round(cfg.tilt * t);
+    for (let x = -half; x <= half; x++) {
+      const lit = (x + skew) > -half * 0.15;
+      let c = lit ? lighter(IVO, 0.12) : darker(IVO, 0.15);
+      if (x < -half * 0.5) c = darker(c, 0.12);
+      // weathering mottle
+      if (hcell(cx + x, topY + y, s & 255) < 0.14) c = darker(c, 0.16);
+      px(cv, cx + x + skew, topY + y, c, 255);
+    }
+  }
+  // one faint eroded groove (a faded inscription line), amber-dark, barely legible
+  const gy = topY + Math.round(h * 0.5), gskew = Math.round(cfg.tilt * 0.5);
+  emberLine(cv, cx - Math.round(w * 0.25) + gskew, gy, Math.round(w * 0.5), AMB_DK, 120);
+  emberLine(cv, cx - Math.round(w * 0.18) + gskew, gy + 5, Math.round(w * 0.36), S_SH, 130);
+  selout(cv, S_SH);
+  save(cv, name);
+}
+namelessStone('l5b_nameless_stone.png',   { seed: 85490, w: 24, h: 52, tilt: 4 });
+namelessStone('l5b_nameless_stone_b.png', { seed: 85491, w: 20, h: 62, tilt: -6 });
+namelessStone('l5b_nameless_stone_c.png', { seed: 85492, w: 28, h: 42, tilt: 6 });
+
 console.log('l5b objects: done');
