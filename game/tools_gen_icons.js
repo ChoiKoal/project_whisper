@@ -2953,6 +2953,276 @@ icons.D323 = (cv) => { // 타버린 금서 burnt forbidden-book (decor·dead-end
 };
 
 // ============================================================================
+// EX-L5 침묵의 종탑 (v1.9.0). S8..S12 gather + D324..D346 craft. Silent-belfry
+// aesthetic: dusk bronze/verdigris bell-metal with pale IVORY-SILVER chime glow as
+// the only living/lit colour (a rung-out cathedral bell tower, sound gone still).
+// L5 divinity kinship (ivory/silver) but a bronze body. Each painter bespoke →
+// every file byte-unique. Reuses L2..L4 helpers (coil/disc/glowBehind/runeSpark).
+// ============================================================================
+const BF = {
+  bronzeD: hexToRGB('#3a2c1a'), bronze: hexToRGB('#6e5432'), bronzeM: hexToRGB('#8f7040'), bronzeL: hexToRGB('#b9955a'),
+  verd: hexToRGB('#5c8a72'), verdHi: hexToRGB('#8fc0a4'), verdD: hexToRGB('#33513f'),
+  ivory: hexToRGB('#efe8d6'), ivoryHi: hexToRGB('#fbf7ec'), ivoryD: hexToRGB('#b8ad92'),
+  chime: hexToRGB('#dfe6ee'), chimeHi: hexToRGB('#f4f8ff'), chimeD: hexToRGB('#8b98ab'),
+  ropeD: hexToRGB('#5a4326'), rope: hexToRGB('#8a6a3c'), ropeL: hexToRGB('#b58f56'),
+  stoneD: hexToRGB('#241f1a'), stone: hexToRGB('#453c30'), stoneL: hexToRGB('#6b5f4c'),
+};
+function chimeSpark(cv, x, y) {
+  setPx(cv, x, y, BF.chimeHi); setPx(cv, x - 1, y, BF.chime, 200); setPx(cv, x + 1, y, BF.chime, 200);
+  setPx(cv, x, y - 1, BF.chime, 200); setPx(cv, x, y + 1, BF.chime, 200);
+}
+function bellBody(cv, cx, cy, rx, ry, lit, dark) { // a bell silhouette: flared skirt + crown
+  for (let y = -ry; y <= ry; y++) {
+    const t = (y + ry) / (2 * ry);
+    const hw = Math.round(rx * (0.42 + 0.58 * t)); // flare wider toward the mouth
+    for (let x = -hw; x <= hw; x++) setPx(cv, cx + x, cy + y, (x - y) > 1 ? lit : dark);
+  }
+  fillRect(cv, cx - Math.round(rx * 0.9), cy + ry - 1, cx + Math.round(rx * 0.9), cy + ry + 1, dark); // lip
+}
+
+// ---------- S8..S12 (EX-L5 gather) ----------
+icons.S8 = (cv) => { // 종 파편 bell shard — a broken, still-quivering wedge of bell-bronze
+  glowBehind(cv, 24, 26, 11, BF.chimeD);
+  const poly = [[14, 16], [34, 12], [30, 38], [16, 34]];
+  for (let y = 12; y < 39; y++) for (let x = 12; x < 36; x++) {
+    // crude point-in-quad by scanline against the two long edges
+    const inx = x > 14 + (y - 16) * 0.1 && x < 34 - (y - 12) * 0.15;
+    if (inx && y > 12 && y < 38) setPx(cv, x, y, (x - y) > 2 ? BF.bronzeL : BF.bronze);
+  }
+  line(cv, 14, 16, 34, 12, BF.bronzeL, 1); // lit top edge
+  for (let y = 18; y < 34; y += 5) line(cv, 18, y, 30, y - 1, BF.ivoryD, 1); // casting striations
+  chimeSpark(cv, 24, 22); // the short quiver that remains
+  outline(cv, '#241a0e');
+};
+icons.S9 = (cv) => { // 종탑 밧줄 belfry rope — a stiff coiled bell-pull, knot hardened
+  glowBehind(cv, 24, 26, 12, BF.ropeD);
+  // coil of rope
+  for (let a = 0; a < Math.PI * 5; a += 0.12) {
+    const rr = 13 * (1 - a / (Math.PI * 5.5));
+    setPx(cv, 24 + Math.cos(a) * rr, 26 + Math.sin(a) * rr * 0.9, (a % 0.6 < 0.3) ? BF.ropeL : BF.rope);
+  }
+  disc(cv, 24, 14, 4, BF.rope); disc(cv, 24, 14, 3, BF.ropeL); // hardened knot at top
+  for (const [x, y] of [[19, 14], [29, 14], [24, 10]]) setPx(cv, x, y, BF.ropeD); // knot binds
+  chimeSpark(cv, 24, 26);
+  outline(cv, '#2a1e10');
+};
+icons.S10 = (cv) => { // 울림 청동 resonant bronze — a rough bronze billet, resonance asleep inside
+  ellipse(cv, 24, 30, 13, 11, BF.bronze, BF.bronzeD); // billet body
+  for (let y = 20; y < 40; y++) for (let x = 11; x < 37; x++) if (getA(cv, x, y)) setPx(cv, x, y, (x - y) > 0 ? BF.bronzeL : BF.bronze);
+  ellipse(cv, 22, 25, 6, 3, BF.bronzeL, BF.bronze); // top sheen
+  disc(cv, 24, 30, 4, BF.verd, 180); disc(cv, 24, 30, 2, BF.chime); // sleeping resonance (verdigris + chime core)
+  chimeSpark(cv, 24, 30);
+  outline(cv, '#241a0e');
+};
+icons.S11 = (cv) => { // 잔향 가루 reverb dust — settled fine dust of the last toll, faint chime
+  glowBehind(cv, 24, 30, 12, BF.chimeD);
+  ellipse(cv, 24, 34, 13, 6, BF.ivoryD, BF.stoneD); // dune of dust
+  for (let i = 0; i < 60; i++) { const x = 12 + (i * 7 % 25); const y = 28 + (i * 11 % 10); setPx(cv, x, y, (i % 3) ? BF.ivory : BF.ivoryHi, 220); }
+  for (const [x, y] of [[18, 24], [30, 22], [24, 20]]) chimeSpark(cv, x, y); // motes rising with old sound
+  outline(cv, '#2a2418');
+};
+icons.S12 = (cv) => { // 신의 마지막 음 god's last note (UNIQUE) — THE single radiant chime drawn from the great bell
+  glowBehind(cv, 24, 24, 22, BF.chime);
+  glowBehind(cv, 24, 24, 15, BF.chimeHi);
+  // a single struck note: concentric resonance rings around an ivory-white core
+  for (let ring = 6; ring <= 18; ring += 4) circle(cv, 24, 24, ring, BF.chime, BF.chimeD);
+  for (let a = 0; a < Math.PI * 2; a += 0.4) { const r = 20; setPx(cv, 24 + Math.cos(a) * r, 24 + Math.sin(a) * r, BF.chimeHi, 200); } // outermost sound-front
+  disc(cv, 24, 24, 5, BF.chimeHi); disc(cv, 24, 24, 3, BF.ivoryHi); // white-hot note
+  chimeSpark(cv, 12, 14); chimeSpark(cv, 36, 30); chimeSpark(cv, 35, 13); chimeSpark(cv, 13, 35);
+  outline(cv, '#3a3f48');
+};
+
+// ---------- D324..D346 (EX-L5 craft) ----------
+icons.D324 = (cv) => { // 종석 이음쇠 bell-anchor coupling — a shard bound with rope, the first foothold (S8+S9)
+  glowBehind(cv, 24, 26, 13, BF.chimeD);
+  for (let y = 14; y < 36; y++) for (let x = 14; x < 34; x++) if (x < 33 - (y - 14) * 0.2) setPx(cv, x, y, (x - y) > 2 ? BF.bronzeL : BF.bronze); // shard
+  for (let a = 20; a <= 160; a += 5) { const r = a * Math.PI / 180; setPx(cv, 24 + Math.cos(r) * 12, 26 + Math.sin(r) * 12, BF.rope); } // rope wound round
+  for (let a = 200; a <= 340; a += 5) { const r = a * Math.PI / 180; setPx(cv, 24 + Math.cos(r) * 12, 26 + Math.sin(r) * 12, BF.ropeL); }
+  chimeSpark(cv, 24, 24);
+  outline(cv, '#241a0e');
+};
+icons.D325 = (cv) => { // 종석 잔교 bell-stone gangway (GB1 key) — a bronze plank spanning the void, chime links
+  glowBehind(cv, 24, 26, 16, BF.bronzeD);
+  fillRect(cv, 6, 24, 42, 30, BF.bronze); for (let x = 6; x < 42; x++) setPx(cv, x, 24, BF.bronzeL); // plank
+  fillRect(cv, 6, 30, 42, 31, BF.bronzeD);
+  for (let x = 9; x < 42; x += 6) { disc(cv, x, 27, 2, BF.verd); disc(cv, x, 27, 1, BF.chime); } // verdigris/chime rivets
+  line(cv, 6, 27, 2, 20, BF.chime, 1); line(cv, 42, 27, 46, 34, BF.chime, 1); // chime tethers into the dark
+  chimeSpark(cv, 24, 20);
+  outline(cv, '#241a0e');
+};
+icons.D326 = (cv) => { // 정음 가루 clear-tone powder — sifted bright dust that clears a muddied chime (S11+S8)
+  glowBehind(cv, 24, 28, 12, BF.chimeD);
+  ellipse(cv, 24, 34, 11, 5, BF.ivory, BF.ivoryD); // clean sifted heap
+  for (let i = 0; i < 44; i++) { const x = 15 + (i * 5 % 19); const y = 26 + (i * 7 % 9); setPx(cv, x, y, BF.ivoryHi, 230); }
+  for (let x = 18; x < 30; x += 3) line(cv, x, 20, x, 26, BF.chime, 1); // falling sift
+  chimeSpark(cv, 24, 22);
+  outline(cv, '#2a2418');
+};
+icons.D327 = (cv) => { // 정음의 물 clear-tone water (GB2 use) — a flask of luminous ivory-chime water
+  glowBehind(cv, 24, 28, 14, BF.chimeD);
+  fillRect(cv, 20, 8, 28, 14, BF.stoneL); fillRect(cv, 21, 4, 27, 9, BF.stone); // stopper/neck
+  ellipse(cv, 24, 30, 11, 12, BF.chimeD, BF.stoneD); // flask
+  for (let y = 24; y < 40; y++) { const hw = Math.round(Math.sqrt(Math.max(0, 120 - (y - 30) * (y - 30)))); for (let x = 24 - hw + 1; x < 24 + hw - 1; x++) setPx(cv, x, y, y < 28 ? BF.chimeHi : BF.chime); } // water
+  ellipse(cv, 24, 27, 8, 2, BF.chimeHi, BF.chime); // surface
+  disc(cv, 20, 32, 2, BF.chimeHi, 200);
+  chimeSpark(cv, 24, 22);
+  outline(cv, '#2a2418');
+};
+function chimeBell(cv, headFn, ord) { // shared: a small hung chime-bell w/ ordinal pips (GB3 ordered puzzle)
+  line(cv, 24, 6, 24, 12, BF.ropeL, 1); // hang cord
+  bellBody(cv, 24, 22, 11, 11, BF.bronzeM, BF.bronze);
+  disc(cv, 24, 12, 3, BF.bronzeL); // crown
+  disc(cv, 24, 33, 2, BF.ivoryD); // clapper
+  headFn(cv);
+  for (let p = 0; p < ord; p++) disc(cv, 18 + p * 6, 40, 1, BF.chimeHi); // ordinal pips (1/2/3)
+}
+icons.D328 = (cv) => { // 울림 종 하나 chime-bell #1 (GB3 key) — first/low toll: single deep chime band
+  chimeBell(cv, (c) => { fillRect(c, 17, 20, 31, 23, BF.verd); disc(c, 24, 26, 3, BF.chime); chimeSpark(c, 24, 26); }, 1);
+  outline(cv, '#241a0e');
+};
+icons.D329 = (cv) => { // 울림 종 둘 chime-bell #2 (GB3 key) — second/mid toll: paired chime arcs
+  chimeBell(cv, (c) => { for (let a = -1; a <= 1; a += 2) for (let t = 0; t < Math.PI; t += 0.25) setPx(c, 24 + a * (3 + Math.sin(t) * 4), 16 + t * 4, BF.chime); disc(c, 24, 26, 2, BF.chimeHi); }, 2);
+  outline(cv, '#241a0e');
+};
+icons.D330 = (cv) => { // 울림 종 셋 chime-bell #3 (GB3 key) — third/high toll: a bright triple sound-front
+  chimeBell(cv, (c) => { for (let ring = 4; ring <= 8; ring += 2) circle(c, 24, 24, ring, BF.chime, BF.chimeD); disc(c, 24, 24, 2, BF.chimeHi); chimeSpark(c, 24, 24); }, 3);
+  outline(cv, '#241a0e');
+};
+icons.D331 = (cv) => { // 타종구 씨 toll-orb seed — the last note wrapped in a shard, wound to be rung again (S12+S8)
+  glowBehind(cv, 24, 26, 16, BF.chime);
+  ellipse(cv, 24, 26, 12, 12, BF.bronze, BF.bronzeD); // shard-wrap hull
+  for (let y = 16; y < 36; y++) for (let x = 13; x < 35; x++) if (getA(cv, x, y)) setPx(cv, x, y, (x - y) > 2 ? BF.bronzeL : BF.bronze);
+  coil(cv, 24, 24, 9, BF.chimeHi, BF.chime); // the wound last-note
+  disc(cv, 24, 24, 2, BF.ivoryHi);
+  chimeSpark(cv, 24, 13); chimeSpark(cv, 14, 30);
+  outline(cv, '#241a0e');
+};
+icons.D332 = (cv) => { // 응답의 타종구 the great toll of answer (GB4 FINAL key) — the assembled, world-answering bell
+  glowBehind(cv, 24, 24, 23, BF.chimeHi);
+  glowBehind(cv, 24, 24, 16, BF.verdHi);
+  // outer ivory sound-front rings — the biggest answer sent back to the world
+  for (let ring = 8; ring <= 20; ring += 4) circle(cv, 24, 24, ring, BF.chime, BF.chimeD);
+  bellBody(cv, 24, 24, 12, 12, BF.bronzeL, BF.bronze); // the great bell body, re-rung
+  disc(cv, 24, 12, 3, BF.verdHi); // crown lit verdigris
+  coil(cv, 24, 24, 7, BF.ivoryHi, BF.chime); disc(cv, 24, 24, 3, BF.chimeHi); // white note within
+  chimeSpark(cv, 30, 14); chimeSpark(cv, 15, 32); chimeSpark(cv, 34, 30); chimeSpark(cv, 13, 14);
+  outline(cv, '#3a3f48');
+};
+icons.D333 = (cv) => { // 종 파편 무리 bell-shard cluster (decor·glows) — two shards leaned together, faint quiver (S8+S8)
+  glowBehind(cv, 24, 26, 14, BF.chimeD);
+  for (const [ox, tint] of [[-6, BF.bronzeM], [6, BF.bronzeL]]) {
+    for (let y = 14; y < 36; y++) for (let x = 16; x < 32; x++) setPx(cv, x + ox, y, (x + y) % 6 ? tint : BF.bronze);
+    line(cv, 16 + ox, 16, 30 + ox, 14, BF.bronzeL, 1);
+  }
+  chimeSpark(cv, 22, 22); chimeSpark(cv, 28, 28);
+  outline(cv, '#241a0e');
+};
+icons.D334 = (cv) => { // 밧줄 종렬 rope bell-row (structure) — plaited bell-pulls hung in a rank (S9+S9)
+  for (const dx of [-8, 0, 8]) { for (let y = 8; y < 40; y++) setPx(cv, 24 + dx, y, (y % 3) ? BF.rope : BF.ropeL); disc(cv, 24 + dx, 8, 2, BF.ropeD); }
+  for (let y = 12; y < 38; y += 6) { line(cv, 16, y, 32, y + 2, BF.ropeL, 1); } // cross-plaits
+  fillRect(cv, 12, 38, 36, 41, BF.stoneD);
+  outline(cv, '#2a1e10');
+};
+icons.D335 = (cv) => { // 청동 무더기 bronze heap (structure) — a mound of cooled, poured bell-metal (S10+S10)
+  ellipse(cv, 24, 36, 16, 6, BF.bronze, BF.bronzeD); // base
+  disc(cv, 20, 30, 8, BF.bronzeM); disc(cv, 30, 31, 7, BF.bronzeM); disc(cv, 25, 24, 6, BF.bronzeL);
+  for (let i = 0; i < 6; i++) { const x = 16 + i * 3; for (let y = 30; y < 34 + (i % 3) * 3; y++) setPx(cv, x, y, BF.bronzeD); } // runnels
+  for (const [x, y] of [[22, 22], [30, 27]]) disc(cv, x, y, 1, BF.verd, 200); // verdigris flecks
+  outline(cv, '#241a0e');
+};
+icons.D336 = (cv) => { // 잔향 군집 reverb swarm (decor·glows) — a dense clump of reverb-dust beads (S11+S11)
+  glowBehind(cv, 24, 28, 14, BF.chimeD);
+  for (const [x, y, r] of [[24, 26, 8], [15, 30, 5], [33, 30, 5], [24, 34, 4]]) { disc(cv, x, y, r, BF.ivoryD); disc(cv, x - 1, y - 1, Math.max(1, r - 3), BF.ivory); }
+  for (const [x, y] of [[24, 24], [15, 28], [33, 28]]) setPx(cv, x, y, BF.chimeHi, 220);
+  chimeSpark(cv, 24, 26);
+  outline(cv, '#2a2418');
+};
+icons.D337 = (cv) => { // 잔향 등명 reverb lamp (decor·glows) — a small belfry-in-hand, bronze lamp w/ rope wick (S9+S10)
+  glowBehind(cv, 24, 26, 15, BF.chime);
+  ellipse(cv, 24, 34, 11, 7, BF.bronze, BF.bronzeD); // bronze body
+  for (let y = 28; y < 40; y++) if (getA(cv, 24, y)) for (let x = 14; x < 34; x++) if (getA(cv, x, y)) setPx(cv, x, y, (x - y) > 0 ? BF.bronzeL : BF.bronze);
+  fillRect(cv, 23, 16, 25, 28, BF.ropeL); // rope wick
+  ellipse(cv, 24, 16, 4, 6, BF.chimeHi, BF.chime); // chime flame
+  disc(cv, 24, 15, 1, BF.chimeHi);
+  chimeSpark(cv, 24, 12);
+  outline(cv, '#241a0e');
+};
+icons.D338 = (cv) => { // 봉음 종판 sound-sealing board (structure) — a plate laid to silence a chime, dust-sealed (D324+S11)
+  fillRect(cv, 11, 12, 37, 38, BF.stone);
+  for (let y = 12; y < 38; y++) for (let x = 11; x < 37; x++) setPx(cv, x, y, (x - y) > 4 ? BF.stoneL : BF.stone);
+  fillRect(cv, 11, 12, 37, 14, BF.bronzeL); fillRect(cv, 11, 36, 37, 38, BF.stoneD);
+  ellipse(cv, 24, 25, 10, 8, BF.ivoryD, BF.stoneD); disc(cv, 24, 25, 5, BF.ivory, 200); // dust seal over the chime
+  for (let i = 0; i < 4; i++) { const x = 18 + i * 4; for (let y = 32; y < 36; y++) setPx(cv, x, y, BF.ivoryD); }
+  outline(cv, '#241f1a');
+};
+icons.D339 = (cv) => { // 타종 부적 toll charm (decor) — a chime-bell shrunk to an amulet on a rope cord (D328+S9)
+  for (let a = 20; a <= 160; a += 6) { const r = a * Math.PI / 180; setPx(cv, 24 + Math.cos(r) * 13, 14 + Math.sin(r) * 11, BF.ropeL); } // cord
+  bellBody(cv, 24, 30, 8, 9, BF.bronzeM, BF.bronze); // tiny bell
+  disc(cv, 24, 21, 2, BF.bronzeL); disc(cv, 24, 30, 3, BF.chime); // crown + chime bead
+  chimeSpark(cv, 24, 30);
+  outline(cv, '#241a0e');
+};
+icons.D340 = (cv) => { // 종탑 등명 belfry lantern (structure·glows) — the answered-toll's ember carried in a bell-lamp (D332+S8)
+  glowBehind(cv, 24, 26, 17, BF.chime);
+  fillRect(cv, 15, 14, 33, 42, BF.bronze); fillRect(cv, 15, 14, 33, 16, BF.bronzeL); fillRect(cv, 15, 40, 33, 42, BF.bronzeD); // frame
+  fillRect(cv, 19, 18, 29, 38, BF.stoneD); // window
+  disc(cv, 24, 28, 6, BF.verd); coil(cv, 24, 28, 5, BF.chimeHi, BF.chime); disc(cv, 24, 28, 2, BF.ivoryHi); // toll-ember within
+  fillRect(cv, 22, 8, 26, 14, BF.bronzeM); disc(cv, 24, 8, 2, BF.verd); // top ring
+  outline(cv, '#241a0e');
+};
+icons.D341 = (cv) => { // 등불 종탑 lantern belfry (structure·glows) — cathedral sanctum-lamp hung on a belfry rope (D177+S9)
+  glowBehind(cv, 24, 24, 14, BF.chimeD);
+  fillRect(cv, 16, 30, 32, 42, BF.stone); fillRect(cv, 16, 30, 32, 32, BF.stoneL); circle(cv, 24, 36, 4, BF.verd, BF.verdD); // lower belfry stone
+  for (let y = 8; y < 30; y++) setPx(cv, 24, y, (y % 3) ? BF.rope : BF.ropeL); // rope up
+  ellipse(cv, 24, 20, 7, 8, BF.ivory, BF.ivoryD); disc(cv, 24, 20, 3, BF.chimeHi); // sanctum lamp
+  disc(cv, 24, 8, 2, BF.bronzeL);
+  outline(cv, '#241f1a');
+};
+icons.D342 = (cv) => { // 응답의 종함 answer coffer (structure) — the given "answer" set into a bell-shaped casket (D186+S10)
+  fillRect(cv, 12, 20, 36, 40, BF.bronze); fillRect(cv, 12, 20, 36, 22, BF.bronzeL); fillRect(cv, 12, 38, 36, 40, BF.bronzeD); // casket
+  for (let y = 22; y < 38; y++) for (let x = 12; x < 36; x++) setPx(cv, x, y, (x - y) > 2 ? BF.bronzeM : BF.bronze);
+  bellBody(cv, 24, 17, 12, 5, BF.bronzeM, BF.bronze); // bell-shaped lid
+  circle(cv, 24, 30, 6, BF.verdD, BF.bronzeD); disc(cv, 24, 30, 2, BF.chime); // the answer-core within
+  chimeSpark(cv, 24, 30);
+  outline(cv, '#241a0e');
+};
+icons.D343 = (cv) => { // 재의 종렬 ash bell-row (decor·glows) — ash-prayer set to a chime, tolled through reverb (D184+S11)
+  glowBehind(cv, 24, 28, 13, BF.chimeD);
+  ellipse(cv, 24, 36, 14, 5, BF.stoneD, BF.stoneD); // ash bed
+  for (const dx of [-7, 0, 7]) { bellBody(cv, 24 + dx, 24, 5, 7, BF.bronzeM, BF.bronze); disc(cv, 24 + dx, 30, 1, BF.ivoryD); }
+  for (let i = 0; i < 20; i++) { const x = 12 + (i * 7 % 25); setPx(cv, x, 34 + (i % 3), BF.ivory, 200); } // reverb ash rising
+  chimeSpark(cv, 24, 20);
+  outline(cv, '#241f1a');
+};
+icons.D344 = (cv) => { // 지워진 타종 명부 erased toll-register (decor·dead-end) — a ledger of ringers, reverb-blurred (D329+S11)
+  fillRect(cv, 12, 12, 36, 40, BF.bronzeM);
+  for (let y = 12; y < 40; y++) for (let x = 12; x < 36; x++) setPx(cv, x, y, (x + y) % 5 ? BF.bronzeM : BF.bronze);
+  fillRect(cv, 12, 12, 36, 14, BF.bronzeL);
+  for (let y = 17; y < 24; y += 3) line(cv, 15, y, 32, y, BF.stoneL, 1); // half-readable ringer names
+  ellipse(cv, 24, 30, 10, 6, BF.ivoryD, BF.stoneD); disc(cv, 24, 30, 5, BF.ivory, 160); // reverb blur over names
+  disc(cv, 19, 34, 1, BF.ivoryD, 150);
+  outline(cv, '#241a0e');
+};
+icons.D345 = (cv) => { // 굳은 종지기 잔영 stilled-bellkeeper afterimage (structure·dead-end) — a figure frozen hauling the rope (D324+S9)
+  ellipse(cv, 24, 40, 9, 4, BF.bronzeD, BF.stoneD); // base shadow
+  fillRect(cv, 21, 22, 27, 40, BF.bronze); disc(cv, 24, 17, 5, BF.bronzeM); // body + head
+  line(cv, 24, 26, 16, 14, BF.bronzeL, 2); // arm hauling up the rope
+  for (let y = 8; y < 26; y++) setPx(cv, 16 - (y < 14 ? 0 : (y - 14) / 3), y, BF.ropeL); // the bell-pull
+  for (let y = 15; y < 30; y += 4) setPx(cv, 24, y, BF.chime, 160); // afterimage shimmer
+  disc(cv, 23, 16, 1, BF.chimeD); // dim eye
+  outline(cv, '#241a0e');
+};
+icons.D346 = (cv) => { // 식은 종 cooled bell (decor·dead-end) — a bell gone cold, reverb rubbed dead-black into it (S9+S11)
+  bellBody(cv, 24, 24, 12, 13, BF.stone, BF.stoneD); // cold bell body
+  disc(cv, 24, 10, 3, BF.stoneL); // crown
+  for (let y = 16; y < 34; y += 5) line(cv, 15, y, 33, y - 1, BF.stoneD, 1); // dead striations
+  fillRect(cv, 18, 22, 30, 30, BF.stoneD); // black scorch of dead reverb
+  disc(cv, 24, 36, 2, BF.stoneL); // clapper, unmoving
+  for (const [x, y] of [[20, 20], [30, 26]]) setPx(cv, x, y, BF.ivoryD, 120); // last dust motes
+  outline(cv, '#1a1610');
+};
+
+// ============================================================================
 // Emit all icon files. Item catalog = 9 gatherables (I1..I9) + crafts D01..D61
 // minus the retired 석기 D11 (removed v0.3.1) + Layer-2 J1..J7 + D62..D102 (L2-4).
 // D06 is an alias of I4 → identical bytes to I4 (spec: "D06 alias resolves to I4's
@@ -2991,6 +3261,9 @@ for (let i = 278; i <= 300; i++) ALL_IDS.push('D' + i);
 // v1.8.0 EX-L4 부유 서고: gathers P8..P12 + crafts D301..D323.
 for (let i = 8; i <= 12; i++) ALL_IDS.push('P' + i);
 for (let i = 301; i <= 323; i++) ALL_IDS.push('D' + i);
+// v1.9.0 EX-L5 침묵의 종탑: gathers S8..S12 + crafts D324..D346.
+for (let i = 8; i <= 12; i++) ALL_IDS.push('S' + i);
+for (let i = 324; i <= 346; i++) ALL_IDS.push('D' + i);
 
 let count = 0, total = 0;
 for (const id of ALL_IDS) {
