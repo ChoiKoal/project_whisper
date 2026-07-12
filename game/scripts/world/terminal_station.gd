@@ -130,6 +130,49 @@ func _on_return_portal() -> void:
 	get_tree().change_scene_to_file(WorldContext.scene_path(WorldContext.SCENE_HOME))
 
 
+## (EXL2-2) Spawn the 정비 승강로 하강 연결점 to the 지하 데이터 성소 (l2s) — ONLY after L2 정화
+## (control_core 급전 = 승강로에 잔류 전력이 도는 신호). A real Portal near spawn with a custom
+## travel handler into SCENE_SANCTUM. Idempotent (guarded). Clones grove_session._spawn_zone_portal.
+var _sanctum_descent_spawned := false
+
+func _spawn_sanctum_descent() -> void:
+	if _sanctum_descent_spawned:
+		return
+	if _loader == null or _loader.spawn_cell == Vector2i(-1, -1):
+		return
+	if not (typeof(GameState) != TYPE_NIL and GameState.layer2_purified_flag):
+		return  # locked until the terminal station is 정화된 (관제탑 재가동)
+	_sanctum_descent_spawned = true
+	# 승강로: a walkable cell NORTH of spawn (관제탑단 아래로 하강 = 최심부 방향).
+	var candidates := [
+		_loader.spawn_cell + Vector2i(0, -3),
+		_loader.spawn_cell + Vector2i(-3, -2),
+		_loader.spawn_cell + Vector2i(3, -2),
+		_loader.spawn_cell + Vector2i(-4, 0),
+	]
+	var cell := Vector2i(-1, -1)
+	for c in candidates:
+		if _loader.is_cell_walkable(c):
+			cell = c
+			break
+	if cell == Vector2i(-1, -1):
+		return
+	var ctrl := ReturnPortalController.new()
+	add_child(ctrl)
+	ctrl.setup(_loader, _player, [cell], "E 지하 데이터 성소로")
+	ctrl.entered.connect(_on_sanctum_descent)
+
+
+func _on_sanctum_descent() -> void:
+	if typeof(WorldContext) == TYPE_NIL:
+		return
+	WorldContext.arrival_mode = "portal_arrival"
+	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("save_game"):
+		SaveManager.save_game()
+	WorldContext.current_scene = WorldContext.SCENE_SANCTUM
+	get_tree().change_scene_to_file(WorldContext.scene_path(WorldContext.SCENE_SANCTUM))
+
+
 ## Spawn the 정비대 (tech workbench). Reuses the L2 workbench art + a violet-cyan glow pool. Sits
 ## on its legend cell (west of spawn) so the "first craft ≤4분" pacing (§A-7) holds — the player
 ## lands and the bench is 2-3 cells away.
