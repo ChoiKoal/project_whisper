@@ -172,6 +172,9 @@ func build_save_dict() -> Dictionary:
 		"layer3_purified": GameState.layer3_purified_flag,
 		"layer4_purified": GameState.layer4_purified_flag,
 		"layer5_purified": GameState.layer5_purified_flag,
+		# (EXL1-3) L1 확장 SUB-zone 정화 플래그 (고요의 화원 / 생명의 심장). 기존 세이브엔 결측 → false 기본.
+		"garden_purified": GameState.garden_purified_flag,
+		"heart_purified": GameState.heart_purified_flag,
 		# (L5-5) 다섯 포탈 전점등 + 빛의 문 예고가 이미 발동했는지 (5레이어 완결 후 재로드 시 유지).
 		"light_gate_previewed": GameState.light_gate_previewed_flag,
 		# (EG-2) 진상 조각 진행 (회차 지속; NG+에서 리셋). 최종 회수 카드 본 여부.
@@ -416,6 +419,9 @@ func _apply_core_state(data: Dictionary) -> void:
 	GameState.layer3_purified_flag = bool(data.get("layer3_purified", false))
 	GameState.layer4_purified_flag = bool(data.get("layer4_purified", false))
 	GameState.layer5_purified_flag = bool(data.get("layer5_purified", false))
+	# (EXL1-3) L1 확장 SUB-zone 정화 플래그 (기존 세이브 결측 → false, 하위호환 안전).
+	GameState.garden_purified_flag = bool(data.get("garden_purified", false))
+	GameState.heart_purified_flag = bool(data.get("heart_purified", false))
 	GameState.light_gate_previewed_flag = bool(data.get("light_gate_previewed", false))
 	# (EG-2) 진상 조각 진행 + 최종 카드 여부 (v0.9.0 세이브엔 결측 → 빈 dict/false 기본값, null-가드).
 	GameState.truth_shards = (data.get("truth_shards", {}) as Dictionary).duplicate()
@@ -645,6 +651,7 @@ func start_ng_plus(finished_run_recipes: Array = []) -> Array:
 	GameState.reset_layer3()           # (L3-5) clear the machine-world purified flag on NG+
 	GameState.reset_layer4()           # (L4-5) clear the magic-world purified flag on NG+
 	GameState.reset_layer5()           # (L5-5) clear the divinity-world purified flag on NG+
+	GameState.reset_layer1_zones()     # (EXL1-3) clear 고요의 화원/생명의 심장 정화 플래그 on NG+
 	GameState.reset_truth_shards()     # (EG-2) 진상 조각 회차 리셋 ([돌아선다] 재획득; endings_seen는 보존)
 	WhisperCurrency.reset()            # (L2-3) no 에너지/마력 Whisper held
 	Codex.reset()
@@ -693,6 +700,7 @@ func new_game() -> void:
 	GameState.reset_layer3()           # (L3-5) clear the machine-world purified flag
 	GameState.reset_layer4()           # (L4-5) clear the magic-world purified flag
 	GameState.reset_layer5()           # (L5-5) clear the divinity-world purified flag
+	GameState.reset_layer1_zones()     # (EXL1-3) clear 고요의 화원/생명의 심장 정화 플래그
 	GameState.reset_truth_shards()     # (EG-2) 진상 조각 초기화
 	WhisperCurrency.reset()            # (L2-3) no 에너지/마력 Whisper held
 	Codex.reset()

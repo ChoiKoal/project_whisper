@@ -68,6 +68,20 @@ signal layer5_purified(layer: String)
 ## 완결의 최종 플래그. Mirrors layer4_purified_flag.
 var layer5_purified_flag: bool = false
 
+## (EXL1-3) Emitted when the 고요의 화원(l1g) 색의 봉헌(GA4) 정화 완료. Carries "garden". The garden
+## session hooks the return-home nudge; the flag persists. Garden/Heart are L1 SUB-zones (reached
+## from the grove), so they do NOT drive the 5-portal line — L1 clear is still SaveManager.cleared.
+signal garden_purified(zone: String)
+## (EXL1-3) True once 고요의 화원 is 정화된 (색의 봉헌 완료). Saved; drives the persisted end-state
+## (color returned) on re-entry without replaying the flash set-piece.
+var garden_purified_flag: bool = false
+
+## (EXL1-3) Emitted when the 생명의 심장(l1h) 심장 봉인(GH2) 정화 완료 + C-4 컷신 종료. Carries "heart".
+signal heart_purified(zone: String)
+## (EXL1-3) True once 생명의 심장 is 정화된 (심장 봉인 봉헌 완료). Saved; drives the persisted end-state
+## (heart beating) on re-entry without replaying the cutscene.
+var heart_purified_flag: bool = false
+
 
 ## (L2-3) Mark a power node energized (idempotent). Records it in `powered_nodes` and announces
 ## it so gate listeners (bridge swap / clear cutscene) and quests react. No signal if already on.
@@ -109,6 +123,13 @@ func reset_layer5() -> void:
 	layer5_purified_flag = false
 	# (L5-5) the 빛의 문 예고 is re-earned each run — clear it alongside the L5 purified flag.
 	light_gate_previewed_flag = false
+
+## (EXL1-3) Reset the L1 확장 SUB-zone purification flags (고요의 화원 / 생명의 심장) to the new-game
+## baseline. Called by new game / NG+ alongside reset_layer2~5. Garden/Heart are L1 sub-zones, so
+## they do NOT touch the portal line — clearing these just re-locks the two sub-zone end-states.
+func reset_layer1_zones() -> void:
+	garden_purified_flag = false
+	heart_purified_flag = false
 
 ## (v0.4.0-C) Emitted when a structure/decor item is PLACED into the world (persistent
 ## PlacedObject). `item_id` = the placed item, `cell` = its tile. Quests/audio hook here.

@@ -634,6 +634,19 @@ func _apply_placement_effect(item_id: String, cell: Vector2i) -> bool:
 		"D22":  # 어린 세계수 — plant on VOID: clear condition.
 			GameState.world_tree_planted.emit(cell)
 			return true
+		"D223":  # (EXL1-3) 꽃돌다리 — GA1 색의 여울 디딤돌: announce the placement; the l1x gate
+			# controller listens on placed_object_placed and swaps the K cell to walkable (like the
+			# L2 bridge). Kept as an explicit case (functional, not structure) so it does NOT spawn a
+			# recallable PlacedObject — the bridge is a permanent gate-open, not a decor.
+			GameState.placed_object_placed.emit(item_id, cell)
+			return true
+	# (EXL1-3) 붉은/노란/푸른 물감 — GA3 색맞춤 화단 슬롯 배치. Functional placement: announce it; the
+	# l1x gate controller's color-bed watcher checks the 3 slot cells and opens the 색의 문 M when all
+	# three colors are present. Re-placeable(실수 복구). (Handled here, after the match, to keep the tab
+	# indentation consistent with this block.)
+	if item_id == "D226" or item_id == "D227" or item_id == "D228":
+		GameState.placed_object_placed.emit(item_id, cell)
+		return true
 	# (v0.4.0-C) structure/decor: spawn a persistent, recallable PlacedObject.
 	var pclass := ItemDB.placement_class(item_id)
 	if pclass == "structure" or pclass == "decor":

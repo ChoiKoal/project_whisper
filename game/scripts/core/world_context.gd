@@ -25,6 +25,11 @@ const SCENE_MAGE_TOWER := "mage_tower"
 ## (L5-5) Layer-5 「응답 없는 대성당」 — the divinity portal destination (마지막 레이어). Value matches
 ## the literal cathedral.gd sets on WorldContext.current_scene, so the save snapshot round-trips.
 const SCENE_CATHEDRAL := "cathedral"
+## (EXL1-2) L1 확장 SUB-zone 「고요의 화원」 (l1g) — the grove-north 오솔길 destination. Value matches
+## the literal garden_session.gd sets on WorldContext.current_scene so the save snapshot round-trips.
+const SCENE_GARDEN := "quiet_garden"
+## (EXL1-2) L1 확장 SUB-zone 「생명의 심장」 (l1h) — the world-tree descent destination.
+const SCENE_HEART := "life_heart"
 
 const HOME_SCENE_PATH := "res://scenes/world/home_island.tscn"
 const GROVE_SCENE_PATH := "res://scenes/world/starting_grove.tscn"
@@ -32,6 +37,8 @@ const TERMINAL_SCENE_PATH := "res://scenes/world/terminal_station.tscn"
 const CLOCKWORK_SCENE_PATH := "res://scenes/world/clockwork_city.tscn"
 const MAGE_TOWER_SCENE_PATH := "res://scenes/world/mage_tower.tscn"
 const CATHEDRAL_SCENE_PATH := "res://scenes/world/cathedral.tscn"
+const GARDEN_SCENE_PATH := "res://scenes/world/quiet_garden.tscn"
+const HEART_SCENE_PATH := "res://scenes/world/life_heart.tscn"
 
 ## The scene id the player is currently in ("home" at the start of a new game). Set by each
 ## world scene's session node on boot; read by SaveManager to key the world snapshot.
@@ -65,6 +72,8 @@ func scene_path(scene_id: String) -> String:
 		SCENE_CLOCKWORK: return CLOCKWORK_SCENE_PATH
 		SCENE_MAGE_TOWER: return MAGE_TOWER_SCENE_PATH
 		SCENE_CATHEDRAL: return CATHEDRAL_SCENE_PATH
+		SCENE_GARDEN: return GARDEN_SCENE_PATH
+		SCENE_HEART: return HEART_SCENE_PATH
 	return GROVE_SCENE_PATH
 
 

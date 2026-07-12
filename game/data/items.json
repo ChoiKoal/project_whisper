@@ -4372,7 +4372,9 @@
       "category": "craft",
       "flavor": "모든 색이 한 점에 모였다. 화원에 색을 돌려줄, 마지막 한 방울.",
       "placeable_on": [],
-      "usable_on": [],
+      "usable_on": [
+        "rainbow_font"
+      ],
       "key_item": true
     },
     {
@@ -4415,7 +4417,9 @@
       "category": "craft",
       "flavor": "세계수의 심장이 다시 뛴다. 이 세계에, 아직 남은 온기.",
       "placeable_on": [],
-      "usable_on": [],
+      "usable_on": [
+        "heart_seal"
+      ],
       "key_item": true
     },
     {
