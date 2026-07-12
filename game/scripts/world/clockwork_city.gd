@@ -54,6 +54,8 @@ func _setup() -> void:
 	_scatter_robots()
 	_spawn_npc()
 	_spawn_return_portal()
+	# (EXL3-2) 대시계 재가동(L3 정화) 후 낡은 광차 승강로 하강 = 태엽 광산 개방.
+	_spawn_mine_descent()
 	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("register_world"):
 		SaveManager.register_world(_loader, _player, respawn)
 		# (v1.3.1 BUG B) 이어하기 load or in-run RE-ENTRY (portal travel): restore this world's
@@ -90,6 +92,51 @@ func _on_layer3_purified(_layer: String) -> void:
 		GameState.set_portal_state("magic", GameState.PORTAL_FLICKERING)
 	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("save_game"):
 		SaveManager.save_game()
+	# (EXL3-2) 정화 직후 승강로 하강 개방(재진입 없이 즉시 나타남 — terminal→sanctum 패턴 계승).
+	_spawn_mine_descent()
+
+
+## (EXL3-2) Spawn the 낡은 광차 승강로 하강 연결점 to the 태엽 광산 (l3m) — ONLY after L3 정화
+## (대시계 재가동 = 승강로에 잔류 태엽 동력이 도는 신호). A real Portal near spawn with a custom
+## travel handler into SCENE_MINE. Idempotent (guarded). Clones terminal_station._spawn_sanctum_descent.
+var _mine_descent_spawned := false
+
+func _spawn_mine_descent() -> void:
+	if _mine_descent_spawned:
+		return
+	if _loader == null or _loader.spawn_cell == Vector2i(-1, -1):
+		return
+	if not (typeof(GameState) != TYPE_NIL and GameState.layer3_purified_flag):
+		return  # locked until 시계탑 도시 is 정화된 (대시계 재가동)
+	_mine_descent_spawned = true
+	# 광차 승강로: a walkable cell NORTH of spawn (대시계 광장단 아래로 하강 = 최심부 방향).
+	var candidates := [
+		_loader.spawn_cell + Vector2i(0, -4),
+		_loader.spawn_cell + Vector2i(-3, -2),
+		_loader.spawn_cell + Vector2i(3, -2),
+		_loader.spawn_cell + Vector2i(-4, 0),
+	]
+	var cell := Vector2i(-1, -1)
+	for c in candidates:
+		if _loader.is_cell_walkable(c):
+			cell = c
+			break
+	if cell == Vector2i(-1, -1):
+		return
+	var ctrl := ReturnPortalController.new()
+	add_child(ctrl)
+	ctrl.setup(_loader, _player, [cell], "E 태엽 광산으로")
+	ctrl.entered.connect(_on_mine_descent)
+
+
+func _on_mine_descent() -> void:
+	if typeof(WorldContext) == TYPE_NIL:
+		return
+	WorldContext.arrival_mode = "portal_arrival"
+	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("save_game"):
+		SaveManager.save_game()
+	WorldContext.current_scene = WorldContext.SCENE_MINE
+	get_tree().change_scene_to_file(WorldContext.scene_path(WorldContext.SCENE_MINE))
 
 
 func _spawn_return_portal() -> void:

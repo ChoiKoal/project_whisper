@@ -89,6 +89,13 @@ var heart_purified_flag: bool = false
 signal sanctum_purified(zone: String)
 var sanctum_purified_flag: bool = false
 
+## (EXL3-3) Emitted when the 태엽 광산(l3m) 대굴착기 재점화(GM4) 정화 완료 + C-4 컷신 종료. Carries
+## "mine". Like sanctum/heart it is an L3 SUB-zone flag — it does NOT touch the portal line
+## (L3 clear = 시계탑 도시 대시계 재가동). Drives the persisted end-state (대굴착기 코어 발광·태엽 온기)
+## on re-entry without replaying the cutscene.
+signal mine_purified(zone: String)
+var mine_purified_flag: bool = false
+
 
 ## (L2-3) Mark a power node energized (idempotent). Records it in `powered_nodes` and announces
 ## it so gate listeners (bridge swap / clear cutscene) and quests react. No signal if already on.
@@ -143,6 +150,12 @@ func reset_layer1_zones() -> void:
 ## touch the portal line — clearing this just re-locks the sanctum end-state.
 func reset_layer2_zones() -> void:
 	sanctum_purified_flag = false
+
+## (EXL3-3) Reset the L3 확장 SUB-zone purification flag (태엽 광산) to the new-game baseline.
+## Called by new game / NG+ alongside reset_layer2~5. Mine is an L3 sub-zone, so it does NOT
+## touch the portal line — clearing this just re-locks the mine end-state.
+func reset_layer3_zones() -> void:
+	mine_purified_flag = false
 
 ## (v0.4.0-C) Emitted when a structure/decor item is PLACED into the world (persistent
 ## PlacedObject). `item_id` = the placed item, `cell` = its tile. Quests/audio hook here.

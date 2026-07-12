@@ -34,6 +34,10 @@ const SCENE_HEART := "life_heart"
 ## 하강 destination. Value matches the literal sanctum_session.gd sets on current_scene.
 const SCENE_SANCTUM := "data_sanctum"
 
+## (EXL3-2) L3 확장 SUB-zone 「태엽 광산」 (l3m) — the clockwork-city 대시계 광장 아래 낡은 광차 승강로
+## 하강 destination. Value matches the literal clockwork_mine session sets on current_scene.
+const SCENE_MINE := "clockwork_mine"
+
 const HOME_SCENE_PATH := "res://scenes/world/home_island.tscn"
 const GROVE_SCENE_PATH := "res://scenes/world/starting_grove.tscn"
 const TERMINAL_SCENE_PATH := "res://scenes/world/terminal_station.tscn"
@@ -43,6 +47,7 @@ const CATHEDRAL_SCENE_PATH := "res://scenes/world/cathedral.tscn"
 const GARDEN_SCENE_PATH := "res://scenes/world/quiet_garden.tscn"
 const HEART_SCENE_PATH := "res://scenes/world/life_heart.tscn"
 const SANCTUM_SCENE_PATH := "res://scenes/world/data_sanctum.tscn"
+const MINE_SCENE_PATH := "res://scenes/world/clockwork_mine.tscn"
 
 ## The scene id the player is currently in ("home" at the start of a new game). Set by each
 ## world scene's session node on boot; read by SaveManager to key the world snapshot.
@@ -79,6 +84,7 @@ func scene_path(scene_id: String) -> String:
 		SCENE_GARDEN: return GARDEN_SCENE_PATH
 		SCENE_HEART: return HEART_SCENE_PATH
 		SCENE_SANCTUM: return SANCTUM_SCENE_PATH
+		SCENE_MINE: return MINE_SCENE_PATH
 	return GROVE_SCENE_PATH
 
 
