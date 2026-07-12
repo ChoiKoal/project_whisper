@@ -7,7 +7,7 @@ GODOT=/workspace/group/tools/Godot_v4.5-stable_linux.arm64
 cd "$(dirname "$0")/../game" || exit 2
 DONE_FILE=.sweep_done
 touch "$DONE_FILE"
-SKIP_RE='home_overview_render'   # render tools, not harnesses
+SKIP_RE='home_overview_render|home_hero_render'   # render tools, not harnesses
 fails=0
 for scene in scenes/dev/*.tscn; do
   name=$(basename "$scene" .tscn)
