@@ -1,15 +1,19 @@
-# STATUS — v1.9.1 종의 들판 §㉙ 실루엣 변주 (태스크 #253)
+# STATUS — Apple 배포 준비 (태스크 #255)
 
 ## 목표
-belfry(l5b) "종의 들판" 격자 과밀 반복 개선:
-1. 들판 오브젝트 25~35% 신규 장식 아트로 치환 (깨진/빈 받침, 기울어진 종, 낮은 잔해·무명석 4~5종)
-2. 대각선 빈 통로 2~3개로 격자 리듬 절단
-3. '침묵한 종들의 무덤' 폐허 리듬 유지
+v1.9.1 macOS 빌드 Apple 공증 준비물 완비 (서명·공증은 콸 로컬 맥에서 수행).
+1. .app Info.plist 공증 요건 완비 (postprocess_macos_zip.py 보강)
+2. 커스텀 앱 아이콘 .icns 제작 (PIL 없이 struct/zlib 순수 파이썬)
+3. entitlements.plist (Godot 4.5 GL compat 최소셋)
+4. tools/notarize_local.sh (콸 맥 원커맨드)
+5. dist/apple-ready zip (앱+스크립트+entitlements+README 동봉)
+6. docs/apple-notarization-guide.md
+7. 검증: 재서명 verify, 부트 스모크, 기존 파이프라인 무회귀
 
 ## 불변
-- 보행성·게이트 체인·채집(s/j/z/d) 위치 불변. spatial_audit 그린. 세이브 호환(장식 치환뿐).
-- 하네스 count 어서션(l5s_map _test_counts) 갱신 필요 → 커밋 메시지 명시.
+- 기존 macOS/win zip 산출 경로·이름 불변. 게임 데이터(PCK) 무변경.
+- Apple 크리덴셜 절대 미취급 (문서에 절차만). ad-hoc 서명 유지.
 
 ## 진행
-- 재개(레이트리밋 무산 후 처음부터). 파악 완료: 레이아웃/legend/loader/overview/harness.
-- 신규 장식 = 비채집 l5xobj (plain Sprite2D). 새 심볼 = 들판 A/Q/C/O 플로어 셀 치환 → walkable 696 불변(V/x만 제외 카운트), A/Q/C/O expect 갱신 + 새 심볼 expect 추가.
+- 착수. 기존 Info.plist는 Godot가 이미 CFBundleIdentifier/카테고리/버전/카피라이트 채움.
+  → 커스텀 아이콘(현재 Godot 기본 아이콘)·CFBundleVersion 빌드번호 동기·entitlements 추가가 델타.
