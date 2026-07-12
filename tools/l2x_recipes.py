@@ -128,7 +128,10 @@ def build():
 
 # ---- 무결성 검증 ----
 def existing_pairs():
-    recs = json.load(open(os.path.join(DATA, "recipes.json"), encoding="utf-8"))["recipes"]
+    # post-merge 정합: EX-L2 산출(EX-L2-R*)이 이미 recipes.json에 반영된 경우
+    # 자기 자신과의 self-conflict를 제외한다(l1x_recipes.py 5cd9332 전례).
+    recs = [x for x in json.load(open(os.path.join(DATA, "recipes.json"), encoding="utf-8"))["recipes"]
+            if not str(x.get("id", "")).startswith("EX-L2-")]
     pairs = {}
     for x in recs:
         inp = x["inputs"]
