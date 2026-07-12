@@ -6084,6 +6084,458 @@
         ],
         "blocks": false
       }
+    },
+    {
+      "id": "S8",
+      "name": "종 파편",
+      "category": "gather",
+      "layer": 5,
+      "flavor": "울리다 만 종의 깨진 조각. 두드리면, 아주 짧게 떨림이 남는다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "S9",
+      "name": "종탑 밧줄",
+      "category": "gather",
+      "layer": 5,
+      "flavor": "큰 종을 당기던 밧줄. 오래 당겨지지 않아, 매듭이 굳었다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "S10",
+      "name": "울림 청동",
+      "category": "gather",
+      "layer": 5,
+      "flavor": "종을 부어 만든 청동의 남은 조각. 안에 아직 울림이 잠들어 있다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "S11",
+      "name": "잔향 가루",
+      "category": "gather",
+      "layer": 5,
+      "flavor": "마지막 타종의 잔향이 내려앉아 굳은 가루. 스치면 옛 소리가 인다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "S12",
+      "name": "신의 마지막 음",
+      "category": "gather",
+      "layer": 5,
+      "unique": true,
+      "flavor": "큰 종에서 꺼낸 단 하나의 음. 신이 세계에게 마지막으로 낸 소리.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D324",
+      "name": "종석 이음쇠",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "깨진 종 조각에 밧줄이 감긴다. 허공을 딛을 첫 이음.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D325",
+      "name": "종석 잔교",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "무너진 계단과 계단 사이. 청동 종석으로, 딛을 다리를 놓는다.",
+      "placeable_on": [
+        "BELL_BRIDGE"
+      ],
+      "usable_on": [],
+      "placement": {
+        "class": "functional",
+        "on": [
+          "BELL_BRIDGE"
+        ],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D326",
+      "name": "정음 가루",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "흐린 소리를 걷어내는 맑은 가루. 결계에 스밀 만큼 곱게.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D327",
+      "name": "정음의 물",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "흐려진 종음 결계를 다시 맑히는 물. 부으면 결계가 다시 운다.",
+      "placeable_on": [],
+      "usable_on": [
+        "bell_ward"
+      ]
+    },
+    {
+      "id": "D328",
+      "name": "울림 종 하나",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "첫째 종. 울림의 처음. 이것부터 울려야 다음이 공명한다.",
+      "placeable_on": [
+        "CHIME_SLOT"
+      ],
+      "usable_on": [],
+      "placement": {
+        "class": "functional",
+        "on": [
+          "CHIME_SLOT"
+        ],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D329",
+      "name": "울림 종 둘",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "둘째 종. 첫 종이 울린 뒤라야 소리가 앉는다.",
+      "placeable_on": [
+        "CHIME_SLOT"
+      ],
+      "usable_on": [],
+      "placement": {
+        "class": "functional",
+        "on": [
+          "CHIME_SLOT"
+        ],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D330",
+      "name": "울림 종 셋",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "셋째 종. 순서대로 셋을 울리면, 종탑 상층문이 열린다.",
+      "placeable_on": [
+        "CHIME_SLOT"
+      ],
+      "usable_on": [],
+      "placement": {
+        "class": "functional",
+        "on": [
+          "CHIME_SLOT"
+        ],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D331",
+      "name": "타종구 씨",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "마지막으로 낸 그 소리를, 새 타종에 감아 다시 울릴 씨.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D332",
+      "name": "응답의 타종구",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "세계에게 보내는 가장 큰 대답. 세 속삭임을 모아, 큰 종을 다시 울린다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "key_item": true
+    },
+    {
+      "id": "D333",
+      "name": "종 파편 무리",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "울리다 만 두 조각이 나란히. 서로의 떨림을 겨우 이어 받는다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L5T-A",
+          "L5T-Q",
+          "L5T-C",
+          "L5T-O",
+          "T0"
+        ],
+        "blocks": false,
+        "glows": true
+      }
+    },
+    {
+      "id": "D334",
+      "name": "밧줄 종렬",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "매듭이 매듭을 받친다. 당길 종이 이제 걸리지 않은 밧줄.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L5T-A",
+          "L5T-Q",
+          "L5T-C",
+          "L5T-O",
+          "T0"
+        ],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D335",
+      "name": "청동 무더기",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "다 식은 종물의 자리. 부어지다 만 울림들이 굳었다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L5T-A",
+          "L5T-Q",
+          "L5T-C",
+          "L5T-O",
+          "T0"
+        ],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D336",
+      "name": "잔향 군집",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "잔향을 두 번 모은 가루. 너무 짙어, 어떤 소리든 삼킨다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L5T-A",
+          "L5T-Q",
+          "L5T-C",
+          "L5T-O",
+          "T0"
+        ],
+        "blocks": false,
+        "glows": true
+      }
+    },
+    {
+      "id": "D337",
+      "name": "잔향 등명",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "손안의 작은 종탑. 청동 등에 밧줄 심지가 옛 울림으로 은은히 빛난다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L5T-A",
+          "L5T-Q",
+          "L5T-C",
+          "L5T-O",
+          "T0"
+        ],
+        "blocks": false,
+        "glows": true
+      }
+    },
+    {
+      "id": "D338",
+      "name": "봉음 종판",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "누구도 못 울리게 덮은 판. 오래 지키려는 손길.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L5T-A",
+          "L5T-Q",
+          "L5T-C",
+          "L5T-O",
+          "T0"
+        ],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D339",
+      "name": "타종 부적",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "다 울리지 못한 순서를, 부적처럼. 언젠가 마저 울릴 믿음으로.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L5T-A",
+          "L5T-Q",
+          "L5T-C",
+          "L5T-O",
+          "T0"
+        ],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D340",
+      "name": "종탑 등명",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "다시 울린 종탑을 밝히는 등명. 응답의 여운을, 곁에 둔다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L5T-A",
+          "L5T-Q",
+          "L5T-C",
+          "L5T-O",
+          "T0"
+        ],
+        "blocks": true,
+        "glows": true
+      }
+    },
+    {
+      "id": "D341",
+      "name": "등불 종탑",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "대성당의 등불과, 종탑의 밧줄이 한 탑에 걸린다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L5T-A",
+          "L5T-Q",
+          "L5T-C",
+          "L5T-O",
+          "T0"
+        ],
+        "blocks": true,
+        "glows": true
+      }
+    },
+    {
+      "id": "D342",
+      "name": "응답의 종함",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "대제단에 바친 응답을, 종의 그릇에 한 번 더.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L5T-A",
+          "L5T-Q",
+          "L5T-C",
+          "L5T-O",
+          "T0"
+        ],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D343",
+      "name": "재의 종렬",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "무엇을 빌었는지, 이 잔향 너머로 종이 운다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L5T-A",
+          "L5T-Q",
+          "L5T-C",
+          "L5T-O",
+          "T0"
+        ],
+        "blocks": false,
+        "glows": true
+      }
+    },
+    {
+      "id": "D344",
+      "name": "지워진 타종 명부",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "마지막 타종자 명부. 누가 종을 울렸는지, 잔향 아래로 지워졌다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L5T-A",
+          "L5T-Q",
+          "L5T-C",
+          "L5T-O",
+          "T0"
+        ],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D345",
+      "name": "굳은 종지기 잔영",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "종탑을 지키던 종지기의 말로. 밧줄을 당기려던 자세로 굳었다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L5T-A",
+          "L5T-Q",
+          "L5T-C",
+          "L5T-O",
+          "T0"
+        ],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D346",
+      "name": "식은 종",
+      "category": "craft",
+      "layer": 5,
+      "flavor": "누군가는 이 종을 다시 울리고 싶어 했다. 이제는 식은 잔향뿐.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L5T-A",
+          "L5T-Q",
+          "L5T-C",
+          "L5T-O",
+          "T0"
+        ],
+        "blocks": false
+      }
     }
   ]
 }

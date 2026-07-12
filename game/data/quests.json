@@ -969,6 +969,51 @@
           "text": "다음 열람자는… 오지 않았어. 이제 알겠어. 우리는 더 깊이, 더 많이 읽었어 — 봉해선 안 될 한 줄까지. 어떤 앎은, 다시 봉하는 것 말고는 되돌릴 수 없어. …너는 가. 이걸 알고도, 여기 남지 마. 작별이야, 서고."
         }
       }
+    },
+    {
+      "id": "N-bellkeeper-Q1",
+      "whisper": "…밧줄이 삭았어. 종을 걸 이음쇠를 하나 다시 벼려 줘. 이음이 있어야, 이 종이 다시 걸려.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D324",
+      "count": 1,
+      "next": "N-bellkeeper-Q2",
+      "reward": {
+        "recipes": [
+          "EX-L5-R14"
+        ]
+      }
+    },
+    {
+      "id": "N-bellkeeper-Q2",
+      "whisper": "이 종탑은 너무 어두워. 빛나는 걸 하나, 내가 볼 수 있는 곳에 놔 줘. 오래 지켰어, 여기서.",
+      "type": "place",
+      "signal": "placed_object_placed",
+      "target": "any",
+      "count": 1,
+      "next": "N-bellkeeper-Q3",
+      "reward": {
+        "whisper": {
+          "attr": "vita",
+          "amt": 1
+        }
+      }
+    },
+    {
+      "id": "N-bellkeeper-Q3",
+      "whisper": "저기 기록판에… 신의 마지막 말이 있어. 가서 들어. 신이 마지막으로 무엇을 물었는지, 거기 적혀 있을 거야.",
+      "type": "recall",
+      "signal": "truth_shard_investigated",
+      "target": "divinity_prayer",
+      "count": 1,
+      "next": "",
+      "reward": {
+        "log": {
+          "id": "npc_bellkeeper",
+          "title": "종지기 그림자의 작별",
+          "text": "신은 마지막으로 물었어. '아직 거기 있니'라고. 아무도 대답 안 해서, 나는 밧줄을 놓지 못했어. …그런데 방금, 네가 대답했어. 종으로. 가장 큰 소리로. 이제 나는, 밧줄을 놓아도 되겠다. 작별이야, 종탑."
+        }
+      }
     }
   ]
 }
