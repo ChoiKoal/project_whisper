@@ -12,7 +12,14 @@
     "2": {"source": 1, "tile_id": "T1"},
     "3": {"source": 1, "tile_id": "T1"},
     "4": {"source": 1, "tile_id": "T1"},
-    "5": {"source": 1, "tile_id": "T1"}
+    "5": {"source": 1, "tile_id": "T1"},
+    "p": {"source": 1, "tile_id": "T1"},
+    "q": {"source": 1, "tile_id": "T1"},
+    "k": {"source": 1, "tile_id": "T1"},
+    "b": {"source": 1, "tile_id": "T1"},
+    "n": {"source": 1, "tile_id": "T1"},
+    "o": {"source": 1, "tile_id": "T1"},
+    "x": {"source": 1, "tile_id": "T1"}
   },
   "objects": {
     "C": {"scene": "cauldron.tscn", "object_id": "cauldron"},
@@ -21,6 +28,13 @@
     "2": {"kind": "portal", "object_id": "portal_science", "layer": "science"},
     "3": {"kind": "portal", "object_id": "portal_machine", "layer": "machine"},
     "4": {"kind": "portal", "object_id": "portal_magic", "layer": "magic"},
-    "5": {"kind": "portal", "object_id": "portal_divinity", "layer": "divinity"}
+    "5": {"kind": "portal", "object_id": "portal_divinity", "layer": "divinity"},
+    "p": {"kind": "homedeco", "l2_id": "deco_leaf", "art": "home_deco_leaf", "offset": [0, -48], "blocks": false},
+    "q": {"kind": "homedeco", "l2_id": "deco_data", "art": "home_deco_data", "offset": [0, -48], "glow": "violet", "glow_scale": 0.5, "blocks": false},
+    "k": {"kind": "homedeco", "l2_id": "deco_gear", "art": "home_deco_gear", "offset": [0, -48], "blocks": false},
+    "b": {"kind": "homedeco", "l2_id": "deco_tome", "art": "home_deco_tome", "offset": [0, -48], "glow": "violet", "glow_scale": 0.4, "blocks": false},
+    "n": {"kind": "homedeco", "l2_id": "deco_bell", "art": "home_deco_bell", "offset": [0, -48], "blocks": false},
+    "o": {"kind": "homedeco", "l2_id": "deco_pool", "art": "home_deco_pool", "offset": [0, -48], "blocks": false},
+    "x": {"kind": "homedeco", "l2_id": "deco_rubble", "art": "home_deco_rubble", "art_variants": ["home_deco_rubble_b", "home_deco_rubble_c"], "offset": [0, -48], "blocks": false}
   }
 }

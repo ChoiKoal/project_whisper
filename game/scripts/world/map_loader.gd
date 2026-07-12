@@ -1366,6 +1366,12 @@ func _spawn_object(sym: String, cell: Vector2i, spec: Dictionary) -> void:
 	if kind == "portal":
 		_spawn_portal(cell, spec)
 		return
+	# (v1.10.0 L0 허브 확장) 순수 장식 데코 — 세계층 방향성 소품(잎/데이터/태엽/서고/종) +
+	# 빛 웅덩이·비석/잔해 스캐터. 보행 가능 지면 위 비-블로킹 스프라이트라 데이터 경로는 l2obj
+	# 재사용(art/art_variants/offset/glow/blocks). 코어 로더 무변경, 심볼 하드코딩 없음.
+	if kind == "homedeco":
+		_spawn_l2_object(sym, cell, spec, world)
+		return
 	if kind == "observation":
 		observation_cell = cell
 		# Reuse the RestStump (time-skip to next evening) as the observation stone — same
