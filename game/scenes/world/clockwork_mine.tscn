@@ -1,0 +1,178 @@
+[gd_scene load_steps=28 format=3 uid="uid://bwhisperl3mds01"]
+
+[ext_resource type="TileSet" uid="uid://bwhisperts0001" path="res://data/whisper_tileset.tres" id="1_tileset"]
+[ext_resource type="Script" path="res://scripts/world/map_loader.gd" id="2_maploader"]
+[ext_resource type="Script" path="res://scripts/player/player.gd" id="3_player"]
+[ext_resource type="SpriteFrames" uid="uid://bwhisperpf0001" path="res://data/player_frames.tres" id="4_frames"]
+[ext_resource type="Script" path="res://scripts/world/tile_highlight.gd" id="5_highlight"]
+[ext_resource type="Script" path="res://scripts/world/interaction_controller.gd" id="6_interaction"]
+[ext_resource type="Script" path="res://scripts/ui/inventory_ui.gd" id="7_inv_ui"]
+[ext_resource type="Script" path="res://scripts/ui/fusion_ui.gd" id="8_fusion_ui"]
+[ext_resource type="Script" path="res://scripts/ui/codex_ui.gd" id="9_codex_ui"]
+[ext_resource type="Script" path="res://scripts/world/day_night.gd" id="10_daynight"]
+[ext_resource type="Script" path="res://scripts/ui/time_hud.gd" id="11_timehud"]
+[ext_resource type="Script" path="res://scripts/world/object_respawn.gd" id="13_respawn"]
+[ext_resource type="Script" path="res://scripts/ui/pause_menu.gd" id="15_pause"]
+[ext_resource type="Script" path="res://scripts/world/mine_session.gd" id="16_session"]
+[ext_resource type="Script" path="res://scripts/world/touch_controller.gd" id="17_touch"]
+[ext_resource type="Script" path="res://scripts/world/backdrop.gd" id="19_backdrop"]
+[ext_resource type="Script" path="res://scripts/ui/character_window.gd" id="21_charwin"]
+[ext_resource type="Script" path="res://scripts/ui/ui_hub.gd" id="22_uihub"]
+[ext_resource type="Script" path="res://scripts/world/vignette.gd" id="23_vignette"]
+[ext_resource type="Script" path="res://scripts/world/tile_glow.gd" id="24_tileglow"]
+[ext_resource type="Script" path="res://scripts/world/placement_ghost.gd" id="25_ghost"]
+[ext_resource type="Script" path="res://scripts/ui/quest_hud.gd" id="26_questhud"]
+[ext_resource type="Script" path="res://scripts/ui/quest_log.gd" id="27_questlog"]
+[ext_resource type="Script" path="res://scripts/world/camera_zoom.gd" id="29_camzoom"]
+[ext_resource type="Script" path="res://scripts/world/l3m_gate_controller.gd" id="30_l3mgates"]
+[ext_resource type="Script" path="res://scripts/ui/whisper_hud.gd" id="31_whisperhud"]
+
+[sub_resource type="CircleShape2D" id="col_player"]
+radius = 20.0
+
+[node name="ClockworkMine" type="Node2D"]
+
+[node name="Backdrop" type="CanvasLayer" parent="." groups=["backdrop"]]
+script = ExtResource("19_backdrop")
+l2_mood = true
+
+[node name="DayNight" type="CanvasModulate" parent="."]
+script = ExtResource("10_daynight")
+fixed_tone = "#231609"
+
+[node name="GlowLayer" type="CanvasLayer" parent="." groups=["glow_layer"]]
+layer = 1
+follow_viewport_enabled = true
+
+[node name="Ground" type="TileMapLayer" parent="."]
+tile_set = ExtResource("1_tileset")
+script = ExtResource("2_maploader")
+layout_path_override = "res://data/l3m_map_layout.txt"
+legend_path_override = "res://data/l3m_map_legend.json"
+height_path_override = "res://data/l3m_map_height.txt"
+enable_scatter = false
+ysort_layer_path = NodePath("../YSortLayer")
+feedback_layer_path = NodePath("../YSortLayer")
+player_path = NodePath("../YSortLayer/Player")
+fade_rect_path = NodePath("../FadeLayer/Fade")
+
+[node name="TileHighlight" type="Node2D" parent="."]
+script = ExtResource("5_highlight")
+
+[node name="TileGlow" type="Node2D" parent="."]
+z_index = 3
+script = ExtResource("24_tileglow")
+
+[node name="PlacementGhost" type="Node2D" parent="."]
+z_index = 6
+script = ExtResource("25_ghost")
+
+[node name="YSortLayer" type="Node2D" parent="."]
+y_sort_enabled = true
+z_index = 5
+
+[node name="Player" type="CharacterBody2D" parent="YSortLayer"]
+y_sort_enabled = true
+position = Vector2(0, 0)
+motion_mode = 1
+script = ExtResource("3_player")
+tilemap_path = NodePath("../../Ground")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="YSortLayer/Player"]
+position = Vector2(0, -40)
+scale = Vector2(1.15, 1.15)
+sprite_frames = ExtResource("4_frames")
+animation = &"idle_SE"
+autoplay = "idle_SE"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="YSortLayer/Player"]
+shape = SubResource("col_player")
+
+[node name="Camera2D" type="Camera2D" parent="YSortLayer/Player"]
+position_smoothing_enabled = true
+position_smoothing_speed = 5.0
+zoom = Vector2(1.5, 1.5)
+script = ExtResource("29_camzoom")
+
+[node name="Interaction" type="Node2D" parent="."]
+script = ExtResource("6_interaction")
+player_path = NodePath("../YSortLayer/Player")
+tilemap_path = NodePath("../Ground")
+highlight_path = NodePath("../TileHighlight")
+feedback_layer_path = NodePath("../YSortLayer")
+tile_glow_path = NodePath("../TileGlow")
+ysort_layer_path = NodePath("../YSortLayer")
+placement_ghost_path = NodePath("../PlacementGhost")
+
+[node name="ObjectRespawn" type="Node" parent="."]
+script = ExtResource("13_respawn")
+map_loader_path = NodePath("../Ground")
+ysort_layer_path = NodePath("../YSortLayer")
+
+[node name="TouchController" type="Node2D" parent="."]
+script = ExtResource("17_touch")
+map_loader_path = NodePath("../Ground")
+player_path = NodePath("../YSortLayer/Player")
+interaction_path = NodePath("../Interaction")
+
+[node name="InventoryUI" type="CanvasLayer" parent="."]
+script = ExtResource("7_inv_ui")
+interaction_path = NodePath("../Interaction")
+
+[node name="FusionUI" type="CanvasLayer" parent="."]
+layer = 2
+script = ExtResource("8_fusion_ui")
+
+[node name="CodexUI" type="CanvasLayer" parent="."]
+layer = 2
+script = ExtResource("9_codex_ui")
+
+[node name="CharacterWindow" type="CanvasLayer" parent="."]
+layer = 2
+script = ExtResource("21_charwin")
+
+[node name="Vignette" type="CanvasLayer" parent="." groups=["vignette"]]
+script = ExtResource("23_vignette")
+strength_override = 0.48
+inner_override = 0.34
+
+[node name="TimeHUD" type="CanvasLayer" parent="."]
+script = ExtResource("11_timehud")
+
+[node name="QuestHUD" type="CanvasLayer" parent="."]
+script = ExtResource("26_questhud")
+
+[node name="QuestLog" type="CanvasLayer" parent="."]
+script = ExtResource("27_questlog")
+
+[node name="FadeLayer" type="CanvasLayer" parent="."]
+layer = 8
+
+[node name="Fade" type="ColorRect" parent="FadeLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.03, 0.02, 0.01, 1)
+visible = false
+
+[node name="PauseMenu" type="CanvasLayer" parent="."]
+layer = 9
+script = ExtResource("15_pause")
+
+[node name="UIHub" type="CanvasLayer" parent="."]
+script = ExtResource("22_uihub")
+pause_menu_path = NodePath("../PauseMenu")
+
+[node name="L3mGateController" type="Node" parent="."]
+script = ExtResource("30_l3mgates")
+map_loader_path = NodePath("../Ground")
+player_path = NodePath("../YSortLayer/Player")
+
+[node name="WhisperHUD" type="CanvasLayer" parent="."]
+script = ExtResource("31_whisperhud")
+
+[node name="MineSession" type="Node" parent="."]
+script = ExtResource("16_session")
+map_loader_path = NodePath("../Ground")
+player_path = NodePath("../YSortLayer/Player")
+respawn_path = NodePath("../ObjectRespawn")

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bl3suniqhrn01"]
+
+[ext_resource type="Script" path="res://scenes/dev/l3s_unique_harness.gd" id="1_l3suniq"]
+
+[node name="L3sUniqueHarness" type="Node"]
+script = ExtResource("1_l3suniq")

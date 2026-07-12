@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bl3smaphrn001"]
+
+[ext_resource type="Script" path="res://scenes/dev/l3s_map_harness.gd" id="1_l3smap"]
+
+[node name="L3sMapHarness" type="Node"]
+script = ExtResource("1_l3smap")
