@@ -28,7 +28,8 @@
   (v1.9.1, 커스텀 아이콘·Info.plist 반영, 현재 ad-hoc 서명 → MAS 인증서로 재서명 예정)
 - `tools/apple/entitlements-mas.plist` (App Sandbox 포함 최소 entitlements)
 - `tools/build_mas_pkg_local.sh` (재서명 → .pkg 패키징 원커맨드)
-- `dist/apple-ready/screenshots/*.png` (1280×800 스크린샷 후보 5장 — 업로드용 초안)
+- `dist/apple-ready/screenshots/mas/*.png` (2880×1800 스크린샷 후보 5장 — 업로드용 초안;
+  전 플랫폼 규격 세트는 `dist/apple-ready/screenshots/README-screenshots.md` 참고)
 
 ---
 
@@ -111,12 +112,14 @@ appstoreconnect.apple.com → **나의 앱 → ＋ → 신규 앱**.
 - macOS 스크린샷 허용 규격(정확히 이 중 하나여야 함):
   **1280×800 / 1440×900 / 2560×1600 / 2880×1800**.
 - 최소 1장, 권장 5장(최대 10장).
-- 이 리포가 **1280×800 후보 5장**을 미리 만들어 둠:
-  `dist/apple-ready/screenshots/01-title.png … 05-art.png`
-  (01 타이틀·02 홈 아일랜드 실렌더는 그대로 써도 무방, 03~05 는 필요시 실제 플레이
-  화면으로 교체 권장 — 규격만 맞추면 됨).
+- 이 리포가 **2880×1800 후보 5장**을 미리 만들어 둠:
+  `dist/apple-ready/screenshots/mas/01-home.png … 05-belfry.png`
+  (홈 아일랜드 실렌더·L1~L5 biome 실렌더 크롭 — 그대로 업로드 가능,
+  필요시 실제 플레이 화면으로 교체 권장. 규격만 맞추면 됨).
+- **전 플랫폼 규격 세트**(iOS/iPad/Android 포함)와 각 스토어 요구 표는
+  `dist/apple-ready/screenshots/README-screenshots.md` 참고.
 - 실제 플레이 캡처로 교체하려면: 맥에서 게임 실행 → `⌘⇧4` 로 영역 캡처 후 위 규격에
-  맞게 리사이즈, 또는 리눅스 호스트의 `tools/make_mas_screenshots.py` 로 재생성.
+  맞게 리사이즈, 또는 리눅스 호스트의 `tools/make_store_screenshots.py` 로 전 규격 재생성.
 
 ---
 
