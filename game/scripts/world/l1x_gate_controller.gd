@@ -62,6 +62,13 @@ var _life_spring_given: bool = false
 const BRIDGE_LIT_SOURCE := 1    # T1 dirt — walkable 꽃돌다리 deck
 const WATER_SOURCE := 8         # T5A — sealed 색의 여울
 const GROUND_SOURCE := 2        # T2A — walkable ground (GA2/GA3/GH1/GH2 open state)
+# Non-walkable seal source for closed A/M (garden) / L/H (heart) bottlenecks. Their authored
+# source-2 (T2A) tile is walkable, so without a seal the closed gates are passable — contradicting
+# the design (§A-6 truth tables) and l1x_bfs.py, which treat every closed gate cell as a wall.
+# Per zone we reuse a source already proven non-walkable in that tileset: garden 색의 여울 water
+# (T5A=8), heart 뿌리 도랑 water (T5M=10). (T0=0 is walkable in these tilesets — cannot seal.)
+const GARDEN_CLOSED_SOURCE := 8   # T5A water
+const HEART_CLOSED_SOURCE := 10   # T5M root-ditch water
 
 ## Signal parity with the L2 line: emitted the moment a color bed puzzle is solved.
 signal color_bed_solved()
@@ -90,6 +97,7 @@ func _setup() -> void:
 	else:
 		return
 	_wire_cells()
+	_seal_closed_gates()
 	_wire_art()
 	_wrap_use_targets()
 	_spawn_life_spring()
@@ -115,6 +123,23 @@ func _wire_cells() -> void:
 	else:
 		_gh1_cells = _cells_of(_gates.get("GH1", {}).get("cells", []))
 		_gh2_cells = _cells_of(_gates.get("GH2", {}).get("cells", []))
+
+
+## Seal the A/M/L/H gate bottlenecks non-walkable on load. Their authored tile is source-2
+## (T2A, walkable), so without this the closed gates are passable — contradicting the design
+## (§A-6 truth tables) and l1x_bfs.py, which treat every closed gate cell as a wall. GA1's K
+## cells are already water-sealed (source 8) by the layout, so they are skipped. _reapply
+## (called just after) re-opens whatever the save/flag state says should be open.
+func _seal_closed_gates() -> void:
+	var to_seal: Array = []
+	var closed_source := HEART_CLOSED_SOURCE
+	if _zone == "garden":
+		to_seal = _ga2_cells + _ga3_door_cells
+		closed_source = GARDEN_CLOSED_SOURCE
+	else:
+		to_seal = _gh1_cells + _gh2_cells
+	for cell in to_seal:
+		_loader.set_gate_cell_source(cell, false, GROUND_SOURCE, closed_source)
 
 
 func _wire_art() -> void:

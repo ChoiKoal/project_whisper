@@ -197,7 +197,9 @@ func _test_npc_lines_coexist() -> void:
 
 func _test_heart() -> void:
 	WorldContext.current_scene = WorldContext.SCENE_HEART
-	GameState.reset_layer1_zones()
+	# Only clear the heart flag — the garden was purified above and must stay purified so the
+	# save test can assert BOTH flags persist (reset_layer1_zones() would wipe garden too).
+	GameState.heart_purified_flag = false
 	WhisperCurrency.reset()
 	var heart_scene: PackedScene = load(HEART)
 	var map: Node = heart_scene.instantiate()
@@ -317,24 +319,43 @@ func _cells(arr: Array) -> Array:
 	return out
 
 
-## Find the Gatherable use-target carrying `object_id` among the loader's spawned l1x objects.
+## Find the use-target node the controller identifies as `object_id`. Mirrors
+## L1xGateController._on_item_used matching: object_id lives either as a String
+## property or a "object_id" meta. The loader stores spawned objects as "l2_id@cell",
+## so wilted_arch / rainbow_font / heart_seal are found by that key prefix. The
+## controller-spawned root_gate lives directly on the YSortLayer (not in the map).
+func _obj_id_of(node: Node) -> String:
+	if node == null or not is_instance_valid(node):
+		return ""
+	if node.has_method("get"):
+		var v: Variant = node.get("object_id")
+		if typeof(v) == TYPE_STRING and String(v) != "":
+			return String(v)
+	if node.has_method("get_meta"):
+		return String(node.get_meta("object_id", ""))
+	return ""
+
+
 func _find_use_target(loader: MapLoader, object_id: String) -> Node:
-	# Some l1x objects ARE the Gatherable (spawned directly); others carry a child use-proxy.
+	# Loader-spawned objects: keyed as "l2_id@cell". The l2_id IS the semantic id.
 	for key in loader.l2_object_nodes.keys():
 		if String(key).split("@")[0] != object_id:
 			continue
 		var node: Node = loader.l2_object_nodes[key].get("node")
 		if node == null:
 			continue
-		if node.has_method("get") and String(node.get("object_id")) == object_id:
+		if _obj_id_of(node) == object_id:
 			return node
 		for ch in node.get_children():
-			if ch.has_method("get") and String(ch.get("object_id")) == object_id:
+			if _obj_id_of(ch) == object_id:
 				return ch
-	# root_gate is wrapped by the controller directly on the YSortLayer, not in l2_object_nodes.
+		# The controller matches these by their l2_id key even when the spawned
+		# sprite carries no object_id property — return the keyed node itself.
+		return node
+	# root_gate is spawned by the controller directly on the YSortLayer.
 	var ys := loader.get_node_or_null(loader.ysort_layer_path)
 	if ys != null:
 		for ch in ys.get_children():
-			if ch.has_method("get") and String(ch.get("object_id")) == object_id:
+			if _obj_id_of(ch) == object_id:
 				return ch
 	return null
