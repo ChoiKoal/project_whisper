@@ -30,6 +30,9 @@ const SCENE_CATHEDRAL := "cathedral"
 const SCENE_GARDEN := "quiet_garden"
 ## (EXL1-2) L1 확장 SUB-zone 「생명의 심장」 (l1h) — the world-tree descent destination.
 const SCENE_HEART := "life_heart"
+## (EXL2-2) L2 확장 SUB-zone 「지하 데이터 성소」 (l2s) — the terminal-station 관제탑 아래 정비 승강로
+## 하강 destination. Value matches the literal sanctum_session.gd sets on current_scene.
+const SCENE_SANCTUM := "data_sanctum"
 
 const HOME_SCENE_PATH := "res://scenes/world/home_island.tscn"
 const GROVE_SCENE_PATH := "res://scenes/world/starting_grove.tscn"
@@ -39,6 +42,7 @@ const MAGE_TOWER_SCENE_PATH := "res://scenes/world/mage_tower.tscn"
 const CATHEDRAL_SCENE_PATH := "res://scenes/world/cathedral.tscn"
 const GARDEN_SCENE_PATH := "res://scenes/world/quiet_garden.tscn"
 const HEART_SCENE_PATH := "res://scenes/world/life_heart.tscn"
+const SANCTUM_SCENE_PATH := "res://scenes/world/data_sanctum.tscn"
 
 ## The scene id the player is currently in ("home" at the start of a new game). Set by each
 ## world scene's session node on boot; read by SaveManager to key the world snapshot.
@@ -74,6 +78,7 @@ func scene_path(scene_id: String) -> String:
 		SCENE_CATHEDRAL: return CATHEDRAL_SCENE_PATH
 		SCENE_GARDEN: return GARDEN_SCENE_PATH
 		SCENE_HEART: return HEART_SCENE_PATH
+		SCENE_SANCTUM: return SANCTUM_SCENE_PATH
 	return GROVE_SCENE_PATH
 
 

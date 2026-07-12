@@ -82,6 +82,13 @@ signal heart_purified(zone: String)
 ## (heart beating) on re-entry without replaying the cutscene.
 var heart_purified_flag: bool = false
 
+## (EXL2-3) Emitted when the 지하 데이터 성소(l2s) 백업 봉헌(GB4) 정화 완료 + C-4 컷신 종료. Carries
+## "sanctum". Like garden/heart it is an L2 SUB-zone flag — it does NOT touch the portal line
+## (L2 clear = terminal station 정화). Drives the persisted end-state (백업 코어 발광·기록의 빛)
+## on re-entry without replaying the cutscene.
+signal sanctum_purified(zone: String)
+var sanctum_purified_flag: bool = false
+
 
 ## (L2-3) Mark a power node energized (idempotent). Records it in `powered_nodes` and announces
 ## it so gate listeners (bridge swap / clear cutscene) and quests react. No signal if already on.
@@ -130,6 +137,12 @@ func reset_layer5() -> void:
 func reset_layer1_zones() -> void:
 	garden_purified_flag = false
 	heart_purified_flag = false
+
+## (EXL2-3) Reset the L2 확장 SUB-zone purification flag (지하 데이터 성소) to the new-game baseline.
+## Called by new game / NG+ alongside reset_layer2~5. Sanctum is an L2 sub-zone, so it does NOT
+## touch the portal line — clearing this just re-locks the sanctum end-state.
+func reset_layer2_zones() -> void:
+	sanctum_purified_flag = false
 
 ## (v0.4.0-C) Emitted when a structure/decor item is PLACED into the world (persistent
 ## PlacedObject). `item_id` = the placed item, `cell` = its tile. Quests/audio hook here.
