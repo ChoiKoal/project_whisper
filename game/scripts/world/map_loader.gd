@@ -1408,6 +1408,13 @@ func _spawn_object(sym: String, cell: Vector2i, spec: Dictionary) -> void:
 	if kind == "l1xobj":
 		_spawn_l2_object(sym, cell, spec, world)
 		return
+	# (EXL3-2) Layer-3 확장(태엽 광산 l3m) objects reuse the identical data-driven spawn path
+	# (spec carries l3m_* art, art_variants 실루엣 변주, offset, glow, gatherable, blocking, and an
+	# l2_id the EX-L3 gate controller hooks state onto). Only the `kind` string differs so the base
+	# 시계탑 도시(l3obj) symbol/spawn stays untouched (zero regression to L3 구역 1).
+	if kind == "l3xobj":
+		_spawn_l2_object(sym, cell, spec, world)
+		return
 	match sym:
 		"C":
 			cauldron_cell = cell
