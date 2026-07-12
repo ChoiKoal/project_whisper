@@ -5646,6 +5646,444 @@
         ],
         "blocks": false
       }
+    },
+    {
+      "id": "P8",
+      "name": "금서 조각",
+      "category": "gather",
+      "layer": 4,
+      "flavor": "찢긴 금서의 한 장. 읽으면 안 될 글이, 아직 반쯤 남아 빛난다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "P9",
+      "name": "서고 룬판",
+      "category": "gather",
+      "layer": 4,
+      "flavor": "책장을 잠그던 룬판. 봉인이 풀리며, 잠금 룬이 텅 비었다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "P10",
+      "name": "열람 촛농",
+      "category": "gather",
+      "layer": 4,
+      "flavor": "밤새 금서를 읽던 촛불이 굳은 것. 누군가 여기서 오래 읽었다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "P11",
+      "name": "별지 잉크",
+      "category": "gather",
+      "layer": 4,
+      "flavor": "별을 갈아 만든 잉크. 봉인문을 쓰던 마지막 한 방울.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "P12",
+      "name": "금기 정수",
+      "category": "gather",
+      "layer": 4,
+      "unique": true,
+      "flavor": "금서고 코어에서 꺼낸 원금기. 힘의 극한이 마지막으로 열람한 한 줄.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D301",
+      "name": "서가 각인석",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "빈 룬판에 금서의 한 줄이 앉는다. 허공을 딛을 첫 룬.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D302",
+      "name": "부유 서가 다리석",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "끊긴 서가와 서가 사이. 금색 룬으로, 떠 있는 다리를 놓는다.",
+      "placeable_on": [
+        "SEAL_BRIDGE"
+      ],
+      "usable_on": [],
+      "placement": {
+        "class": "functional",
+        "on": [
+          "SEAL_BRIDGE"
+        ],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D303",
+      "name": "정련 촛농",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "흐린 것을 걷어내는 맑은 밀랍. 결계에 스밀 만큼 곱게.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D304",
+      "name": "열람 정화의 물",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "흐려진 열람 결계를 다시 맑히는 물. 부으면 결계가 다시 돈다.",
+      "placeable_on": [],
+      "usable_on": [
+        "reading_ward"
+      ]
+    },
+    {
+      "id": "D305",
+      "name": "봉인 서판 1장",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "첫째 서판. 순서의 처음. 이것부터 봉해야 다음이 열린다.",
+      "placeable_on": [
+        "SEAL_TABLET"
+      ],
+      "usable_on": [],
+      "placement": {
+        "class": "functional",
+        "on": [
+          "SEAL_TABLET"
+        ],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D306",
+      "name": "봉인 서판 2장",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "둘째 서판. 첫 서판이 봉해진 뒤라야 글이 앉는다.",
+      "placeable_on": [
+        "SEAL_TABLET"
+      ],
+      "usable_on": [],
+      "placement": {
+        "class": "functional",
+        "on": [
+          "SEAL_TABLET"
+        ],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D307",
+      "name": "봉인 서판 3장",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "셋째 서판. 순서대로 셋을 다 봉하면, 금서고 통로가 열린다.",
+      "placeable_on": [
+        "SEAL_TABLET"
+      ],
+      "usable_on": [],
+      "placement": {
+        "class": "functional",
+        "on": [
+          "SEAL_TABLET"
+        ],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D308",
+      "name": "봉인구 씨",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "마지막 열람의 한 줄을, 새 봉인에 감아 다시 조인다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D309",
+      "name": "금기 봉인구",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "찢겨 떠돌던 금서고를, 마지막으로 한 번 더 봉한다. 힘이 아니라, 침묵을.",
+      "placeable_on": [],
+      "usable_on": [],
+      "key_item": true
+    },
+    {
+      "id": "D310",
+      "name": "금서 무리",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "읽지 못한 두 장이 나란히. 떠도는 채로 서로를 가린다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L4T-A",
+          "L4T-M",
+          "L4T-O",
+          "T0"
+        ],
+        "blocks": false,
+        "glows": true
+      }
+    },
+    {
+      "id": "D311",
+      "name": "룬판 서가",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "빈 룬판이 룬판을 받친다. 잠글 책이 이제 없는 서가.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L4T-A",
+          "L4T-M",
+          "L4T-O",
+          "T0"
+        ],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D312",
+      "name": "촛농 무더기",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "다 녹은 촛불의 자리. 오래 읽던 밤들이 굳었다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L4T-A",
+          "L4T-M",
+          "L4T-O",
+          "T0"
+        ],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D313",
+      "name": "잉크 군집",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "별을 두 번 간 잉크. 너무 짙어, 무슨 글자든 삼킨다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L4T-A",
+          "L4T-M",
+          "L4T-O",
+          "T0"
+        ],
+        "blocks": false,
+        "glows": true
+      }
+    },
+    {
+      "id": "D314",
+      "name": "촛농 별등",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "손안의 작은 서고. 별 잉크 심지가 금서를 비추듯 빛난다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L4T-A",
+          "L4T-M",
+          "L4T-O",
+          "T0"
+        ],
+        "blocks": false,
+        "glows": true
+      }
+    },
+    {
+      "id": "D315",
+      "name": "방람 봉인판",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "누구도 못 읽게 덮은 판. 오래 지키려는 손길.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L4T-A",
+          "L4T-M",
+          "L4T-O",
+          "T0"
+        ],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D316",
+      "name": "봉인 부적",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "다 봉하지 못한 순서를, 부적처럼. 언젠가 마저 봉할 믿음으로.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L4T-A",
+          "L4T-M",
+          "L4T-O",
+          "T0"
+        ],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D317",
+      "name": "금서고 등명",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "떠도는 서고를 밝히는 등명. 다시 봉한 금기의 고요를, 곁에 둔다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L4T-A",
+          "L4T-M",
+          "L4T-O",
+          "T0"
+        ],
+        "blocks": true,
+        "glows": true
+      }
+    },
+    {
+      "id": "D318",
+      "name": "룬 서가탑",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "마탑의 각인석과, 서고의 룬판이 한 탑에 선다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L4T-A",
+          "L4T-M",
+          "L4T-O",
+          "T0"
+        ],
+        "blocks": true,
+        "glows": true
+      }
+    },
+    {
+      "id": "D319",
+      "name": "봉인 서고함",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "마탑을 봉한 그릇에, 서고의 잠금을 한 칸 더.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L4T-A",
+          "L4T-M",
+          "L4T-O",
+          "T0"
+        ],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D320",
+      "name": "금기 별등",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "무엇을 읽었는지, 이 별 잉크 너머로 룬이 비친다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L4T-A",
+          "L4T-M",
+          "L4T-O",
+          "T0"
+        ],
+        "blocks": false,
+        "glows": true
+      }
+    },
+    {
+      "id": "D321",
+      "name": "지워진 열람 명부",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "마지막 열람자 명부. 누가 금서를 폈는지, 촛농 아래로 지워졌다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L4T-A",
+          "L4T-M",
+          "L4T-O",
+          "T0"
+        ],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D322",
+      "name": "굳은 사서 잔영",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "서고를 정리하던 사서의 말로. 책 한 권을 꽂으려던 자세로 굳었다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L4T-A",
+          "L4T-M",
+          "L4T-O",
+          "T0"
+        ],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D323",
+      "name": "타버린 금서",
+      "category": "craft",
+      "layer": 4,
+      "flavor": "누군가는 이 한 줄을 알고 싶어 했다. 이제는 탄 자국뿐.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L4T-A",
+          "L4T-M",
+          "L4T-O",
+          "T0"
+        ],
+        "blocks": false
+      }
     }
   ]
 }

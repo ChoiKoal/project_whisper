@@ -134,7 +134,11 @@ def build():
 
 # ---- 무결성 검증 ----
 def existing_pairs():
-    recs = json.load(open(os.path.join(DATA, "recipes.json"), encoding="utf-8"))["recipes"]
+    # 멱등화(EX-L3 8a42e09 계승): l4x_apply_data.py가 EX-L4-R* 를 이미 recipes.json에 병합한
+    # 뒤 재실행하면, 자기 자신과의 페어 충돌(self-conflict)로 오탐이 난다. EX-L4 자기 산출은
+    # 대조 대상에서 제외해 재실행에도 PASS 유지(re-import quirk 방지).
+    recs = [x for x in json.load(open(os.path.join(DATA, "recipes.json"), encoding="utf-8"))["recipes"]
+            if not str(x.get("id", "")).startswith("EX-L4")]
     pairs = {}
     for x in recs:
         inp = x["inputs"]
