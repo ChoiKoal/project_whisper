@@ -40,6 +40,10 @@ GATE_KEYS = {
     # 동시에 요구하므로 list-key. GA4/GH2(chain·offering)는 병목 셀이 없어 no_cell_gates로 처리.
     "l1g": {"GA1": "D223", "GA2": "D225", "GA3": ["D226", "D227", "D228"], "GA4": "D230"},
     "l1h": {"GH1": "D232", "GH2": "D235"},
+    # EX-L2 신규 구역(지하 데이터 성소 l2s). GB3은 데이터 조각 정합 미니 퍼즐 = 3조각을 동시에
+    # 요구하므로 list-key. GB4(chain·offering)는 봉헌 목 H 셀이 있어 keyed 게이트이며 J12(유니크)는
+    # self-offering(GB4 자신이 여는 사원에서 채집).
+    "l2s": {"GB1": "D256", "GB2": "D258", "GB3": ["D259", "D260", "D261"], "GB4": "D263"},
 }
 # G2가 추가 소지 재료를 요구하는 경우(예: L3 boiler에 젖은석탄 D106 동시 소지).
 GATE_EXTRA_KEYS = {
@@ -65,6 +69,9 @@ PREMISE_GATHERS = {
 # 전제: 해당 게이트가 order상 마지막이어야 함(뒤에 다른 게이트를 막지 않음). audit이 실측한다.
 SELF_OFFERING_GATHERS = {
     "l1h": {"GH2": {"I14"}},
+    # EX-L2 J12(코어 정수·유니크): 마지막 백업 코어 O(GB4 통과 사원)에서만 채집되고 복원 코어
+    # D262→D263 = GB4 자신의 봉헌 체인에만 쓰인다(design §A-6.2). GB4가 마지막 게이트 = 데드락 불가.
+    "l2s": {"GB4": {"J12"}},
 }
 
 GATE_CELL_FIELDS = [
@@ -381,8 +388,8 @@ def main():
     recipes = load_recipes()
     recipe_idx = build_recipe_index(recipes)
     total_viol = 0
-    print("=== SPATIAL PROGRESSION AUDIT (EX-L1 + L2~L5) ===")
-    for layer in ["l1g", "l1h", "l2", "l3", "l4", "l5"]:
+    print("=== SPATIAL PROGRESSION AUDIT (EX-L1 + EX-L2 + L2~L5) ===")
+    for layer in ["l1g", "l1h", "l2s", "l2", "l3", "l4", "l5"]:
         res = audit_layer(layer, recipe_idx)
         print(f"\n--- {layer.upper()} ---")
         print(f"  spawn={res['spawn']}  gate open order(공간 순서)={res['order']}")
