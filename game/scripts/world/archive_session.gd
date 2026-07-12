@@ -2,7 +2,7 @@ extends Node
 class_name ArchiveSession
 ## (EXL4-5) Session glue for the L4 확장 SUB-zone 「부유 서고」 (floating_archive.tscn / l4a). Mirrors
 ## MineSession: registers the world, spawns the 정비대(제본대, 실 Cauldron with the shared brew skin),
-## the 아직도 책을 정리하는 사서 잔영 잔재 NPC (N-archivist), the 금기 열람 기록 석판 진상 조각 (L4 심부 =
+## the 아직도 책을 정리하는 사서 잔영 잔재 NPC (N-librarian), the 금기 열람 기록 석판 진상 조각 (L4 심부 =
 ## 엔딩 5조각의 마법 조각 심화), and a RETURN portal back to the MAGE TOWER (부유 서고는 마탑 최심부
 ## 곁 찢긴 서고 통로로 진입). Gate LOGIC + cutscene C-4 + the 잔류 열람 결계정 idempotent add_mana live
 ## in the L4aGateController node.
@@ -18,9 +18,11 @@ var _player: Node2D
 var _return_portal: ReturnPortalController = null
 
 ## (EXL4-5) 금기 열람 기록 석판 진상 조각 — L4 심부(마법) 조각. Reuses the canonical 5-set id
-## "sealed_mage" (deepening the L4/마법 진상, NOT a new sixth id) exactly as MineSession reuses
-## "stopped_robot". Placed at the 금기 열람 기록 석판 landmark `3` (27,22).
-const SHARD_ID := "sealed_mage"
+## "mage_ghost" (= 마력/L4 조각; deepening the same shard the base 마탑 mage_tower emits, NOT a new
+## sixth id) exactly as MineSession reuses "stopped_robot". 비게이팅: 엔딩 5조각은 마탑에서 이미
+## 획득 가능하고, 서고 기록판은 같은 마력 조각을 재조사(re-look)로 완성/심화할 뿐 6번째 게이트를
+## 추가하지 않는다(§EX-L4 5·487). Placed at the 금기 열람 기록 석판 landmark `3` (27,22).
+const SHARD_ID := "mage_ghost"
 const SHARD_CELLS := [Vector2i(27, 22), Vector2i(26, 22), Vector2i(28, 22)]
 const SHARD_LOG := "…금기 열람 기록 석판. 마지막 사서가 남긴 기록 — 우리는 더 깊이, 더 많이 읽었다. 힘의 극한, 세계를 다시 쓰는 한 줄을 찾아서. 그런 줄은 봉인해야 했다. 마지막 장에서, 봉인을 다시 여미고서야 알았다. 우리가 어디서 펼치지 말았어야 했는지, 여기 적혀 있다."
 
@@ -57,7 +59,7 @@ func _setup() -> void:
 			AudioManager.start_world_audio()
 		if AudioManager.has_method("set_home_ambience"):
 			AudioManager.set_home_ambience(true)   # 부유 심부 = 조용한 저음 (홈 앰비언스 재사용)
-	# (EXL4-5) 첫 진입 시 L4 속삭임 라인은 mage_tower가 이미 활성 — 서고는 N-archivist 라인만
+	# (EXL4-5) 첫 진입 시 L4 속삭임 라인은 mage_tower가 이미 활성 — 서고는 N-librarian 라인만
 	# (QuestNPC 최초 상호작용 시 activate_npc_line). 별도 라인 활성 불필요.
 
 
@@ -105,12 +107,12 @@ func _add_pool(parent: Node2D, tex_path: String, off: Vector2, strength: float) 
 	parent.add_child(pool)
 
 
-## Spawn the 잔재 NPC 「아직도 책을 정리하는 사서 잔영」 (N-archivist) beside the legend N cell (19,11).
+## Spawn the 잔재 NPC 「아직도 책을 정리하는 사서 잔영」 (N-librarian) beside the legend N cell (19,11).
 func _spawn_npc() -> void:
 	if _loader == null:
 		return
-	QuestNPC.spawn(self, _loader, Vector2i(19, 12), "archivist", "책을 정리하는 사서 잔영",
-		"…다음 열람 예약, 접수 중… 벌써 오래됐는데. 펼쳐 둔 금서는, 여기 쌓여만 가.",
+	QuestNPC.spawn(self, _loader, Vector2i(19, 12), "librarian", "책을 정리하는 사서 잔영",
+		"…이 책은, 제자리가… 어디였더라. 열람 순번이, 흐트러졌어. 나는 아직… 정리 중인데. 다음 열람자는, 언제 오나.",
 		"res://assets/objects/l4a_archivist_shade.png")
 
 
