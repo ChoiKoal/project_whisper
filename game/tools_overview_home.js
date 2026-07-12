@@ -30,7 +30,12 @@ const { PNG } = require("pngjs");
 
 const GAME = __dirname;
 const CLOSEUP = process.argv.includes("--closeup");
+// --hero: 아치(포탈 5기)+다이스 줌인 크롭 → preview-home-hero.png. home_hero_render.tscn 은
+// 실엔진 SubViewport 리드백이라 --headless dummy 드라이버에선 프레임버퍼가 없어 행(hang)한다
+// (tools_overview 상단 주석 참조). 그래서 히어로 샷도 이 오프라인 컴포지터에서 크롭한다.
+const HERO = process.argv.includes("--hero");
 const OUT = CLOSEUP ? "/workspace/group/preview-portal-closeup.png"
+          : HERO    ? "/workspace/group/preview-home-hero.png"
                     : "/workspace/group/preview-home.png";
 
 const TW = 128, TH = 64, HW = 64, HH = 32, LIFT = 32;
@@ -47,6 +52,19 @@ const obj = (n) => loadPng(`${GAME}/assets/objects/${n}.png`);
 const SRC = { 1: tile("t1_dirt") };
 const CAULDRON = obj("cauldron"), STONE = obj("stone");
 const ROCK_TEX = tile("cliff_face_a");   // real rock material sampled into the gates
+
+// (v1.10.0 L0 확장) homedeco 소품 아트 — 층별 상징(잎/데이터/태엽/서고/종) + 빛 웅덩이 + 잔해.
+// 인게임(map_loader _spawn_l2_object)은 이 PNG를 Sprite2D로 셀 중앙 + offset 에 배치한다.
+// 이전 프리뷰는 Pass F에서 이 심볼들을 미러하지 않아 신규 데코가 빈 흙 타일로 보였다(카나 검수).
+// 이제 legend.objects 의 kind:"homedeco" 스펙(art/art_variants/offset/glow/glow_scale)을 그대로 합성.
+const DECO_ART = {};
+for (const sym of Object.keys(legend.objects)) {
+  const spec = legend.objects[sym];
+  if (!spec || spec.kind !== "homedeco") continue;
+  const names = [spec.art, ...(spec.art_variants || [])];
+  for (const nm of names) if (nm && !(nm in DECO_ART)) DECO_ART[nm] = obj(nm);
+}
+const GLOW_VIOLET = obj("light_pool_violet");   // violet additive glow decal (map_loader mirror)
 
 // Home twilight tone — mirrors the #8a86b8 CanvasModulate but LIFTED (×1.28) so the barren
 // island + monumental gates READ; a pure ×0.54 multiply crushed the scene to murk (owner
@@ -414,6 +432,16 @@ function blit(src, dx, dy, tint, aScale) {
     }
   }
 }
+// nearest-neighbour scale of a PNG to (w,h) — for the scaled violet glow decal.
+function scalePng(src, w, h) {
+  w = Math.max(1, Math.round(w)); h = Math.max(1, Math.round(h));
+  const out = new PNG({ width: w, height: h }); out.data.fill(0);
+  for (let y = 0; y < h; y++) { const sy = Math.min(src.height - 1, Math.floor(y * src.height / h));
+    for (let x = 0; x < w; x++) { const sx = Math.min(src.width - 1, Math.floor(x * src.width / w));
+      const si = (src.width * sy + sx) << 2, di = (w * y + x) << 2;
+      out.data[di] = src.data[si]; out.data[di + 1] = src.data[si + 1]; out.data[di + 2] = src.data[si + 2]; out.data[di + 3] = src.data[si + 3]; } }
+  return out;
+}
 function blitAdd(src, dx, dy, aScale) {
   if (!src) return;
   for (let y = 0; y < src.height; y++) { const cy = Math.round(dy) + y; if (cy < 0 || cy >= CH) continue;
@@ -626,6 +654,29 @@ for (const [c, r] of order) {
   const [lx, ly] = cellLocal(c, r), px = OX + lx, py = OY + ly;
   if (sym === "C" && CAULDRON) blit(CAULDRON, px - CAULDRON.width / 2, py - CAULDRON.height + 16, TONE);
   else if (sym === "Y" && STONE) blit(STONE, px - STONE.width / 2, py - STONE.height + 12, TONE);
+  else if (legend.objects[sym] && legend.objects[sym].kind === "homedeco") {
+    // (v1.10.0) homedeco 소품 미러. map_loader _spawn_l2_object 배치를 그대로 재현:
+    // Sprite2D(texture centered) at cell centre + offset. art_variants 는 hash2 로 결정 픽.
+    const spec = legend.objects[sym];
+    let artName = spec.art;
+    const variants = spec.art_variants || [];
+    if (variants.length) { const pool = [spec.art, ...variants]; artName = pool[hash2(c, r, 11) % pool.length]; }
+    const art = DECO_ART[artName];
+    if (art) {
+      const ox = (spec.offset && spec.offset[0]) || 0, oy = (spec.offset && spec.offset[1]) || 0;
+      // 접지 그림자: 스프라이트 시각 중심 아래 지면 셀 중앙에 눌린 타원 (허브 소품 접지감).
+      filledCircle(px, py, 16, [0, 0, 0], 0.30, 2.4);
+      // Sprite2D: texture는 중앙 정렬 + offset → 시각 중심 = (px+ox, py+oy).
+      blit(art, px + ox - art.width / 2, py + oy - art.height / 2, TONE);
+      // violet glow (map_loader: glow=="violet" → light_pool_violet, off.y*0.4, glow_scale).
+      if (spec.glow === "violet" && GLOW_VIOLET) {
+        const gs = spec.glow_scale != null ? spec.glow_scale : 0.8;
+        const gw = GLOW_VIOLET.width * gs, gh = GLOW_VIOLET.height * gs;
+        const scaled = scalePng(GLOW_VIOLET, gw, gh);
+        blitAdd(scaled, px - gw / 2, py + oy * 0.4 - gh / 2, 0.85);
+      }
+    }
+  }
   else if ("12345".includes(sym)) {
     const spec = legend.objects[sym];
     const isNature = spec && spec.layer === "nature";
@@ -674,6 +725,24 @@ if (CLOSEUP) {
     crop.data[di] = canvas.data[si]; crop.data[di + 1] = canvas.data[si + 1]; crop.data[di + 2] = canvas.data[si + 2]; crop.data[di + 3] = 255;
   }
   writeScaled(crop, cw, ch, OUT, 900);
+} else if (HERO) {
+  // 아치(P1..P5)+다이스(스폰) 줌인. 프레임 중심 = 아치 정점 P3와 다이스의 중점 (hero_render.gd 미러).
+  const p3 = findSym("3"), sp = findSym("S");
+  const [p3x, p3y] = cellLocal(p3[0], p3[1]);
+  const [spx, spy] = cellLocal(sp[0], sp[1]);
+  // 아치 폭: P1(sym"1")↔P5(sym"5") 스크린 X 스팬 + 여백.
+  const g1 = findSym("1"), g5 = findSym("5");
+  const x1 = OX + cellLocal(g1[0], g1[1])[0], x5 = OX + cellLocal(g5[0], g5[1])[0];
+  const cx = OX + (p3x + spx) / 2, cyc = OY + (p3y + spy) / 2;
+  const cw = Math.round((x5 - x1) + GATE_W + 240);          // 아치 폭 + 게이트 여유
+  const ch = Math.round(GATE_H + (spy - p3y) + 360);        // 게이트 높이 + 정점→다이스 + 여백
+  const x0 = Math.max(0, Math.round(cx - cw / 2)), y0 = Math.max(0, Math.round(cyc - ch / 2 - GATE_H / 2 + 40));
+  const crop = new PNG({ width: cw, height: ch });
+  for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
+    const si = (CW * Math.min(CH - 1, y0 + y) + Math.min(CW - 1, x0 + x)) << 2, di = (cw * y + x) << 2;
+    crop.data[di] = canvas.data[si]; crop.data[di + 1] = canvas.data[si + 1]; crop.data[di + 2] = canvas.data[si + 2]; crop.data[di + 3] = 255;
+  }
+  writeScaled(crop, cw, ch, OUT, 1400);
 } else {
   writeScaled(canvas, CW, CH, OUT, 1600);
 }
