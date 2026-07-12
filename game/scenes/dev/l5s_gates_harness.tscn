@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bl5sgatehrn01"]
+
+[ext_resource type="Script" path="res://scenes/dev/l5s_gates_harness.gd" id="1_l5sgate"]
+
+[node name="L5sGatesHarness" type="Node"]
+script = ExtResource("1_l5sgate")
