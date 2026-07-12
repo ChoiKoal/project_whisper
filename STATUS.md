@@ -113,3 +113,10 @@
 - 2026-07-07 23:2X — **v1.1.0 릴리스 — GP-6 done, 게임성 패스 완결**: GP-1 솥 통일 / GP-2 결과물 우선 힌트 / GP-3 조합 UI / GP-4 잔재 NPC 6기(부록B 어서션) / GP-5 미니 퍼즐 4종(스킵 가능) / GP-6 통합 검증(e2e GatePuzzle 정합+하네스 바이패스) + 태그·빌드·GitHub 릴리스 https://github.com/ChoiKoal/project_whisper/releases/tag/v1.1.0 (릴리스 생성·업로드는 에이전트 사망으로 카나 직접 마무리). 세이브 호환.
 - 2026-07-08 — **EX-L1 설계 완료 (확장 기획 1/5: 자연의 세계)**: `docs/project-whisper-expansion-l1-design-v1.md`(~61KB, 문서만·구현 금지). L1을 **2개 신규 구역**으로 확장 — **구역 2 「고요의 화원」**(40×40, 꽃/색·물감 챕터: 게이트 4 GA1 색의 여울[배치]→GA2 시든 아치[사용]→GA3 색맞춤 화단[배치 미니퍼즐 3색]→GA4 색의 봉헌[체인], 잔재 NPC 색을 잃은 정원사 석상) + **구역 3 「생명의 심장」**(40×40, 세계수 심부·L1 정화 후 개방: 게이트 2 GH1 뒤엉킨 뿌리문[사용]→GH2 심장 봉인[체인·컷신], 생명 Whisper 재획득처 E[엔딩 3속성 대비], 진상 조각=선배 컨스트럭터의 첫 실험 흔적, 잔재 NPC 첫 컨스트럭터 잔향). 신규 채집 8종 I10~I17(화원 희귀꽃/이슬/색모래/꽃가루 + 심장 생명의정수[유니크]/뿌리수액/씨눈/이끼), 레시피 33종 EX-L1-R01~R33(산출 D222~D254). **공간 증명 이중화**: `tools/l1x_bfs.py` 순서 강제 PASS(화원 GA1→GA2→GA3→GA4 walkable 719, 심장 GH1→GH2 walkable 681, 우회 반증 전부 X, orphan 0) + `tools/l1x_recipes.py` 재료 도달성/softlock PASS(기존 220 레시피 대비 페어중복 0·내부중복 0[초안 5건 해소]·dangling 0). 맵/레시피 표 파이썬 생성(`l1x_map_gen.py`). 플레이타임 L1 40~60→70~90분(+화원 ~20 +심장 ~15). 재사용 부품 매핑(신규 엔진 로직=GA3 색맞춤 퍼즐 술어 1개뿐) + 구현 단계 EX-L1-1~7 + 최심부 컷신 「다시 뛰는 심장」(꺼냄↔돌려줌 대비 = L5 '응답' 복선). 구현 미착수.
 - 2026-07-08 21:4X — **v1.4.0 릴리스 — L1A-4 done, L1 아트 전면 통일**: 시작의 숲 타일셋·유기물 전부 프로시저럴 아이소 문법 재생성(CC0 실사 잔존 0), 세계수 리디자인(잠든/빛나는 2형태, 검수 반영 확대판), 배경 뚫림(보라 지그재그) 수리, tools_overview_l1.js 실물 기준 신규. 스위프·실 PCK 그린. 릴리스 https://github.com/ChoiKoal/project_whisper/releases/tag/v1.4.0 (mac zip 업로드는 에이전트 사망으로 카나 직접 마무리). 세이브 호환.
+
+---
+
+## v1.9.0 릴리스 재개 (5차) — 2026-07-13 (재시작 에이전트)
+- 재개 상태: exl5-belfry @ e09b2ed, 트리 클린, 스윕 65/65(.sweep_done, gitignored).
+- **발견 버그**: export_presets.cfg 버전 3종(product_version/short_version/application/version)이 1.8.0 잔존 — project.godot는 1.9.0. v180 handoff §빌드환경 규율 위반. 수정 예정.
+- 남은: 실 PCK 3종(e2e/l5s_flow/l5s_unique) → main 머지 → 태그 v1.9.0 → 빌드(win/mac) → GH 릴리스 → handoff-v190 완성.
