@@ -162,7 +162,13 @@ def build():
 
 # ---- 무결성 검증 ----
 def existing_pairs():
-    recs = json.load(open(os.path.join(DATA, "recipes.json"), encoding="utf-8"))["recipes"]
+    # Compare the newly-generated EX-L1 set against the PRE-EXISTING baseline only.
+    # Once the 33 EX-L1 recipes are merged into recipes.json (post-implementation), a naive
+    # scan would report each new recipe as "conflicting" with its own merged copy. Excluding
+    # ids that begin with "EX-L1-" keeps this an idempotent regression check both before and
+    # after the data is committed.
+    recs = [x for x in json.load(open(os.path.join(DATA, "recipes.json"), encoding="utf-8"))["recipes"]
+            if not str(x.get("id", "")).startswith("EX-L1-")]
     pairs = {}
     for x in recs:
         inp = x["inputs"]
@@ -183,7 +189,7 @@ def pair_key(inp):
 def main():
     ex_pairs, ex_recs = existing_pairs()
     print("=== EX-L1 레시피 무결성 검증 ===")
-    print(f"기존 recipes.json: {len(ex_recs)}종")
+    print(f"기존 recipes.json (EX-L1 제외 baseline): {len(ex_recs)}종")
     print(f"신규 채집: I10~I17 = {len(GATHERS)}종")
     print(f"신규 레시피: {len(R)}종")
 
