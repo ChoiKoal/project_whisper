@@ -188,8 +188,8 @@ func _tiles_ok() -> bool:
 	if cs == null:
 		return false
 	var tm := _find_tilemap(cs)
-	# Home island (v1.4.2) is 21×17 = 357 used cells (VOID cells are set_cell'd to source 0 too);
-	# grove is 40×40. Either comfortably exceeds 300. (Pre-v1.4.2 home was 22×22 = 484.)
+	# Home island (v1.10.0 L0 확장) is 31×25 = 775 used cells (VOID cells are set_cell'd to
+	# source 0 too); grove is 40×40. Either comfortably exceeds 300. (v1.4.2 home was 21×17=357.)
 	return tm != null and tm.get_used_cells().size() >= 300
 
 
