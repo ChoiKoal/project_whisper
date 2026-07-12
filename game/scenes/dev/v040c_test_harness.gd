@@ -44,6 +44,8 @@ func _test_placement_data() -> void:
 	#   D226/D227/D228 삼원색 물감(무지개 샘 퍼즐). 전부 blocks:false·on-rule 존재.
 	# (v1.6.0 EX-L2 지하 데이터 성소) +4: D256 방수 디딤돌(T5A 위), D259/D260/D261
 	#   정합 조각 α/β/γ(align_slot 위). 전부 blocks:false·on-rule 존재.
+	# (v1.7.0 EX-L3 태엽 광산) +4: D279 붕락 궤도판(GM1 stepping — 붕락 낙석 협곡 K 위 디딤돌),
+	#   D282/D283/D284 전환 레버(GM3 레일 전환 미니 퍼즐, 3 x RAIL_LEVER 슬롯 위). 전부 blocks:false·on-rule 존재.
 	var placeable_count := 0
 	var functional := []
 	for id in ItemDB.all_ids():
@@ -53,8 +55,9 @@ func _test_placement_data() -> void:
 				functional.append(id)
 	_check("20+ placeable items", placeable_count >= 20, "count=%d" % placeable_count)
 	functional.sort()
-	_check("functional class is exactly D14/D22 (+EX-L1 D223/D226/D227/D228 +EX-L2 D256/D259/D260/D261)",
-		functional == ["D14", "D22", "D223", "D226", "D227", "D228", "D256", "D259", "D260", "D261"],
+	_check("functional class is exactly D14/D22 (+EX-L1 D223/D226/D227/D228 +EX-L2 D256/D259/D260/D261 +EX-L3 D279/D282/D283/D284)",
+		functional == ["D14", "D22", "D223", "D226", "D227", "D228", "D256", "D259", "D260", "D261",
+			"D279", "D282", "D283", "D284"],
 		str(functional))
 	# Sample spec classes: structures block, decor doesn't.
 	_check("D24 울타리 = structure, blocks", ItemDB.placement_class("D24") == "structure"
