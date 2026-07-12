@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bl2sflowhrn01"]
+
+[ext_resource type="Script" path="res://scenes/dev/l2s_flow_harness.gd" id="1_l2sflow"]
+
+[node name="L2sFlowHarness" type="Node"]
+script = ExtResource("1_l2sflow")
