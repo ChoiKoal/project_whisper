@@ -133,39 +133,78 @@
     "i": {
       "source": 4,
       "tile_id": "L4T-A"
+    },
+    "X": {
+      "source": 4,
+      "tile_id": "L4T-A",
+      "gate": "GW1",
+      "place_slot": "D302",
+      "_note": "GW1 룬 제단(부유 서가 다리석 D302 설치 슬롯, 착지측 인접). 배치 시 g 잔교 walkable."
     }
   },
   "objects": {
     "C": {
-      "scene": "workbench.tscn",
-      "object_id": "bindery",
+      "kind": "l4xobj",
+      "l2_id": "bindery",
+      "art": "l4a_bindery",
+      "offset": [0, -40],
+      "blocks": true,
+      "block_radius": 16,
+      "glow": "amethyst",
+      "glow_scale": 0.4,
       "_note": "정비대(제본대, L4 crafting station)"
     },
     "N": {
-      "scene": "npc_remnant.tscn",
-      "object_id": "archivist_shade",
+      "kind": "l4xobj",
+      "l2_id": "archivist_shade",
+      "art": "l4a_archivist_shade",
+      "offset": [0, -44],
+      "blocks": true,
+      "block_radius": 14,
+      "glow": "amethyst",
+      "glow_scale": 0.5,
       "_note": "잔재 NPC: 아직도 책을 정리하는 사서 잔영(GP-4 NPC 라인)"
     },
     "E": {
-      "scene": "mana_spring.tscn",
-      "object_id": "reading_ward",
+      "kind": "l4xobj",
+      "l2_id": "reading_ward",
+      "art": "l4a_reading_ward",
+      "offset": [0, -40],
+      "blocks": true,
+      "block_radius": 16,
       "gate": "GW2",
-      "_note": "흐려진 열람 결계(정화의 물 사용 대상)"
+      "_note": "GW2 흐려진 열람 결계 본체(정화의 물 D304 사용 대상)"
     },
     "H": {
-      "scene": "seal_altar.tscn",
-      "object_id": "archive_core_altar",
+      "kind": "l4xobj",
+      "l2_id": "archive_core_altar",
+      "art": "l4a_seal_altar",
+      "offset": [0, -40],
+      "blocks": true,
+      "block_radius": 16,
+      "glow": "gold",
+      "glow_scale": 0.6,
       "gate": "GW4",
-      "_note": "금기 봉인구 봉헌 목(재봉인 = 구역 정화)"
+      "_note": "GW4 금기 봉인구 봉헌 목(재봉인 = 구역 정화)"
     },
     "W": {
-      "scene": "mana_residue.tscn",
-      "object_id": "archive_residual_ward",
+      "kind": "l4xobj",
+      "l2_id": "archive_residual_ward",
+      "art": "l4a_mana_residue_ward",
+      "offset": [0, -24],
+      "blocks": false,
+      "glow": "amethyst",
+      "glow_scale": 0.7,
       "_note": "마력 Whisper 재획득처(idempotent, add_mana)"
     },
     "o": {
-      "scene": "archive_core.tscn",
-      "object_id": "archive_core",
+      "kind": "l4xobj",
+      "l2_id": "archive_core",
+      "art": "l4a_archive_core",
+      "offset": [0, -48],
+      "blocks": false,
+      "glow": "gold",
+      "glow_scale": 1.0,
       "gatherable": {
         "item_id": "P12",
         "unique": true
@@ -174,28 +213,54 @@
       "_note": "최심부 금서고 코어(금기 정수, 유니크)"
     },
     "q": {
-      "scene": "forbidden_page.tscn",
+      "kind": "l4xobj",
+      "l2_id": "forbidden_page",
+      "art": "l4a_forbidden_page",
+      "art_variants": ["l4a_forbidden_page_b", "l4a_forbidden_page_c"],
+      "offset": [0, -16],
+      "blocks": false,
+      "glow": "amethyst",
+      "glow_scale": 0.35,
       "gatherable": {
         "item_id": "P8"
       },
       "_note": "금서 조각"
     },
     "r": {
-      "scene": "archive_rune_slab.tscn",
+      "kind": "l4xobj",
+      "l2_id": "archive_rune_slab",
+      "art": "l4a_archive_rune_slab",
+      "art_variants": ["l4a_archive_rune_slab_b", "l4a_archive_rune_slab_c"],
+      "offset": [0, -14],
+      "blocks": false,
       "gatherable": {
         "item_id": "P9"
       },
       "_note": "서고 룬판"
     },
     "c": {
-      "scene": "reading_wax.tscn",
+      "kind": "l4xobj",
+      "l2_id": "reading_wax",
+      "art": "l4a_reading_wax",
+      "art_variants": ["l4a_reading_wax_b", "l4a_reading_wax_c"],
+      "offset": [0, -12],
+      "blocks": false,
+      "glow": "amethyst",
+      "glow_scale": 0.3,
       "gatherable": {
         "item_id": "P10"
       },
       "_note": "열람 촛농"
     },
     "i": {
-      "scene": "starpage_ink.tscn",
+      "kind": "l4xobj",
+      "l2_id": "starpage_ink",
+      "art": "l4a_starpage_ink",
+      "art_variants": ["l4a_starpage_ink_b", "l4a_starpage_ink_c"],
+      "offset": [0, -12],
+      "blocks": false,
+      "glow": "amethyst",
+      "glow_scale": 0.4,
       "gatherable": {
         "item_id": "P11"
       },

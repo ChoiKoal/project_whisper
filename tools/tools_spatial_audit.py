@@ -48,6 +48,10 @@ GATE_KEYS = {
     # 3 슬롯에 동시 배치하므로 list-key(l2s GB3 동형). GM4(chain·offering)는 봉헌 목 H 셀이 있는 keyed
     # 게이트이며 K12(심층 태엽정·유니크)는 self-offering(GM4 자신이 여는 최심부에서 채집).
     "l3m": {"GM1": "D279", "GM2": "D281", "GM3": ["D282", "D283", "D284"], "GM4": "D286"},
+    # EX-L4 신규 SUB-zone(부유 서고 l4a). GW3은 금서 봉인 순서 퍼즐 = 봉인 서판 3장(D305/D306/D307)을
+    # 3 슬롯에 순서대로 배치하므로 list-key(l3m GM3 동형). GW4(chain·offering)는 봉헌 목 H 셀이 있는
+    # keyed 게이트이며 P12(금기 정수·유니크)는 self-offering(GW4 자신이 여는 최심부 코어에서 채집).
+    "l4a": {"GW1": "D302", "GW2": "D304", "GW3": ["D305", "D306", "D307"], "GW4": "D309"},
 }
 # G2가 추가 소지 재료를 요구하는 경우(예: L3 boiler에 젖은석탄 D106 동시 소지).
 GATE_EXTRA_KEYS = {
@@ -80,6 +84,11 @@ SELF_OFFERING_GATHERS = {
     # 채집되고 D285→D286 = GM4 자신의 봉헌 체인(태엽 노심 봉헌)에만 쓰인다(K12 소비 레시피 = D285 뿐,
     # D285 소비 = D286 뿐). GM4가 최종 게이트 = 데드락 불가. l2s GB4/J12 동형.
     "l3m": {"GM4": {"K12"}},
+    # EX-L4 P12(금기 정수·유니크): 금서고 통로 너머 최심부 코어 o(archive_core, (20,2))에서만 채집되고
+    # D308→D309 = GW4 자신의 봉헌 체인(금기 봉인구 봉헌)에만 쓰인다. 유니크 촉매 프레임 v1.1:
+    # P12는 R08에서 미소모(촉매)이므로 D308 두 개를 P12 1개로 제조 → D309(R09) → GW4. GW4가 최종
+    # 게이트 = 데드락 불가. l3m GM4/K12 동형이되 P12는 소모조차 안 됨(존재 판정만).
+    "l4a": {"GW4": {"P12"}},
 }
 
 GATE_CELL_FIELDS = [
@@ -396,8 +405,8 @@ def main():
     recipes = load_recipes()
     recipe_idx = build_recipe_index(recipes)
     total_viol = 0
-    print("=== SPATIAL PROGRESSION AUDIT (EX-L1 + EX-L2 + EX-L3 + L2~L5) ===")
-    for layer in ["l1g", "l1h", "l2s", "l3m", "l2", "l3", "l4", "l5"]:
+    print("=== SPATIAL PROGRESSION AUDIT (EX-L1 + EX-L2 + EX-L3 + EX-L4 + L2~L5) ===")
+    for layer in ["l1g", "l1h", "l2s", "l3m", "l4a", "l2", "l3", "l4", "l5"]:
         res = audit_layer(layer, recipe_idx)
         print(f"\n--- {layer.upper()} ---")
         print(f"  spawn={res['spawn']}  gate open order(공간 순서)={res['order']}")

@@ -1415,6 +1415,13 @@ func _spawn_object(sym: String, cell: Vector2i, spec: Dictionary) -> void:
 	if kind == "l3xobj":
 		_spawn_l2_object(sym, cell, spec, world)
 		return
+	# (EXL4-2) Layer-4 확장(부유 서고 l4a) objects reuse the identical data-driven spawn path
+	# (spec carries l4a_* art, art_variants 실루엣 변주, offset, glow, gatherable, blocking, and an
+	# l2_id the EX-L4 gate controller hooks state onto). Only the `kind` string differs so the base
+	# 마탑(l4obj) symbol/spawn stays untouched (zero regression to L4 구역 1).
+	if kind == "l4xobj":
+		_spawn_l2_object(sym, cell, spec, world)
+		return
 	match sym:
 		"C":
 			cauldron_cell = cell
@@ -1657,6 +1664,9 @@ func _spawn_l2_object(sym: String, cell: Vector2i, spec: Dictionary, world: Vect
 		_add_light_pool(node, "res://assets/objects/light_pool_orange.png", Vector2(off.x, off.y * 0.4), float(spec.get("glow_scale", 0.8)))
 	elif glow_kind == "gold":
 		_add_light_pool(node, "res://assets/objects/light_pool_gold.png", Vector2(off.x, off.y * 0.4), float(spec.get("glow_scale", 0.8)))
+	elif glow_kind == "amethyst" or glow_kind == "violet":
+		# (EX-L4) 부유 서고 amethyst/violet additive glow. Reuses the violet light-pool decal.
+		_add_light_pool(node, "res://assets/objects/light_pool_violet.png", Vector2(off.x, off.y * 0.4), float(spec.get("glow_scale", 0.8)))
 	if l2_id == "workbench":
 		l2_workbench_cell = cell
 	l2_object_nodes[l2_id + "@" + str(cell)] = {"cell": cell, "node": node, "spec": spec}
