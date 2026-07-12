@@ -5222,6 +5222,430 @@
         ],
         "blocks": false
       }
+    },
+    {
+      "id": "K8",
+      "name": "태엽 광석",
+      "category": "gather",
+      "layer": 3,
+      "flavor": "채굴하다 만 광맥. 태엽이 감기던 원석이, 반쯤 캐낸 채 굳었다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "K9",
+      "name": "녹슨 톱니축",
+      "category": "gather",
+      "layer": 3,
+      "flavor": "부러진 굴착 드릴의 축. 이가 다 닳도록 돌다, 마지막에 멈췄다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "K10",
+      "name": "갱도 석탄",
+      "category": "gather",
+      "layer": 3,
+      "flavor": "가장 깊은 갱에서 캔 검은 덩이. 태울 화로도, 실어 낼 광차도 이제 없다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "K11",
+      "name": "응결 수정",
+      "category": "gather",
+      "layer": 3,
+      "flavor": "갱도 벽에 맺힌 수정. 지열이 식으며 물방울이 그대로 굳었다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "K12",
+      "name": "심층 태엽정",
+      "category": "gather",
+      "layer": 3,
+      "unique": true,
+      "flavor": "대굴착기 코어에서 꺼낸 원태엽. 도시를 감던 모든 태엽의 첫 마디.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D278",
+      "name": "정련 광석판",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "무른 광석이 판이 된다. 낙석 위에 걸쳐도 버티게.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D279",
+      "name": "붕락 궤도판",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "무너진 협곡 위에 놓을, 광차가 지나갈 궤도판.",
+      "placeable_on": [
+        "L3T-rubble"
+      ],
+      "usable_on": [],
+      "placement": {
+        "class": "functional",
+        "on": [
+          "L3T-rubble"
+        ],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D280",
+      "name": "응결 밀봉재",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "틈을 메우는 반투명 반죽. 새는 압력을 붙든다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D281",
+      "name": "감압 밸브 젤",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "통풍문의 잠긴 밸브를 밀어 여는 열쇠 젤. 주입하면 문이 스스로 물러난다.",
+      "placeable_on": [],
+      "usable_on": [
+        "vent_door"
+      ]
+    },
+    {
+      "id": "D282",
+      "name": "전환 레버 α",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "레일을 옮길 첫 레버. 홀로는 아무 갈래도 못 연다.",
+      "placeable_on": [
+        "RAIL_LEVER"
+      ],
+      "usable_on": [],
+      "placement": {
+        "class": "functional",
+        "on": [
+          "RAIL_LEVER"
+        ],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D283",
+      "name": "전환 레버 β",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "둘째 레버. 첫 레버와 갈래가 맞물린다.",
+      "placeable_on": [
+        "RAIL_LEVER"
+      ],
+      "usable_on": [],
+      "placement": {
+        "class": "functional",
+        "on": [
+          "RAIL_LEVER"
+        ],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D284",
+      "name": "전환 레버 γ",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "셋째 레버. 이제 셋을 다 넘기면, 광차문이 갈래를 튼다.",
+      "placeable_on": [
+        "RAIL_LEVER"
+      ],
+      "usable_on": [],
+      "placement": {
+        "class": "functional",
+        "on": [
+          "RAIL_LEVER"
+        ],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D285",
+      "name": "감긴 태엽 씨",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "첫 마디 태엽이, 새 원석에 힘을 옮겨 감긴다.",
+      "placeable_on": [],
+      "usable_on": []
+    },
+    {
+      "id": "D286",
+      "name": "태엽 노심",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "멈춘 대굴착기가 다시 감길 준비를 마친다. 도시를 감던 첫 태엽을, 여기 되돌린다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "key_item": true
+    },
+    {
+      "id": "D287",
+      "name": "광석 무리",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "반쯤 감긴 원석 둘. 캐다 만 채로 나란히.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L3T-B",
+          "L3T-G",
+          "T0"
+        ],
+        "blocks": false,
+        "glows": true
+      }
+    },
+    {
+      "id": "D288",
+      "name": "축 무더기",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "부러진 축이 축을 부른다. 무거운 고철 더미.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L3T-B",
+          "L3T-G",
+          "T0"
+        ],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D289",
+      "name": "석탄 더미",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "실어 낼 곳 없는 검은 벽돌. 태울 화로가 먼저 식었다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L3T-B",
+          "L3T-G",
+          "T0"
+        ],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D290",
+      "name": "수정 군집",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "차게 맺힌 수정이 서로 얼어붙는다. 갱도의 마지막 물기.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L3T-B",
+          "L3T-G",
+          "T0"
+        ],
+        "blocks": false,
+        "glows": true
+      }
+    },
+    {
+      "id": "D291",
+      "name": "석탄 수정 등불",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "손안의 작은 갱. 들면 검은 결 사이로 수정이 희미하게 빛난다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L3T-B",
+          "L3T-G",
+          "T0"
+        ],
+        "blocks": false,
+        "glows": true
+      }
+    },
+    {
+      "id": "D292",
+      "name": "방진 밀봉판",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "먼지도 물기도 새지 않는 판. 오래 지키려는 손길.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L3T-B",
+          "L3T-G",
+          "T0"
+        ],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D293",
+      "name": "톱니 부적",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "다 옮기지 못한 갈래를, 부적처럼. 언젠가 트일 길을 믿으며.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L3T-B",
+          "L3T-G",
+          "T0"
+        ],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D294",
+      "name": "노심 등명",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "갱도를 밝히는 등명. 되감은 첫 태엽의 온기를, 곁에 둔다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L3T-B",
+          "L3T-G",
+          "T0"
+        ],
+        "blocks": true,
+        "glows": true
+      }
+    },
+    {
+      "id": "D295",
+      "name": "광산 톱니탑",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "지상 도시의 톱니와, 지하의 원석이 한 탑에 선다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L3T-B",
+          "L3T-G",
+          "T0"
+        ],
+        "blocks": true,
+        "glows": true
+      }
+    },
+    {
+      "id": "D296",
+      "name": "채굴 구동함",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "멈춘 굴착 팔에 예비 힘을 한 칸. 다시 캘 날을 위한.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L3T-B",
+          "L3T-G",
+          "T0"
+        ],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D297",
+      "name": "광부 시계등",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "몇 시에 무너졌는지, 이 수정 너머로 바늘이 비친다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L3T-B",
+          "L3T-G",
+          "T0"
+        ],
+        "blocks": false,
+        "glows": true
+      }
+    },
+    {
+      "id": "D298",
+      "name": "지워진 광부 명패",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "마지막 교대 명패. 누구였는지, 그을음 속으로 번져버렸다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L3T-B",
+          "L3T-G",
+          "T0"
+        ],
+        "blocks": false
+      }
+    },
+    {
+      "id": "D299",
+      "name": "굳은 굴착 로봇",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "갱도를 파던 로봇의 말로. 드릴을 든 자세로 굳었다.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "structure",
+        "on": [
+          "L3T-B",
+          "L3T-G",
+          "T0"
+        ],
+        "blocks": true
+      }
+    },
+    {
+      "id": "D300",
+      "name": "타버린 표창 태엽",
+      "category": "craft",
+      "layer": 3,
+      "flavor": "누군가는 이 채굴량을 자랑스러워했다. 이제는 탄 자국뿐.",
+      "placeable_on": [],
+      "usable_on": [],
+      "placement": {
+        "class": "decor",
+        "on": [
+          "L3T-B",
+          "L3T-G",
+          "T0"
+        ],
+        "blocks": false
+      }
     }
   ]
 }
