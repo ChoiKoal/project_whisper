@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Project Whisper — Mac App Store (MAS) entitlements.
+
+	  DIFFERENT FILE from tools/apple/entitlements.plist (that one is the
+	  Developer-ID / notarization direct-distribution set). The Mac App Store
+	  REQUIRES the App Sandbox; Developer-ID distribution must NOT ship it. So the
+	  two tracks carry two distinct entitlement files and you pick per track.
+
+	  Scope reminder: pure GDScript Godot 4.5 game (renderer = gl_compatibility),
+	  NO C# / Mono, NO GDExtension / native add-ons, NO networking, NO camera /
+	  microphone / location / address-book / calendar. The set below is the MINIMUM
+	  a sandboxed single-player offline Godot game needs. Apple rejects over-broad
+	  entitlements, so every capability not actually used is left OFF on purpose.
+	-->
+
+	<!-- ===== REQUIRED for the Mac App Store ===== -->
+	<!--
+	  App Sandbox. Mandatory for every MAS submission. Turning this on transparently
+	  redirects the process's HOME so Godot's `user://` resolves to
+	  ~/Library/Containers/com.koalstudio.projectwhisper/Data/... instead of
+	  ~/Library/Application Support/Godot/app_userdata/... . The game only ever writes
+	  user://save1.json and user://audio.cfg via FileAccess/DirAccess (audited: no
+	  absolute paths, no writes outside user://), so saves keep working under the
+	  container with NO code change.
+	-->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+
+	<!-- ===== KEPT (same rationale as the Developer-ID set) ===== -->
+	<!--
+	  Godot maps its universal Mach-O export-template slices and loads the embedded
+	  ProjectWhisper.pck under the Hardened Runtime that MAS signing also applies.
+	  Without this, library-validation can reject that mapping. Godot's macOS export
+	  docs recommend it for this exact case. It does NOT weaken the sandbox.
+	-->
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+
+	<!--
+	  ===== DELIBERATELY OMITTED (and why) =====
+
+	  * com.apple.security.network.client / .network.server
+	      The game is fully offline single-player. No HTTP, no multiplayer, no
+	      telemetry. Requesting network with no use is a common MAS rejection.
+
+	  * com.apple.security.files.user-selected.read-write
+	  * com.apple.security.files.downloads.read-write
+	      No NSOpenPanel/NSSavePanel, no import/export of user-chosen files. Saves
+	      live inside the container automatically, so no user-selected file scope is
+	      needed.
+
+	  * com.apple.security.device.audio-input / .camera
+	  * com.apple.security.personal-information.location / .addressbook / .calendars
+	      None of these devices/data are ever accessed.
+
+	  * com.apple.security.cs.allow-jit
+	  * com.apple.security.cs.allow-unsigned-executable-memory
+	  * com.apple.security.cs.allow-dyld-environment-variables
+	      GDScript runs on a bytecode interpreter, not a JIT; no self-modifying
+	      executable memory, no dylib injection. (Mono/C# builds need these — this
+	      build is pure GDScript.)
+
+	  * com.apple.security.get-task-allow  (Debugging)
+	      MUST be off for a store submission.
+
+	  Audio OUTPUT (playing music/SFX) needs NO entitlement under the sandbox — only
+	  audio INPUT (recording) does, which the game does not use.
+	-->
+</dict>
+</plist>
