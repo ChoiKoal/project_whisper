@@ -166,9 +166,11 @@ func _try_gw3_place(item_id: String, cell: Vector2i) -> void:
 	if slot == Vector2i(-9999, -9999):
 		return
 	_gw3_slots[slot] = item_id
-	# Track distinct-tablet placement order for the ordered-seal check.
-	if not (_gw3_order.has(item_id)):
-		_gw3_order.append(item_id)
+	# Track tablet placement order for the ordered-seal check. 재배치 허용(실수 복구, 설계 §GW3):
+	# 이미 놓인 서판을 다시 봉하면 그 서판을 순서열 맨 뒤로 옮겨 최신 배치 의도를 반영한다 —
+	# 잘못된 첫 시도도 정순으로 다시 봉하면 복구된다(잘못된 순서면 봉인 미완).
+	_gw3_order.erase(item_id)
+	_gw3_order.append(item_id)
 	if AudioManager != null and AudioManager.has_method("play_sfx"):
 		AudioManager.play_sfx("place")
 	_check_gw3_solved()

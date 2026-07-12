@@ -88,7 +88,7 @@ func _wire_gameplay_sfx() -> void:
 	GameState.stepping_stone_placed.connect(func(_cell): play_sfx("place_thud"))
 	GameState.placed_object_placed.connect(func(_id, _cell): play_sfx("place_thud"))
 	GameState.item_used_on_object.connect(func(_item, obj):
-		if obj != null and String(obj.get("object_id")) == "bush_dry":
+		if obj != null and typeof(obj.get("object_id")) == TYPE_STRING and String(obj.get("object_id")) == "bush_dry":
 			play_sfx("bush_bloom"))
 	GameState.world_tree_planted.connect(func(_cell): play_sfx("clear_fanfare"))
 	# UI open/close chime, centralized on the modal transition (any window).

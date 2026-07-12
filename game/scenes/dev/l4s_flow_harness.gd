@@ -112,7 +112,11 @@ func _test_gate_chain() -> void:
 	var gw3_slots := _cells(gw3.get("slot_cells", []))
 	var gw3_door := _cells(gw3.get("cells", []))
 	var gw1_altar: Variant = g.get("GW1", {}).get("altar", [])
-	var altar_cell := Vector2i(int(gw1_altar[0]), int(gw1_altar[1])) if gw1_altar is Array and gw1_altar.size() >= 2 else (gw1[0] if not gw1.is_empty() else Vector2i.ZERO)
+	var altar_cell: Vector2i = Vector2i.ZERO
+	if gw1_altar is Array and (gw1_altar as Array).size() >= 2:
+		altar_cell = Vector2i(int(gw1_altar[0]), int(gw1_altar[1]))
+	elif not gw1.is_empty():
+		altar_cell = gw1[0]
 
 	# GW1 부유 서가 다리석(D302) → 룬 제단 X 배치 → 잔교 g 셀 walkable. 배치 전엔 non-walkable(허공).
 	var pre_walk := loader.is_cell_walkable(gw1[0]) if not gw1.is_empty() else true
