@@ -724,18 +724,30 @@ if(heroCX===null){
 
 console.log(`  hero center: (${Math.round(heroCX)}, ${Math.round(heroCY)}) from ${heroZoneName}`);
 
-const HERO_W=640, HERO_H=480;
-const hx0=Math.round(Math.max(0,Math.min(compPng.width-HERO_W, heroCX-HERO_W/2)));
-const hy0=Math.round(Math.max(0,Math.min(compPng.height-HERO_H, heroCY-HERO_H/2)));
+// Capture a GENEROUS region around the landmark so the hero object sits in
+// context (not a tight 5-tile crop), then downscale to a clean 4:3 preview.
+const CAP_W=2400, CAP_H=1800;             // source capture window (px, in composite space)
+const HERO_W=1600, HERO_H=1200;           // final downscaled preview (4:3)
+let cx0=Math.round(heroCX-CAP_W/2), cy0=Math.round(heroCY-CAP_H*0.42); // bias up: landmarks are tall, keep base+canopy
+cx0=Math.max(0,Math.min(compPng.width-CAP_W, cx0));
+cy0=Math.max(0,Math.min(compPng.height-CAP_H, cy0));
 
 const heroPng=new PNG({width:HERO_W,height:HERO_H});
+const sxScale=CAP_W/HERO_W, syScale=CAP_H/HERO_H;
 for(let y=0;y<HERO_H;y++) for(let x=0;x<HERO_W;x++){
-  const sx=hx0+x,sy=hy0+y;
-  if(sx>=compPng.width||sy>=compPng.height){ const i=(y*HERO_W+x)<<2; heroPng.data[i]=heroPng.data[i+1]=heroPng.data[i+2]=0; heroPng.data[i+3]=255; continue; }
-  const si=(sy*compPng.width+sx)<<2;
+  // area-average box downscale for clean anti-aliased preview
+  const bx0=cx0+Math.floor(x*sxScale), by0=cy0+Math.floor(y*syScale);
+  const bx1=cx0+Math.floor((x+1)*sxScale), by1=cy0+Math.floor((y+1)*syScale);
+  let rr=0,gg=0,bb=0,n=0;
+  for(let sy=by0;sy<by1;sy++) for(let sx=bx0;sx<bx1;sx++){
+    if(sx<0||sy<0||sx>=compPng.width||sy>=compPng.height) continue;
+    const si=(sy*compPng.width+sx)<<2;
+    rr+=compPng.data[si]; gg+=compPng.data[si+1]; bb+=compPng.data[si+2]; n++;
+  }
   const di=(y*HERO_W+x)<<2;
-  heroPng.data[di]=compPng.data[si]; heroPng.data[di+1]=compPng.data[si+1];
-  heroPng.data[di+2]=compPng.data[si+2]; heroPng.data[di+3]=255;
+  if(n===0){ heroPng.data[di]=heroPng.data[di+1]=heroPng.data[di+2]=0; }
+  else { heroPng.data[di]=Math.round(rr/n); heroPng.data[di+1]=Math.round(gg/n); heroPng.data[di+2]=Math.round(bb/n); }
+  heroPng.data[di+3]=255;
 }
 // Slight vignette on hero crop
 const hvcx=HERO_W/2,hvcy=HERO_H/2,hvmax=Math.hypot(hvcx,hvcy);
@@ -748,7 +760,7 @@ for(let y=0;y<HERO_H;y++) for(let x=0;x<HERO_W;x++){
 }
 
 fs.writeFileSync(OUT_HERO, PNG.sync.write(heroPng));
-console.log(`wrote ${OUT_HERO} (${HERO_W}x${HERO_H})`);
+console.log(`wrote ${OUT_HERO} (${HERO_W}x${HERO_H}) capturing ${CAP_W}x${CAP_H} @ (${cx0},${cy0})`);
 
 // ── Summary ──────────────────────────────────────────────────────────────────
 const allMissing=[...new Set([
