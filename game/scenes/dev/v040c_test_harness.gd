@@ -42,6 +42,8 @@ func _test_placement_data() -> void:
 	# Spec: ~20+ dead-end craftables become placeable; functional stays D14/D22 only.
 	# (v1.5.0 EX-L1) +4 신규 functional 배치물: D223 꽃돌다리(물 위 디딤돌 계열),
 	#   D226/D227/D228 삼원색 물감(무지개 샘 퍼즐). 전부 blocks:false·on-rule 존재.
+	# (v1.6.0 EX-L2 지하 데이터 성소) +4: D256 방수 디딤돌(T5A 위), D259/D260/D261
+	#   정합 조각 α/β/γ(align_slot 위). 전부 blocks:false·on-rule 존재.
 	var placeable_count := 0
 	var functional := []
 	for id in ItemDB.all_ids():
@@ -51,8 +53,8 @@ func _test_placement_data() -> void:
 				functional.append(id)
 	_check("20+ placeable items", placeable_count >= 20, "count=%d" % placeable_count)
 	functional.sort()
-	_check("functional class is exactly D14/D22 (+EX-L1 D223/D226/D227/D228)",
-		functional == ["D14", "D22", "D223", "D226", "D227", "D228"],
+	_check("functional class is exactly D14/D22 (+EX-L1 D223/D226/D227/D228 +EX-L2 D256/D259/D260/D261)",
+		functional == ["D14", "D22", "D223", "D226", "D227", "D228", "D256", "D259", "D260", "D261"],
 		str(functional))
 	# Sample spec classes: structures block, decor doesn't.
 	_check("D24 울타리 = structure, blocks", ItemDB.placement_class("D24") == "structure"
