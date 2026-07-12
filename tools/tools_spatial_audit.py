@@ -36,10 +36,23 @@ GATE_KEYS = {
     "l3": {"G1": "D104", "G2": "D105", "G3": "D108", "G4": "D111"},
     "l4": {"G1": "D141", "G2": "D143", "G3": "D145", "G4": "D148"},
     "l5": {"G1": "D178", "G2": "D180", "G3": "D182", "G4": "D186"},
+    # EX-L1 신규 두 구역(고요의 화원 l1g / 생명의 심장 l1h). GA3은 색맞춤 미니 퍼즐 = 3색 물감을
+    # 동시에 요구하므로 list-key. GA4/GH2(chain·offering)는 병목 셀이 없어 no_cell_gates로 처리.
+    "l1g": {"GA1": "D223", "GA2": "D225", "GA3": ["D226", "D227", "D228"], "GA4": "D230"},
+    "l1h": {"GH1": "D232", "GH2": "D235"},
 }
 # G2가 추가 소지 재료를 요구하는 경우(예: L3 boiler에 젖은석탄 D106 동시 소지).
 GATE_EXTRA_KEYS = {
     "l3": {"G2": ["D106"]},
+}
+
+# 구역 진입 전 이미 확보 가능한 '전제(premise)' gather 원소 — 그 구역 legend에 소스가 없어도
+# 도달 가능으로 취급한다. EX-L1 두 구역은 시작의 숲을 클리어해야 개방되므로 시작의 숲 gather
+# (I1~I9)는 진입 시 이미 확보됨(예: GA1의 돌 I8 — design §A-6 order-safe). I14(유니크)는 이 구역
+# 안(세계수 심장 O)에서 채집되므로 premise 아님 — 실제 소스 도달성으로 판정한다.
+PREMISE_GATHERS = {
+    "l1g": {"I1", "I2", "I3", "I4", "I5", "I6", "I7", "I8", "I9"},
+    "l1h": {"I1", "I2", "I3", "I4", "I5", "I6", "I7", "I8", "I9"},
 }
 
 GATE_CELL_FIELDS = [
@@ -111,6 +124,11 @@ def non_walkable_tiles(legend):
             # 물/냉각수만 진짜 지형 벽으로 취급. dark-sealed는 게이트 병목이라 별도 토글.
             # 오브젝트-only 비워커블(발전기 e/배전반 K/관제탑 O 등)은 인접 채집 → 통과 허용.
             if "W" in tid or "coolant" in tid.lower() or "water" in tid.lower():
+                walls.add(sym)
+            # EX-L1 물 밴드 `~`(색의 여울 T5A / 뿌리 도랑 T5M): 게이트 필드가 없는 순수 물 지형 벽.
+            # (게이트 병목 셀 K/A/M/L/H 은 `gate` 필드를 달고 있어 여기서 제외되고, all_gate_cells
+            #  로 별도 토글된다.)
+            elif sym == "~" and not t.get("gate"):
                 walls.add(sym)
     return walls
 
@@ -216,6 +234,11 @@ def source_reachable(item, sources, region):
     return False
 
 
+def _key_items(key_val):
+    """게이트 열쇠는 단일 아이템(str) 또는 다중(list, 예: GA3 3색)일 수 있다."""
+    return list(key_val) if isinstance(key_val, list) else [key_val]
+
+
 def audit_layer(layer, recipe_idx):
     layout = load_layout(layer)
     legend = load_legend(layer)
@@ -225,6 +248,7 @@ def audit_layer(layer, recipe_idx):
     sources = gather_sources(layer, layout, legend)
     keys = GATE_KEYS[layer]
     extra = GATE_EXTRA_KEYS.get(layer, {})
+    premise = PREMISE_GATHERS.get(layer, set())
 
     # 모든 게이트 병목 셀 초기 차단.
     all_gate_cells = set()
@@ -269,11 +293,13 @@ def audit_layer(layer, recipe_idx):
         gid = candidates[0]
 
         # === 이 게이트를 열기 전(region) 상태에서 재료 확보 검증 ===
-        need_items = [keys[gid]] + extra.get(gid, [])
+        need_items = _key_items(keys[gid]) + extra.get(gid, [])
         gathers = set()
         for it in need_items:
             gathers |= expand_to_gathers(it, recipe_idx)
         for gg in sorted(gathers):
+            if gg in premise:
+                continue  # 구역 진입 전 이미 확보(시작의 숲 gather 등) — order-safe.
             if not source_reachable(gg, sources, region):
                 violations.append({
                     "layer": layer, "gate": gid, "key": keys[gid],
@@ -290,11 +316,13 @@ def audit_layer(layer, recipe_idx):
 
     # 셀 없는 게이트(L2 G4 등): 전 게이트 개방 후 region에서 검증.
     for gid in no_cell_gates:
-        need_items = [keys[gid]] + extra.get(gid, [])
+        need_items = _key_items(keys[gid]) + extra.get(gid, [])
         gathers = set()
         for it in need_items:
             gathers |= expand_to_gathers(it, recipe_idx)
         for gg in sorted(gathers):
+            if gg in premise:
+                continue
             if not source_reachable(gg, sources, region):
                 violations.append({
                     "layer": layer, "gate": gid, "key": keys[gid],
@@ -315,8 +343,8 @@ def main():
     recipes = load_recipes()
     recipe_idx = build_recipe_index(recipes)
     total_viol = 0
-    print("=== SPATIAL PROGRESSION AUDIT (L2~L5) ===")
-    for layer in ["l2", "l3", "l4", "l5"]:
+    print("=== SPATIAL PROGRESSION AUDIT (EX-L1 + L2~L5) ===")
+    for layer in ["l1g", "l1h", "l2", "l3", "l4", "l5"]:
         res = audit_layer(layer, recipe_idx)
         print(f"\n--- {layer.upper()} ---")
         print(f"  spawn={res['spawn']}  gate open order(공간 순서)={res['order']}")
