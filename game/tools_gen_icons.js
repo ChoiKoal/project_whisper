@@ -165,6 +165,8 @@ const P = {
   ivoryD: '#6b6459', ivory: '#9a9385', ivoryM: '#c4bdaf', ivoryL: '#e6e0d4', ivoryH: '#f4efe4',
   ashGrey: '#4a463f', ashGreyL: '#726c62',
   ambient: '#e0a94a', ambientD: '#a87c2e', ambientL: '#f2ce8c',
+  // ---- EX-L1 (v1.2.0 색/생명 확장): warm teacup ceramic for the tea crafts.
+  creamCup: '#c9b48a', creamCupL: '#e6d7b0',
 };
 const C = {};
 for (const k in P) C[k] = hexToRGB(P[k]);
@@ -1737,6 +1739,386 @@ icons.D221 = (cv) => { // 돌에 낀 꽃물 (꽃+돌 → 얼룩)
 };
 
 // ============================================================================
+// EX-L1 EXPANSION (v1.2.0 색/생명 확장). New Layer-1 gathers I10..I17 + crafts
+// D222..D254. Two thematic chapters:
+//   garden  = 색 잃은 파스텔 톤 (faded/desaturated pastels being recoloured)
+//   heart   = 심부 어둠 + 뿌리 보라 발광 (dark heart-core with root-violet glow)
+// Reuses the Layer-1 conventions: 1px selout (darker same-hue, never pure black),
+// soft top-right light, bold silhouettes; "glows" items get an additive glowBehind
+// core exactly like the existing violet-glow family. Deterministic (fixed layout
+// per id) so regeneration is byte-stable.
+// ============================================================================
+
+// --- helpers for the EX-L1 palette (faded pastels + warm-violet life glow) ---
+// paint-pot: a small ceramic pot brimming with a coloured paint (lit/dark same-hue).
+function paintPot(cv, lit, dark, rim) {
+  for (let y = 22; y < 40; y++) { // pot body (grey ceramic)
+    const hw = 11 - Math.abs(y - 31) * 0.12;
+    for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, x - 24 > 0 ? C.greyL : C.grey);
+  }
+  ellipse(cv, 24, 22, 11, 4, C.greyL, C.grey);        // rim
+  ellipse(cv, 24, 22, 8, 3, dark, dark);              // paint surface (dark ring)
+  ellipse(cv, 24, 21, 7, 2, lit, dark);               // lit paint meniscus
+  // a fat drip down the front
+  fillRect(cv, 22, 24, 26, 34, dark);
+  fillRect(cv, 22, 24, 24, 34, lit);
+  disc(cv, 21, 25, 1, C.white);                       // ceramic glint
+  if (rim) { for (let x = 15; x < 34; x++) setPx(cv, x, 22, rim); }
+}
+// desaturate a hue toward the pale-grey of the 색 잃은 garden.
+function faded(rgb, amt) {
+  const g = Math.round((rgb[0] + rgb[1] + rgb[2]) / 3);
+  return rgb.map(v => Math.round(v + (g - v) * amt));
+}
+// warm-violet life glow accent (a deeper/heavier sibling of `sparkle`).
+function lifeSpark(cv, x, y) {
+  setPx(cv, x, y, C.white); setPx(cv, x - 1, y, C.violetL, 210); setPx(cv, x + 1, y, C.violetL, 210);
+  setPx(cv, x, y - 1, C.violetL, 210); setPx(cv, x, y + 1, C.violetL, 210);
+  setPx(cv, x - 1, y - 1, C.gold, 120); setPx(cv, x + 1, y + 1, C.gold, 120);
+}
+
+// ---------- I10..I17 (EX-L1 gather) ----------
+icons.I10 = (cv) => { // 희귀 꽃 rare flower — faded pastel bloom (garden)
+  fillRect(cv, 23, 24, 26, 42, faded(C.greenM, 0.35)); // pale stem
+  const pc = faded(C.pinkL, 0.4), pd = faded(C.pink, 0.4);
+  for (let a = 0; a < 6; a++) {
+    const r = a * (Math.PI * 2 / 6) - Math.PI / 2;
+    ellipse(cv, 24 + Math.cos(r) * 8, 20 + Math.sin(r) * 8, 5, 6, pc, pd);
+  }
+  disc(cv, 24, 20, 4, faded(C.goldL, 0.35)); disc(cv, 24, 20, 2, C.cream);
+  outline(cv, '#7a5560'); // faded-rose selout
+};
+icons.I11 = (cv) => { // 꽃 이슬 flower dew — a droplet, faint glow (garden)
+  glowBehind(cv, 24, 28, 12, faded(C.blueL, 0.3));
+  const cx = 24;
+  for (let y = 14; y < 26; y++) { const hw = Math.round((y - 14) / 12 * 8); for (let x = cx - hw; x <= cx + hw; x++) setPx(cv, x, y, x - cx > 1 ? C.blueL : C.blueM); }
+  ellipse(cv, cx, 30, 10, 10, C.blueL, C.blueM);
+  disc(cv, cx + 3, 27, 2, C.white); disc(cv, cx - 3, 32, 1, C.white, 180);
+  outline(cv, P.blueD);
+};
+icons.I12 = (cv) => { // 색 모래 color sand — granular pile, faint desat colour speck (garden)
+  ellipse(cv, 24, 34, 17, 9, faded(C.goldL, 0.35), faded(C.gold, 0.35));
+  const specks = [C.pinkL, C.blueL, C.violetL, C.greenL];
+  for (let i = 0; i < 26; i++) {
+    const x = 10 + (i * 7) % 28, y = 28 + (i * 5) % 10;
+    setPx(cv, x, y, (i % 5 === 0) ? faded(specks[i % 4], 0.45) : (i % 2 ? faded(C.gold, 0.3) : faded(C.goldL, 0.25)));
+  }
+  outline(cv, '#8a7a5a');
+};
+icons.I13 = (cv) => { // 꽃가루 pollen — pale yellow scatter (garden)
+  const pc = faded(C.goldL, 0.2), pd = faded(C.gold, 0.25);
+  disc(cv, 24, 28, 9, pc);                  // soft central puff
+  disc(cv, 24, 28, 5, lighter(pc, 12));
+  const pts = [[14,22],[33,20],[16,34],[32,35],[24,16],[20,38],[30,26],[18,27]];
+  for (let i = 0; i < pts.length; i++) disc(cv, pts[i][0], pts[i][1], 1 + (i % 2), i % 2 ? pd : pc);
+  disc(cv, 21, 25, 1, C.white);
+  outline(cv, '#b89a4a');
+};
+icons.I14 = (cv) => { // 생명의 정수 life essence — UNIQUE, bigger/warmer sibling of I9 (heart)
+  glowBehind(cv, 24, 24, 21, C.violetM);            // wider glow than I9 (r18)
+  glowBehind(cv, 24, 24, 14, C.gold);               // warm gold inner glow
+  circle(cv, 24, 24, 14, C.violetL, C.violet);      // heavier orb (r14 vs I9 r12)
+  disc(cv, 24, 26, 8, C.violetM, 150);              // warm-violet depth
+  disc(cv, 22, 22, 4, C.goldL, 170);                // gold heart-core
+  disc(cv, 28, 19, 3, C.white);                     // spec highlight
+  disc(cv, 19, 29, 2, C.violetL, 200);
+  outline(cv, P.violet);
+  lifeSpark(cv, 12, 15); lifeSpark(cv, 36, 30); lifeSpark(cv, 30, 10);
+};
+icons.I15 = (cv) => { // 뿌리 수액 root sap — slow amber/green liquid drop (heart)
+  glowBehind(cv, 24, 28, 12, C.gold);
+  const cx = 24;
+  for (let y = 14; y < 26; y++) { const hw = Math.round((y - 14) / 12 * 8); for (let x = cx - hw; x <= cx + hw; x++) setPx(cv, x, y, x - cx > 1 ? C.goldL : C.gold); }
+  ellipse(cv, cx, 30, 10, 10, C.goldL, C.gold);
+  ellipse(cv, cx - 2, 33, 5, 4, C.greenM, C.green);  // green root-tinge swirl
+  disc(cv, cx + 3, 27, 2, C.white);
+  outline(cv, '#a8641e');
+};
+icons.I16 = (cv) => { // 세계수 씨눈 world-tree bud/seed-eye (heart)
+  ellipse(cv, 24, 28, 10, 13, C.brownL, C.brown);    // seed husk
+  line(cv, 24, 16, 24, 40, C.brownD, 1);             // seam
+  // the "eye": a violet-glow bud peeking from the top split
+  glowBehind(cv, 24, 18, 9, C.violetM);
+  disc(cv, 24, 19, 4, C.violetL); disc(cv, 24, 19, 2, C.white);
+  leaf(cv, 24, 16, 1, C.greenH, C.greenL);           // tiny sprout tip
+  disc(cv, 21, 25, 2, lighter(C.brownL, 18));        // husk sheen
+  outline(cv, P.brownD);
+};
+icons.I17 = (cv) => { // 심장 이끼 heart moss — dark green with faint violet (heart)
+  ellipse(cv, 24, 32, 16, 9, C.greenD, darker(C.greenD, 6));
+  for (let i = 0; i < 30; i++) { const x = 10 + (i * 11) % 28, y = 26 + (i * 7) % 12; setPx(cv, x, y, i % 4 === 0 ? C.violetM : (i % 3 ? C.green : C.greenM)); }
+  disc(cv, 20, 28, 2, C.violetL, 160); disc(cv, 30, 30, 1, C.violetL, 160); // violet glow flecks
+  outline(cv, '#12281c');
+};
+
+// ---------- D222..D254 (EX-L1 craft) ----------
+// GARDEN color/paint chapter: D222-D230, D236-D241, D248, D251-D253.
+icons.D222 = (cv) => { // 색 모래 반죽 paint paste — thick colour-flecked dough (garden)
+  ellipse(cv, 24, 31, 16, 12, faded(C.goldL, 0.3), faded(C.gold, 0.3));
+  ellipse(cv, 20, 27, 6, 4, lighter(faded(C.goldL, 0.25), 12), faded(C.goldL, 0.3)); // wet knead sheen
+  for (const [x, y, c] of [[18, 30, C.pinkL], [29, 29, C.blueL], [24, 34, C.violetL], [31, 33, C.greenL]])
+    disc(cv, x, y, 2, faded(c, 0.35));
+  outline(cv, '#8a7248');
+};
+icons.D223 = (cv) => { // 꽃돌다리 flower stepping-stone bridge piece (garden)
+  ellipse(cv, 24, 34, 16, 6, faded(C.blueM, 0.3), faded(C.blue, 0.3)); // water ripple
+  ellipse(cv, 24, 27, 14, 8, C.greyL, C.grey);        // flat stone
+  for (let a = 0; a < 5; a++) { const r = a * (Math.PI * 2 / 5) - Math.PI / 2; disc(cv, 24 + Math.cos(r) * 7, 25 + Math.sin(r) * 4, 2, faded(C.pinkL, 0.3)); } // inlaid petals
+  disc(cv, 24, 25, 1, faded(C.goldL, 0.2));
+  outline(cv, '#3f3f48');
+};
+icons.D224 = (cv) => { // 꽃즙 flower juice — vial of soft pink liquid (garden)
+  vial(cv, faded(C.pinkL, 0.2), faded(C.pink, 0.25));
+  outline(cv, '#7a4552');
+};
+icons.D225 = (cv) => { // 개화의 물감 bloom paint — vivid (garden, saturated)
+  disc(cv, 18, 22, 7, C.pinkL); disc(cv, 30, 21, 7, C.violetL); disc(cv, 24, 33, 7, C.goldL);
+  disc(cv, 18, 22, 3, C.pink); disc(cv, 30, 21, 3, C.violetM); disc(cv, 24, 33, 3, C.gold);
+  disc(cv, 16, 19, 2, C.white);
+  outline(cv, P.violet);
+};
+icons.D226 = (cv) => { // 붉은 물감 red paint pot (garden)
+  paintPot(cv, C.pinkL, C.red);
+  outline(cv, '#5a2632');
+};
+icons.D227 = (cv) => { // 노란 물감 yellow paint pot (garden)
+  paintPot(cv, C.goldL, C.gold);
+  outline(cv, '#a8641e');
+};
+icons.D228 = (cv) => { // 푸른 물감 blue paint pot (garden)
+  paintPot(cv, C.blueL, C.blue);
+  outline(cv, P.blueD);
+};
+icons.D229 = (cv) => { // 무지개 물감 rainbow paint (garden)
+  for (let y = 22; y < 40; y++) { const hw = 11 - Math.abs(y - 31) * 0.12; for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, x - 24 > 0 ? C.greyL : C.grey); }
+  ellipse(cv, 24, 22, 11, 4, C.greyL, C.grey);
+  // rainbow bands across the surface
+  const bands = [C.red, C.gold, C.goldL, C.greenM, C.blue, C.violetM];
+  for (let i = 0; i < bands.length; i++) fillRect(cv, 16 + i * 3, 20, 19 + i * 3, 24, bands[i]);
+  fillRect(cv, 22, 24, 26, 34, C.violetM); fillRect(cv, 22, 24, 24, 34, C.pinkL); // drip
+  disc(cv, 21, 25, 1, C.white);
+  outline(cv, P.violet);
+};
+icons.D230 = (cv) => { // 색의 정수 color essence — radiant multi-hue glow (garden, glows)
+  glowBehind(cv, 24, 24, 19, C.pinkL);
+  glowBehind(cv, 24, 24, 15, C.blueL);
+  circle(cv, 24, 24, 12, C.white, C.violetL);
+  for (let a = 0; a < 6; a++) { const r = a * Math.PI / 3; disc(cv, 24 + Math.cos(r) * 7, 24 + Math.sin(r) * 7, 3, [C.pink, C.gold, C.greenL, C.blueM, C.violetM, C.pinkL][a]); }
+  disc(cv, 24, 24, 3, C.white);
+  outline(cv, P.violet);
+  sparkle(cv, 13, 16); sparkle(cv, 35, 30); sparkle(cv, 30, 11);
+};
+icons.D236 = (cv) => { // 꽃 목걸이 flower necklace (garden)
+  for (let a = 30; a <= 150; a += 6) { const r = a * Math.PI / 180; setPx(cv, 24 + Math.cos(r) * 14, 20 + Math.sin(r) * 13, faded(C.greenM, 0.2)); } // cord
+  const cols = [C.pinkL, C.goldL, C.violetL, C.pinkL, C.blueL];
+  for (let i = 0; i < 5; i++) { const a = (35 + i * 28) * Math.PI / 180; ellipse(cv, 24 + Math.cos(a) * 14, 22 + Math.sin(a) * 13, 4, 4, faded(cols[i], 0.15), darker(faded(cols[i], 0.15), 30)); }
+  disc(cv, 24, 35, 3, faded(C.pinkL, 0.15)); // pendant bloom
+  outline(cv, P.green);
+};
+icons.D237 = (cv) => { // 이슬 유리 dew glass — glows (garden, glows)
+  glowBehind(cv, 24, 26, 15, C.blueL);
+  ellipse(cv, 24, 26, 12, 14, C.blueL, C.blueM);   // rounded glass drop
+  ellipse(cv, 24, 26, 8, 10, lighter(C.blueL, 15), C.blueL);
+  disc(cv, 20, 20, 3, C.white); disc(cv, 28, 30, 2, C.white, 180);
+  sparkle(cv, 24, 14); sparkle(cv, 34, 28);
+  outline(cv, P.blueD);
+};
+icons.D238 = (cv) => { // 모래 그림판 sand drawing board (garden)
+  fillRect(cv, 9, 14, 39, 38, C.brownM);            // wooden frame
+  fillRect(cv, 12, 17, 36, 35, faded(C.goldL, 0.3)); // sand bed
+  // a doodled colour line drawn in the sand
+  line(cv, 15, 30, 22, 22, faded(C.pinkL, 0.3), 1);
+  line(cv, 22, 22, 30, 28, faded(C.blueL, 0.3), 1);
+  disc(cv, 30, 28, 2, faded(C.violetL, 0.3));
+  for (const [x, y] of [[16, 20], [33, 32]]) disc(cv, x, y, 1, C.gold); // stray grains
+  outline(cv, P.brownD);
+};
+icons.D239 = (cv) => { // 꽃가루 향낭 pollen sachet (garden)
+  for (let y = 20; y < 40; y++) { const hw = 11 - Math.abs(y - 32) * 0.2; for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, x - 24 > 0 ? faded(C.pinkL, 0.15) : faded(C.pink, 0.2)); }
+  fillRect(cv, 17, 16, 31, 20, faded(C.violetM, 0.2)); // tied neck
+  for (let x = 18; x < 31; x += 3) setPx(cv, x, 14, faded(C.violetM, 0.2)); // gather folds
+  for (let i = 0; i < 6; i++) setPx(cv, 18 + i * 3, 30, faded(C.goldL, 0.15)); // pollen showing through
+  disc(cv, 24, 28, 3, faded(C.goldL, 0.2));
+  outline(cv, '#7a4552');
+};
+icons.D240 = (cv) => { // 색 이슬차 colored dew tea (garden)
+  for (let y = 24; y < 40; y++) { const hw = 10 - Math.abs(y - 32) * 0.1; for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, x - 24 > 0 ? C.creamCupL : C.creamCup); } // cup
+  ellipse(cv, 24, 24, 10, 3, C.creamCupL, C.creamCup);   // rim
+  ellipse(cv, 24, 24, 8, 2, faded(C.pinkL, 0.1), faded(C.pink, 0.15)); // tea surface
+  circle(cv, 34, 30, 4, C.creamCupL, C.creamCup); // handle
+  for (let i = 0; i < 5; i++) setPx(cv, 22 + Math.round(Math.sin(i) * 2), 20 - i, faded(C.violetL, 0.2), 150); // steam
+  outline(cv, '#9a8a5a');
+};
+icons.D241 = (cv) => { // 물든 모래병 dyed sand bottle — layered colored sand (garden)
+  for (let y = 14; y < 40; y++) { const hw = (y < 18) ? 4 : 9; for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, C.blueL, 130); } // clear glass
+  const layers = [[34, faded(C.pinkL, 0.25)], [30, faded(C.goldL, 0.2)], [26, faded(C.blueL, 0.2)], [22, faded(C.violetL, 0.25)]];
+  for (const [y0, c] of layers) for (let x = 16; x < 33; x++) { const wob = Math.round(Math.sin(x * 0.7) * 1); fillRect(cv, x, y0 + wob, x + 1, y0 + 4 + wob, c); }
+  fillRect(cv, 20, 10, 28, 14, C.brownM); // cork
+  disc(cv, 20, 24, 1, C.white);
+  outline(cv, P.blueD);
+};
+icons.D248 = (cv) => { // 색을 되찾은 꽃밭 recolored flowerbed — glows (garden, glows)
+  glowBehind(cv, 24, 24, 19, C.pinkL);
+  ellipse(cv, 24, 36, 17, 7, C.brownM, C.brown);      // soil bed
+  const cols = [C.pinkL, C.violetL, C.goldL, C.blueL, C.greenH];
+  for (let i = 0; i < 5; i++) {
+    const bx = 13 + i * 5;
+    fillRect(cv, bx, 22, bx + 1, 33, C.greenM);
+    disc(cv, bx, 20, 3, cols[i]); disc(cv, bx, 20, 1, C.white);
+  }
+  sparkle(cv, 12, 18); sparkle(cv, 36, 20); sparkle(cv, 24, 10);
+  outline(cv, P.green);
+};
+icons.D251 = (cv) => { // 정령꽃 등롱 spirit-flower lantern — glows (garden, glows)
+  glowBehind(cv, 24, 26, 16, C.violetM);
+  fillRect(cv, 20, 8, 28, 12, faded(C.greenM, 0.2)); // hanger stem
+  // flower-shaped lantern shell
+  for (let a = 0; a < 6; a++) { const r = a * Math.PI / 3; ellipse(cv, 24 + Math.cos(r) * 8, 26 + Math.sin(r) * 9, 5, 6, C.violetM, C.violet); }
+  disc(cv, 24, 26, 6, C.violetL); disc(cv, 24, 26, 3, C.white); // glowing core
+  sparkle(cv, 13, 22); sparkle(cv, 35, 30);
+  outline(cv, P.violet);
+};
+icons.D252 = (cv) => { // 색을 잃은 화관 colorless wreath — desaturated (garden)
+  for (let a = 0; a < 360; a += 12) { const r = a * Math.PI / 180; const rad = 14; ellipse(cv, 24 + Math.cos(r) * rad, 24 + Math.sin(r) * rad, 4, 4, faded(C.greenL, 0.7), faded(C.greenM, 0.7)); }
+  for (let a = 30; a < 360; a += 90) { const r = a * Math.PI / 180; disc(cv, 24 + Math.cos(r) * 14, 24 + Math.sin(r) * 14, 3, faded(C.pinkL, 0.75)); } // washed-out blooms
+  outline(cv, '#5a5a52');
+};
+icons.D253 = (cv) => { // 지워진 팔레트 erased grey palette (garden)
+  // artist's palette (kidney shape via two arcs) in dull grey
+  for (let y = 18; y < 38; y++) { const hw = 15 - Math.abs(y - 28) * 0.35; for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, x - 24 > 0 ? C.greyL : C.grey); }
+  disc(cv, 30, 33, 4, C.greyD); // thumb hole
+  for (const [x, y] of [[16, 22], [22, 20], [29, 21], [18, 30]]) { disc(cv, x, y, 3, faded(C.grey, 0.4)); disc(cv, x, y, 1, faded(C.greyL, 0.3)); } // erased paint dabs (grey)
+  outline(cv, '#45454e');
+};
+
+// HEART life chapter: D231-D235, D242-D247, D249, D250, D254.
+icons.D231 = (cv) => { // 맑은 수액 clear sap — pale amber vial (heart)
+  vial(cv, C.goldL, C.gold);
+  disc(cv, 24, 30, 3, lighter(C.goldL, 15), 160); // clarity sheen
+  outline(cv, '#a8641e');
+};
+icons.D232 = (cv) => { // 소생의 수액 revival sap — glowing (heart, glows)
+  glowBehind(cv, 24, 28, 15, C.gold);
+  glowBehind(cv, 24, 28, 10, C.violetM);
+  vial(cv, C.goldL, C.gold);
+  disc(cv, 24, 30, 4, C.violetL, 150); disc(cv, 24, 28, 2, C.white);
+  sparkle(cv, 24, 16); sparkle(cv, 33, 30);
+  outline(cv, '#a8641e');
+};
+icons.D233 = (cv) => { // 생명의 씨눈 life seedling — warm glow (heart, glows)
+  glowBehind(cv, 24, 22, 15, C.gold);
+  ellipse(cv, 24, 30, 8, 11, C.brownL, C.brown);   // seed
+  glowBehind(cv, 24, 18, 8, C.violetM);
+  fillRect(cv, 23, 20, 26, 26, C.greenM);
+  leaf(cv, 24, 20, -1, C.greenH, C.greenL);
+  leaf(cv, 24, 16, 1, C.violetL, C.violetM);
+  disc(cv, 24, 16, 2, C.white);
+  sparkle(cv, 33, 16); sparkle(cv, 15, 22);
+  outline(cv, P.green);
+};
+icons.D234 = (cv) => { // 심장의 고동물 heartbeat fluid — pulsing violet (heart, glows)
+  glowBehind(cv, 24, 26, 17, C.violetM);
+  flask(cv, C.violetL, C.violetM);
+  // pulse rings inside
+  circle(cv, 24, 30, 7, C.violetL, C.violetM); circle(cv, 24, 30, 4, C.white, C.violetL);
+  disc(cv, 24, 30, 2, C.pinkL);
+  sparkle(cv, 24, 16); sparkle(cv, 15, 30); sparkle(cv, 33, 28);
+  outline(cv, P.violet);
+};
+icons.D235 = (cv) => { // 되살아난 심장 revived heart — warm glowing heart core (heart, glows)
+  glowBehind(cv, 24, 24, 19, C.red);
+  glowBehind(cv, 24, 24, 13, C.gold);
+  // heart silhouette (pink→red), warm core
+  ellipse(cv, 18, 20, 8, 8, C.pinkL, C.pink); ellipse(cv, 30, 20, 8, 8, C.pinkL, C.pink);
+  for (let i = 0; i < 16; i++) { const hw = 13 - i; for (let w = -hw; w <= hw; w++) setPx(cv, 24 + w, 22 + i, (w > 0) ? C.pinkL : C.pink); }
+  disc(cv, 24, 24, 6, C.goldL); disc(cv, 24, 24, 3, C.white); // glowing life-core
+  sparkle(cv, 14, 14); sparkle(cv, 34, 16); sparkle(cv, 24, 40);
+  outline(cv, P.red);
+};
+icons.D242 = (cv) => { // 쌍뿌리 매듭 twin-root knot (heart)
+  // two brown roots interwoven into a knot
+  for (let t = 0; t < 40; t++) { const y = 8 + t; const x1 = 24 + Math.round(Math.sin(t * 0.32) * 8); const x2 = 24 - Math.round(Math.sin(t * 0.32) * 8); disc(cv, x1, y, 2, (t % 2) ? C.brownL : C.brownM); disc(cv, x2, y, 2, (t % 2) ? C.brownM : C.brown); }
+  disc(cv, 24, 24, 3, C.brownD); // central knot cinch
+  disc(cv, 24, 24, 1, C.violetM); // faint life at core
+  outline(cv, P.brownD);
+};
+icons.D243 = (cv) => { // 겹씨눈 double bud (heart)
+  glowBehind(cv, 18, 22, 8, C.violetM); glowBehind(cv, 30, 26, 8, C.violetM);
+  ellipse(cv, 18, 24, 8, 11, C.brownL, C.brown); ellipse(cv, 30, 26, 8, 11, C.brownL, C.brown);
+  disc(cv, 18, 20, 3, C.violetL); disc(cv, 18, 20, 1, C.white);
+  disc(cv, 30, 22, 3, C.violetL); disc(cv, 30, 22, 1, C.white);
+  outline(cv, P.brownD);
+};
+icons.D244 = (cv) => { // 이끼 방석 moss cushion (heart)
+  for (let y = 24; y < 40; y++) { const hw = 16 - Math.abs(y - 32) * 0.3; for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, x - 24 > 0 ? C.greenM : C.green); } // plump cushion
+  for (let i = 0; i < 40; i++) { const x = 10 + (i * 11) % 28, y = 26 + (i * 7) % 12; setPx(cv, x, y, i % 5 === 0 ? C.violetM : (i % 3 ? C.greenL : C.greenH)); }
+  ellipse(cv, 24, 26, 12, 4, C.greenL, C.greenM); // top-lit dome
+  outline(cv, '#12281c');
+};
+icons.D245 = (cv) => { // 수액 등불 sap lantern — glows (heart, glows)
+  glowBehind(cv, 24, 26, 16, C.gold);
+  fillRect(cv, 20, 8, 28, 12, C.brownM); // hanger
+  fillRect(cv, 16, 14, 32, 38, C.brown); // wooden frame
+  fillRect(cv, 19, 17, 29, 35, C.goldL); // glowing sap glass
+  ellipse(cv, 24, 27, 4, 7, C.white, C.goldL);
+  disc(cv, 24, 33, 2, C.gold);
+  sparkle(cv, 14, 22); sparkle(cv, 34, 30);
+  outline(cv, P.brownD);
+};
+icons.D246 = (cv) => { // 심장 이끼차 heart moss tea (heart)
+  for (let y = 24; y < 40; y++) { const hw = 10 - Math.abs(y - 32) * 0.1; for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, x - 24 > 0 ? C.creamCupL : C.creamCup); }
+  ellipse(cv, 24, 24, 10, 3, C.creamCupL, C.creamCup);
+  ellipse(cv, 24, 24, 8, 2, C.greenD, darker(C.greenD, 6)); // dark mossy brew
+  disc(cv, 22, 24, 1, C.violetM); // faint violet sheen
+  circle(cv, 34, 30, 4, C.creamCupL, C.creamCup); // handle
+  for (let i = 0; i < 5; i++) setPx(cv, 22 + Math.round(Math.sin(i) * 2), 20 - i, C.violetL, 140);
+  outline(cv, '#9a8a5a');
+};
+icons.D247 = (cv) => { // 생명의 눈꽃 life snow-flower — glows (heart, glows)
+  glowBehind(cv, 24, 24, 17, C.violetM);
+  glowBehind(cv, 24, 24, 11, C.blueL);
+  // 6-fold snowflake-flower of violet/white
+  for (let a = 0; a < 6; a++) {
+    const r = a * Math.PI / 3;
+    line(cv, 24, 24, 24 + Math.cos(r) * 14, 24 + Math.sin(r) * 14, C.violetL, 1);
+    ellipse(cv, 24 + Math.cos(r) * 12, 24 + Math.sin(r) * 12, 3, 3, C.white, C.violetL);
+    disc(cv, 24 + Math.cos(r) * 7, 24 + Math.sin(r) * 7, 1, C.blueL);
+  }
+  disc(cv, 24, 24, 3, C.white);
+  sparkle(cv, 13, 15); sparkle(cv, 35, 32);
+  outline(cv, P.violet);
+};
+icons.D249 = (cv) => { // 세계수 묘목 화분 sapling pot (heart)
+  glowBehind(cv, 24, 18, 12, C.violetM);
+  for (let y = 28; y < 42; y++) { const hw = 11 - (y - 28) * 0.3; for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, x - 24 > 0 ? hexToRGB('#c47a68') : hexToRGB('#a85a4a')); }
+  fillRect(cv, 11, 26, 37, 30, hexToRGB('#c47a68')); // rim
+  fillRect(cv, 23, 18, 26, 28, C.brownM); // trunk
+  ellipse(cv, 24, 16, 9, 8, C.greenL, C.greenM); // canopy
+  ellipse(cv, 24, 12, 5, 4, C.greenH, C.greenL);
+  sparkle(cv, 24, 6); sparkle(cv, 34, 16);
+  outline(cv, '#6e3327');
+};
+icons.D250 = (cv) => { // 생명수 성수반 life-water font — glows (heart, glows)
+  glowBehind(cv, 24, 26, 18, C.violetM);
+  // pedestal font
+  fillRect(cv, 21, 30, 27, 42, C.greyL); // stem
+  fillRect(cv, 16, 40, 32, 44, C.grey);  // base
+  for (let y = 22; y < 32; y++) { const hw = 15 - (y - 22) * 0.4; for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, x - 24 > 0 ? C.greyL : C.grey); } // bowl
+  ellipse(cv, 24, 22, 15, 4, C.greyL, C.grey);       // bowl rim
+  ellipse(cv, 24, 22, 12, 3, C.violetL, C.violetM);  // glowing water
+  disc(cv, 24, 22, 3, C.white);
+  sparkle(cv, 12, 20); sparkle(cv, 36, 20); sparkle(cv, 24, 12);
+  outline(cv, '#3f3f48');
+};
+icons.D254 = (cv) => { // 첫 실험의 잔재 first-experiment remnant — hardened failed lump (heart)
+  ellipse(cv, 24, 31, 15, 12, hexToRGB('#4a3f4a'), hexToRGB('#332a35')); // murky violet-grey lump
+  disc(cv, 19, 27, 3, hexToRGB('#5f4a5f')); disc(cv, 30, 29, 3, hexToRGB('#4a3a4f'));
+  disc(cv, 24, 35, 2, hexToRGB('#3a2f3a'));
+  disc(cv, 22, 24, 1, C.violetM, 160); disc(cv, 29, 26, 1, C.gold, 120); // faint failed-life glint
+  outline(cv, '#1c141c');
+};
+
+// ============================================================================
 // Emit all icon files. Item catalog = 9 gatherables (I1..I9) + crafts D01..D61
 // minus the retired 석기 D11 (removed v0.3.1) + Layer-2 J1..J7 + D62..D102 (L2-4).
 // D06 is an alias of I4 → identical bytes to I4 (spec: "D06 alias resolves to I4's
@@ -1763,6 +2145,9 @@ for (let i = 1; i <= 7; i++) ALL_IDS.push('S' + i);
 for (let i = 177; i <= 218; i++) ALL_IDS.push('D' + i);
 // v1.1.0 GP-2 §2.3: 실패작 D219..D221 (junk outputs of fail_recipes).
 for (let i = 219; i <= 221; i++) ALL_IDS.push('D' + i);
+// v1.2.0 EX-L1 색/생명 확장: gathers I10..I17 + crafts D222..D254.
+for (let i = 10; i <= 17; i++) ALL_IDS.push('I' + i);
+for (let i = 222; i <= 254; i++) ALL_IDS.push('D' + i);
 
 let count = 0, total = 0;
 for (const id of ALL_IDS) {

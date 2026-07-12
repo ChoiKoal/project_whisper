@@ -117,54 +117,109 @@
       "object_id": "cauldron"
     },
     "N": {
-      "scene": "npc_remnant.tscn",
-      "object_id": "gardener_statue",
-      "_note": "잔재 NPC: 색을 잃은 정원사 석상(GP-4 NPC 라인)"
+      "kind": "l1xobj",
+      "l2_id": "gardener_statue",
+      "art": "gardener_statue",
+      "offset": [
+        0,
+        -40
+      ],
+      "blocks": true,
+      "block_radius": 14,
+      "_note": "잔재 NPC: 색을 잃은 정원사 석상(GP-4 N- 라인)"
     },
     "A": {
-      "scene": "wilted_arch.tscn",
-      "object_id": "wilted_arch",
-      "gate": "GA2"
+      "kind": "l1xobj",
+      "l2_id": "wilted_arch",
+      "art": "wilted_arch",
+      "offset": [
+        0,
+        -48
+      ],
+      "blocks": false,
+      "gate": "GA2",
+      "_note": "GA2 시든 아치(사용형)"
     },
     "H": {
-      "scene": "color_font.tscn",
-      "object_id": "rainbow_font",
-      "gate": "GA4"
+      "kind": "l1xobj",
+      "l2_id": "rainbow_font",
+      "art": "rainbow_font",
+      "offset": [
+        0,
+        -44
+      ],
+      "blocks": true,
+      "block_radius": 16,
+      "gate": "GA4",
+      "_note": "GA4 무지개 분수 봉헌 목(체인형=화원 클리어)"
     },
     "f": {
-      "scene": "rare_flower.tscn",
+      "kind": "l1xobj",
+      "l2_id": "rare_flower",
+      "art": "rare_flower",
+      "offset": [
+        0,
+        -18
+      ],
+      "blocks": false,
       "gatherable": {
         "item_id": "I10"
       },
-      "variants": [
-        "O1A",
-        "O1B",
-        "O1C",
-        "O1D",
-        "O1E"
-      ],
       "_note": "희귀 꽃"
     },
     "d": {
-      "scene": "dew.tscn",
+      "kind": "l1xobj",
+      "l2_id": "dew",
+      "art": "dew",
+      "offset": [
+        0,
+        -14
+      ],
+      "blocks": false,
       "gatherable": {
         "item_id": "I11"
       },
       "_note": "꽃 이슬"
     },
     "z": {
-      "scene": "color_sand.tscn",
+      "kind": "l1xobj",
+      "l2_id": "color_sand",
+      "art": "color_sand",
+      "offset": [
+        0,
+        -12
+      ],
+      "blocks": false,
       "gatherable": {
         "item_id": "I12"
       },
       "_note": "색 모래"
     },
     "y": {
-      "scene": "pollen.tscn",
+      "kind": "l1xobj",
+      "l2_id": "pollen",
+      "art": "pollen",
+      "offset": [
+        0,
+        -12
+      ],
+      "blocks": false,
       "gatherable": {
         "item_id": "I13"
       },
       "_note": "꽃가루"
+    },
+    "x": {
+      "kind": "l1xobj",
+      "l2_id": "color_bed",
+      "art": "color_bed",
+      "offset": [
+        0,
+        -16
+      ],
+      "blocks": false,
+      "gate": "GA3",
+      "_note": "GA3 색맞춤 화단 슬롯(배치 대상)"
     }
   },
   "landmarks": {
@@ -198,7 +253,7 @@
     },
     "GA2": {
       "type": "use",
-      "item": "I7_or_D224",
+      "item": "D225",
       "target": "wilted_arch",
       "cells": [
         [

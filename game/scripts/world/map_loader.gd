@@ -1401,6 +1401,13 @@ func _spawn_object(sym: String, cell: Vector2i, spec: Dictionary) -> void:
 	if kind == "l5obj":
 		_spawn_l2_object(sym, cell, spec, world)
 		return
+	# (EXL1-2) Layer-1 확장(고요의 화원 l1g / 생명의 심장 l1h) objects reuse the identical
+	# data-driven spawn path (spec carries l1x_* art, offset, glow, gatherable, blocking, and an
+	# l2_id the EX-L1 gate controller hooks state onto). Only the `kind` string differs so the
+	# grove's symbol match below stays untouched (zero regression to the base 시작의 숲).
+	if kind == "l1xobj":
+		_spawn_l2_object(sym, cell, spec, world)
+		return
 	match sym:
 		"C":
 			cauldron_cell = cell

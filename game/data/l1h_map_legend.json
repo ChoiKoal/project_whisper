@@ -107,46 +107,100 @@
       "object_id": "cauldron"
     },
     "N": {
-      "scene": "npc_remnant.tscn",
-      "object_id": "first_constructor_echo",
-      "_note": "잔재 NPC: 선배 컨스트럭터의 잔향"
+      "kind": "l1xobj",
+      "l2_id": "first_constructor_echo",
+      "art": "first_constructor_echo",
+      "offset": [
+        0,
+        -44
+      ],
+      "blocks": true,
+      "block_radius": 14,
+      "glow": "gold",
+      "glow_scale": 0.6,
+      "_note": "잔재 NPC: 첫 컨스트럭터의 잔향(GP-4 N- 라인)"
     },
     "E": {
-      "scene": "life_spring.tscn",
-      "object_id": "heart_life_spring",
-      "_note": "생명 Whisper 재획득처(idempotent, add_vita)"
+      "kind": "l1xobj",
+      "l2_id": "heart_life_spring",
+      "art": "life_spring",
+      "offset": [
+        0,
+        -20
+      ],
+      "blocks": false,
+      "glow": "gold",
+      "glow_scale": 0.7,
+      "_note": "생명 Whisper 재획득처(idempotent add_vita)"
     },
     "O": {
-      "scene": "world_tree_heart.tscn",
-      "object_id": "tree_heart",
+      "kind": "l1xobj",
+      "l2_id": "tree_heart",
+      "art": "world_tree_heart",
+      "offset": [
+        0,
+        -40
+      ],
+      "blocks": false,
+      "glow": "gold",
+      "glow_scale": 1.0,
       "gatherable": {
         "item_id": "I14",
         "unique": true
       },
       "gate": "GH2",
-      "_note": "세계수 심장(생명의 정수, 유니크)"
+      "_note": "세계수 심장(생명의 정수 I14 유니크) + GH2 최종 봉헌 대상"
     },
     "H": {
-      "scene": "heart_seal.tscn",
-      "object_id": "heart_seal",
-      "gate": "GH2"
+      "kind": "l1xobj",
+      "l2_id": "heart_seal",
+      "art": "heart_seal",
+      "offset": [
+        0,
+        -44
+      ],
+      "blocks": true,
+      "block_radius": 16,
+      "gate": "GH2",
+      "_note": "GH2 심장 봉인 목(체인형=심장 정화·컷신)"
     },
     "j": {
-      "scene": "root_sap.tscn",
+      "kind": "l1xobj",
+      "l2_id": "root_sap",
+      "art": "root_sap",
+      "offset": [
+        0,
+        -14
+      ],
+      "blocks": false,
       "gatherable": {
         "item_id": "I15"
       },
       "_note": "뿌리 수액"
     },
     "e": {
-      "scene": "tree_bud.tscn",
+      "kind": "l1xobj",
+      "l2_id": "tree_bud",
+      "art": "tree_bud",
+      "offset": [
+        0,
+        -14
+      ],
+      "blocks": false,
       "gatherable": {
         "item_id": "I16"
       },
       "_note": "세계수 씨눈"
     },
     "q": {
-      "scene": "heart_moss.tscn",
+      "kind": "l1xobj",
+      "l2_id": "heart_moss",
+      "art": "heart_moss",
+      "offset": [
+        0,
+        -12
+      ],
+      "blocks": false,
       "gatherable": {
         "item_id": "I17"
       },
@@ -162,7 +216,7 @@
   "gates": {
     "GH1": {
       "type": "use",
-      "item": "D231",
+      "item": "D232",
       "target": "root_gate",
       "cells": [
         [
