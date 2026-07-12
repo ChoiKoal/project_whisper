@@ -59,8 +59,10 @@ func _ready() -> void:
 	# (L4)   Layer-4 mage items:      P1-P7 (7 gather) + D140-D176 (37 craft) = 44 bespoke icons.
 	# (L5)   Layer-5 divinity items:  S1-S7 (7 gather) + D177-D218 (42 craft) = 49 bespoke icons.
 	# (v1.1.0 GP-2 §2.3) +3 실패작 D219-D221 (no `layer` field → classified as canonical L1) = 71.
-	_check("71 L1 + 48 L2 + 44 L3 + 44 L4 + 49 L5 canonical + 1 alias split",
-		canonical_ids.size() == 71 and l2_ids.size() == 48 and l3_ids.size() == 44 \
+	# (v1.5.0 EX-L1) +41 신규 Layer-1 도메인 아이템: I10-I17 (8 gather) + D222-D254 (33 craft)
+	#   → canonical L1 71 + 41 = 112.
+	_check("112 L1 + 48 L2 + 44 L3 + 44 L4 + 49 L5 canonical + 1 alias split",
+		canonical_ids.size() == 112 and l2_ids.size() == 48 and l3_ids.size() == 44 \
 		and l4_ids.size() == 44 and l5_ids.size() == 49 and alias_ids.size() == 1)
 
 	# 1. every canonical id (Layer-1..-5) has a real icon FILE (present on disk).
@@ -91,7 +93,7 @@ func _ready() -> void:
 	var i4 := ItemDB.icon("I4")
 	_check("D06 icon resolves to I4's icon", d06 != null and d06 == i4)
 
-	# 3. no two icon files byte-identical (253 canonical: 68 L1 + 48 L2 + 44 L3 + 44 L4 + 49 L5).
+	# 3. no two icon files byte-identical (297 canonical: 112 L1 + 48 L2 + 44 L3 + 44 L4 + 49 L5).
 	var hashes := {}
 	var dup_pairs: Array = []
 	for id in canonical_ids + l2_ids + l3_ids + l4_ids + l5_ids:
@@ -101,8 +103,8 @@ func _ready() -> void:
 			dup_pairs.append([hashes[h], id])
 		else:
 			hashes[h] = id
-	_check("all 256 canonical icon files are byte-unique (dupes=%s)" % [dup_pairs], dup_pairs.is_empty())
-	_check("distinct icon hashes == 256", hashes.size() == 256)
+	_check("all 297 canonical icon files are byte-unique (dupes=%s)" % [dup_pairs], dup_pairs.is_empty())
+	_check("distinct icon hashes == 297", hashes.size() == 297)
 
 	# Sanity: the alias file, if present, equals I4's file (spec: D06 shares I4 art).
 	if ResourceLoader.exists(ICON_DIR + "D06.png"):
