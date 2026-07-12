@@ -55,6 +55,18 @@ PREMISE_GATHERS = {
     "l1h": {"I1", "I2", "I3", "I4", "I5", "I6", "I7", "I8", "I9"},
 }
 
+# 게이트 '자기 봉헌(self-offering)' 재료 — 그 게이트가 스스로 여는 최종 구역 안에서만 채집되며,
+# 오직 그 게이트 자신의 열쇠에만 쓰이는 재료. design §A-6.2 order-safe 규약:
+#   시작의 숲 I9(세계수 정수)는 G4(최종 봉헌 목) 자신에게만 쓰이고 G4가 여는 구역에서 채집된다.
+#   EX-L1 I14(생명의 정수·유니크)도 동형 — 세계수 심장 O(코어, GH2 통과 후)에서만 채집되고
+#   D233→D234→D235(되살아난 심장) = GH2 자신의 봉헌 체인에만 쓰인다.
+# 이 재료는 "게이트 통과 전 구역"이 아니라 "게이트가 여는 구역"에서 도달성을 판정한다.
+# (검증: I14를 쓰는 레시피는 GH2 열쇠 파생 D233/D234/D235 뿐 — 뒤 게이트 없음 = 데드락 불가.)
+# 전제: 해당 게이트가 order상 마지막이어야 함(뒤에 다른 게이트를 막지 않음). audit이 실측한다.
+SELF_OFFERING_GATHERS = {
+    "l1h": {"GH2": {"I14"}},
+}
+
 GATE_CELL_FIELDS = [
     "bridge_cells", "door_cells", "cells", "lift_cells", "neck_cells",
     "crack_cells", "gate_cells",
@@ -249,6 +261,7 @@ def audit_layer(layer, recipe_idx):
     keys = GATE_KEYS[layer]
     extra = GATE_EXTRA_KEYS.get(layer, {})
     premise = PREMISE_GATHERS.get(layer, set())
+    self_offer = SELF_OFFERING_GATHERS.get(layer, {})
 
     # 모든 게이트 병목 셀 초기 차단.
     all_gate_cells = set()
@@ -297,9 +310,35 @@ def audit_layer(layer, recipe_idx):
         gathers = set()
         for it in need_items:
             gathers |= expand_to_gathers(it, recipe_idx)
+
+        # 이 게이트가 여는 구역(post-gate region) — self-offering 재료 도달성 판정용.
+        post_blocked = set(blocked)
+        for c in gcells[gid]:
+            post_blocked.discard(c)
+        post_region = reachable_from(spawn, layout, walls, post_blocked)
+        # 이 게이트가 마지막인가?(뒤에 아직 안 연 keyed 게이트 = 없음) — self-offering 전제.
+        is_terminal = all(g in opened or g == gid for g in keyed_gates)
+
+        offer_gg = self_offer.get(gid, set())
         for gg in sorted(gathers):
             if gg in premise:
                 continue  # 구역 진입 전 이미 확보(시작의 숲 gather 등) — order-safe.
+            if gg in offer_gg:
+                # 자기 봉헌 재료(예: I14): '통과 전'이 아니라 '이 게이트가 여는 구역'에서 판정.
+                # + 이 게이트가 마지막이어야 함(뒤 게이트를 막지 않음 = 데드락 불가).
+                if not is_terminal:
+                    violations.append({
+                        "layer": layer, "gate": gid, "key": keys[gid],
+                        "missing_gather": gg,
+                        "detail": f"{gg}(self-offering)인데 {gid}가 최종 게이트 아님 → 뒤 게이트 위험",
+                    })
+                elif not source_reachable(gg, sources, post_region):
+                    violations.append({
+                        "layer": layer, "gate": gid, "key": keys[gid],
+                        "missing_gather": gg,
+                        "detail": f"{gg} 소스가 {gid} 개방 구역에도 없음(자기 봉헌 채집 불가)",
+                    })
+                continue
             if not source_reachable(gg, sources, region):
                 violations.append({
                     "layer": layer, "gate": gid, "key": keys[gid],
@@ -310,9 +349,8 @@ def audit_layer(layer, recipe_idx):
         # 게이트 열고 region 확장.
         opened.add(gid)
         order.append(gid)
-        for c in gcells[gid]:
-            blocked.discard(c)
-        region = reachable_from(spawn, layout, walls, blocked)
+        blocked = post_blocked
+        region = post_region
 
     # 셀 없는 게이트(L2 G4 등): 전 게이트 개방 후 region에서 검증.
     for gid in no_cell_gates:
