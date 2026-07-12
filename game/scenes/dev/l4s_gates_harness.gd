@@ -122,7 +122,7 @@ func _test_offering_point(loader: MapLoader) -> void:
 # ---- 4: 컨트롤러 활성 + 정화 전 상태 --------------------------------------
 
 func _test_controller_active(gates: Node) -> void:
-	_check("게이트 컨트롤러 활성 (idle 아님)", bool(gates.get("_active")))
+	_check("게이트 컨트롤러 활성 (idle 아님)", gates.get("_active") == true)
 	_check("정화 전 archive_purified_flag = false", not GameState.archive_purified_flag)
 
 

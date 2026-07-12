@@ -16,7 +16,7 @@ class_name L4aGateController
 ##   잔류 열람 결계정 W: idempotent add_mana(1) — GW1→GW2 회랑에 강제 배치, 게이트 아님(§A-6.3).
 ##
 ## 각 게이트 병목의 walkable/sealed source id는 legend gate 레코드의 lit_source/dark_source에서 읽는다
-## (없으면 기본 4=자수정 바닥 / 0=허공). Defensive against missing autoloads/nodes. Idempotent:
+## (없으면 기본 4=자수정 바닥 / 31=l4d 봉인석). Defensive against missing autoloads/nodes. Idempotent:
 ## re-applies opened/purified state on load/re-entry (no cutscene replay).
 
 @export var map_loader_path: NodePath
@@ -48,9 +48,11 @@ var _archive_core: Node = null
 var _archive_purifying: bool = false
 var _mana_given: bool = false
 
-## Default open/sealed sources. 4 = 자수정/파편 바닥(walkable). 0 = 허공 T0(void, non-walkable).
+## Default open/sealed sources. 4 = 자수정/파편 바닥(walkable, l4a floor). 31 = l4_dark 봉인석
+## (non-walkable seal). NB: source 0(허공 T0)은 tileset custom-data상 walkable=true라 seal에 부적합 —
+## 반드시 진짜 non-walkable source(31 l4d)로 닫아야 is_cell_walkable=false가 성립한다.
 const DEFAULT_LIT_SOURCE := 4
-const DEFAULT_DARK_SOURCE := 0
+const DEFAULT_DARK_SOURCE := 31
 const GLOW_TEX := "res://assets/objects/light_pool_violet.png"
 const GOLD_TEX := "res://assets/objects/light_pool_gold.png"
 
@@ -140,7 +142,7 @@ func _on_placed(item_id: String, cell: Vector2i) -> void:
 ## GW1: 다리석 D302가 룬 제단 X(altar) 또는 잔교 g 인접에 배치되면 → 잔교 g 셀 전부 walkable(허공에
 ## 룬 다리가 걸친다). 제단 좌표는 legend gate GW1.altar.
 func _try_gw1_place(cell: Vector2i) -> void:
-	var altar := _gates.get("GW1", {}).get("altar", [])
+	var altar: Variant = _gates.get("GW1", {}).get("altar", [])
 	var altar_cell := Vector2i(-9999, -9999)
 	if altar is Array and altar.size() >= 2:
 		altar_cell = Vector2i(int(altar[0]), int(altar[1]))
