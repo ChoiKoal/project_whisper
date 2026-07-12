@@ -39,6 +39,7 @@ func _run() -> void:
 	await _c_spawn_valid()
 	await _d_portal_aprons()
 	await _e_island_ratio()
+	await _g_expansion_core_invariant()
 	await _f_legacy_save_lands_valid()
 	print("=== RESULT: %s (%d failures) ===" % ["PASS" if _fail == 0 else "FAIL", _fail])
 	get_tree().quit(_fail)
@@ -198,6 +199,37 @@ func _e_island_ratio() -> void:
 	# 톱니 엣지·아치로 정확히 2.00은 아님 — 대략 1.7~2.6 사이면 "가로로 긴 직사각" 의도 충족.
 	_check("섬 스크린 bbox 비율 ~2:1 (1.7~2.6)", ratio >= 1.7 and ratio <= 2.6,
 		"w=%.0f h=%.0f ratio=%.2f:1" % [w, h, ratio])
+	await _teardown()
+
+
+# ==== (g) v1.10.0 L0 확장: 치수 확장 + 코어 셀 좌표 불변 =====================
+
+func _g_expansion_core_invariant() -> void:
+	print("--- (g) L0 허브 확장: 31×25 치수 + 코어 좌표 불변 ---")
+	_scene = await _boot_home()
+	var ld := _loader()
+	# 확장 치수: 21×17 → 31×25.
+	_check("맵 폭 31 (확장)", ld.width == 31, "width=%d" % ld.width)
+	_check("맵 높이 25 (확장)", ld.height == 25, "height=%d" % ld.height)
+	# 승인 아치 구도 불변 — 포탈/스폰/솥 셀 좌표가 v1.4.2 원본과 픽셀 단위로 동일.
+	# (이 좌표들은 staggered 투영에서 절대 인덱스에만 의존하므로, 인덱스 불변 = 월드 불변.)
+	var core := {
+		"nature": Vector2i(7, 5), "science": Vector2i(9, 4), "machine": Vector2i(10, 3),
+		"magic": Vector2i(12, 4), "divinity": Vector2i(13, 5),
+	}
+	for layer in core:
+		var got: Vector2i = ld.portal_cells.get(layer, Vector2i(-1, -1))
+		_check("포탈 %s 셀 좌표 불변 %s" % [layer, core[layer]], got == core[layer],
+			"got=%s expected=%s" % [got, core[layer]])
+	_check("스폰(다이스) 셀 좌표 불변 (10,9)", ld.spawn_cell == Vector2i(10, 9),
+		"spawn_cell=%s" % ld.spawn_cell)
+	_check("솥 셀 좌표 불변 (7,12)", ld.cauldron_cell == Vector2i(7, 12),
+		"cauldron_cell=%s" % ld.cauldron_cell)
+	_check("관측석 셀 좌표 불변 (14,11)", ld.observation_cell == Vector2i(14, 11),
+		"observation_cell=%s" % ld.observation_cell)
+	# 확장으로 지면(D)이 된 신규 셀은 보행 가능해야 함 (예: 우측 테라스, 하단 앞마당).
+	_check("확장 우측 테라스 보행 가능 (17,11)", ld.is_cell_walkable(Vector2i(17, 11)))
+	_check("확장 하단 앞마당 보행 가능 (11,18)", ld.is_cell_walkable(Vector2i(11, 18)))
 	await _teardown()
 
 
