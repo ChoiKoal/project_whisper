@@ -1,0 +1,305 @@
+{
+  "_comment": "EX-L5 침묵의 종탑 legend (in-game l5b). Symbol->(source,object). map_loader 재사용(l5xobj 파서). 게이트 강제=void(바래 사라진 허공)+게이트셀+고도차. 좌표 (col,row). 무드=상아/백은+호박빛 잔불(amber ember).",
+  "_coord_note": "row0=북(종탑 정점 큰 종/재타종=응답, +2), row39=남(대성당 연결 착지 스폰, 0). col0=서.",
+  "tiles": {
+    "A": {
+      "source": 5,
+      "tile_id": "L5T-A",
+      "_note": "종탑 착지 계단참 바닥(상아 포장, 고도 0)"
+    },
+    "Q": {
+      "source": 5,
+      "tile_id": "L5T-Q",
+      "_note": "종실 회랑 바닥(상층, 고도 +1)"
+    },
+    "C": {
+      "source": 5,
+      "tile_id": "L5T-C",
+      "_note": "타종 울림 회랑 바닥(상층, 고도 +1)"
+    },
+    "O": {
+      "source": 5,
+      "tile_id": "L5T-O",
+      "_note": "종탑 정점 큰 종 바닥(정점, 고도 +2)"
+    },
+    "V": {
+      "source": 0,
+      "tile_id": "T0",
+      "walkable": false,
+      "void": true,
+      "_note": "바래 사라진 허공/종탑 층 사이"
+    },
+    "S": {
+      "source": 5,
+      "tile_id": "L5T-A",
+      "spawn": true
+    },
+    "/": {
+      "source": 5,
+      "tile_id": "L5T-ramp",
+      "ramp": true,
+      "_note": "경사로(종실 회랑 +1 진입 / 정점 +2 오름)"
+    },
+    "g": {
+      "source": 5,
+      "tile_id": "L5T-A",
+      "gate": "GB1",
+      "walkable": false,
+      "place_slot": "D325",
+      "_note": "GB1 무너진 종탑 계단 종석 잔교 슬롯(허공 위, 종석 설치 후 walkable)"
+    },
+    "e": {
+      "source": 5,
+      "tile_id": "L5T-A",
+      "gate": "GB2",
+      "walkable": false,
+      "_note": "흐려진 종음 결계문(정음의 물 사용 후 walkable)"
+    },
+    "L": {
+      "source": 5,
+      "tile_id": "L5T-A",
+      "gate": "GB3",
+      "walkable": false,
+      "_note": "종탑 상층문(타종 울림 순서 퍼즐 성공 후 walkable)"
+    },
+    "y": {
+      "source": 5,
+      "tile_id": "L5T-A",
+      "place_slot": "CHIME_BELL",
+      "_note": "GB3 타종 종 슬롯(3개, 울림 순서 있음: chime_ordered)"
+    },
+    "x": {
+      "source": 5,
+      "tile_id": "L5T-crack",
+      "walkable": false,
+      "crack": true,
+      "_note": "금 간 종석 균열 타일(부적 소지 시 통과 = 지름길/연출, 지대 단절 아님). L4/L5 균열 재사용"
+    },
+    "H": {
+      "source": 5,
+      "tile_id": "L5T-O",
+      "gate": "GB4",
+      "_note": "응답의 타종구 봉헌 목(재타종 = 구역 클리어)"
+    },
+    "N": {
+      "source": 5,
+      "tile_id": "L5T-C"
+    },
+    "1": {
+      "source": 5,
+      "tile_id": "L5T-O"
+    },
+    "2": {
+      "source": 5,
+      "tile_id": "L5T-Q"
+    },
+    "3": {
+      "source": 5,
+      "tile_id": "L5T-Q"
+    },
+    "4": {
+      "source": 5,
+      "tile_id": "L5T-A"
+    },
+    "5": {
+      "source": 5,
+      "tile_id": "L5T-C"
+    },
+    "F": {
+      "source": 5,
+      "tile_id": "L5T-Q"
+    },
+    "E": {
+      "source": 5,
+      "tile_id": "L5T-A"
+    },
+    "o": {
+      "source": 5,
+      "tile_id": "L5T-O"
+    },
+    "s": {
+      "source": 5,
+      "tile_id": "L5T-A"
+    },
+    "j": {
+      "source": 5,
+      "tile_id": "L5T-A"
+    },
+    "z": {
+      "source": 5,
+      "tile_id": "L5T-A"
+    },
+    "d": {
+      "source": 5,
+      "tile_id": "L5T-A"
+    }
+  },
+  "objects": {
+    "C": {
+      "kind": "l5xobj",
+      "l2_id": "workbench",
+      "art": "l5b_bell_forge",
+      "offset": [0, -40],
+      "blocks": true,
+      "block_radius": 16,
+      "glow": "gold",
+      "glow_scale": 0.4,
+      "_note": "정비대(주종대, L5 crafting station)"
+    },
+    "N": {
+      "kind": "l5xobj",
+      "l2_id": "bellkeeper_shade",
+      "art": "l5b_bellkeeper_shade",
+      "offset": [0, -44],
+      "blocks": true,
+      "block_radius": 14,
+      "glow": "gold",
+      "glow_scale": 0.5,
+      "_note": "잔재 NPC: 아직도 종을 지키는 종지기의 그림자(GP-4 NPC 라인)"
+    },
+    "E": {
+      "kind": "l5xobj",
+      "l2_id": "chime_ward",
+      "art": "l5b_chime_ward",
+      "offset": [0, -40],
+      "blocks": true,
+      "block_radius": 16,
+      "gate": "GB2",
+      "_note": "GB2 흐려진 종음 결계 본체(정음의 물 D327 사용 대상)"
+    },
+    "H": {
+      "kind": "l5xobj",
+      "l2_id": "great_bell_altar",
+      "art": "l5b_bell_altar",
+      "offset": [0, -40],
+      "blocks": true,
+      "block_radius": 16,
+      "glow": "gold",
+      "glow_scale": 0.6,
+      "gate": "GB4",
+      "_note": "GB4 응답의 타종구 봉헌 목(재타종 = 구역 정화)"
+    },
+    "F": {
+      "kind": "l5xobj",
+      "l2_id": "belfry_residual_font",
+      "art": "l5b_reverb_font",
+      "offset": [0, -24],
+      "blocks": false,
+      "glow": "gold",
+      "glow_scale": 0.7,
+      "_note": "생명 Whisper 재획득처(idempotent, add_vita)"
+    },
+    "o": {
+      "kind": "l5xobj",
+      "l2_id": "great_bell",
+      "art": "l5b_great_bell",
+      "offset": [0, -48],
+      "blocks": false,
+      "glow": "gold",
+      "glow_scale": 1.0,
+      "gatherable": {
+        "item_id": "S12",
+        "unique": true
+      },
+      "gate": "GB4",
+      "_note": "종탑 정점 큰 종(신의 마지막 음 S12, 유니크)"
+    },
+    "s": {
+      "kind": "l5xobj",
+      "l2_id": "bell_shard",
+      "art": "l5b_bell_shard",
+      "art_variants": ["l5b_bell_shard_b", "l5b_bell_shard_c"],
+      "offset": [0, -16],
+      "blocks": false,
+      "glow": "gold",
+      "glow_scale": 0.35,
+      "gatherable": {
+        "item_id": "S8"
+      },
+      "_note": "종 파편"
+    },
+    "j": {
+      "kind": "l5xobj",
+      "l2_id": "belfry_rope",
+      "art": "l5b_belfry_rope",
+      "art_variants": ["l5b_belfry_rope_b", "l5b_belfry_rope_c"],
+      "offset": [0, -14],
+      "blocks": false,
+      "gatherable": {
+        "item_id": "S9"
+      },
+      "_note": "종탑 밧줄"
+    },
+    "z": {
+      "kind": "l5xobj",
+      "l2_id": "resonant_bronze",
+      "art": "l5b_resonant_bronze",
+      "art_variants": ["l5b_resonant_bronze_b", "l5b_resonant_bronze_c"],
+      "offset": [0, -12],
+      "blocks": false,
+      "glow": "gold",
+      "glow_scale": 0.3,
+      "gatherable": {
+        "item_id": "S10"
+      },
+      "_note": "울림 청동"
+    },
+    "d": {
+      "kind": "l5xobj",
+      "l2_id": "reverb_dust",
+      "art": "l5b_reverb_dust",
+      "art_variants": ["l5b_reverb_dust_b", "l5b_reverb_dust_c"],
+      "offset": [0, -12],
+      "blocks": false,
+      "glow": "gold",
+      "glow_scale": 0.4,
+      "gatherable": {
+        "item_id": "S11"
+      },
+      "_note": "잔향 가루"
+    }
+  },
+  "landmarks": {
+    "1": "great_bell",
+    "2": "great_bell_silhouette",
+    "3": "gods_last_record_slab",
+    "4": "tutorial_hung_bell",
+    "5": "three_chime_bells"
+  },
+  "gates": {
+    "GB1": {
+      "type": "placement",
+      "kind": "bridge",
+      "place_item": "D325",
+      "cells": [[18, 29], [19, 29], [18, 30], [19, 30]],
+      "altar": [17, 31]
+    },
+    "GB2": {
+      "type": "use",
+      "item": "D327",
+      "target": "chime_ward",
+      "cells": [[18, 17], [19, 17]]
+    },
+    "GB3": {
+      "type": "placement",
+      "kind": "puzzle",
+      "puzzle": "chime_ordered_3",
+      "slot_cells": [[14, 12], [19, 12], [24, 12]],
+      "cells": [[18, 6], [19, 6]]
+    },
+    "GB4": {
+      "type": "chain",
+      "kind": "offering",
+      "node_id": "great_bell_altar",
+      "cells": [[19, 3]],
+      "mount": [19, 3]
+    }
+  },
+  "special": {
+    "workbench_cell": [20, 38],
+    "reverb_font_cell": [12, 22],
+    "_life_note": "잔향 성수반 F = 생명 Whisper 재획득처(idempotent add_vita). GB1 뒤·GB2 앞 회랑 유일 경로에 배치 → 엔딩 Balance(4축) 대비. 최초 생명 획득처(L5 구역1 G2 생명의 샘)의 소진 세이브 안전망.",
+    "entry_from": "cathedral",
+    "entry_note": "대성당(l5 구역1) 대제단 곁, 종탑으로 이어지는 계단 → 종탑 착지. 개방 조건 = L5 구역1 정화 완료(대제단 봉헌='응답'/layer5_purified) 후 종탑 계단 활성. 좌표: 대성당 대제단 곁 → 침묵의 종탑 스폰 S(19,39)."
+  }
+}

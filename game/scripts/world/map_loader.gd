@@ -1422,6 +1422,13 @@ func _spawn_object(sym: String, cell: Vector2i, spec: Dictionary) -> void:
 	if kind == "l4xobj":
 		_spawn_l2_object(sym, cell, spec, world)
 		return
+	# (EXL5-2) Layer-5 확장(침묵의 종탑 l5b) objects reuse the identical data-driven spawn path
+	# (spec carries l5b_* art, art_variants 실루엣 변주, offset, glow[gold=amber ember], gatherable,
+	# blocking, and an l2_id the EX-L5 gate controller hooks state onto). Only the `kind` string
+	# differs so the base 대성당(l5obj) symbol/spawn stays untouched (zero regression to L5 구역 1).
+	if kind == "l5xobj":
+		_spawn_l2_object(sym, cell, spec, world)
+		return
 	match sym:
 		"C":
 			cauldron_cell = cell
