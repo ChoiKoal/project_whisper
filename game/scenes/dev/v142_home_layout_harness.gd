@@ -40,6 +40,7 @@ func _run() -> void:
 	await _d_portal_aprons()
 	await _e_island_ratio()
 	await _g_expansion_core_invariant()
+	await _h_homedeco_spawn()
 	await _f_legacy_save_lands_valid()
 	print("=== RESULT: %s (%d failures) ===" % ["PASS" if _fail == 0 else "FAIL", _fail])
 	get_tree().quit(_fail)
@@ -230,6 +231,38 @@ func _g_expansion_core_invariant() -> void:
 	# 확장으로 지면(D)이 된 신규 셀은 보행 가능해야 함 (예: 우측 테라스, 하단 앞마당).
 	_check("확장 우측 테라스 보행 가능 (17,11)", ld.is_cell_walkable(Vector2i(17, 11)))
 	_check("확장 하단 앞마당 보행 가능 (11,18)", ld.is_cell_walkable(Vector2i(11, 18)))
+	await _teardown()
+
+
+# ==== (h) v1.10.0 L0 확장: homedeco 소품 실제 인게임 스폰 =====================
+
+func _h_homedeco_spawn() -> void:
+	print("--- (h) L0 허브 확장: homedeco 데코 인게임 스폰 카운트 ---")
+	_scene = await _boot_home()
+	var ld := _loader()
+	# 로더는 스폰된 l2/데코 노드를 l2_object_nodes[l2_id + "@" + str(cell)] 에 기록한다.
+	# homedeco 스펙의 l2_id 는 모두 "deco_" 접두. 레이아웃엔 p/q/k/b/n/o/x 20셀 존재.
+	var deco_count := 0
+	var live := 0
+	var l2_ids := {}
+	for key in ld.l2_object_nodes:
+		var rec: Dictionary = ld.l2_object_nodes[key]
+		var spec: Dictionary = rec.get("spec", {})
+		if String(spec.get("kind", "")) != "homedeco":
+			continue
+		deco_count += 1
+		var node = rec.get("node", null)
+		if node != null and is_instance_valid(node):
+			live += 1
+		l2_ids[String(spec.get("l2_id", ""))] = true
+	# 레이아웃 셀 카운트(권위) 대조 — 20셀 전부 스폰돼야 함.
+	_check("homedeco 노드 20개 스폰 (레이아웃 셀 카운트 일치)", deco_count == 20,
+		"deco_count=%d (expected 20)" % deco_count)
+	_check("스폰된 homedeco 노드 전부 유효(살아있음)", live == deco_count,
+		"live=%d / %d" % [live, deco_count])
+	# 7종 데코 l2_id 전부 대표됨.
+	for want in ["deco_leaf", "deco_data", "deco_gear", "deco_tome", "deco_bell", "deco_pool", "deco_rubble"]:
+		_check("데코 종류 %s 스폰됨" % want, l2_ids.has(want))
 	await _teardown()
 
 
