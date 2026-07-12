@@ -1004,7 +1004,7 @@
       "whisper": "저기 기록판에… 신의 마지막 말이 있어. 가서 들어. 신이 마지막으로 무엇을 물었는지, 거기 적혀 있을 거야.",
       "type": "recall",
       "signal": "truth_shard_investigated",
-      "target": "divinity_prayer",
+      "target": "petrified_pilgrim",
       "count": 1,
       "next": "",
       "reward": {

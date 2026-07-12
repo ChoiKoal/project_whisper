@@ -103,6 +103,13 @@ var mine_purified_flag: bool = false
 signal archive_purified(zone: String)
 var archive_purified_flag: bool = false
 
+## (EXL5-3) Emitted when the 침묵의 종탑(belfry) is 정화됨(GB4 응답의 타종구 봉헌 = 큰 종 재타종 = "응답")
+## with zone = "belfry". Like archive/mine/sanctum it is an L5 SUB-zone flag — it does NOT touch the
+## portal line (L5 clear = 대성당 대제단 봉헌 "응답"/layer5_purified). Drives the persisted end-state
+## (큰 종 호박빛 발광 지속) on re-entry without replaying the cutscene. 진상 5조각 비게이팅 불변.
+signal belfry_purified(zone: String)
+var belfry_purified_flag: bool = false
+
 
 ## (L2-3) Mark a power node energized (idempotent). Records it in `powered_nodes` and announces
 ## it so gate listeners (bridge swap / clear cutscene) and quests react. No signal if already on.
@@ -169,6 +176,12 @@ func reset_layer3_zones() -> void:
 ## touch the portal line — clearing this just re-locks the archive end-state (P12 재채집 가능).
 func reset_layer4_zones() -> void:
 	archive_purified_flag = false
+
+## (EXL5-3) Reset the L5 확장 SUB-zone purification flag (침묵의 종탑) to the new-game baseline.
+## Called by new game / NG+ alongside reset_layer2~5. Belfry is an L5 sub-zone, so it does NOT touch
+## the portal line — clearing this just re-locks the belfry end-state (S12 재채집 가능).
+func reset_layer5_zones() -> void:
+	belfry_purified_flag = false
 
 ## (v0.4.0-C) Emitted when a structure/decor item is PLACED into the world (persistent
 ## PlacedObject). `item_id` = the placed item, `cell` = its tile. Quests/audio hook here.
