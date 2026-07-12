@@ -46,6 +46,10 @@ func _setup() -> void:
 	# A return portal near the grove spawn — always OPEN (the way back to the home island).
 	_spawn_return_portal()
 
+	# (EXL1-2) Once the grove is cleared (세계수 정화), the two L1 확장 SUB-zone 연결점이 열린다:
+	# 화원(북 오솔길) + 심장(세계수 하강). Spawned as open zone portals only when SaveManager.cleared.
+	_spawn_zone_portals()
+
 	# (v1.1.0 GP-4 §1) 시들지 않는 노목 QuestNPC near the grove spawn (reachable, off the portal apron).
 	if _loader != null and _loader.spawn_cell != Vector2i(-1, -1):
 		QuestNPC.spawn(self, _loader, _loader.spawn_cell + Vector2i(3, 1), "oak", "시들지 않는 노목",
@@ -137,6 +141,57 @@ func _spawn_return_portal() -> void:
 
 func _on_return_portal() -> void:
 	_return_home(false)
+
+
+## (EXL1-2) Spawn the two L1 확장 SUB-zone 연결점 (화원·심장) — ONLY after the grove is cleared
+## (세계수 정화 = 북쪽 길 개방 신호). Each is a real Portal with a custom travel handler. Placed on
+## walkable cells NORTH of spawn (화원 = 오솔길, 심장 = 세계수 하강). Idempotent-ish (guarded by a flag).
+var _zone_portals_spawned := false
+
+func _spawn_zone_portals() -> void:
+	if _zone_portals_spawned:
+		return
+	if _loader == null or _loader.spawn_cell == Vector2i(-1, -1):
+		return
+	if not (typeof(SaveManager) != TYPE_NIL and SaveManager.cleared):
+		return  # locked until the grove is cleared
+	_zone_portals_spawned = true
+	var ys := _loader.get_node_or_null(_loader.ysort_layer_path) as Node2D
+	if ys == null:
+		return
+	# 화원 연결점: a walkable cell to the NW of spawn (오솔길로 북상). 심장: to the NE (세계수 하강).
+	_spawn_zone_portal(ys, [_loader.spawn_cell + Vector2i(-4, -3), _loader.spawn_cell + Vector2i(-3, -2),
+		_loader.spawn_cell + Vector2i(-5, 0)], "E 고요의 화원으로", WorldContext.SCENE_GARDEN)
+	_spawn_zone_portal(ys, [_loader.spawn_cell + Vector2i(4, -3), _loader.spawn_cell + Vector2i(3, -2),
+		_loader.spawn_cell + Vector2i(5, 0)], "E 생명의 심장으로", WorldContext.SCENE_HEART)
+
+
+func _spawn_zone_portal(ys: Node2D, cell_candidates: Array, prompt: String, scene_id: String) -> void:
+	var cell := Vector2i(-1, -1)
+	for c in cell_candidates:
+		if c is Vector2i and _loader.is_cell_walkable(c):
+			cell = c
+			break
+	if cell == Vector2i(-1, -1):
+		return
+	# Reuse the ReturnPortalController (real Portal, OPEN "return" state → violet vortex glow, apron
+	# prompt, E + click-walk-then-enter). The zone identity is carried by the travel handler, not the
+	# portal layer key — the controller keeps the portal OPEN via its "return" key.
+	var ctrl := ReturnPortalController.new()
+	add_child(ctrl)
+	ctrl.setup(_loader, _player, [cell], prompt)
+	ctrl.entered.connect(func(): _travel_to_zone(scene_id))
+
+
+## Travel from the grove into a SUB-zone (화원/심장). Snapshots the grove so返回 restores it.
+func _travel_to_zone(scene_id: String) -> void:
+	if typeof(WorldContext) == TYPE_NIL:
+		return
+	WorldContext.arrival_mode = "portal_arrival"
+	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("save_game"):
+		SaveManager.save_game()
+	WorldContext.current_scene = scene_id
+	get_tree().change_scene_to_file(WorldContext.scene_path(scene_id))
 
 
 func _on_cleared() -> void:

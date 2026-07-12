@@ -744,6 +744,96 @@
           "text": "응답을 기다리다 석화된 신도. 응답은 끝내 오지 않았으나, 방랑자가 왔다. 그것으로 되었다."
         }
       }
+    },
+    {
+      "id": "N-gardener-Q1",
+      "whisper": "…이슬에 노란 걸 풀면, 볕의 색이 나와. 그걸 한 통.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D227",
+      "count": 1,
+      "next": "N-gardener-Q2",
+      "reward": {
+        "recipes": [
+          "EX-L1-R05"
+        ]
+      }
+    },
+    {
+      "id": "N-gardener-Q2",
+      "whisper": "내가 보이는 곳에, 붉은 걸 하나 놓아줘. 오래 못 봤어, 그 색을.",
+      "type": "place",
+      "signal": "placed_object_placed",
+      "target": "any",
+      "count": 1,
+      "next": "N-gardener-Q3",
+      "reward": {
+        "whisper": {
+          "attr": "vita",
+          "amt": 1
+        }
+      }
+    },
+    {
+      "id": "N-gardener-Q3",
+      "whisper": "…저 석상, 낯이 익어. 손 모양이… 나랑 똑같잖아. 왜 저기 서 있지. 가서, 봐줘.",
+      "type": "recall",
+      "signal": "truth_shard_investigated",
+      "target": "gardener_petrified",
+      "count": 1,
+      "next": "",
+      "reward": {
+        "log": {
+          "id": "npc_gardener",
+          "title": "정원사 석상의 회고",
+          "text": "물감을 개던 손이 그대로 굳었다. 색을 되찾아줘도, 그는 알아채지 못한다. …이미, 오래전에 멈춘 손이니까. 작별이야, 화원."
+        }
+      }
+    },
+    {
+      "id": "N-constructor-Q1",
+      "whisper": "뿌리를 거른 맑은 물이 필요해. 이끼로 걸러 봐.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D231",
+      "count": 1,
+      "next": "N-constructor-Q2",
+      "reward": {
+        "recipes": [
+          "EX-L1-R12"
+        ]
+      }
+    },
+    {
+      "id": "N-constructor-Q2",
+      "whisper": "…빛나는 걸, 심장이 보이는 곳에 놓아줘. 혼자 두기엔, 너무 어두워.",
+      "type": "place",
+      "signal": "placed_object_placed",
+      "target": "any",
+      "count": 1,
+      "next": "N-constructor-Q3",
+      "reward": {
+        "whisper": {
+          "attr": "vita",
+          "amt": 1
+        }
+      }
+    },
+    {
+      "id": "N-constructor-Q3",
+      "whisper": "저기, 내 첫 실험 흔적이 있어. 가서… 봐. 내가 어디서 틀렸는지.",
+      "type": "recall",
+      "signal": "truth_shard_investigated",
+      "target": "world_tree",
+      "count": 1,
+      "next": "",
+      "reward": {
+        "log": {
+          "id": "npc_constructor",
+          "title": "첫 컨스트럭터의 회고",
+          "text": "나도 이걸 되살리려 했어. 심장에서 꺼내기만 하고, 돌려주는 걸 잊은 채로. 선배들도 그랬어. 너는, 잊지 마. …작별이야, 심장."
+        }
+      }
     }
   ]
 }
