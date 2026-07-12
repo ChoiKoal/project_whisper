@@ -44,6 +44,10 @@ GATE_KEYS = {
     # 요구하므로 list-key. GB4(chain·offering)는 봉헌 목 H 셀이 있어 keyed 게이트이며 J12(유니크)는
     # self-offering(GB4 자신이 여는 사원에서 채집).
     "l2s": {"GB1": "D256", "GB2": "D258", "GB3": ["D259", "D260", "D261"], "GB4": "D263"},
+    # EX-L3 신규 SUB-zone(태엽 광산 l3m). GM3은 레일 전환 미니 퍼즐 = 전환 레버 3개(D282/D283/D284)를
+    # 3 슬롯에 동시 배치하므로 list-key(l2s GB3 동형). GM4(chain·offering)는 봉헌 목 H 셀이 있는 keyed
+    # 게이트이며 K12(심층 태엽정·유니크)는 self-offering(GM4 자신이 여는 최심부에서 채집).
+    "l3m": {"GM1": "D279", "GM2": "D281", "GM3": ["D282", "D283", "D284"], "GM4": "D286"},
 }
 # G2가 추가 소지 재료를 요구하는 경우(예: L3 boiler에 젖은석탄 D106 동시 소지).
 GATE_EXTRA_KEYS = {
@@ -72,6 +76,10 @@ SELF_OFFERING_GATHERS = {
     # EX-L2 J12(코어 정수·유니크): 마지막 백업 코어 O(GB4 통과 사원)에서만 채집되고 복원 코어
     # D262→D263 = GB4 자신의 봉헌 체인에만 쓰인다(design §A-6.2). GB4가 마지막 게이트 = 데드락 불가.
     "l2s": {"GB4": {"J12"}},
+    # EX-L3 K12(심층 태엽정·유니크): 광차문 너머 최심부 태엽 노심 O(excavator_core, (20,2))에서만
+    # 채집되고 D285→D286 = GM4 자신의 봉헌 체인(태엽 노심 봉헌)에만 쓰인다(K12 소비 레시피 = D285 뿐,
+    # D285 소비 = D286 뿐). GM4가 최종 게이트 = 데드락 불가. l2s GB4/J12 동형.
+    "l3m": {"GM4": {"K12"}},
 }
 
 GATE_CELL_FIELDS = [
@@ -388,8 +396,8 @@ def main():
     recipes = load_recipes()
     recipe_idx = build_recipe_index(recipes)
     total_viol = 0
-    print("=== SPATIAL PROGRESSION AUDIT (EX-L1 + EX-L2 + L2~L5) ===")
-    for layer in ["l1g", "l1h", "l2s", "l2", "l3", "l4", "l5"]:
+    print("=== SPATIAL PROGRESSION AUDIT (EX-L1 + EX-L2 + EX-L3 + L2~L5) ===")
+    for layer in ["l1g", "l1h", "l2s", "l3m", "l2", "l3", "l4", "l5"]:
         res = audit_layer(layer, recipe_idx)
         print(f"\n--- {layer.upper()} ---")
         print(f"  spawn={res['spawn']}  gate open order(공간 순서)={res['order']}")
