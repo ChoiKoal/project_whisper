@@ -34,15 +34,25 @@ func _run() -> void:
 		GameState.set_portal_state(lay, GameState.PORTAL_DORMANT)
 
 	# Reframe: drop the player's follow-camera and add a static camera centred on the island,
-	# zoomed out to show the whole 21×17 slab + starfield.
+	# zoomed out to show the whole 31×25 slab + starfield. (v1.10.0: the expanded slab is not
+	# centred on the grid midpoint — its content spans cols ~4..17, rows 2..24 — so centre on
+	# the island cell centroid rather than (width/2,height/2) to keep the hub framed.)
 	var loader := scene.get_node("Ground") as MapLoader
-	var center := loader.cell_center_world(Vector2i(loader.width / 2, loader.height / 2))
+	var sum := Vector2.ZERO
+	var n := 0
+	for r in range(loader.height):
+		for c in range(loader.width):
+			if loader._is_island_cell(Vector2i(c, r)):
+				sum += loader.cell_center_world(Vector2i(c, r))
+				n += 1
+	var center := (sum / float(n)) if n > 0 else loader.cell_center_world(Vector2i(loader.width / 2, loader.height / 2))
 	var pcam := scene.get_node_or_null("YSortLayer/Player/Camera2D") as Camera2D
 	if pcam != null:
 		pcam.enabled = false
 	var cam := Camera2D.new()
 	cam.position = center
-	cam.zoom = Vector2(0.62, 0.62)
+	# Wider slab (2240px screen span) → zoom out further so the whole island + starfield fits.
+	cam.zoom = Vector2(0.5, 0.5)
 	scene.add_child(cam)
 	cam.make_current()
 

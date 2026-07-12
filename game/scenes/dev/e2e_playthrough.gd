@@ -208,8 +208,9 @@ func _stepH_home_awakening() -> void:
 	var hrespawn := _scene.get_node("ObjectRespawn") as ObjectRespawn
 	SaveManager.register_world(hloader, hplayer, hrespawn)
 
-	# (v1.4.2) 홈 섬 = staggered 투영 기준으로 재저작된 21×17 floating isle (포탈 아치 구도).
-	_check("home island booted (21×17 floating isle, v1.4.2 재저작)", hloader.width == 21 and hloader.height == 17,
+	# (v1.10.0) L0 허브 확장 — 21×17 → 31×25. staggered 투영 기준 재저작 아치 구도는 불변
+	# (코어 셀 인덱스 무이동, v142 하네스가 아치 좌표 불변을 강제). 치수만 확장.
+	_check("home island booted (31×25 확장 허브, 아치 구도 불변)", hloader.width == 31 and hloader.height == 25,
 		"%d×%d" % [hloader.width, hloader.height])
 	_check("5 portals stand around the dais", _count_portals() == 5, "n=%d" % _count_portals())
 	_check("quest line begins at P0 (여기가… 나의 세계)", QuestManager.active_id == "P0",
