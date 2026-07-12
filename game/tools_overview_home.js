@@ -735,8 +735,8 @@ if (CLOSEUP) {
   const x1 = OX + cellLocal(g1[0], g1[1])[0], x5 = OX + cellLocal(g5[0], g5[1])[0];
   const cx = OX + (p3x + spx) / 2, cyc = OY + (p3y + spy) / 2;
   const cw = Math.round((x5 - x1) + GATE_W + 240);          // 아치 폭 + 게이트 여유
-  const ch = Math.round(GATE_H + (spy - p3y) + 360);        // 게이트 높이 + 정점→다이스 + 여백
-  const x0 = Math.max(0, Math.round(cx - cw / 2)), y0 = Math.max(0, Math.round(cyc - ch / 2 - GATE_H / 2 + 40));
+  const ch = Math.round(GATE_H + (spy - p3y) + 430);        // 게이트 높이 + 정점→다이스 + 여백(부유 시길 헤드룸)
+  const x0 = Math.max(0, Math.round(cx - cw / 2)), y0 = Math.max(0, Math.round(cyc - ch / 2 - GATE_H / 2 - 20));
   const crop = new PNG({ width: cw, height: ch });
   for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
     const si = (CW * Math.min(CH - 1, y0 + y) + Math.min(CW - 1, x0 + x)) << 2, di = (cw * y + x) << 2;
