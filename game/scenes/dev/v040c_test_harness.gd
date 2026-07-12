@@ -57,9 +57,10 @@ func _test_placement_data() -> void:
 				functional.append(id)
 	_check("20+ placeable items", placeable_count >= 20, "count=%d" % placeable_count)
 	functional.sort()
-	_check("functional class is exactly D14/D22 (+EX-L1 D223/D226/D227/D228 +EX-L2 D256/D259/D260/D261 +EX-L3 D279/D282/D283/D284 +EX-L4 D302/D305/D306/D307)",
+	_check("functional class is exactly D14/D22 (+EX-L1 D223/D226/D227/D228 +EX-L2 D256/D259/D260/D261 +EX-L3 D279/D282/D283/D284 +EX-L4 D302/D305/D306/D307 +EX-L5 D325/D328/D329/D330)",
 		functional == ["D14", "D22", "D223", "D226", "D227", "D228", "D256", "D259", "D260", "D261",
-			"D279", "D282", "D283", "D284", "D302", "D305", "D306", "D307"],
+			"D279", "D282", "D283", "D284", "D302", "D305", "D306", "D307",
+			"D325", "D328", "D329", "D330"],
 		str(functional))
 	# Sample spec classes: structures block, decor doesn't.
 	_check("D24 울타리 = structure, blocks", ItemDB.placement_class("D24") == "structure"
