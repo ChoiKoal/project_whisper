@@ -198,6 +198,10 @@
       "kind": "l2obj",
       "l2_id": "data_crystal",
       "art": "l2s_data_crystal",
+      "art_variants": [
+        "l2s_data_crystal_b",
+        "l2s_data_crystal_c"
+      ],
       "offset": [
         0,
         -16
@@ -214,6 +218,10 @@
       "kind": "l2obj",
       "l2_id": "corroded_core",
       "art": "l2s_corroded_core",
+      "art_variants": [
+        "l2s_corroded_core_b",
+        "l2s_corroded_core_c"
+      ],
       "offset": [
         0,
         -14
@@ -228,6 +236,10 @@
       "kind": "l2obj",
       "l2_id": "fiber_bundle",
       "art": "l2s_fiber_bundle",
+      "art_variants": [
+        "l2s_fiber_bundle_b",
+        "l2s_fiber_bundle_c"
+      ],
       "offset": [
         0,
         -14
@@ -242,6 +254,10 @@
       "kind": "l2obj",
       "l2_id": "coolant_gel",
       "art": "l2s_coolant_gel",
+      "art_variants": [
+        "l2s_coolant_gel_b",
+        "l2s_coolant_gel_c"
+      ],
       "offset": [
         0,
         -12

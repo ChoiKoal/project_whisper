@@ -54,14 +54,14 @@ def placement_from_place(place: str):
 
 def build_items(frag):
     items = []
-    # 채집 5종 J8~J12
+    # 채집 5종 J8~J12 (모든 신규 항목 layer:2 병기 — 설계 §B, L2 도메인)
     for g in frag["gathers"]:
         if g["id"] in UNIQUE_GATHERS:
-            it = {"id": g["id"], "name": g["name"], "category": "gather",
+            it = {"id": g["id"], "name": g["name"], "category": "gather", "layer": 2,
                   "unique": True, "flavor": g["flavor"],
                   "placeable_on": [], "usable_on": []}
         else:
-            it = {"id": g["id"], "name": g["name"], "category": "gather",
+            it = {"id": g["id"], "name": g["name"], "category": "gather", "layer": 2,
                   "flavor": g["flavor"], "placeable_on": [], "usable_on": []}
         items.append(it)
     # 조합 23종 D255~D277 (fragment.recipes[].output)
@@ -71,6 +71,7 @@ def build_items(frag):
             "id": oid,
             "name": r["name"],
             "category": "craft",
+            "layer": 2,
             "flavor": r.get("flavor", ""),
             "placeable_on": [],
             "usable_on": [],

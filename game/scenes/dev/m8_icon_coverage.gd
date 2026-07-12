@@ -61,8 +61,10 @@ func _ready() -> void:
 	# (v1.1.0 GP-2 §2.3) +3 실패작 D219-D221 (no `layer` field → classified as canonical L1) = 71.
 	# (v1.5.0 EX-L1) +41 신규 Layer-1 도메인 아이템: I10-I17 (8 gather) + D222-D254 (33 craft)
 	#   → canonical L1 71 + 41 = 112.
-	_check("112 L1 + 48 L2 + 44 L3 + 44 L4 + 49 L5 canonical + 1 alias split",
-		canonical_ids.size() == 112 and l2_ids.size() == 48 and l3_ids.size() == 44 \
+	# (v1.6.0 EX-L2) +28 신규 Layer-2 도메인 아이템: J8-J12 (5 gather) + D255-D277 (23 craft)
+	#   → L2 48 + 28 = 76. 총 canonical 297 + 28 = 325.
+	_check("112 L1 + 76 L2 + 44 L3 + 44 L4 + 49 L5 canonical + 1 alias split",
+		canonical_ids.size() == 112 and l2_ids.size() == 76 and l3_ids.size() == 44 \
 		and l4_ids.size() == 44 and l5_ids.size() == 49 and alias_ids.size() == 1)
 
 	# 1. every canonical id (Layer-1..-5) has a real icon FILE (present on disk).
@@ -86,14 +88,14 @@ func _ready() -> void:
 	for id in l2_ids + l3_ids + l4_ids + l5_ids:
 		if not ResourceLoader.exists(ICON_DIR + id + ".png") or load(ICON_DIR + id + ".png") == null:
 			l2_fallback.append(id)
-	_check("all 185 Layer-2..5 icons are real painted files (fallback=%s)" % [l2_fallback], l2_fallback.is_empty())
+	_check("all 213 Layer-2..5 icons are real painted files (fallback=%s)" % [l2_fallback], l2_fallback.is_empty())
 
 	# alias D06 resolves to I4's icon (same texture object / same file).
 	var d06 := ItemDB.icon("D06")
 	var i4 := ItemDB.icon("I4")
 	_check("D06 icon resolves to I4's icon", d06 != null and d06 == i4)
 
-	# 3. no two icon files byte-identical (297 canonical: 112 L1 + 48 L2 + 44 L3 + 44 L4 + 49 L5).
+	# 3. no two icon files byte-identical (325 canonical: 112 L1 + 76 L2 + 44 L3 + 44 L4 + 49 L5).
 	var hashes := {}
 	var dup_pairs: Array = []
 	for id in canonical_ids + l2_ids + l3_ids + l4_ids + l5_ids:
@@ -103,8 +105,8 @@ func _ready() -> void:
 			dup_pairs.append([hashes[h], id])
 		else:
 			hashes[h] = id
-	_check("all 297 canonical icon files are byte-unique (dupes=%s)" % [dup_pairs], dup_pairs.is_empty())
-	_check("distinct icon hashes == 297", hashes.size() == 297)
+	_check("all 325 canonical icon files are byte-unique (dupes=%s)" % [dup_pairs], dup_pairs.is_empty())
+	_check("distinct icon hashes == 325", hashes.size() == 325)
 
 	# Sanity: the alias file, if present, equals I4's file (spec: D06 shares I4 art).
 	if ResourceLoader.exists(ICON_DIR + "D06.png"):

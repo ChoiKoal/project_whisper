@@ -1600,6 +1600,15 @@ func _spawn_l2_object(sym: String, cell: Vector2i, spec: Dictionary, world: Vect
 	var art := String(spec.get("art", ""))
 	if art == "":
 		return
+	# (EXL2-1 실루엣 변주, 멤쵸 QA §㉘) When a spec lists `art_variants`, deterministically hash-pick
+	# among [art] + variants per cell so repeated gatherables (data crystals / cores / fibers / gel)
+	# aren't an identical stamp in a row. Deterministic → ObjectRespawn rebuilds the same variant.
+	var variants: Array = spec.get("art_variants", [])
+	if variants is Array and not variants.is_empty():
+		var pool: Array = [art]
+		for v in variants:
+			pool.append(String(v))
+		art = String(pool[_cell_hash(cell.x, cell.y, 11) % pool.size()])
 	var tex := load("res://assets/objects/%s.png" % art) as Texture2D
 	if tex == null:
 		push_warning("MapLoader: L2 object art missing: %s" % art)
