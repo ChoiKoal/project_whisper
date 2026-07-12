@@ -2119,6 +2119,334 @@ icons.D254 = (cv) => { // 첫 실험의 잔재 first-experiment remnant — hard
 };
 
 // ============================================================================
+// EX-L2 지하 데이터 성소 (v1.6.0). J8..J12 gather + D255..D277 craft. Same L2
+// science aesthetic (metal-grey + cyan data-glow) but darker/underground: base
+// metal desaturated & dimmed, corroded ruins in rust/sickly-green, and the only
+// living colour is the cyan memory-glow on crystals/cores/beacons. Each painter
+// is bespoke so every file is byte-unique.
+// ============================================================================
+
+// deep-underground steel tones (darker siblings of the L2 steel ramp)
+const UG = {
+  metalD: hexToRGB('#161c26'), metal: hexToRGB('#242c3a'), metalM: hexToRGB('#38424f'),
+  metalL: hexToRGB('#5a6472'), metalH: hexToRGB('#828c9c'),
+  corD: hexToRGB('#3a2418'), cor: hexToRGB('#6e4028'), corL: hexToRGB('#9a5f38'),
+  sick: hexToRGB('#4a6a3a'), sickL: hexToRGB('#7aa055'), // sickly corrosion green
+  gelD: hexToRGB('#1f5a5a'), gel: hexToRGB('#3a8f88'), gelL: hexToRGB('#7ad6cc'),
+  charD: hexToRGB('#0e0e12'), char: hexToRGB('#22222a'), charL: hexToRGB('#3a3a44'),
+};
+
+// server-rack fragment: a small dark ribbed metal block (used as a mount base)
+function rackFrag(cv, x0, y0, x1, y1) {
+  fillRect(cv, x0, y0, x1, y1, UG.metal);
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) setPx(cv, x, y, x - y > 4 ? UG.metalM : UG.metal);
+  for (let y = y0 + 2; y < y1; y += 3) line(cv, x0 + 1, y, x1 - 2, y, UG.metalD, 1); // rack ribs
+  fillRect(cv, x0, y0, x1, y0 + 2, UG.metalL); // lit top edge
+}
+// draw a single upright faceted crystal shard; returns nothing.
+function crystalShard(cv, cx, top, h, wBase, lit, dark) {
+  for (let y = 0; y < h; y++) {
+    const hw = Math.max(1, Math.round((1 - y / h) * wBase) + 1);
+    for (let x = -hw; x <= hw; x++) setPx(cv, cx + x, top + y, x > 0 ? lit : dark);
+  }
+  setPx(cv, cx, top, C.white); // tip glint
+}
+
+// ---------- J8..J12 (EX-L2 gather) ----------
+icons.J8 = (cv) => { // 데이터 결정 data crystal — glowing cyan crystal on server-rack fragment
+  rackFrag(cv, 12, 30, 36, 42);
+  glowBehind(cv, 24, 24, 15, C.cyanM);
+  crystalShard(cv, 24, 8, 24, 4, C.cyanL, C.cyan);
+  crystalShard(cv, 17, 18, 13, 2, C.cyanM, C.cyanD);
+  crystalShard(cv, 31, 20, 11, 2, C.cyanM, C.cyanD);
+  cyanSpark(cv, 24, 13);
+  outline(cv, P.cyanD);
+};
+icons.J9 = (cv) => { // 부식 코어 corroded core — rusted computation chip, brown/green corrosion
+  fillRect(cv, 14, 16, 34, 34, UG.cor);
+  for (let y = 16; y < 34; y++) for (let x = 14; x < 34; x++) setPx(cv, x, y, (x + y) % 3 ? UG.cor : UG.corD);
+  // pin legs
+  for (let i = 15; i <= 33; i += 4) { line(cv, i, 12, i, 16, UG.metalM, 1); line(cv, i, 34, i, 38, UG.metalM, 1); }
+  // sickly-green corrosion blooms eating the chip
+  disc(cv, 20, 22, 4, UG.sick); disc(cv, 29, 27, 3, UG.sickL); disc(cv, 24, 30, 2, UG.sick);
+  disc(cv, 30, 19, 2, UG.corL);
+  outline(cv, '#1e120c');
+};
+icons.J10 = (cv) => { // 광섬유 다발 fiber-optic bundle — thin drooping threads, faint tip glow
+  fillRect(cv, 16, 10, 32, 15, UG.metalM); // crimp collar at top
+  fillRect(cv, 16, 10, 32, 12, UG.metalL);
+  const tips = [];
+  for (let i = 0; i < 7; i++) {
+    const sx = 18 + i * 2, ex = 12 + i * 4, ey = 30 + ((i * 5) % 10);
+    for (let t = 0; t <= 20; t++) {
+      const u = t / 20;
+      const x = sx + (ex - sx) * u;
+      const y = 15 + (ey - 15) * u + Math.sin(u * Math.PI) * 5; // droop
+      setPx(cv, x, y, i % 2 ? C.steelL : C.steelM);
+      if (t === 20) tips.push([x | 0, y | 0]);
+    }
+  }
+  for (const [x, y] of tips) { disc(cv, x, y, 1, C.cyanL); setPx(cv, x, y - 1, C.cyanM, 150); }
+  outline(cv, P.steelD);
+};
+icons.J11 = (cv) => { // 냉각 젤 coolant gel — translucent hardening blue-green blob
+  glowBehind(cv, 24, 32, 14, UG.gel);
+  ellipse(cv, 24, 33, 16, 11, UG.gel, UG.gelD);
+  for (let y = 22; y < 44; y++) for (let x = 8; x < 40; x++) if (getA(cv, x, y) && (x + y) % 5 === 0) setPx(cv, x, y, UG.gelL); // gel speckle
+  ellipse(cv, 19, 28, 5, 3, UG.gelL, UG.gel); // sheen
+  disc(cv, 30, 34, 2, C.white, 150);
+  outline(cv, '#144040');
+};
+icons.J12 = (cv) => { // 코어 정수 core essence — THE memory seed, single perfect radiant cyan gem
+  glowBehind(cv, 24, 24, 22, C.cyanL);
+  glowBehind(cv, 24, 24, 16, C.cyanM);
+  // faceted diamond gem
+  for (let y = 8; y < 40; y++) {
+    const t = (y - 24) / 16;
+    const hw = Math.round((1 - Math.abs(t)) * 13);
+    for (let x = 24 - hw; x <= 24 + hw; x++) {
+      const facet = (x - 24) + (y - 24) * 0.4;
+      setPx(cv, x, y, facet > 4 ? C.white : facet > -4 ? C.cyanL : C.cyan);
+    }
+  }
+  disc(cv, 20, 18, 3, C.white); // bright core highlight
+  line(cv, 24, 9, 24, 39, lighter(C.cyanL, 20), 1); // central axis glint
+  cyanSpark(cv, 12, 14); cyanSpark(cv, 36, 30); cyanSpark(cv, 34, 12); cyanSpark(cv, 14, 34);
+  outline(cv, P.cyan);
+};
+
+// ---------- D255..D277 (EX-L2 craft) ----------
+icons.D255 = (cv) => { // 굳은 냉각 젤판 hardened gel slab — flat set rectangular gel plate
+  glowBehind(cv, 24, 30, 12, UG.gel);
+  fillRect(cv, 9, 22, 39, 38, UG.gel);
+  for (let y = 22; y < 38; y++) for (let x = 9; x < 39; x++) setPx(cv, x, y, x - y > 6 ? UG.gelL : UG.gel);
+  fillRect(cv, 9, 22, 39, 25, UG.gelL); // lit top face
+  fillRect(cv, 9, 36, 39, 38, UG.gelD); // dark base
+  line(cv, 15, 26, 33, 26, lighter(UG.gelL, 20), 1); // frozen crack sheen
+  outline(cv, '#144040');
+};
+icons.D256 = (cv) => { // 방수 디딤돌 waterproof stepping stone — gel slab + data crystal embedded
+  ellipse(cv, 24, 36, 17, 6, UG.gelD, darker(UG.gelD, 10)); // wet ground ring
+  fillRect(cv, 11, 24, 37, 36, UG.gel);
+  for (let y = 24; y < 36; y++) for (let x = 11; x < 37; x++) setPx(cv, x, y, x - y > 6 ? UG.gelL : UG.gel);
+  fillRect(cv, 11, 24, 37, 27, UG.gelL);
+  glowBehind(cv, 24, 22, 10, C.cyanM); // embedded crystal
+  crystalShard(cv, 24, 12, 14, 3, C.cyanL, C.cyan);
+  cyanSpark(cv, 24, 16);
+  outline(cv, '#144040');
+};
+icons.D257 = (cv) => { // 복원 신호선 restoration signal-line — crystal on fiber
+  // fiber cable snaking across
+  for (let x = 8; x < 40; x++) { const y = 30 + Math.round(Math.sin((x - 8) / 6) * 6); setPx(cv, x, y, C.steelM); setPx(cv, x, y + 1, C.steelL); }
+  disc(cv, 8, 30, 2, UG.metalL); disc(cv, 40, 32, 2, UG.metalL);
+  glowBehind(cv, 24, 18, 13, C.cyanM); // crystal riding the line
+  crystalShard(cv, 24, 6, 18, 4, C.cyanL, C.cyan);
+  crystalShard(cv, 30, 16, 9, 2, C.cyanM, C.cyanD);
+  cyanSpark(cv, 24, 11);
+  outline(cv, P.cyanD);
+};
+icons.D258 = (cv) => { // 디코더 젤 decoder gel — key gel, injectable syringe of cyan-green gel
+  glowBehind(cv, 24, 26, 12, UG.gel);
+  fillRect(cv, 18, 8, 30, 12, UG.metalL);              // plunger flange
+  fillRect(cv, 22, 4, 26, 10, UG.metalM);              // plunger rod
+  fillRect(cv, 19, 12, 29, 36, UG.metalL, 90);         // barrel glass
+  fillRect(cv, 20, 22, 28, 36, UG.gel);                // gel fill
+  fillRect(cv, 20, 22, 24, 36, UG.gelL);
+  fillRect(cv, 23, 36, 25, 44, UG.metalL);             // needle
+  disc(cv, 22, 25, 1, C.white);
+  cyanSpark(cv, 24, 29);
+  outline(cv, P.steelD);
+};
+// align shards α/β/γ — visibly different fragment silhouettes, cyan data-etched
+function alignShard(cv, poly, outl) {
+  // fill polygon (scanline) with steel + cyan etch
+  let minY = 48, maxY = 0; for (const [, y] of poly) { if (y < minY) minY = y; if (y > maxY) maxY = y; }
+  for (let y = minY; y <= maxY; y++) {
+    const xs = [];
+    for (let i = 0; i < poly.length; i++) {
+      const [x1, y1] = poly[i], [x2, y2] = poly[(i + 1) % poly.length];
+      if ((y1 <= y && y2 > y) || (y2 <= y && y1 > y)) xs.push(x1 + (x2 - x1) * (y - y1) / (y2 - y1));
+    }
+    xs.sort((a, b) => a - b);
+    for (let k = 0; k + 1 < xs.length; k += 2)
+      for (let x = Math.round(xs[k]); x <= Math.round(xs[k + 1]); x++) setPx(cv, x, y, x - y > 2 ? C.steelM : C.steel);
+  }
+  outline(cv, outl);
+}
+icons.D259 = (cv) => { // 정합 조각 α align shard alpha — tall angular sliver, single cyan trace
+  alignShard(cv, [[24, 6], [34, 34], [22, 40], [16, 20]], P.steelD);
+  line(cv, 24, 12, 24, 34, C.cyan, 1); cyanSpark(cv, 24, 22);
+  disc(cv, 20, 30, 1, C.rust);
+};
+icons.D260 = (cv) => { // 정합 조각 β align shard beta — squat wide chunk, forked cyan trace
+  alignShard(cv, [[10, 26], [20, 14], [38, 20], [34, 38], [14, 40]], P.steelD);
+  line(cv, 16, 28, 26, 24, C.cyanM, 1); line(cv, 26, 24, 33, 30, C.cyanM, 1); cyanSpark(cv, 26, 24);
+  disc(cv, 30, 34, 1, C.rust);
+};
+icons.D261 = (cv) => { // 정합 조각 γ align shard gamma — L-bent hook shape, ring cyan node
+  alignShard(cv, [[14, 8], [26, 8], [26, 24], [40, 24], [40, 36], [14, 36]], P.steelD);
+  circle(cv, 33, 30, 3, C.cyanL, C.cyan); disc(cv, 33, 30, 1, C.white);
+  line(cv, 19, 12, 19, 32, C.cyanD, 1);
+};
+icons.D262 = (cv) => { // 기억의 씨앗 memory seed — core essence engraved into crystal (seed in gem)
+  glowBehind(cv, 24, 24, 18, C.cyanM);
+  // outer crystal hull (faceted)
+  for (let y = 8; y < 40; y++) {
+    const t = (y - 24) / 16, hw = Math.round((1 - Math.abs(t)) * 12);
+    for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, x - 24 > 2 ? C.cyanL : C.cyan);
+  }
+  // engraved inner seed: a bright teardrop core
+  for (let y = 18; y < 32; y++) { const hw = Math.round(Math.sin((y - 16) / 16 * Math.PI) * 5); for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, C.white); }
+  disc(cv, 24, 27, 3, C.cyanL); // seed glow center
+  cyanSpark(cv, 24, 12); cyanSpark(cv, 15, 26);
+  outline(cv, P.cyan);
+};
+icons.D263 = (cv) => { // 복원 코어 restoration core — the GB4 offering, radiant assembled core
+  glowBehind(cv, 24, 24, 22, C.cyanL);
+  glowBehind(cv, 24, 24, 16, C.cyanM);
+  // hex cage
+  const pts = [];
+  for (let a = 0; a < 6; a++) { const r = a * Math.PI / 3 - Math.PI / 2; pts.push([24 + Math.cos(r) * 16, 24 + Math.sin(r) * 16]); }
+  for (let i = 0; i < 6; i++) line(cv, pts[i][0], pts[i][1], pts[(i + 1) % 6][0], pts[(i + 1) % 6][1], C.steelL, 2);
+  for (let i = 0; i < 6; i++) { disc(cv, pts[i][0], pts[i][1], 2, C.cyanL); } // lit nodes
+  circle(cv, 24, 24, 9, C.cyanL, C.cyan); disc(cv, 24, 24, 5, C.white); disc(cv, 21, 21, 2, C.white);
+  cyanSpark(cv, 30, 14); cyanSpark(cv, 15, 32); cyanSpark(cv, 34, 30);
+  outline(cv, P.cyan);
+};
+icons.D264 = (cv) => { // 결정 무리 crystal cluster (glows) — many shards fanned out
+  glowBehind(cv, 24, 28, 18, C.cyanM);
+  crystalShard(cv, 24, 8, 26, 4, C.cyanL, C.cyan);
+  crystalShard(cv, 15, 16, 18, 3, C.cyanM, C.cyanD);
+  crystalShard(cv, 33, 18, 16, 3, C.cyanM, C.cyanD);
+  crystalShard(cv, 19, 22, 12, 2, C.cyanL, C.cyan);
+  crystalShard(cv, 29, 24, 10, 2, C.cyanL, C.cyan);
+  cyanSpark(cv, 24, 12); cyanSpark(cv, 15, 20);
+  outline(cv, P.cyanD);
+};
+icons.D265 = (cv) => { // 부식 덩이 corrosion lump — rust+sickly-green ore chunk
+  ellipse(cv, 24, 31, 16, 12, UG.cor, UG.corD);
+  for (let i = 0; i < 26; i++) { const x = 10 + (i * 7) % 28, y = 22 + (i * 11) % 18; if (getA(cv, x, y)) setPx(cv, x, y, i % 3 ? UG.corL : UG.sick); }
+  disc(cv, 20, 27, 4, UG.sick); disc(cv, 30, 30, 3, UG.sickL); disc(cv, 26, 24, 2, UG.corL);
+  outline(cv, '#1e120c');
+};
+icons.D266 = (cv) => { // 광섬유 타래 fiber skein — coiled fiber loop bundle
+  for (let a = 0; a < 360; a += 5) {
+    const r = a * Math.PI / 180;
+    setPx(cv, 24 + Math.cos(r) * 14, 26 + Math.sin(r) * 11, C.steelM);
+    setPx(cv, 24 + Math.cos(r) * 11, 26 + Math.sin(r) * 8, C.steelL);
+  }
+  fillRect(cv, 20, 22, 28, 30, UG.metalM); // bind clip
+  fillRect(cv, 20, 22, 28, 24, UG.metalL);
+  disc(cv, 10, 26, 1, C.cyanL); disc(cv, 38, 26, 1, C.cyanL); // glowing loose tips
+  outline(cv, P.steelD);
+};
+icons.D267 = (cv) => { // 냉각 젤 블록 gel block — solid cubic gel brick (iso-ish)
+  glowBehind(cv, 24, 28, 13, UG.gel);
+  // top face
+  for (let y = 14; y < 22; y++) for (let x = 14; x < 34; x++) if (Math.abs(x - 24) <= (y - 10)) setPx(cv, x, y, UG.gelL);
+  fillRect(cv, 14, 22, 34, 38, UG.gel);                // front
+  for (let y = 22; y < 38; y++) for (let x = 14; x < 34; x++) setPx(cv, x, y, x > 27 ? UG.gelD : UG.gel);
+  line(cv, 14, 22, 34, 22, lighter(UG.gelL, 10), 1);
+  disc(cv, 20, 27, 2, C.white, 130);
+  outline(cv, '#144040');
+};
+icons.D268 = (cv) => { // 결정 랜턴 crystal lantern (glows) — crystal set in a metal lamp frame
+  glowBehind(cv, 24, 26, 17, C.cyanM);
+  fillRect(cv, 20, 6, 28, 10, UG.metalM); disc(cv, 24, 8, 3, UG.metalD); // handle
+  fillRect(cv, 14, 14, 34, 40, UG.metal); fillRect(cv, 14, 14, 34, 16, UG.metalL); // frame top
+  fillRect(cv, 14, 38, 34, 40, UG.metalD);
+  fillRect(cv, 18, 16, 30, 38, UG.metalD); // glass void
+  crystalShard(cv, 24, 18, 18, 3, C.cyanL, C.cyan); // caged crystal
+  line(cv, 14, 24, 34, 24, UG.metalM, 1); line(cv, 14, 32, 34, 32, UG.metalM, 1); // bars
+  cyanSpark(cv, 24, 22);
+  outline(cv, P.steelD);
+};
+icons.D269 = (cv) => { // 젤 절연판 gel insulation board — gel-coated metal panel
+  fillRect(cv, 10, 14, 38, 40, UG.metal); // metal backing
+  fillRect(cv, 12, 16, 36, 34, UG.gel);   // gel coat
+  for (let y = 16; y < 34; y++) for (let x = 12; x < 36; x++) setPx(cv, x, y, (x + y) % 6 < 3 ? UG.gel : UG.gelL);
+  for (const [x, y] of [[14, 18], [34, 18], [14, 32], [34, 32]]) disc(cv, x, y, 2, UG.metalL); // corner bolts
+  disc(cv, 20, 22, 2, C.white, 120);
+  outline(cv, P.steelD);
+};
+icons.D270 = (cv) => { // 부식 부적 corrosion amulet — rusted talisman pendant on cord
+  for (let a = 20; a <= 160; a += 6) { const r = a * Math.PI / 180; setPx(cv, 24 + Math.cos(r) * 13, 16 + Math.sin(r) * 12, UG.metalM); } // cord
+  ellipse(cv, 24, 30, 10, 11, UG.cor, UG.corD);        // rusted disc
+  circle(cv, 24, 30, 6, UG.corL, UG.cor);
+  disc(cv, 24, 30, 3, UG.sick); disc(cv, 22, 28, 1, UG.sickL); // corrosion eye
+  for (let a = 0; a < 6; a++) { const r = a * Math.PI / 3; setPx(cv, 24 + Math.cos(r) * 8, 30 + Math.sin(r) * 8, UG.corL); } // rune studs
+  outline(cv, '#1e120c');
+};
+icons.D271 = (cv) => { // 백업 등명 backup beacon-lamp (glows) — squat beacon with cyan dome
+  glowBehind(cv, 24, 18, 16, C.cyanM);
+  fillRect(cv, 14, 28, 34, 42, UG.metal); // base housing
+  for (let y = 28; y < 42; y++) for (let x = 14; x < 34; x++) setPx(cv, x, y, x > 26 ? UG.metalM : UG.metal);
+  fillRect(cv, 14, 28, 34, 30, UG.metalL);
+  ellipse(cv, 24, 26, 11, 10, C.cyanL, C.cyan); // glowing dome
+  ellipse(cv, 24, 26, 7, 6, C.white, C.cyanL);
+  fillRect(cv, 23, 8, 25, 16, UG.metalL); disc(cv, 24, 8, 2, C.cyanL); // antenna
+  cyanSpark(cv, 24, 24);
+  outline(cv, P.steelD);
+};
+icons.D272 = (cv) => { // 네온 서버탑 neon server tower (glows) — tall ribbed rack with cyan strips
+  glowBehind(cv, 24, 24, 16, C.cyanM);
+  fillRect(cv, 15, 6, 33, 44, UG.metal);
+  for (let y = 6; y < 44; y++) for (let x = 15; x < 33; x++) setPx(cv, x, y, x > 26 ? UG.metalM : UG.metal);
+  fillRect(cv, 15, 6, 33, 8, UG.metalL);
+  for (let y = 10; y < 42; y += 5) { fillRect(cv, 18, y, 30, y + 3, UG.metalD); fillRect(cv, 26, y, 29, y + 3, C.cyan); disc(cv, 20, y + 1, 1, C.cyanL); } // rack slots + LEDs
+  outline(cv, P.steelD);
+};
+icons.D273 = (cv) => { // 충전된 코어함 charged core-case — sealed box with a core visible through a window
+  glowBehind(cv, 24, 26, 12, C.cyanM);
+  fillRect(cv, 10, 16, 38, 40, UG.metal);
+  for (let y = 16; y < 40; y++) for (let x = 10; x < 38; x++) setPx(cv, x, y, x > 30 ? UG.metalM : UG.metal);
+  fillRect(cv, 10, 16, 38, 18, UG.metalL);
+  fillRect(cv, 16, 22, 32, 36, UG.metalD); // viewport frame
+  circle(cv, 24, 29, 6, C.cyanL, C.cyan); disc(cv, 24, 29, 3, C.white); // charged core
+  for (const [x, y] of [[13, 19], [35, 19], [13, 37], [35, 37]]) disc(cv, x, y, 1, UG.metalL); // latches
+  cyanSpark(cv, 24, 29);
+  outline(cv, P.steelD);
+};
+icons.D274 = (cv) => { // 기록 랜턴 record lantern (glows) — data-tablet lantern w/ scrolling glyph light
+  glowBehind(cv, 24, 26, 16, C.cyanM);
+  fillRect(cv, 16, 8, 32, 12, UG.metalM); disc(cv, 24, 10, 2, UG.metalD); // hook
+  fillRect(cv, 14, 14, 34, 42, UG.metal); fillRect(cv, 14, 14, 34, 16, UG.metalL);
+  fillRect(cv, 17, 18, 31, 38, C.cyanD); // screen
+  for (let y = 20; y < 37; y += 4) line(cv, 19, y, 29, y, C.cyanL, 1); // scrolling record lines
+  disc(cv, 20, 22, 1, C.white);
+  cyanSpark(cv, 27, 34);
+  outline(cv, P.steelD);
+};
+icons.D275 = (cv) => { // 지워진 로그 erased log — corroded, blacked-out data fragment
+  fillRect(cv, 12, 14, 36, 40, UG.char);
+  for (let y = 14; y < 40; y++) for (let x = 12; x < 36; x++) setPx(cv, x, y, (x + y) % 4 ? UG.char : UG.charD);
+  // half-erased text lines, then a black redaction blot
+  for (let y = 18; y < 26; y += 3) line(cv, 15, y, 32, y, UG.charL, 1);
+  fillRect(cv, 14, 28, 34, 38, UG.charD); // redaction
+  disc(cv, 20, 22, 3, UG.sick, 120); disc(cv, 30, 20, 2, UG.cor, 120); // corrosion creep
+  outline(cv, '#060608');
+};
+icons.D276 = (cv) => { // 굳은 관리 드론 frozen archivist drone — small stopped robot, dim eye
+  ellipse(cv, 24, 24, 12, 11, UG.metalM, UG.metal); // body sphere
+  for (let y = 14; y < 34; y++) for (let x = 12; x < 36; x++) if (getA(cv, x, y)) setPx(cv, x, y, x - y > 2 ? UG.metalL : UG.metalM);
+  circle(cv, 24, 22, 5, UG.metalD, UG.charD); disc(cv, 24, 22, 3, C.cyanD); disc(cv, 23, 21, 1, C.cyanM, 200); // single dim cyan eye
+  fillRect(cv, 10, 22, 14, 26, UG.metalM); fillRect(cv, 34, 22, 38, 26, UG.metalM); // side thrusters (stopped)
+  line(cv, 20, 33, 18, 40, UG.metalM, 1); line(cv, 28, 33, 30, 40, UG.metalM, 1); // dangling legs
+  outline(cv, P.steelD);
+};
+icons.D277 = (cv) => { // 타버린 훈장 데이터 burnt medal data — charred black medal fragment
+  // charred ribbon
+  for (let x = 18; x < 30; x++) { setPx(cv, x, 10, UG.char); setPx(cv, x, 11, UG.charD); }
+  fillRect(cv, 19, 11, 23, 20, UG.char); fillRect(cv, 25, 11, 29, 20, UG.charD);
+  // burnt medallion
+  circle(cv, 24, 30, 10, UG.char, UG.charD);
+  for (let a = 0; a < 8; a++) { const r = a * Math.PI / 4; line(cv, 24, 30, 24 + Math.cos(r) * 9, 30 + Math.sin(r) * 9, UG.charD, 1); } // burst rays, charred
+  disc(cv, 24, 30, 3, UG.charL);
+  for (const [x, y] of [[20, 26], [29, 33], [24, 36]]) disc(cv, x, y, 1, C.ember, 150); // dying embers
+  outline(cv, '#060608');
+};
+
+// ============================================================================
 // Emit all icon files. Item catalog = 9 gatherables (I1..I9) + crafts D01..D61
 // minus the retired 석기 D11 (removed v0.3.1) + Layer-2 J1..J7 + D62..D102 (L2-4).
 // D06 is an alias of I4 → identical bytes to I4 (spec: "D06 alias resolves to I4's
@@ -2148,6 +2476,9 @@ for (let i = 219; i <= 221; i++) ALL_IDS.push('D' + i);
 // v1.2.0 EX-L1 색/생명 확장: gathers I10..I17 + crafts D222..D254.
 for (let i = 10; i <= 17; i++) ALL_IDS.push('I' + i);
 for (let i = 222; i <= 254; i++) ALL_IDS.push('D' + i);
+// v1.6.0 EX-L2 지하 데이터 성소: gathers J8..J12 + crafts D255..D277.
+for (let i = 8; i <= 12; i++) ALL_IDS.push('J' + i);
+for (let i = 255; i <= 277; i++) ALL_IDS.push('D' + i);
 
 let count = 0, total = 0;
 for (const id of ALL_IDS) {
