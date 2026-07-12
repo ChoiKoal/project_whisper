@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Project Whisper — Hardened Runtime entitlements (macOS notarization)
+
+	  Scope: this is a PURE GDScript Godot 4.5 game (renderer = gl_compatibility),
+	  with NO C# / Mono, NO GDExtension / native add-ons, NO camera / microphone /
+	  location / address-book / calendar usage. The entitlement set is therefore the
+	  MINIMUM that a notarized Godot game needs — everything not required is omitted
+	  on purpose (Apple rejects over-broad entitlements and each one widens the
+	  attack surface).
+
+	  Deliberately OMITTED and why:
+	    * com.apple.security.cs.allow-jit
+	    * com.apple.security.cs.allow-unsigned-executable-memory
+	    * com.apple.security.cs.allow-dyld-environment-variables
+	        GDScript runs on a bytecode INTERPRETER, not a JIT. Godot's own macOS
+	        export docs enable these ONLY for Mono/C# builds or native add-ons that
+	        emit/patch executable memory. This build has neither, so they stay off.
+	    * com.apple.security.get-task-allow  (Debugging)
+	        MUST be off for notarization — Apple rejects apps that ship it.
+	    * device/privacy entitlements (audio-input, camera, location, ...)
+	        The game accesses none of these.
+	    * App Sandbox (com.apple.security.app-sandbox)
+	        Only required for the Mac App Store, NOT for Developer-ID + notarization
+	        direct distribution (our path). Left off intentionally.
+
+	  KEPT:
+	    * com.apple.security.cs.disable-library-validation
+	        Godot loads its game data (Resources/ProjectWhisper.pck) and the export
+	        template links its universal Mach-O slices; with Hardened Runtime this
+	        entitlement lets the process map that content without a library-validation
+	        rejection. Godot's macOS docs recommend it for ad-hoc-signed and
+	        add-on-loading exports; it is the single safe minimal entitlement here.
+	-->
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+</dict>
+</plist>
