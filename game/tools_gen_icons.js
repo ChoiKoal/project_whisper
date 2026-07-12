@@ -2687,6 +2687,272 @@ icons.D300 = (cv) => { // 타버린 표창 태엽 burnt spur-spring — overload
 };
 
 // ============================================================================
+// EX-L4 부유 서고 (v1.8.0). P8..P12 gather + D301..D323 craft. Floating-archive
+// aesthetic: amethyst/violet stone base with GOLD leaf and BLUE-WHITE rune glow as
+// the only living/lit colours (forbidden-knowledge shelves adrift above the void).
+// Each painter is bespoke so every file is byte-unique. Reuses L3 helpers.
+// ============================================================================
+const AR = {
+  ameD: hexToRGB('#241830'), ame: hexToRGB('#3d2a52'), ameM: hexToRGB('#5c4078'), ameL: hexToRGB('#8464a8'),
+  violet: hexToRGB('#7a4fbf'), violetHi: hexToRGB('#b592e6'),
+  gold: hexToRGB('#f2c14e'), goldHi: hexToRGB('#ffe3a0'), goldD: hexToRGB('#a67c1e'),
+  rune: hexToRGB('#a8c8ff'), runeHi: hexToRGB('#dbeaff'), runeD: hexToRGB('#4a6aa0'),
+  stoneD: hexToRGB('#1a1626'), stone: hexToRGB('#2e2840'), stoneL: hexToRGB('#4a4460'),
+  ink: hexToRGB('#20304e'), inkL: hexToRGB('#3a5688'),
+};
+function runeSpark(cv, x, y) {
+  setPx(cv, x, y, AR.runeHi); setPx(cv, x - 1, y, AR.rune, 200); setPx(cv, x + 1, y, AR.rune, 200);
+  setPx(cv, x, y - 1, AR.rune, 200); setPx(cv, x, y + 1, AR.rune, 200);
+}
+
+// ---------- P8..P12 (EX-L4 gather) ----------
+icons.P8 = (cv) => { // 금서 조각 torn forbidden-book page — half-glowing rune text on a torn leaf
+  glowBehind(cv, 26, 22, 11, AR.runeD);
+  // torn page: parchment quad with a jagged right tear
+  for (let y = 10; y < 40; y++) { const tear = 34 - ((y % 4 === 0) ? 3 : 0) - ((y > 30) ? (y - 30) : 0) / 2; for (let x = 12; x < tear; x++) setPx(cv, x, y, (x + y) % 7 ? AR.ameL : AR.ameM); }
+  fillRect(cv, 12, 10, 33, 12, AR.violetHi); // lit top edge
+  for (let y = 14; y < 34; y += 4) line(cv, 15, y, 28, y, AR.stoneL, 1); // faint dead text (upper)
+  for (let y = 16; y < 30; y += 5) line(cv, 15, y, 27, y, AR.rune, 1); // still-glowing rune lines
+  runeSpark(cv, 20, 20); runeSpark(cv, 24, 26);
+  outline(cv, '#140f1e');
+};
+icons.P9 = (cv) => { // 서고 룬판 shelf rune-slab — carved slab whose lock-rune has emptied out
+  fillRect(cv, 12, 12, 36, 38, AR.stone);
+  for (let y = 12; y < 38; y++) for (let x = 12; x < 36; x++) setPx(cv, x, y, (x - y) > 4 ? AR.stoneL : AR.stone);
+  fillRect(cv, 12, 12, 36, 14, AR.ameL); fillRect(cv, 12, 36, 36, 38, AR.stoneD); // bevel
+  circle(cv, 24, 25, 9, AR.goldD, AR.stoneD); // empty lock-rune ring, unlit gold
+  for (let a = 0; a < 6; a++) { const r = a * Math.PI / 3; line(cv, 24, 25, 24 + Math.cos(r) * 7, 25 + Math.sin(r) * 7, AR.stoneL, 1); } // hollow socket spokes
+  disc(cv, 24, 25, 2, AR.stoneD); // emptied centre
+  outline(cv, '#100c18');
+};
+icons.P10 = (cv) => { // 열람 촛농 reading candle-wax — a hardened dribbled wax lump, faint gold sheen
+  glowBehind(cv, 24, 30, 10, AR.goldD);
+  ellipse(cv, 24, 36, 13, 5, AR.ame, AR.ameD); // pooled base
+  // dribbled wax mound
+  ellipse(cv, 24, 28, 9, 10, AR.goldHi, AR.gold);
+  for (let i = 0; i < 5; i++) { const x = 17 + i * 4; const h = 30 + (i % 2) * 6; for (let y = 24; y < h; y++) setPx(cv, x, y, y > h - 3 ? AR.goldD : AR.gold); } // drip runnels
+  disc(cv, 21, 24, 2, AR.goldHi); // wax sheen
+  runeSpark(cv, 24, 20); // last wick ember (blue-white)
+  outline(cv, '#3a2a10');
+};
+icons.P11 = (cv) => { // 별지 잉크 star-ground ink — a faint blue-white droplet, last drop of seal-ink
+  glowBehind(cv, 24, 30, 12, AR.runeD);
+  fillRect(cv, 18, 10, 30, 16, AR.ink); fillRect(cv, 18, 10, 30, 12, AR.inkL); // small vial neck
+  // falling droplet
+  for (let y = 18; y < 30; y++) { const hw = Math.round((y - 18) / 12 * 7); for (let x = 24 - hw; x <= 24 + hw; x++) setPx(cv, x, y, x - 24 > 1 ? AR.runeHi : AR.rune); }
+  ellipse(cv, 24, 34, 8, 7, AR.rune, AR.inkL); // droplet body
+  disc(cv, 26, 32, 2, AR.runeHi); // sheen
+  for (const [x, y] of [[16, 22], [33, 26], [20, 38]]) setPx(cv, x, y, AR.runeHi, 200); // ground star flecks
+  outline(cv, '#0e1524');
+};
+icons.P12 = (cv) => { // 금기 정수 forbidden essence — THE radiant one-line-of-knowledge core (UNIQUE)
+  glowBehind(cv, 24, 24, 22, AR.rune);
+  glowBehind(cv, 24, 24, 15, AR.runeHi);
+  // radiant gold rune-ring wound tight, one glowing line of forbidden text
+  for (let a = 0; a < Math.PI * 6; a += 0.09) {
+    const rr = 14 * (1 - a / (Math.PI * 6.4));
+    setPx(cv, 24 + Math.cos(a) * rr, 24 + Math.sin(a) * rr, ((a % Math.PI) < Math.PI / 2) ? AR.goldHi : AR.gold);
+  }
+  disc(cv, 24, 24, 4, AR.runeHi); disc(cv, 24, 24, 2, AR.goldHi); // white-hot core
+  runeSpark(cv, 13, 15); runeSpark(cv, 35, 30); runeSpark(cv, 34, 13); runeSpark(cv, 14, 34);
+  outline(cv, '#2a1c40');
+};
+
+// ---------- D301..D323 (EX-L4 craft) ----------
+icons.D301 = (cv) => { // 서가 각인석 shelf sigil-stone — rune-slab with a golden book-line seated (P8+P9)
+  fillRect(cv, 11, 12, 37, 38, AR.stone);
+  for (let y = 12; y < 38; y++) for (let x = 11; x < 37; x++) setPx(cv, x, y, (x - y) > 4 ? AR.stoneL : AR.stone);
+  fillRect(cv, 11, 12, 37, 14, AR.ameL); fillRect(cv, 11, 36, 37, 38, AR.stoneD);
+  circle(cv, 24, 25, 8, AR.gold, AR.goldD); // rune ring now lit gold
+  for (let y = 22; y < 29; y += 3) line(cv, 19, y, 29, y, AR.goldHi, 1); // seated book-line
+  runeSpark(cv, 24, 25);
+  outline(cv, '#100c18');
+};
+icons.D302 = (cv) => { // 부유 서가 다리석 floating shelf bridge-stone (GW1 key) — plank spanning void, gold rune links
+  glowBehind(cv, 24, 26, 16, AR.goldD);
+  fillRect(cv, 6, 24, 42, 30, AR.ame); for (let x = 6; x < 42; x++) setPx(cv, x, 24, AR.ameL); // floating plank
+  fillRect(cv, 6, 30, 42, 31, AR.ameD);
+  for (let x = 9; x < 42; x += 6) { disc(cv, x, 27, 2, AR.gold); disc(cv, x, 27, 1, AR.goldHi); } // gold rune links
+  line(cv, 6, 27, 2, 20, AR.rune, 1); line(cv, 42, 27, 46, 34, AR.rune, 1); // rune tethers to unseen shelves
+  runeSpark(cv, 24, 20);
+  outline(cv, '#241830');
+};
+icons.D303 = (cv) => { // 정련 촛농 refined wax — a clean pale wax cake, gold-clear (P10+P8 ash)
+  ellipse(cv, 24, 30, 12, 10, AR.goldHi, AR.gold); // clear refined cake
+  for (let y = 22; y < 38; y++) for (let x = 14; x < 34; x++) if (getA(cv, x, y)) setPx(cv, x, y, (x - y) > 0 ? AR.goldHi : AR.gold);
+  ellipse(cv, 24, 25, 8, 3, AR.runeHi, AR.gold); // purified top film
+  disc(cv, 21, 24, 2, AR.runeHi);
+  outline(cv, '#3a2a10');
+};
+icons.D304 = (cv) => { // 열람 정화의 물 reading-cleanse water (GW2 use) — flask of clear blue-white water
+  glowBehind(cv, 24, 28, 14, AR.runeD);
+  fillRect(cv, 20, 8, 28, 14, AR.stoneL); fillRect(cv, 21, 4, 27, 9, AR.stone); // stopper/neck
+  // round flask body
+  ellipse(cv, 24, 30, 11, 12, AR.inkL, AR.ink);
+  for (let y = 24; y < 40; y++) { const hw = Math.round(Math.sqrt(Math.max(0, 120 - (y - 30) * (y - 30))) ); for (let x = 24 - hw + 1; x < 24 + hw - 1; x++) setPx(cv, x, y, y < 28 ? AR.runeHi : AR.rune); } // luminous water
+  ellipse(cv, 24, 27, 8, 2, AR.runeHi, AR.rune); // surface
+  disc(cv, 20, 32, 2, AR.runeHi, 200);
+  runeSpark(cv, 24, 22);
+  outline(cv, '#0e1524');
+};
+function sealTablet(cv, glyphFn, ord) { // shared: a violet-stone tablet w/ gold seal-glyph + ordinal pips
+  fillRect(cv, 13, 10, 35, 40, AR.ame);
+  for (let y = 10; y < 40; y++) for (let x = 13; x < 35; x++) setPx(cv, x, y, (x - y) > 2 ? AR.ameM : AR.ame);
+  fillRect(cv, 13, 10, 35, 12, AR.ameL); fillRect(cv, 13, 38, 35, 40, AR.ameD); // bevel
+  glyphFn(cv);
+  for (let p = 0; p < ord; p++) disc(cv, 18 + p * 6, 36, 1, AR.goldHi); // ordinal pips (1/2/3)
+}
+icons.D305 = (cv) => { // 봉인 서판 1장 seal-tablet #1 (GW3 key) — first glyph: a single gold bar-rune
+  sealTablet(cv, (c) => { fillRect(c, 18, 18, 30, 22, AR.gold); fillRect(c, 18, 18, 30, 19, AR.goldHi); disc(c, 24, 28, 4, AR.goldD); runeSpark(c, 24, 28); }, 1);
+  outline(cv, '#140f1e');
+};
+icons.D306 = (cv) => { // 봉인 서판 2장 seal-tablet #2 (GW3 key) — second glyph: paired rune arcs (blue-ink)
+  sealTablet(cv, (c) => { for (let a = -1; a <= 1; a += 2) { for (let t = 0; t < Math.PI; t += 0.2) setPx(c, 24 + a * (4 + Math.sin(t) * 4), 16 + t * 5, AR.rune); } line(c, 20, 30, 28, 30, AR.gold, 2); runeSpark(c, 24, 24); }, 2);
+  outline(cv, '#140f1e');
+};
+icons.D307 = (cv) => { // 봉인 서판 3장 seal-tablet #3 (GW3 key) — third glyph: a closed gold triangle-seal
+  sealTablet(cv, (c) => { const p = [[24, 16], [17, 30], [31, 30]]; for (let i = 0; i < 3; i++) line(c, p[i][0], p[i][1], p[(i + 1) % 3][0], p[(i + 1) % 3][1], AR.gold, 2); disc(c, 24, 25, 2, AR.runeHi); runeSpark(c, 24, 25); }, 3);
+  outline(cv, '#140f1e');
+};
+icons.D308 = (cv) => { // 봉인구 씨 seal-orb seed — forbidden essence wrapped in a page, wound tight
+  glowBehind(cv, 24, 26, 16, AR.gold);
+  ellipse(cv, 24, 26, 12, 12, AR.ame, AR.ameD); // page-wrap hull
+  for (let y = 16; y < 36; y++) for (let x = 13; x < 35; x++) if (getA(cv, x, y)) setPx(cv, x, y, (x - y) > 2 ? AR.ameM : AR.ame);
+  coil(cv, 24, 24, 9, AR.goldHi, AR.gold); // wound essence
+  disc(cv, 24, 24, 2, AR.runeHi);
+  runeSpark(cv, 24, 13); runeSpark(cv, 14, 30);
+  outline(cv, '#241830');
+};
+icons.D309 = (cv) => { // 금기 봉인구 forbidden seal-orb (GW4 FINAL key) — the climactic assembled seal
+  glowBehind(cv, 24, 24, 23, AR.runeHi);
+  glowBehind(cv, 24, 24, 16, AR.gold);
+  // outer gold seal-ring hexagon of the two seal-seeds bound in silence
+  const pts = [];
+  for (let a = 0; a < 6; a++) { const r = a * Math.PI / 3 - Math.PI / 2; pts.push([24 + Math.cos(r) * 16, 24 + Math.sin(r) * 16]); }
+  for (let i = 0; i < 6; i++) line(cv, pts[i][0], pts[i][1], pts[(i + 1) % 6][0], pts[(i + 1) % 6][1], AR.goldHi, 2);
+  for (let i = 0; i < 6; i++) disc(cv, pts[i][0], pts[i][1], 2, AR.rune);
+  circle(cv, 24, 24, 10, AR.gold, AR.goldD); // inner seal ring
+  coil(cv, 24, 24, 8, AR.runeHi, AR.rune); disc(cv, 24, 24, 3, AR.runeHi); // silenced core
+  runeSpark(cv, 30, 14); runeSpark(cv, 15, 32); runeSpark(cv, 34, 30);
+  outline(cv, '#2a1c40');
+};
+icons.D310 = (cv) => { // 금서 무리 forbidden-book flock (decor·glows) — two torn pages adrift, overlapping
+  glowBehind(cv, 24, 26, 15, AR.runeD);
+  for (const [ox, oy, tint] of [[-6, 2, AR.ameM], [5, -2, AR.ameL]]) {
+    for (let y = 12; y < 36; y++) for (let x = 14; x < 32; x++) setPx(cv, x + ox, y + oy, (x + y) % 6 ? tint : AR.ame);
+    line(cv, 16 + ox, 18 + oy, 28 + ox, 18 + oy, AR.rune, 1); line(cv, 16 + ox, 24 + oy, 27 + ox, 24 + oy, AR.rune, 1);
+  }
+  runeSpark(cv, 22, 22); runeSpark(cv, 28, 28);
+  outline(cv, '#140f1e');
+};
+icons.D311 = (cv) => { // 룬판 서가 rune-slab shelf (structure) — two empty rune-slabs standing as a shelf
+  for (const dx of [-7, 7]) { fillRect(cv, 20 + dx, 10, 28 + dx, 40, AR.stone); for (let y = 10; y < 40; y++) setPx(cv, 27 + dx, y, AR.stoneL); circle(cv, 24 + dx, 20, 4, AR.goldD, AR.stoneD); }
+  fillRect(cv, 12, 24, 36, 27, AR.ameM); fillRect(cv, 12, 24, 36, 25, AR.ameL); // cross-shelf
+  fillRect(cv, 12, 38, 36, 41, AR.stoneD);
+  outline(cv, '#100c18');
+};
+icons.D312 = (cv) => { // 촛농 무더기 wax heap (structure) — a mound of fused hardened candle-wax
+  ellipse(cv, 24, 36, 16, 6, AR.ame, AR.ameD); // base
+  disc(cv, 20, 30, 8, AR.gold); disc(cv, 30, 31, 7, AR.gold); disc(cv, 25, 24, 6, AR.goldHi);
+  for (let i = 0; i < 6; i++) { const x = 16 + i * 3; for (let y = 30; y < 34 + (i % 3) * 3; y++) setPx(cv, x, y, AR.goldD); } // drips
+  for (const [x, y] of [[22, 22], [30, 27]]) disc(cv, x, y, 1, AR.goldHi, 220); // sheen
+  outline(cv, '#3a2a10');
+};
+icons.D313 = (cv) => { // 잉크 군집 ink colony (decor·glows) — a dense clump of star-ink beads
+  glowBehind(cv, 24, 28, 14, AR.runeD);
+  for (const [x, y, r] of [[24, 26, 8], [15, 30, 5], [33, 30, 5], [24, 34, 4]]) { disc(cv, x, y, r, AR.ink); disc(cv, x - 1, y - 1, Math.max(1, r - 3), AR.rune); }
+  for (const [x, y] of [[24, 24], [15, 28], [33, 28]]) setPx(cv, x, y, AR.runeHi, 220);
+  runeSpark(cv, 24, 26);
+  outline(cv, '#0e1524');
+};
+icons.D314 = (cv) => { // 촛농 별등 wax star-lamp (decor·glows) — a wax lamp lit by a star-ink wick
+  glowBehind(cv, 24, 26, 15, AR.gold);
+  ellipse(cv, 24, 34, 11, 7, AR.gold, AR.goldD); // wax body
+  for (let y = 28; y < 40; y++) if (getA(cv, 24, y)) for (let x = 14; x < 34; x++) if (getA(cv, x, y)) setPx(cv, x, y, (x - y) > 0 ? AR.goldHi : AR.gold);
+  fillRect(cv, 23, 16, 25, 28, AR.stoneL); // star-ink wick
+  ellipse(cv, 24, 16, 4, 6, AR.runeHi, AR.rune); // flame (blue-white)
+  disc(cv, 24, 15, 1, AR.runeHi);
+  runeSpark(cv, 24, 12);
+  outline(cv, '#3a2a10');
+};
+icons.D315 = (cv) => { // 방람 봉인판 reading-ward board (structure) — sigil-stone sealed over with wax
+  fillRect(cv, 11, 12, 37, 38, AR.stone);
+  for (let y = 12; y < 38; y++) for (let x = 11; x < 37; x++) setPx(cv, x, y, (x - y) > 4 ? AR.stoneL : AR.stone);
+  fillRect(cv, 11, 12, 37, 14, AR.ameL); fillRect(cv, 11, 36, 37, 38, AR.stoneD);
+  // wax seal blotch covering the rune
+  ellipse(cv, 24, 25, 10, 8, AR.gold, AR.goldD); disc(cv, 24, 25, 5, AR.goldHi, 200);
+  for (let i = 0; i < 4; i++) { const x = 18 + i * 4; for (let y = 32; y < 36; y++) setPx(cv, x, y, AR.goldD); } // drip lip
+  outline(cv, '#100c18');
+};
+icons.D316 = (cv) => { // 봉인 부적 seal charm (decor) — a seal-tablet shrunk to an amulet on a cord
+  for (let a = 20; a <= 160; a += 6) { const r = a * Math.PI / 180; setPx(cv, 24 + Math.cos(r) * 13, 14 + Math.sin(r) * 11, AR.inkL); } // cord
+  fillRect(cv, 17, 20, 31, 40, AR.ame); fillRect(cv, 17, 20, 31, 22, AR.ameL); fillRect(cv, 17, 38, 31, 40, AR.ameD); // tablet
+  fillRect(cv, 20, 26, 28, 29, AR.gold); disc(cv, 24, 33, 3, AR.rune); // glyph + rune bead
+  runeSpark(cv, 24, 33);
+  outline(cv, '#140f1e');
+};
+icons.D317 = (cv) => { // 금서고 등명 archive lantern (structure·glows) — orb-silence carried in a book-lamp
+  glowBehind(cv, 24, 26, 17, AR.rune);
+  fillRect(cv, 15, 14, 33, 42, AR.ame); fillRect(cv, 15, 14, 33, 16, AR.ameL); fillRect(cv, 15, 40, 33, 42, AR.ameD); // frame
+  fillRect(cv, 19, 18, 29, 38, AR.stoneD); // window
+  disc(cv, 24, 28, 6, AR.gold); coil(cv, 24, 28, 5, AR.runeHi, AR.rune); disc(cv, 24, 28, 2, AR.runeHi); // silenced core
+  fillRect(cv, 22, 8, 26, 14, AR.ameM); disc(cv, 24, 8, 2, AR.gold); // top ring
+  outline(cv, '#241830');
+};
+icons.D318 = (cv) => { // 룬 서가탑 rune shelf-tower (structure·glows) — mage sigil-stone + archive rune-slabs stacked
+  glowBehind(cv, 24, 24, 14, AR.runeD);
+  fillRect(cv, 16, 30, 32, 42, AR.stone); fillRect(cv, 16, 30, 32, 32, AR.stoneL); circle(cv, 24, 36, 4, AR.gold, AR.goldD); // lower slab (archive)
+  fillRect(cv, 18, 18, 30, 30, AR.ameM); fillRect(cv, 18, 18, 30, 20, AR.ameL); // mid mage-stone
+  disc(cv, 24, 24, 4, AR.violet); disc(cv, 24, 24, 2, AR.runeHi); // mage rune-core
+  fillRect(cv, 20, 10, 28, 18, AR.stone); circle(cv, 24, 14, 3, AR.gold, AR.goldD); // top slab
+  outline(cv, '#100c18');
+};
+icons.D319 = (cv) => { // 봉인 서고함 sealed archive-coffer (structure) — a deep-seal casket w/ a rune-slab lid
+  fillRect(cv, 12, 20, 36, 40, AR.ame); fillRect(cv, 12, 20, 36, 22, AR.ameL); fillRect(cv, 12, 38, 36, 40, AR.ameD); // casket
+  for (let y = 22; y < 38; y++) for (let x = 12; x < 36; x++) setPx(cv, x, y, (x - y) > 2 ? AR.ameM : AR.ame);
+  fillRect(cv, 10, 16, 38, 21, AR.stone); fillRect(cv, 10, 16, 38, 17, AR.stoneL); // rune-slab lid
+  circle(cv, 24, 30, 6, AR.goldD, AR.ameD); disc(cv, 24, 30, 2, AR.gold); // lock
+  for (const [x, y] of [[16, 24], [32, 24]]) disc(cv, x, y, 1, AR.gold); // corner studs
+  outline(cv, '#241830');
+};
+icons.D320 = (cv) => { // 금기 별등 forbidden star-lamp (decor·glows) — mage rune-essence under star-ink glass
+  glowBehind(cv, 24, 26, 16, AR.rune);
+  circle(cv, 24, 28, 11, AR.inkL, AR.ink); // star-ink glass globe
+  disc(cv, 24, 28, 8, AR.ink, 180);
+  disc(cv, 24, 28, 5, AR.violet); disc(cv, 24, 28, 3, AR.runeHi); // rune-essence within
+  fillRect(cv, 20, 12, 28, 18, AR.ameM); fillRect(cv, 22, 8, 26, 14, AR.gold); // cap
+  for (const [x, y] of [[18, 22], [30, 32], [22, 34]]) setPx(cv, x, y, AR.runeHi, 210);
+  outline(cv, '#0e1524');
+};
+icons.D321 = (cv) => { // 지워진 열람 명부 erased reading-register (decor) — a wax-smeared ledger of readers
+  fillRect(cv, 12, 12, 36, 40, AR.ameM);
+  for (let y = 12; y < 40; y++) for (let x = 12; x < 36; x++) setPx(cv, x, y, (x + y) % 5 ? AR.ameM : AR.ame);
+  fillRect(cv, 12, 12, 36, 14, AR.ameL);
+  for (let y = 17; y < 24; y += 3) line(cv, 15, y, 32, y, AR.stoneL, 1); // half-readable names
+  ellipse(cv, 24, 30, 10, 6, AR.gold, AR.goldD); disc(cv, 24, 30, 5, AR.goldHi, 160); // wax smear over the names
+  disc(cv, 19, 34, 1, AR.goldD, 150);
+  outline(cv, '#140f1e');
+};
+icons.D322 = (cv) => { // 굳은 사서 잔영 stilled-librarian afterimage (structure) — a figure frozen shelving a book
+  ellipse(cv, 24, 40, 9, 4, AR.ameD, AR.stoneD); // base shadow
+  fillRect(cv, 21, 22, 27, 40, AR.ame); disc(cv, 24, 17, 5, AR.ameM); // body + head
+  line(cv, 24, 26, 34, 20, AR.ameL, 2); // arm reaching to shelve
+  fillRect(cv, 32, 16, 37, 22, AR.stone); circle(cv, 34, 19, 2, AR.gold, AR.goldD); // the book (rune-slab) being placed
+  for (let y = 15; y < 30; y += 4) setPx(cv, 24, y, AR.rune, 160); // faint afterimage shimmer
+  disc(cv, 23, 16, 1, AR.runeD); // dim eye
+  outline(cv, '#100c18');
+};
+icons.D323 = (cv) => { // 타버린 금서 burnt forbidden-book (decor·dead-end) — a charred slab, text burned black
+  fillRect(cv, 12, 12, 36, 38, AR.stoneD);
+  for (let y = 12; y < 38; y++) for (let x = 12; x < 36; x++) setPx(cv, x, y, (x + y) % 4 ? AR.stoneD : AR.ameD);
+  fillRect(cv, 12, 12, 36, 14, AR.stoneL); // spine highlight
+  for (let y = 18; y < 32; y += 4) line(cv, 15, y, 31, y, AR.stone, 1); // ghost of burnt text
+  fillRect(cv, 16, 22, 32, 30, AR.stoneD); // black scorch over the forbidden line
+  for (const [x, y] of [[20, 26], [30, 20], [24, 34]]) disc(cv, x, y, 1, C.ember, 150); // dying embers
+  outline(cv, '#0a0810');
+};
+
+// ============================================================================
 // Emit all icon files. Item catalog = 9 gatherables (I1..I9) + crafts D01..D61
 // minus the retired 석기 D11 (removed v0.3.1) + Layer-2 J1..J7 + D62..D102 (L2-4).
 // D06 is an alias of I4 → identical bytes to I4 (spec: "D06 alias resolves to I4's
@@ -2722,6 +2988,9 @@ for (let i = 255; i <= 277; i++) ALL_IDS.push('D' + i);
 // v1.7.0 EX-L3 태엽 광산: gathers K8..K12 + crafts D278..D300.
 for (let i = 8; i <= 12; i++) ALL_IDS.push('K' + i);
 for (let i = 278; i <= 300; i++) ALL_IDS.push('D' + i);
+// v1.8.0 EX-L4 부유 서고: gathers P8..P12 + crafts D301..D323.
+for (let i = 8; i <= 12; i++) ALL_IDS.push('P' + i);
+for (let i = 301; i <= 323; i++) ALL_IDS.push('D' + i);
 
 let count = 0, total = 0;
 for (const id of ALL_IDS) {
