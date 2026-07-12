@@ -61,7 +61,8 @@ def gen_sanctum():
     rect(g, 8, 31, 31, 38, "P")          # 서버실 바닥(격자 강판, 리컬러)
     put(g, 19, 39, "S")                  # 스폰(남, 터미널 스테이션 정비 승강로 하강)
     put(g, 19, 38, "P"); put(g, 18, 39, "P"); put(g, 20, 39, "P")
-    put(g, 20, 38, "C")                  # 정비대(솥단지 등가, 스폰 인접)
+    # 정비대(솥단지 등가)는 세션(SanctumSession)이 special.workbench_cell(20,38)에서 스폰
+    # (terminal_station 패턴 계승 — 실 Cauldron 스킨, Fusion UI 바인딩). 레이아웃 심볼 아님.
     # 어귀 채집: 데이터 결정 h, 부식 코어 k, 광섬유 다발 o, 냉각 젤 g
     for (x, y, c) in [(11, 32, "h"), (24, 32, "h"), (13, 35, "k"), (27, 35, "k"),
                       (10, 34, "o"), (28, 33, "o"), (16, 36, "b"), (23, 36, "b"),
@@ -141,7 +142,6 @@ SANCTUM_LEGEND = {
         "~": {"source": 8, "tile_id": "T5A", "walkable": False, "_note": "냉각 침수로(범람한 냉각수, GB1 물 밴드)"},
         "V": {"source": 0, "tile_id": "T0", "walkable": False, "void": True},
         "S": {"source": 2, "tile_id": "T2A", "spawn": True},
-        "C": {"source": 2, "tile_id": "T2A"},
         "K": {"source": 8, "tile_id": "T5A", "walkable": False, "gate": "GB1", "place_slot": "D256", "_note": "GB1 디딤돌 배치 슬롯(방수 디딤돌)"},
         "D": {"source": 2, "tile_id": "T2A", "gate": "GB2", "walkable": False, "_note": "봉인 격벽(디코더 젤 사용 후 walkable)"},
         "M": {"source": 2, "tile_id": "T2A", "gate": "GB3", "walkable": False, "_note": "데이터 문(3조각 정합 성공 후 walkable)"},
@@ -160,16 +160,18 @@ SANCTUM_LEGEND = {
         "b": {"source": 2, "tile_id": "T2A"},
     },
     "objects": {
-        "C": {"scene": "workbench.tscn", "object_id": "workbench", "_note": "정비대(L2 crafting station)"},
-        "N": {"scene": "npc_remnant.tscn", "object_id": "archivist_drone", "_note": "잔재 NPC: 마지막 백업을 지키는 관리 드론(GP-4 NPC 라인)"},
-        "D": {"scene": "sealed_bulkhead.tscn", "object_id": "sealed_bulkhead", "gate": "GB2"},
-        "H": {"scene": "backup_altar.tscn", "object_id": "backup_altar", "gate": "GB4"},
-        "E": {"scene": "power_residue.tscn", "object_id": "sanctum_power_residue", "_note": "에너지 Whisper 재획득처(idempotent, add_energy)"},
-        "O": {"scene": "backup_core.tscn", "object_id": "backup_core", "gatherable": {"item_id": "J12", "unique": True}, "gate": "GB4", "_note": "마지막 백업 코어(코어 정수, 유니크)"},
-        "h": {"scene": "data_crystal.tscn", "gatherable": {"item_id": "J8"}, "_note": "데이터 결정"},
-        "k": {"scene": "corroded_core.tscn", "gatherable": {"item_id": "J9"}, "_note": "부식 코어"},
-        "o": {"scene": "fiber_bundle.tscn", "gatherable": {"item_id": "J10"}, "_note": "광섬유 다발"},
-        "b": {"scene": "coolant_gel.tscn", "gatherable": {"item_id": "J11"}, "_note": "냉각 젤"},
+        # 데이터 성소 오브젝트 = 데이터 드리븐 스폰(kind:"l2obj" → map_loader._spawn_l2_object).
+        # 필드: art(assets/objects/<art>.png), offset, glow("cyan"|""), blocks, block_radius,
+        #       gatherable:{item_id,unique}, l2_id, gate. EX-L1 l1h 레전드 형식 계승.
+        "N": {"kind": "l2obj", "l2_id": "archivist_drone", "art": "l2s_archivist_drone", "offset": [0, -44], "blocks": True, "block_radius": 14, "glow": "cyan", "glow_scale": 0.6, "_note": "잔재 NPC: 마지막 백업을 지키는 관리 드론(GP-4 N- 라인)"},
+        "D": {"kind": "l2obj", "l2_id": "sealed_bulkhead", "art": "l2s_sealed_bulkhead", "offset": [0, -40], "blocks": True, "block_radius": 16, "gate": "GB2", "_note": "GB2 봉인 격벽(사용형=디코더 젤 주입)"},
+        "H": {"kind": "l2obj", "l2_id": "backup_altar", "art": "l2s_backup_altar", "offset": [0, -40], "blocks": True, "block_radius": 16, "glow": "cyan", "glow_scale": 0.6, "gate": "GB4", "_note": "GB4 백업 봉헌 목(체인형=구역 정화·컷신)"},
+        "E": {"kind": "l2obj", "l2_id": "sanctum_power_residue", "art": "l2s_power_residue", "offset": [0, -20], "blocks": False, "glow": "cyan", "glow_scale": 0.7, "_note": "에너지 Whisper 재획득처(idempotent, add_energy)"},
+        "O": {"kind": "l2obj", "l2_id": "backup_core", "art": "l2s_backup_core", "offset": [0, -40], "blocks": False, "glow": "cyan", "glow_scale": 1.0, "gatherable": {"item_id": "J12", "unique": True}, "gate": "GB4", "_note": "마지막 백업 코어(코어 정수 J12 유니크) + GB4 봉헌 대상"},
+        "h": {"kind": "l2obj", "l2_id": "data_crystal", "art": "l2s_data_crystal", "offset": [0, -16], "blocks": False, "glow": "cyan", "glow_scale": 0.5, "gatherable": {"item_id": "J8"}, "_note": "데이터 결정"},
+        "k": {"kind": "l2obj", "l2_id": "corroded_core", "art": "l2s_corroded_core", "offset": [0, -14], "blocks": False, "gatherable": {"item_id": "J9"}, "_note": "부식 코어"},
+        "o": {"kind": "l2obj", "l2_id": "fiber_bundle", "art": "l2s_fiber_bundle", "offset": [0, -14], "blocks": False, "gatherable": {"item_id": "J10"}, "_note": "광섬유 다발"},
+        "b": {"kind": "l2obj", "l2_id": "coolant_gel", "art": "l2s_coolant_gel", "offset": [0, -12], "blocks": False, "glow": "cyan", "glow_scale": 0.4, "gatherable": {"item_id": "J11"}, "_note": "냉각 젤"},
     },
     "landmarks": {"1": "backup_core", "2": "core_sanctum_silhouette", "3": "war_record_terminal", "4": "tutorial_server_rack"},
     "gates": {

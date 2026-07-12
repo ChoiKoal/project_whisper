@@ -40,10 +40,6 @@
       "tile_id": "T2A",
       "spawn": true
     },
-    "C": {
-      "source": 2,
-      "tile_id": "T2A"
-    },
     "K": {
       "source": 8,
       "tile_id": "T5A",
@@ -125,64 +121,134 @@
     }
   },
   "objects": {
-    "C": {
-      "scene": "workbench.tscn",
-      "object_id": "workbench",
-      "_note": "정비대(L2 crafting station)"
-    },
     "N": {
-      "scene": "npc_remnant.tscn",
-      "object_id": "archivist_drone",
-      "_note": "잔재 NPC: 마지막 백업을 지키는 관리 드론(GP-4 NPC 라인)"
+      "kind": "l2obj",
+      "l2_id": "archivist_drone",
+      "art": "l2s_archivist_drone",
+      "offset": [
+        0,
+        -44
+      ],
+      "blocks": true,
+      "block_radius": 14,
+      "glow": "cyan",
+      "glow_scale": 0.6,
+      "_note": "잔재 NPC: 마지막 백업을 지키는 관리 드론(GP-4 N- 라인)"
     },
     "D": {
-      "scene": "sealed_bulkhead.tscn",
-      "object_id": "sealed_bulkhead",
-      "gate": "GB2"
+      "kind": "l2obj",
+      "l2_id": "sealed_bulkhead",
+      "art": "l2s_sealed_bulkhead",
+      "offset": [
+        0,
+        -40
+      ],
+      "blocks": true,
+      "block_radius": 16,
+      "gate": "GB2",
+      "_note": "GB2 봉인 격벽(사용형=디코더 젤 주입)"
     },
     "H": {
-      "scene": "backup_altar.tscn",
-      "object_id": "backup_altar",
-      "gate": "GB4"
+      "kind": "l2obj",
+      "l2_id": "backup_altar",
+      "art": "l2s_backup_altar",
+      "offset": [
+        0,
+        -40
+      ],
+      "blocks": true,
+      "block_radius": 16,
+      "glow": "cyan",
+      "glow_scale": 0.6,
+      "gate": "GB4",
+      "_note": "GB4 백업 봉헌 목(체인형=구역 정화·컷신)"
     },
     "E": {
-      "scene": "power_residue.tscn",
-      "object_id": "sanctum_power_residue",
+      "kind": "l2obj",
+      "l2_id": "sanctum_power_residue",
+      "art": "l2s_power_residue",
+      "offset": [
+        0,
+        -20
+      ],
+      "blocks": false,
+      "glow": "cyan",
+      "glow_scale": 0.7,
       "_note": "에너지 Whisper 재획득처(idempotent, add_energy)"
     },
     "O": {
-      "scene": "backup_core.tscn",
-      "object_id": "backup_core",
+      "kind": "l2obj",
+      "l2_id": "backup_core",
+      "art": "l2s_backup_core",
+      "offset": [
+        0,
+        -40
+      ],
+      "blocks": false,
+      "glow": "cyan",
+      "glow_scale": 1.0,
       "gatherable": {
         "item_id": "J12",
         "unique": true
       },
       "gate": "GB4",
-      "_note": "마지막 백업 코어(코어 정수, 유니크)"
+      "_note": "마지막 백업 코어(코어 정수 J12 유니크) + GB4 봉헌 대상"
     },
     "h": {
-      "scene": "data_crystal.tscn",
+      "kind": "l2obj",
+      "l2_id": "data_crystal",
+      "art": "l2s_data_crystal",
+      "offset": [
+        0,
+        -16
+      ],
+      "blocks": false,
+      "glow": "cyan",
+      "glow_scale": 0.5,
       "gatherable": {
         "item_id": "J8"
       },
       "_note": "데이터 결정"
     },
     "k": {
-      "scene": "corroded_core.tscn",
+      "kind": "l2obj",
+      "l2_id": "corroded_core",
+      "art": "l2s_corroded_core",
+      "offset": [
+        0,
+        -14
+      ],
+      "blocks": false,
       "gatherable": {
         "item_id": "J9"
       },
       "_note": "부식 코어"
     },
     "o": {
-      "scene": "fiber_bundle.tscn",
+      "kind": "l2obj",
+      "l2_id": "fiber_bundle",
+      "art": "l2s_fiber_bundle",
+      "offset": [
+        0,
+        -14
+      ],
+      "blocks": false,
       "gatherable": {
         "item_id": "J10"
       },
       "_note": "광섬유 다발"
     },
     "b": {
-      "scene": "coolant_gel.tscn",
+      "kind": "l2obj",
+      "l2_id": "coolant_gel",
+      "art": "l2s_coolant_gel",
+      "offset": [
+        0,
+        -12
+      ],
+      "blocks": false,
+      "glow": "cyan",
+      "glow_scale": 0.4,
       "gatherable": {
         "item_id": "J11"
       },
