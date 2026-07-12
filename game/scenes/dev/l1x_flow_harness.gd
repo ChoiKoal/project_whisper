@@ -59,11 +59,12 @@ func _test_routing() -> void:
 		WorldContext.scene_path(WorldContext.SCENE_HEART).findn("life_heart") >= 0)
 	# grove zone 포탈은 세계수 정화(cleared) 후에만 스폰 — 미클리어 시 생성 안 됨.
 	SaveManager.cleared = false
-	var grove := load("res://scenes/world/starting_grove.tscn").instantiate()
+	var grove_scene: PackedScene = load("res://scenes/world/starting_grove.tscn")
+	var grove: Node = grove_scene.instantiate()
 	add_child(grove)
 	for i in range(6):
 		await get_tree().process_frame
-	var sess := grove.get_node_or_null("GroveSession")
+	var sess: Node = grove.get_node_or_null("GroveSession")
 	_check("grove GroveSession present", sess != null)
 	if sess != null:
 		_check("미클리어 grove: zone 포탈 미스폰 (화원/심장 잠김)",
@@ -73,11 +74,11 @@ func _test_routing() -> void:
 		await get_tree().process_frame
 	# cleared 상태로 재부팅 → zone 포탈 스폰.
 	SaveManager.cleared = true
-	var grove2 := load("res://scenes/world/starting_grove.tscn").instantiate()
+	var grove2: Node = grove_scene.instantiate()
 	add_child(grove2)
 	for i in range(6):
 		await get_tree().process_frame
-	var sess2 := grove2.get_node_or_null("GroveSession")
+	var sess2: Node = grove2.get_node_or_null("GroveSession")
 	if sess2 != null:
 		_check("클리어 grove: zone 포탈 스폰 (화원·심장 개방)",
 			bool(sess2.get("_zone_portals_spawned")))
@@ -91,12 +92,13 @@ func _test_routing() -> void:
 func _test_garden() -> void:
 	WorldContext.current_scene = WorldContext.SCENE_GARDEN
 	GameState.reset_layer1_zones()
-	var map := load(GARDEN).instantiate()
+	var garden_scene: PackedScene = load(GARDEN)
+	var map: Node = garden_scene.instantiate()
 	add_child(map)
 	for i in range(8):
 		await get_tree().process_frame
 	var loader := map.get_node("Ground") as MapLoader
-	var gates := map.get_node_or_null("L1xGateController")
+	var gates: Node = map.get_node_or_null("L1xGateController")
 	_check("화원 loader + L1xGateController present", loader != null and gates != null)
 	if loader == null or gates == null:
 		map.queue_free()
@@ -104,7 +106,7 @@ func _test_garden() -> void:
 	var g := loader.legend_gates()
 	var ga1 := _cells(g.get("GA1", {}).get("cells", []))
 	var ga2 := _cells(g.get("GA2", {}).get("cells", []))
-	var ga3 := g.get("GA3", {})
+	var ga3: Dictionary = g.get("GA3", {})
 	var ga3_slots := _cells(ga3.get("slot_cells", []))
 	var ga3_door := _cells(ga3.get("cells", []))
 
@@ -197,12 +199,13 @@ func _test_heart() -> void:
 	WorldContext.current_scene = WorldContext.SCENE_HEART
 	GameState.reset_layer1_zones()
 	WhisperCurrency.reset()
-	var map := load(HEART).instantiate()
+	var heart_scene: PackedScene = load(HEART)
+	var map: Node = heart_scene.instantiate()
 	add_child(map)
 	for i in range(8):
 		await get_tree().process_frame
 	var loader := map.get_node("Ground") as MapLoader
-	var gates := map.get_node_or_null("L1xGateController")
+	var gates: Node = map.get_node_or_null("L1xGateController")
 	_check("심장 loader + L1xGateController present", loader != null and gates != null)
 	if loader == null or gates == null:
 		map.queue_free()
@@ -274,7 +277,8 @@ func _test_save_and_ngplus() -> void:
 	_garden_sig = false
 	WorldContext.current_scene = WorldContext.SCENE_GARDEN
 	GameState.garden_purified_flag = true
-	var map := load(GARDEN).instantiate()
+	var reentry_scene: PackedScene = load(GARDEN)
+	var map: Node = reentry_scene.instantiate()
 	add_child(map)
 	for i in range(8):
 		await get_tree().process_frame
