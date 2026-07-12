@@ -55,6 +55,8 @@ func _setup() -> void:
 	_scatter_log_screens()
 	_spawn_npc()
 	_spawn_return_portal()
+	# (EXL2-2) 관제탑 재가동(control_core 급전 = L2 정화) 후 정비 승강로 하강 = 지하 데이터 성소 개방.
+	_spawn_sanctum_descent()
 	# Register the live world so the station snapshots/restores like the other scenes.
 	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("register_world"):
 		SaveManager.register_world(_loader, _player, respawn)
@@ -86,6 +88,8 @@ func _setup() -> void:
 ## → machine flickering, mirroring the Layer-1 nature→science hand-off) so the next dead world
 ## opens on return home. Save the run so the purified flag + powered nodes persist.
 func _on_layer2_purified(_layer: String) -> void:
+	# (EXL2-2) 정화 직후 승강로 하강 개방(재진입 없이 즉시 나타남 — grove clear→zone portal 패턴).
+	_spawn_sanctum_descent()
 	if typeof(GameState) != TYPE_NIL and GameState.has_method("set_portal_state"):
 		# (L2-5) science 포탈 = OPEN (자유 왕래) — 정화한 세계는 열린 채로 남는다(nature→open 패턴 계승).
 		GameState.set_portal_state("science", GameState.PORTAL_OPEN)

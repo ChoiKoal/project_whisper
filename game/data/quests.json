@@ -834,6 +834,51 @@
           "text": "나도 이걸 되살리려 했어. 심장에서 꺼내기만 하고, 돌려주는 걸 잊은 채로. 선배들도 그랬어. 너는, 잊지 마. …작별이야, 심장."
         }
       }
+    },
+    {
+      "id": "N-archivist-Q1",
+      "whisper": "…끊긴 신호를 이어 줘. 결정을 실에 물리면, 다시 흐를 거야.",
+      "type": "craft",
+      "signal": "item_crafted",
+      "target": "D257",
+      "count": 1,
+      "next": "N-archivist-Q2",
+      "reward": {
+        "recipes": [
+          "EX-L2-R14"
+        ]
+      }
+    },
+    {
+      "id": "N-archivist-Q2",
+      "whisper": "내가 볼 수 있는 곳에, 빛나는 걸 하나 놓아줘. 오래 어두웠어, 이 아래는.",
+      "type": "place",
+      "signal": "placed_object_placed",
+      "target": "any",
+      "count": 1,
+      "next": "N-archivist-Q3",
+      "reward": {
+        "whisper": {
+          "attr": "energy",
+          "amt": 1
+        }
+      }
+    },
+    {
+      "id": "N-archivist-Q3",
+      "whisper": "저기 기록 단말에… 마지막 로그가 있어. 가서 봐. 내가 왜 여기 남았는지, 거기 적혀 있을 거야.",
+      "type": "recall",
+      "signal": "truth_shard_investigated",
+      "target": "l2_last_log",
+      "count": 1,
+      "next": "",
+      "reward": {
+        "log": {
+          "id": "npc_archivist",
+          "title": "관리 드론의 회고",
+          "text": "나는 이걸 지키라고만 남겨졌어. 누가 남겼는지는, 로그가 지워졌어. …백업이 깨어난 지금에야, 지킨 게 뭔지 알겠어. 작별이야, 성소."
+        }
+      }
     }
   ]
 }
