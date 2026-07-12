@@ -96,6 +96,13 @@ var sanctum_purified_flag: bool = false
 signal mine_purified(zone: String)
 var mine_purified_flag: bool = false
 
+## (EXL4-3) Emitted when the 부유 서고(l4a) 금서고 코어 재봉인(GW4) 정화 완료 + C-4 컷신 종료. Carries
+## "archive". Like mine/sanctum it is an L4 SUB-zone flag — it does NOT touch the portal line
+## (L4 clear = 마탑 최심부 봉인 재구축). Drives the persisted end-state (금서고 코어 발광·금빛 봉인)
+## on re-entry without replaying the cutscene.
+signal archive_purified(zone: String)
+var archive_purified_flag: bool = false
+
 
 ## (L2-3) Mark a power node energized (idempotent). Records it in `powered_nodes` and announces
 ## it so gate listeners (bridge swap / clear cutscene) and quests react. No signal if already on.
@@ -156,6 +163,12 @@ func reset_layer2_zones() -> void:
 ## touch the portal line — clearing this just re-locks the mine end-state.
 func reset_layer3_zones() -> void:
 	mine_purified_flag = false
+
+## (EXL4-3) Reset the L4 확장 SUB-zone purification flag (부유 서고) to the new-game baseline.
+## Called by new game / NG+ alongside reset_layer2~5. Archive is an L4 sub-zone, so it does NOT
+## touch the portal line — clearing this just re-locks the archive end-state (P12 재채집 가능).
+func reset_layer4_zones() -> void:
+	archive_purified_flag = false
 
 ## (v0.4.0-C) Emitted when a structure/decor item is PLACED into the world (persistent
 ## PlacedObject). `item_id` = the placed item, `cell` = its tile. Quests/audio hook here.

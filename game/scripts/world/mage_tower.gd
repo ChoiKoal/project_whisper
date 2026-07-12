@@ -55,6 +55,7 @@ func _setup() -> void:
 	_scatter_ghosts()
 	_spawn_npc()
 	_spawn_return_portal()
+	_spawn_archive_descent()
 	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("register_world"):
 		SaveManager.register_world(_loader, _player, respawn)
 		# (v1.3.1 BUG B) 이어하기 load or in-run RE-ENTRY (portal travel): restore this world's
@@ -91,6 +92,51 @@ func _on_layer4_purified(_layer: String) -> void:
 		GameState.set_portal_state("divinity", GameState.PORTAL_FLICKERING)
 	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("save_game"):
 		SaveManager.save_game()
+	# (EXL4-2) 마탑 최심부 봉인이 재구축된 뒤에야 찢겨 나간 서고 통로가 활성 → 부유 서고 하강 개방.
+	_spawn_archive_descent()
+
+
+## (EXL4-2) A real Portal near spawn that travels into SCENE_ARCHIVE (부유 서고). Gated on the mage
+## tower being 정화됨(layer4_purified_flag = 최심부 봉인 재구축). Idempotent (guarded). Clones
+## clockwork_city._spawn_mine_descent — 마탑 최심부 봉인실 곁 찢긴 서고 통로 = 부유 파편 착지.
+var _archive_descent_spawned := false
+
+func _spawn_archive_descent() -> void:
+	if _archive_descent_spawned:
+		return
+	if _loader == null or _loader.spawn_cell == Vector2i(-1, -1):
+		return
+	if not (typeof(GameState) != TYPE_NIL and GameState.layer4_purified_flag):
+		return  # locked until the mage tower(L4 구역1) is 정화된 (최심부 봉인 재구축)
+	_archive_descent_spawned = true
+	# 찢긴 서고 통로: a walkable cell NORTH of spawn (최심부 봉인실 방향 = 서고 파편으로 진입).
+	var candidates := [
+		_loader.spawn_cell + Vector2i(0, -4),
+		_loader.spawn_cell + Vector2i(-3, -2),
+		_loader.spawn_cell + Vector2i(3, -2),
+		_loader.spawn_cell + Vector2i(-4, 0),
+	]
+	var cell := Vector2i(-1, -1)
+	for c in candidates:
+		if _loader.is_cell_walkable(c):
+			cell = c
+			break
+	if cell == Vector2i(-1, -1):
+		return
+	var ctrl := ReturnPortalController.new()
+	add_child(ctrl)
+	ctrl.setup(_loader, _player, [cell], "E 부유 서고로")
+	ctrl.entered.connect(_on_archive_descent)
+
+
+func _on_archive_descent() -> void:
+	if typeof(WorldContext) == TYPE_NIL:
+		return
+	WorldContext.arrival_mode = "portal_arrival"
+	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("save_game"):
+		SaveManager.save_game()
+	WorldContext.current_scene = WorldContext.SCENE_ARCHIVE
+	get_tree().change_scene_to_file(WorldContext.scene_path(WorldContext.SCENE_ARCHIVE))
 
 
 func _spawn_return_portal() -> void:

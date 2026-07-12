@@ -178,6 +178,8 @@ func build_save_dict() -> Dictionary:
 		"sanctum_purified": GameState.sanctum_purified_flag,
 		# (EXL3-3) L3 확장 SUB-zone 정화 플래그 (태엽 광산). 기존 세이브엔 결측 → false 기본.
 		"mine_purified": GameState.mine_purified_flag,
+		# (EXL4-3) L4 확장 SUB-zone 정화 플래그 (부유 서고). 기존 세이브엔 결측 → false 기본.
+		"archive_purified": GameState.archive_purified_flag,
 		# (L5-5) 다섯 포탈 전점등 + 빛의 문 예고가 이미 발동했는지 (5레이어 완결 후 재로드 시 유지).
 		"light_gate_previewed": GameState.light_gate_previewed_flag,
 		# (EG-2) 진상 조각 진행 (회차 지속; NG+에서 리셋). 최종 회수 카드 본 여부.
@@ -428,6 +430,8 @@ func _apply_core_state(data: Dictionary) -> void:
 	GameState.sanctum_purified_flag = bool(data.get("sanctum_purified", false))
 	# (EXL3-3) L3 확장 SUB-zone 정화 플래그 (기존 세이브 결측 → false, 하위호환 안전).
 	GameState.mine_purified_flag = bool(data.get("mine_purified", false))
+	# (EXL4-3) L4 확장 SUB-zone 정화 플래그 (기존 세이브 결측 → false, 하위호환 안전).
+	GameState.archive_purified_flag = bool(data.get("archive_purified", false))
 	GameState.light_gate_previewed_flag = bool(data.get("light_gate_previewed", false))
 	# (EG-2) 진상 조각 진행 + 최종 카드 여부 (v0.9.0 세이브엔 결측 → 빈 dict/false 기본값, null-가드).
 	GameState.truth_shards = (data.get("truth_shards", {}) as Dictionary).duplicate()
@@ -660,6 +664,7 @@ func start_ng_plus(finished_run_recipes: Array = []) -> Array:
 	GameState.reset_layer1_zones()     # (EXL1-3) clear 고요의 화원/생명의 심장 정화 플래그 on NG+
 	GameState.reset_layer2_zones()     # (EXL2-3) clear 지하 데이터 성소 정화 플래그
 	GameState.reset_layer3_zones()     # (EXL3-3) clear 태엽 광산 정화 플래그 on NG+
+	GameState.reset_layer4_zones()     # (EXL4-3) clear 부유 서고 정화 플래그 on NG+
 	GameState.reset_truth_shards()     # (EG-2) 진상 조각 회차 리셋 ([돌아선다] 재획득; endings_seen는 보존)
 	WhisperCurrency.reset()            # (L2-3) no 에너지/마력 Whisper held
 	Codex.reset()
@@ -711,6 +716,7 @@ func new_game() -> void:
 	GameState.reset_layer1_zones()     # (EXL1-3) clear 고요의 화원/생명의 심장 정화 플래그
 	GameState.reset_layer2_zones()     # (EXL2-3) clear 지하 데이터 성소 정화 플래그
 	GameState.reset_layer3_zones()     # (EXL3-3) clear 태엽 광산 정화 플래그
+	GameState.reset_layer4_zones()     # (EXL4-3) clear 부유 서고 정화 플래그
 	GameState.reset_truth_shards()     # (EG-2) 진상 조각 초기화
 	WhisperCurrency.reset()            # (L2-3) no 에너지/마력 Whisper held
 	Codex.reset()
