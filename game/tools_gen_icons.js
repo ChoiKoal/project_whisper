@@ -2447,6 +2447,246 @@ icons.D277 = (cv) => { // 타버린 훈장 데이터 burnt medal data — charre
 };
 
 // ============================================================================
+// EX-L3 태엽 광산 (v1.7.0). K8..K12 gather + D278..D300 craft. Same L3 machine
+// aesthetic (copper/brass) but UNDERGROUND (지하 광산): base pulled darker, and the
+// only living colour is the amber/orange spring-glow (first-wound clockwork). Each
+// painter is bespoke so every file is byte-unique.
+// ============================================================================
+const MN = {
+  brassD: hexToRGB('#241813'), brass: hexToRGB('#5a4230'), brassM: hexToRGB('#8a6a44'), brassL: hexToRGB('#b89058'),
+  ironD: hexToRGB('#161a20'), iron: hexToRGB('#282e38'), ironM: hexToRGB('#414a58'), ironL: hexToRGB('#5e6a7a'),
+  amber: hexToRGB('#ff9a3a'), amberD: hexToRGB('#b35e1a'), amberHi: hexToRGB('#ffe0a8'),
+  rust: hexToRGB('#6e4028'), rustD: hexToRGB('#341c10'), rustL: hexToRGB('#9a5f38'),
+  coal: hexToRGB('#1c1c22'), coalD: hexToRGB('#0b0b0e'), coalL: hexToRGB('#3a3a44'),
+  qtz: hexToRGB('#8a6a44'), qtzL: hexToRGB('#d8b878'),
+};
+function amberSpark(cv, x, y) {
+  setPx(cv, x, y, MN.amberHi); setPx(cv, x - 1, y, MN.amber, 200); setPx(cv, x + 1, y, MN.amber, 200);
+  setPx(cv, x, y - 1, MN.amber, 200); setPx(cv, x, y + 1, MN.amber, 200);
+}
+
+// ---------- K8..K12 (EX-L3 gather) ----------
+icons.K8 = (cv) => { // 태엽 광석 spring ore — dark ore chunk with an exposed glowing spring coil
+  ellipse(cv, 24, 32, 15, 11, MN.brass, MN.brassD);
+  for (let i = 0; i < 24; i++) { const x = 12 + (i * 7) % 24, y = 24 + (i * 11) % 16; if (getA(cv, x, y)) setPx(cv, x, y, i % 3 ? MN.brassM : MN.brassD); }
+  glowBehind(cv, 26, 24, 10, MN.amber);
+  coil(cv, 26, 24, 7, MN.amber, MN.amberD);
+  amberSpark(cv, 26, 24);
+  outline(cv, '#1a120c');
+};
+icons.K9 = (cv) => { // 녹슨 톱니축 rusted axle — a broken drill axle w/ worn gear teeth (no glow)
+  fillRect(cv, 21, 10, 27, 40, MN.iron);
+  for (let y = 10; y < 40; y++) setPx(cv, 26, y, MN.ironM); // shaft shade
+  for (let y = 12; y < 38; y += 5) { disc(cv, 22 + (y % 3), y, 1, MN.rust); }
+  gear(cv, 24, 12, 8, MN.rustL, MN.rust, 7); // worn teeth top
+  disc(cv, 24, 12, 2, MN.rustD);
+  fillRect(cv, 20, 38, 28, 41, MN.ironD); // broken base
+  outline(cv, '#120e0a');
+};
+icons.K10 = (cv) => { // 갱도 석탄 mine coal — a pile of near-black coal lumps (no glow)
+  ellipse(cv, 24, 34, 16, 9, MN.coalD, MN.coalD);
+  disc(cv, 22, 28, 8, MN.coal); disc(cv, 32, 31, 6, MN.coal); disc(cv, 15, 32, 5, MN.coal); disc(cv, 26, 22, 5, MN.coal);
+  for (const [x, y] of [[19, 25], [30, 29], [13, 31], [24, 20]]) setPx(cv, x, y, MN.coalL, 220); // glints
+  outline(cv, '#040406');
+};
+icons.K11 = (cv) => { // 응결 수정 condensate crystal — wall-condensed quartz cluster, faint amber sheen
+  glowBehind(cv, 24, 28, 12, MN.amberD);
+  ellipse(cv, 24, 38, 12, 5, MN.brassD, MN.rustD); // base rock
+  crystalShard(cv, 24, 12, 24, 4, MN.qtzL, MN.qtz);
+  crystalShard(cv, 16, 20, 14, 2, MN.qtzL, MN.qtz);
+  crystalShard(cv, 31, 22, 12, 2, MN.qtz, MN.brass);
+  amberSpark(cv, 24, 16);
+  outline(cv, '#2a2018');
+};
+icons.K12 = (cv) => { // 심층 태엽정 deep spring-well — THE first wound spring, single radiant coil gem
+  glowBehind(cv, 24, 24, 22, MN.amber);
+  glowBehind(cv, 24, 24, 15, MN.amberHi);
+  // tight radiant mainspring
+  for (let a = 0; a < Math.PI * 7; a += 0.09) {
+    const rr = 15 * (1 - a / (Math.PI * 7.4));
+    setPx(cv, 24 + Math.cos(a) * rr, 24 + Math.sin(a) * rr, ((a % Math.PI) < Math.PI / 2) ? MN.amberHi : MN.amber);
+  }
+  disc(cv, 24, 24, 3, MN.amberHi);
+  amberSpark(cv, 13, 15); amberSpark(cv, 35, 30); amberSpark(cv, 34, 13); amberSpark(cv, 14, 34);
+  outline(cv, P.ember);
+};
+
+// ---------- D278..D300 (EX-L3 craft) ----------
+icons.D278 = (cv) => { // 정련 광석판 refined ore plate — flat forged brass plate (K8 pressed on K9)
+  fillRect(cv, 9, 20, 39, 34, MN.brassM);
+  for (let y = 20; y < 34; y++) for (let x = 9; x < 39; x++) setPx(cv, x, y, x - y > 8 ? MN.brassL : MN.brassM);
+  fillRect(cv, 9, 20, 39, 23, MN.brassL); fillRect(cv, 9, 32, 39, 34, MN.brassD);
+  for (let x = 12; x < 38; x += 6) disc(cv, x, 27, 1, MN.amberD); // rivets
+  outline(cv, '#2a1c12');
+};
+icons.D279 = (cv) => { // 붕락 궤도판 collapse rail-plate — ore plate w/ a mine-cart rail (GM1 place)
+  fillRect(cv, 8, 22, 40, 34, MN.brass);
+  for (let y = 22; y < 34; y++) for (let x = 8; x < 40; x++) setPx(cv, x, y, x - y > 8 ? MN.brassM : MN.brass);
+  fillRect(cv, 8, 22, 40, 24, MN.brassL);
+  line(cv, 12, 26, 36, 26, MN.ironL, 2); line(cv, 12, 31, 36, 31, MN.ironL, 2); // two rails
+  for (let x = 14; x < 36; x += 5) line(cv, x, 26, x, 31, MN.ironM, 1); // sleepers
+  emberSpark(cv, 30, 24);
+  outline(cv, '#2a1c12');
+};
+icons.D280 = (cv) => { // 응결 밀봉재 condensate sealant — quartz ground into amber ore-paste tub
+  fillRect(cv, 14, 22, 34, 38, MN.iron); fillRect(cv, 14, 22, 34, 24, MN.ironL); // tub
+  ellipse(cv, 24, 26, 9, 4, MN.qtzL, MN.qtz); // paste surface
+  for (let i = 0; i < 14; i++) { const x = 16 + (i * 5) % 16, y = 24 + (i * 7) % 6; setPx(cv, x, y, i % 2 ? MN.amber : MN.qtzL); }
+  outline(cv, '#141018');
+};
+icons.D281 = (cv) => { // 감압 밸브 젤 decompression valve-gel — injector of amber gel (GM2 use)
+  glowBehind(cv, 24, 26, 11, MN.amberD);
+  fillRect(cv, 18, 8, 30, 12, MN.ironL); fillRect(cv, 22, 4, 26, 10, MN.ironM); // plunger
+  fillRect(cv, 19, 12, 29, 36, MN.ironL, 90); // barrel
+  fillRect(cv, 20, 22, 28, 36, MN.amber); fillRect(cv, 20, 22, 24, 36, MN.amberHi); // gel
+  fillRect(cv, 23, 36, 25, 44, MN.ironL); // needle
+  amberSpark(cv, 24, 29);
+  outline(cv, '#141018');
+};
+// rail transfer levers α/β/γ — visibly different lever silhouettes (GM3 place)
+function railLever(cv, headFn, tint) {
+  fillRect(cv, 22, 16, 26, 40, MN.ironM); // shaft
+  for (let y = 16; y < 40; y++) setPx(cv, 25, y, MN.ironL);
+  fillRect(cv, 16, 38, 32, 42, MN.iron); fillRect(cv, 16, 38, 32, 39, MN.ironL); // base plate
+  disc(cv, 24, 40, 2, MN.ironD);
+  headFn(cv);
+}
+icons.D282 = (cv) => { // 전환 레버 α — round amber weight head (K8+K10)
+  railLever(cv, (c) => { glowBehind(c, 24, 12, 9, MN.amberD); disc(c, 24, 12, 6, MN.amber); disc(c, 22, 10, 2, MN.amberHi); }, MN.amber);
+  outline(cv, '#141018');
+};
+icons.D283 = (cv) => { // 전환 레버 β — forked axle head w/ a crystal (K9+K11)
+  railLever(cv, (c) => { line(c, 24, 16, 18, 8, MN.ironL, 2); line(c, 24, 16, 30, 8, MN.ironL, 2); crystalShard(c, 24, 6, 10, 2, MN.qtzL, MN.qtz); }, MN.qtz);
+  outline(cv, '#141018');
+};
+icons.D284 = (cv) => { // 전환 레버 γ — sealed hardened head (D280+K9)
+  railLever(cv, (c) => { ellipse(c, 24, 12, 7, 6, MN.qtz, MN.brassD); disc(c, 24, 12, 3, MN.amberD); disc(c, 22, 10, 1, MN.amberHi); }, MN.qtz);
+  outline(cv, '#141018');
+};
+icons.D285 = (cv) => { // 감긴 태엽 씨 wound spring-seed — deep spring-well wound onto ore (GM4 chain)
+  glowBehind(cv, 24, 24, 18, MN.amber);
+  ellipse(cv, 24, 26, 13, 12, MN.brass, MN.brassD); // ore hull
+  coil(cv, 24, 24, 10, MN.amberHi, MN.amber);
+  disc(cv, 24, 24, 2, MN.amberHi);
+  amberSpark(cv, 24, 12); amberSpark(cv, 14, 28);
+  outline(cv, '#2a1c12');
+};
+icons.D286 = (cv) => { // 태엽 노심 spring core — the GM4 offering, radiant assembled clockwork core
+  glowBehind(cv, 24, 24, 22, MN.amberHi);
+  glowBehind(cv, 24, 24, 16, MN.amber);
+  const pts = [];
+  for (let a = 0; a < 6; a++) { const r = a * Math.PI / 3 - Math.PI / 2; pts.push([24 + Math.cos(r) * 16, 24 + Math.sin(r) * 16]); }
+  for (let i = 0; i < 6; i++) line(cv, pts[i][0], pts[i][1], pts[(i + 1) % 6][0], pts[(i + 1) % 6][1], MN.brassL, 2);
+  for (let i = 0; i < 6; i++) disc(cv, pts[i][0], pts[i][1], 2, MN.amber);
+  coil(cv, 24, 24, 9, MN.amberHi, MN.amber); disc(cv, 24, 24, 3, MN.amberHi);
+  amberSpark(cv, 30, 14); amberSpark(cv, 15, 32); amberSpark(cv, 34, 30);
+  outline(cv, P.ember);
+};
+icons.D287 = (cv) => { // 광석 무리 ore cluster (glows) — several spring-ore chunks fanned
+  glowBehind(cv, 24, 28, 15, MN.amber);
+  disc(cv, 24, 26, 9, MN.brass); disc(cv, 14, 30, 6, MN.brass); disc(cv, 34, 30, 6, MN.brass);
+  coil(cv, 24, 24, 5, MN.amberHi, MN.amber); coil(cv, 14, 30, 3, MN.amber, MN.amberD); coil(cv, 34, 30, 3, MN.amber, MN.amberD);
+  amberSpark(cv, 24, 24);
+  outline(cv, '#1a120c');
+};
+icons.D288 = (cv) => { // 축 무더기 axle heap — a bundle of rusted axles pressed together
+  for (const dx of [-8, 0, 8]) { fillRect(cv, 22 + dx, 12, 26 + dx, 38, MN.iron); for (let y = 12; y < 38; y++) setPx(cv, 25 + dx, y, MN.ironM); }
+  for (const dx of [-8, 0, 8]) { disc(cv, 24 + dx, 12, 3, MN.rust); disc(cv, 24 + dx, 12, 1, MN.rustD); }
+  fillRect(cv, 12, 38, 36, 42, MN.ironD);
+  outline(cv, '#120e0a');
+};
+icons.D289 = (cv) => { // 석탄 더미 coal briquette — coal pressed into a solid brick
+  fillRect(cv, 12, 20, 36, 38, MN.coal);
+  for (let y = 20; y < 38; y++) for (let x = 12; x < 36; x++) setPx(cv, x, y, (x + y) % 4 ? MN.coal : MN.coalD);
+  fillRect(cv, 12, 20, 36, 22, MN.coalL); fillRect(cv, 12, 36, 36, 38, MN.coalD);
+  for (const [x, y] of [[18, 26], [30, 30], [24, 24]]) setPx(cv, x, y, MN.coalL, 200);
+  outline(cv, '#040406');
+};
+icons.D290 = (cv) => { // 수정 군집 crystal colony (glows) — many quartz shards grown together
+  glowBehind(cv, 24, 28, 15, MN.amberD);
+  crystalShard(cv, 24, 8, 26, 4, MN.qtzL, MN.qtz);
+  crystalShard(cv, 15, 16, 18, 3, MN.qtz, MN.brass);
+  crystalShard(cv, 33, 18, 16, 3, MN.qtz, MN.brass);
+  crystalShard(cv, 19, 22, 12, 2, MN.qtzL, MN.qtz);
+  amberSpark(cv, 24, 12); amberSpark(cv, 15, 20);
+  outline(cv, '#2a2018');
+};
+icons.D291 = (cv) => { // 석탄 수정 등불 coal-crystal lantern (glows) — coal lump w/ a quartz-lit core
+  glowBehind(cv, 24, 26, 15, MN.amber);
+  disc(cv, 24, 30, 12, MN.coal); for (let i = 0; i < 16; i++) { const x = 14 + (i * 7) % 20, y = 24 + (i * 5) % 12; if (getA(cv, x, y)) setPx(cv, x, y, MN.coalL, 180); }
+  crystalShard(cv, 24, 12, 16, 3, MN.qtzL, MN.qtz);
+  ellipse(cv, 24, 30, 5, 4, MN.amber, MN.amberD); disc(cv, 24, 30, 2, MN.amberHi);
+  amberSpark(cv, 24, 22);
+  outline(cv, '#040406');
+};
+icons.D292 = (cv) => { // 방진 밀봉판 dust-seal board — ore plate studded densely w/ quartz
+  fillRect(cv, 10, 16, 38, 40, MN.brass);
+  for (let y = 16; y < 40; y++) for (let x = 10; x < 38; x++) setPx(cv, x, y, x - y > 6 ? MN.brassM : MN.brass);
+  fillRect(cv, 10, 16, 38, 18, MN.brassL);
+  for (let y = 20; y < 38; y += 5) for (let x = 14; x < 36; x += 5) disc(cv, x, y, 1, MN.qtzL); // quartz studs
+  outline(cv, '#2a1c12');
+};
+icons.D293 = (cv) => { // 톱니 부적 gear amulet — a rail-lever wrapped in quartz on a cord
+  for (let a = 20; a <= 160; a += 6) { const r = a * Math.PI / 180; setPx(cv, 24 + Math.cos(r) * 13, 15 + Math.sin(r) * 11, MN.ironM); } // cord
+  gear(cv, 24, 30, 9, MN.brassL, MN.brass, 8);
+  circle(cv, 24, 30, 5, MN.qtzL, MN.qtz); disc(cv, 24, 30, 2, MN.amber);
+  outline(cv, '#2a1c12');
+};
+icons.D294 = (cv) => { // 노심 등명 core lantern (glows) — spring-core spillover set into an ore lamp
+  glowBehind(cv, 24, 26, 17, MN.amber);
+  fillRect(cv, 15, 14, 33, 42, MN.brass); fillRect(cv, 15, 14, 33, 16, MN.brassL); fillRect(cv, 15, 40, 33, 42, MN.brassD); // frame
+  fillRect(cv, 19, 18, 29, 38, MN.brassD); // window
+  coil(cv, 24, 28, 8, MN.amberHi, MN.amber); disc(cv, 24, 28, 2, MN.amberHi);
+  fillRect(cv, 22, 8, 26, 14, MN.brassM); disc(cv, 24, 8, 2, MN.amber); // top vent
+  outline(cv, '#2a1c12');
+};
+icons.D295 = (cv) => { // 광산 톱니탑 mine gear-tower (glows) — steel gear stacked w/ spring ore
+  glowBehind(cv, 24, 24, 14, MN.amberD);
+  gear(cv, 24, 32, 10, MN.ironL, MN.ironM, 9);
+  gear(cv, 24, 18, 7, MN.brassL, MN.brass, 8);
+  coil(cv, 24, 18, 4, MN.amberHi, MN.amber);
+  disc(cv, 24, 32, 2, MN.ironD);
+  outline(cv, '#141018');
+};
+icons.D296 = (cv) => { // 채굴 구동함 mining drive-case — a drive module w/ an axle fed into a case
+  fillRect(cv, 12, 18, 36, 40, MN.iron); fillRect(cv, 12, 18, 36, 20, MN.ironL); fillRect(cv, 12, 38, 36, 40, MN.ironD);
+  gear(cv, 20, 29, 6, MN.brassL, MN.brass, 8); // drive gear
+  fillRect(cv, 27, 22, 31, 36, MN.ironM); disc(cv, 29, 22, 2, MN.rust); // axle inserted
+  for (const [x, y] of [[14, 20], [34, 20], [14, 38], [34, 38]]) disc(cv, x, y, 1, MN.ironL); // bolts
+  outline(cv, '#141018');
+};
+icons.D297 = (cv) => { // 광부 시계등 miner clock-lamp (glows) — clock dial topped w/ quartz, lights a gang
+  glowBehind(cv, 24, 24, 16, MN.amberD);
+  circle(cv, 24, 26, 12, MN.brassL, MN.brass); disc(cv, 24, 26, 10, MN.brassD);
+  for (let a = 0; a < 12; a++) { const r = a * Math.PI / 6; setPx(cv, 24 + Math.cos(r) * 9, 26 + Math.sin(r) * 9, MN.brassL); } // ticks
+  line(cv, 24, 26, 24, 19, MN.amber, 1); line(cv, 24, 26, 29, 28, MN.amber, 1); // hands
+  crystalShard(cv, 24, 6, 10, 2, MN.qtzL, MN.qtz); disc(cv, 24, 26, 2, MN.amberHi);
+  outline(cv, '#2a1c12');
+};
+icons.D298 = (cv) => { // 지워진 광부 명패 erased miner nameplate — smudged charred plate (dead-end)
+  fillRect(cv, 12, 16, 36, 36, MN.brassD);
+  for (let y = 16; y < 36; y++) for (let x = 12; x < 36; x++) setPx(cv, x, y, (x + y) % 4 ? MN.brassD : MN.coalD);
+  for (let y = 20; y < 26; y += 3) line(cv, 15, y, 32, y, MN.brass, 1); // half-visible letters
+  fillRect(cv, 14, 28, 34, 34, MN.coalD); // black smudge over the name
+  disc(cv, 20, 22, 2, MN.coal, 130); disc(cv, 30, 20, 2, MN.rust, 130);
+  outline(cv, '#040406');
+};
+icons.D299 = (cv) => { // 굳은 굴착 로봇 seized digger-bot — a tiny stopped robot, dim optic (dead-end)
+  ellipse(cv, 24, 26, 11, 11, MN.brass, MN.brassD); // body
+  for (let y = 16; y < 34; y++) for (let x = 13; x < 35; x++) if (getA(cv, x, y)) setPx(cv, x, y, x - y > 2 ? MN.brassM : MN.brass);
+  circle(cv, 24, 22, 5, MN.ironD, MN.coalD); disc(cv, 24, 22, 3, MN.amberD); disc(cv, 23, 21, 1, MN.amber, 200); // dim optic
+  line(cv, 32, 24, 40, 30, MN.ironM, 2); disc(cv, 40, 30, 2, MN.rust); // drooping drill arm
+  line(cv, 20, 34, 18, 41, MN.ironM, 1); line(cv, 28, 34, 30, 41, MN.ironM, 1); // legs
+  outline(cv, '#141018');
+};
+icons.D300 = (cv) => { // 타버린 표창 태엽 burnt spur-spring — overloaded charred spring (dead-end)
+  circle(cv, 24, 28, 11, MN.coal, MN.coalD);
+  for (let a = 0; a < Math.PI * 5; a += 0.11) { const rr = 9 * (1 - a / (Math.PI * 5.3)); setPx(cv, 24 + Math.cos(a) * rr, 28 + Math.sin(a) * rr, ((a % Math.PI) < Math.PI / 2) ? MN.coalL : MN.coal); } // charred coil
+  for (const [x, y] of [[18, 24], [30, 31], [24, 34], [28, 22]]) disc(cv, x, y, 1, C.ember, 150); // dying embers
+  outline(cv, '#040406');
+};
+
+// ============================================================================
 // Emit all icon files. Item catalog = 9 gatherables (I1..I9) + crafts D01..D61
 // minus the retired 석기 D11 (removed v0.3.1) + Layer-2 J1..J7 + D62..D102 (L2-4).
 // D06 is an alias of I4 → identical bytes to I4 (spec: "D06 alias resolves to I4's
@@ -2479,6 +2719,9 @@ for (let i = 222; i <= 254; i++) ALL_IDS.push('D' + i);
 // v1.6.0 EX-L2 지하 데이터 성소: gathers J8..J12 + crafts D255..D277.
 for (let i = 8; i <= 12; i++) ALL_IDS.push('J' + i);
 for (let i = 255; i <= 277; i++) ALL_IDS.push('D' + i);
+// v1.7.0 EX-L3 태엽 광산: gathers K8..K12 + crafts D278..D300.
+for (let i = 8; i <= 12; i++) ALL_IDS.push('K' + i);
+for (let i = 278; i <= 300; i++) ALL_IDS.push('D' + i);
 
 let count = 0, total = 0;
 for (const id of ALL_IDS) {
