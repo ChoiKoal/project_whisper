@@ -41,6 +41,19 @@ const H = layout.length, W = layout[0].length;
 function loadPng(p) { try { return PNG.sync.read(fs.readFileSync(p)); } catch (e) { return null; } }
 const tileArt = (n) => loadPng(`${GAME}/assets/tiles/${n}.png`);
 const objArt = (n) => loadPng(`${GAME}/assets/objects/${n}.png`);
+// (v1.9.1 §㉙) 종의 들판 신규 장식(broken_plinth/nameless_stone/empty_plinth/low_rubble/tilted_bell)은
+// art_variants(실루엣 3변주)를 갖는다 — 게임 로더처럼 셀마다 결정론적으로 변주를 골라 미러링해,
+// 프리뷰 조감에서 격자 반복이 아니라 폐허 무덤의 흩어진 리듬으로 읽히게 한다. (변주 선택은 미관용이라
+// 게임의 정확한 셀↔변주 대응까지 재현할 필요는 없다 — 결정론적 다양성이면 충분.)
+function artFor(objSpec, c, r) {
+  const base = objSpec.art;
+  const vars = Array.isArray(objSpec.art_variants) ? objSpec.art_variants : [];
+  if (!vars.length) return base;
+  const pool = [base, ...vars];
+  let h = ((c * 73856093) ^ (r * 19349663) ^ (11 * 83492791)) >>> 0;
+  h = ((h ^ (h >> 13)) * 1274126177) >>> 0; h = (h ^ (h >> 16)) >>> 0;
+  return pool[h % pool.length];
+}
 
 // The 침묵의 종탑 legend keys every walkable/gate tile to source 5 with L5T-* tile_ids (height
 // baked separately in l5b_map_height.txt); void is source 0. Map the tile_ids onto the shipped
@@ -142,7 +155,7 @@ for (let r = 0; r < H; r++) for (let c = 0; c < layout[r].length; c++) {
   minY = Math.min(minY, ly - lift - TH); maxY = Math.max(maxY, ly + TH * 3);
   const objSpec = legend.objects[layout[r][c]];
   if (objSpec) {
-    const src = objArt(objSpec.art);
+    const src = objArt(artFor(objSpec, c, r));
     if (src) {
       const off = objSpec.offset || [0, -8];
       const topY = ly - lift - src.height + HH + off[1];
@@ -267,7 +280,7 @@ for (let r = 0; r < H; r++) for (let c = 0; c < layout[r].length; c++) {
   const sym = layout[r][c];
   const objSpec = legend.objects[sym];
   if (!objSpec) continue;
-  const src = objArt(objSpec.art);
+  const src = objArt(artFor(objSpec, c, r));
   if (!src) continue;
   const off = objSpec.offset || [0, -8];
   const legendGlow = objSpec.glow ? (objSpec.glow_scale || 0.4) : 0;
