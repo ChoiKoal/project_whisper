@@ -132,6 +132,36 @@
     "d": {
       "source": 5,
       "tile_id": "L5T-A"
+    },
+    "f": {
+      "source": 5,
+      "tile_id": "L5T-C",
+      "_note": "종의 들판(§㉙): 주종대 없는 맨 울림 회랑 바닥 — 대각선 빈 통로/격자 리듬 절단용(C 밴드, 오브젝트 無)"
+    },
+    "b": {
+      "source": 5,
+      "tile_id": "L5T-C",
+      "_note": "종의 들판 장식(§㉙): 깨진 받침 broken_plinth (C 밴드 주종대 치환)"
+    },
+    "m": {
+      "source": 5,
+      "tile_id": "L5T-C",
+      "_note": "종의 들판 장식(§㉙): 무명석 nameless_stone (C 밴드 주종대 치환)"
+    },
+    "p": {
+      "source": 5,
+      "tile_id": "L5T-C",
+      "_note": "종의 들판 장식(§㉙): 빈 받침 empty_plinth (C 밴드 주종대 치환)"
+    },
+    "u": {
+      "source": 5,
+      "tile_id": "L5T-C",
+      "_note": "종의 들판 장식(§㉙): 낮은 잔해 low_rubble (C 밴드 주종대 치환)"
+    },
+    "t": {
+      "source": 5,
+      "tile_id": "L5T-C",
+      "_note": "종의 들판 장식(§㉙): 기울어진 종 tilted_bell (C 밴드 주종대 치환)"
     }
   },
   "objects": {
@@ -257,6 +287,55 @@
         "item_id": "S11"
       },
       "_note": "잔향 가루"
+    },
+    "b": {
+      "kind": "l5xobj",
+      "l2_id": "broken_plinth",
+      "art": "l5b_broken_plinth",
+      "art_variants": ["l5b_broken_plinth_b", "l5b_broken_plinth_c"],
+      "offset": [0, -20],
+      "blocks": false,
+      "_note": "장식(§㉙): 깨진 받침 — 종 사라진 폐허 받침(무발광)"
+    },
+    "m": {
+      "kind": "l5xobj",
+      "l2_id": "nameless_stone",
+      "art": "l5b_nameless_stone",
+      "art_variants": ["l5b_nameless_stone_b", "l5b_nameless_stone_c"],
+      "offset": [0, -18],
+      "blocks": false,
+      "_note": "장식(§㉙): 무명석 — 이름 지워진 종지기 묘석(무발광)"
+    },
+    "p": {
+      "kind": "l5xobj",
+      "l2_id": "empty_plinth",
+      "art": "l5b_empty_plinth",
+      "art_variants": ["l5b_empty_plinth_b", "l5b_empty_plinth_c"],
+      "offset": [0, -22],
+      "blocks": false,
+      "glow": "gold",
+      "glow_scale": 0.12,
+      "_note": "장식(§㉙): 빈 받침 — 오지 않은 종을 기다리는 빈 소켓(희미)"
+    },
+    "u": {
+      "kind": "l5xobj",
+      "l2_id": "low_rubble",
+      "art": "l5b_low_rubble",
+      "art_variants": ["l5b_low_rubble_b", "l5b_low_rubble_c"],
+      "offset": [0, -12],
+      "blocks": false,
+      "_note": "장식(§㉙): 낮은 잔해 — 낮고 넓은 붕괴 잔해(수평 실루엣, 무발광)"
+    },
+    "t": {
+      "kind": "l5xobj",
+      "l2_id": "tilted_bell",
+      "art": "l5b_tilted_bell",
+      "art_variants": ["l5b_tilted_bell_b", "l5b_tilted_bell_c"],
+      "offset": [0, -16],
+      "blocks": false,
+      "glow": "gold",
+      "glow_scale": 0.15,
+      "_note": "장식(§㉙): 기울어진 종 — 받침에서 떨어져 누운 침묵한 종(죽은 잔불)"
     }
   },
   "landmarks": {
