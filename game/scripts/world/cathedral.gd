@@ -21,6 +21,11 @@ var _player: Node2D
 ## (L5-2) The L5 return portal at the spawn — same reworked entry-zone pattern as grove/home/L2~L4.
 var _return_portal: ReturnPortalController = null
 
+## (EXL5-2) 침묵의 종탑(l5b) 하강 포탈 1회-스폰 래치. 대제단 봉헌(응답)으로 대성당이 정화된
+## (layer5_purified_flag) 뒤에야 대제단 곁 종탑 계단이 활성 → 종탑 착지. mage_tower._spawn_archive_descent
+## 패턴 계승. 종탑은 L5 SUB-zone이므로 포탈 라인/엔딩 게이팅은 불변(대성당 응답만이 divinity 포탈을 연다).
+var _belfry_descent_spawned := false
+
 ## Debris scatter tuning: sparse — a crumbling cathedral, not a meadow. Deterministic by cell hash.
 const DEBRIS_TARGET := 40
 const DEBRIS_SEED := 0x3B2C4E
@@ -55,6 +60,8 @@ func _setup() -> void:
 	_scatter_statues()
 	_spawn_npc()
 	_spawn_return_portal()
+	# (EXL5-2) 대성당이 이미 정화됐다면(이어하기/재진입) 종탑 하강 계단을 즉시 활성.
+	_spawn_belfry_descent()
 	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("register_world"):
 		SaveManager.register_world(_loader, _player, respawn)
 		# (v1.3.1 BUG B) 이어하기 load or in-run RE-ENTRY (portal travel): restore this world's
@@ -93,6 +100,50 @@ func _on_layer5_purified(_layer: String) -> void:
 			GameState.maybe_light_five_portals()
 	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("save_game"):
 		SaveManager.save_game()
+	# (EXL5-2) 대제단 봉헌으로 대성당 정화 완료 → 대제단 곁 종탑 계단 활성(재진입 대기 없이 즉시).
+	_spawn_belfry_descent()
+
+
+## (EXL5-2) 대제단 봉헌(응답)으로 대성당이 정화된 뒤에만 활성화되는, SCENE_BELFRY(침묵의 종탑)로
+## 내려가는 실제 Portal. mage_tower._spawn_archive_descent를 그대로 계승 — 정화 전에는 계단이 없고,
+## 정화 후에는 스폰 곁 종탑 계단으로 진입한다. Idempotent(래치). 종탑은 L5 SUB-zone이라 포탈 라인 불변.
+func _spawn_belfry_descent() -> void:
+	if _belfry_descent_spawned:
+		return
+	if _loader == null or _loader.spawn_cell == Vector2i(-1, -1):
+		return
+	if not (typeof(GameState) != TYPE_NIL and GameState.layer5_purified_flag):
+		return  # locked until the cathedral(L5 구역1) is 정화된 (대제단 봉헌 = "응답")
+	_belfry_descent_spawned = true
+	# 대제단 곁 종탑 계단: a walkable cell near spawn (대제단 방향 = 종탑 상행 계단).
+	var candidates := [
+		_loader.spawn_cell + Vector2i(0, -3),
+		_loader.spawn_cell + Vector2i(3, -1),
+		_loader.spawn_cell + Vector2i(-3, -1),
+		_loader.spawn_cell + Vector2i(0, -4),
+		_loader.spawn_cell + Vector2i(3, 0),
+	]
+	var cell := Vector2i(-1, -1)
+	for c in candidates:
+		if _loader.is_cell_walkable(c):
+			cell = c
+			break
+	if cell == Vector2i(-1, -1):
+		return
+	var ctrl := ReturnPortalController.new()
+	add_child(ctrl)
+	ctrl.setup(_loader, _player, [cell], "E 침묵의 종탑으로")
+	ctrl.entered.connect(_on_belfry_descent)
+
+
+func _on_belfry_descent() -> void:
+	if typeof(WorldContext) == TYPE_NIL:
+		return
+	WorldContext.arrival_mode = "portal_arrival"
+	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("save_game"):
+		SaveManager.save_game()
+	WorldContext.current_scene = WorldContext.SCENE_BELFRY
+	get_tree().change_scene_to_file(WorldContext.scene_path(WorldContext.SCENE_BELFRY))
 
 
 func _spawn_return_portal() -> void:
