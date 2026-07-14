@@ -148,6 +148,21 @@ const WHISPER_VIOLET = [150, 118, 214];
 const UNDER_SHADOW = [40, 38, 56], UNDER_SHADOW_DEEP = [26, 22, 40];
 const UNDER_MOSS = [74, 110, 54], UNDER_MOSS_DK = [48, 78, 40];
 function alphaAt(img, x, y) { return img.data[((img.width * y + x) << 2) + 3]; }
+// smooth value-noise in [0,1] over a 1-D coordinate (linearly interpolated between integer
+// samples) — used to wobble the silhouette CONTINUOUSLY down the body so the edge never jumps
+// by whole steps row-to-row (that row jump was the left-side horizontal streak, 카나 #2).
+function snoise1(t, salt) {
+  const i = Math.floor(t), f = t - i;
+  const a = rockNoise(i, salt, salt + 3), b = rockNoise(i + 1, salt, salt + 3);
+  const u = f * f * (3 - 2 * f);
+  return a + (b - a) * u;
+}
+// per-column jagged offset of the shelf boundary y (so band seams are organic 지그재그 노치,
+// not a straight ruler line, 카나 #1). Smooth in x, deterministic per band index.
+function shelfEdgeOffset(x, bandI, salt) {
+  return (snoise1(x / 26.0, salt + bandI * 131) - 0.5) * 22.0
+       + (snoise1(x / 7.0, salt + bandI * 57) - 0.5) * 7.0;
+}
 function makeUnderside(span, depth, salt, topProfile) {
   const img = new PNG({ width: span, height: depth }); img.data.fill(0);
   const haveProfile = topProfile && topProfile.length === span;
@@ -158,34 +173,54 @@ function makeUnderside(span, depth, salt, topProfile) {
     if (rimR <= rimL) { rimL = 0; rimR = span; }
   }
   const rimCx = (rimL + rimR) * 0.5, rimHalf = Math.max(2, (rimR - rimL) * 0.5);
+  const NB = 5;   // sediment bands
   for (let y = 0; y < depth; y++) {
     const ty = y / depth;
-    const shelf = Math.floor(ty * 4.0) / 4.0;
-    const stepT = shelf + (ty - shelf) * 0.4;
-    const baseHalf = rimHalf * (1 - 0.72 * Math.pow(stepT, 1.6));
-    const wob = (rockNoise((y * 0.5) | 0, salt, salt + 3) - 0.5) * span * 0.05;
-    const jag = (rockNoise((y / 11) | 0, salt + 11, salt + 7) - 0.5) * span * 0.05;
+    // CONTINUOUS taper (no per-row shelf jump in the silhouette): the *width* tapers smoothly;
+    // the "층계식" reads from the banded SHADING, not from a stepped outline. Irregular step
+    // widths come from a low-freq width wobble (카나 #4 불규칙 스텝).
+    const taper = 1 - 0.70 * Math.pow(ty, 1.55);
+    const stepWob = (snoise1(ty * 5.0, salt + 91) - 0.5) * 0.16;   // uneven step widths
+    const baseHalf = rimHalf * clamp(taper + stepWob, 0.08, 1.2);
+    // SMOOTH silhouette wobble (interpolated → no row-to-row jumps → no left streak).
+    const wob = (snoise1(y / 9.0, salt) - 0.5) * span * 0.045;
+    const jag = (snoise1(y / 3.3, salt + 11) - 0.5) * span * 0.022;
     const half = Math.max(2, baseHalf + (wob + jag) * (1 - ty * 0.55));
     for (let x = Math.max(0, (rimCx - half) | 0); x < Math.min(span, (rimCx + half) | 0); x++) {
       let topY = 0;
       if (haveProfile) { topY = topProfile[x]; if (topY < 0) continue; if (y < topY) continue; }
       const hx = Math.abs(x - rimCx) / Math.max(1, half);
-      const shelfI = Math.round(shelf * 4.0);
-      let band = 0.98 - 0.11 * shelfI;
-      band += (shelfI % 2 === 0) ? 0.06 : -0.04;
+      // Which sediment band is this pixel in? The band boundary is JAGGED per column (지그재그
+      // 침식 노치) + pixel-dithered, so the seam is never a straight horizontal line.
+      const bandF = ty * NB;
+      const nearestSeam = Math.round(bandF);
+      const seamY = nearestSeam / NB * depth + shelfEdgeOffset(x, nearestSeam, salt);
+      const distToSeam = y - seamY;                 // px above/below the jagged seam line
+      const bandI = clamp(Math.floor((y - shelfEdgeOffset(x, Math.floor(bandF) + 1, salt) * 0) / depth * NB), 0, NB - 1);
+      // band brightness — GENTLER contrast than before (카나 "명도 차 과함").
+      let band = 0.95 - 0.055 * bandI;
+      band += (bandI % 2 === 0) ? 0.028 : -0.02;
       const strata = Math.floor(rockNoise((x / 7) | 0, (y / 6) | 0, salt) * 5.0) / 5.0;
-      const facet = (strata - 0.4) * 0.34;
-      const crack = (rockNoise((x / 3) | 0, (y / 5) | 0, salt + 5) < 0.11) ? -0.26 : 0.0;
-      const seam = (Math.abs(ty * 4.0 - Math.round(ty * 4.0)) < 0.05) ? -0.30 : 0.0;
+      const facet = (strata - 0.4) * 0.30;
+      const crack = (rockNoise((x / 3) | 0, (y / 5) | 0, salt + 5) < 0.11) ? -0.22 : 0.0;
+      // soft dithered seam: a thin darker notch right at the jagged boundary, dithered so it
+      // dissolves into pixels rather than a hard line.
+      let seam = 0.0;
+      if (Math.abs(distToSeam) < 2.4) {
+        const dith = ((x * 7 + y * 3 + (rockNoise(x, y, salt + 9) * 4 | 0)) & 3) !== 0;
+        if (dith) seam = -0.20 * (1 - Math.abs(distToSeam) / 2.4);
+      }
       const edge = -0.34 * hx * hx;
       const n = rockNoise(x, y, salt) * 0.10 - 0.05;
       let col = rockCol(band + facet + crack + seam + edge + n);
-      col = lerpC(col, UNDER_SHADOW, 0.16 + 0.22 * ty);
-      col = lerpC(col, UNDER_SHADOW_DEEP, clamp((ty - 0.6) / 0.4, 0, 1) * 0.4);
-      if (ty > 0.62) { const glow = clamp((ty - 0.62) / 0.38, 0, 1) * (0.25 + 0.45 * hx * hx) * 0.30; col = lerpC(col, WHISPER_VIOLET, glow); }
+      col = lerpC(col, UNDER_SHADOW, 0.18 + 0.24 * ty);
+      col = lerpC(col, UNDER_SHADOW_DEEP, clamp((ty - 0.5) / 0.5, 0, 1) * 0.55);   // unify the deep tip DARK (no bright tan wedge, 카나 #3)
+      // violet whisper rim-glow — stronger & reaching higher so it actually READS (카나 #3 "살릴 것").
+      if (ty > 0.40) { const glow = clamp((ty - 0.40) / 0.60, 0, 1) * (0.20 + 0.55 * hx * hx) * 0.55; col = lerpC(col, WHISPER_VIOLET, glow); }
       if (haveProfile && (y - topY) < 4 && hx < 0.92) col = ((x + y) % 3 !== 0) ? UNDER_MOSS : UNDER_MOSS_DK;
+      // dithered edge so the silhouette rim reads as eroded rock, not a clean bezier.
       let a = 1.0;
-      if (hx > 0.82) a = clamp((1 - hx) / 0.18, 0, 1);
+      if (hx > 0.80) { const e = (1 - hx) / 0.20; a = clamp(e, 0, 1); if (a < 1 && ((x + y * 2) & 1)) a = clamp(a + 0.35, 0, 1); }
       if (ty > 0.9) a *= clamp((1 - ty) / 0.1, 0, 1);
       put(img, x, y, col[0], col[1], col[2], Math.round(a * 255));
     }
@@ -212,10 +247,10 @@ function undersideHangers(img, span, depth, rimCx, rimHalf, salt) {
         const xx = (ax | 0) + dx;
         if (xx < 0 || xx >= span) continue;
         const sdx = dx / Math.max(1, w), hx = Math.abs(sdx);
-        const shade = 0.72 - 0.30 * t - 0.16 * sdx - 0.14 * hx;
+        const shade = 0.62 - 0.30 * t - 0.16 * sdx - 0.14 * hx;   // darker so the tail never reads brighter than the body (카나 #3)
         let col = rockCol(shade + rockNoise(xx, yy, s) * 0.10 - 0.05);
-        col = lerpC(col, UNDER_SHADOW, 0.22 + 0.18 * t);
-        if (isSpike && t > 0.6) col = lerpC(col, WHISPER_VIOLET, (t - 0.6) / 0.4 * 0.28);
+        col = lerpC(col, UNDER_SHADOW, 0.30 + 0.22 * t);
+        if (t > 0.5) col = lerpC(col, WHISPER_VIOLET, (t - 0.5) / 0.5 * (isSpike ? 0.42 : 0.30));   // violet rim on hanging tips
         const a = t < 0.85 ? 1.0 : clamp((1 - t) / 0.15, 0, 1);
         if (alphaAt(img, xx, yy) > 0 || (isSpike && t > 0.6)) put(img, xx, yy, col[0], col[1], col[2], Math.round(a * 255));
       }
@@ -830,23 +865,34 @@ if (CLOSEUP) {
   }
   writeScaled(crop, cw, ch, OUT, 1400);
 } else if (CAPSULE) {
-  // (#257) 캡슐: 섬 중심 1.8배 크롭 → 1920×1080. 프레임 중심을 섬 slab 중심에서 아래로 살짝
-  // 내려 언더사이드(부유섬 암반)가 프레임 안에 들어오게 한다. src 크롭 종횡비 16:9 고정.
-  const OUTW = 1920, OUTH = 1080, ZOOM = 1.8;
-  const cw = Math.round(OUTW / ZOOM), ch = Math.round(OUTH / ZOOM);
-  // frame X = island slab horizontal centre (ism* are already canvas-space).
+  // (#257 v1.10.1 rev) 캡슐: **섬 전체 + 언더사이드가 프레임인** 되는 1920×1080 히어로.
+  // 이전 버그: ZOOM=1.8 고정 크롭이 1067×600만 잘라 타일 클로즈업이 됐다(카나 검수 #5).
+  // 대신 실 실루엣(위: 아치 top rim / 아래: 매달린 암반 tail / 좌우: slab rim)을 모두 감싸는
+  // 최소 크롭 박스를 구해 16:9 로 맞춘 뒤 1920×1080 으로 업스케일한다. (v1.10.0 정상 캡슐의
+  // "섬 전체 크롭 → 업스케일" 방식으로 복귀, 단 언더사이드 tail 까지 포함.)
+  const OUTW = 1920, OUTH = 1080, ASPECT = OUTW / OUTH;
   const islandCX = (ismnx + ismxx) / 2;
-  // frame Y = midway between the island TOP rim and the bottom of the hanging rock mass, so
-  // both the arch on top and the underside below sit inside the 16:9 frame.
+  // Vertical silhouette bounds: from the top of the tallest gate arch (top rim − GATE_H − sigil
+  // headroom) down to the bottom of the hanging rock tail (botY + hang).
   let topRim = 1e9;
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) { if (!isIsland(c, r)) continue; const [, ly] = cellLocal(c, r); topRim = Math.min(topRim, OY + ly - HH); }
-  const massBottom = botY + Math.round((ismxx - ismnx) * 0.34);   // botY + hang (mirror of the underside tail)
-  const frameCY = (topRim + massBottom) / 2;
-  const x0 = Math.max(0, Math.min(CW - cw, Math.round(islandCX - cw / 2)));
-  const y0 = Math.max(0, Math.min(CH - ch, Math.round(frameCY - ch / 2)));
+  const archTop = topRim - GATE_H - 70;                            // gate stands GATE_H above its cell + floating sigil headroom
+  const massBottom = botY + Math.round((ismxx - ismnx) * 0.34);    // botY + hang (mirror of the underside tail)
+  const marginX = 90, marginY = 70;
+  let boxL = ismnx - marginX, boxR = ismxx + marginX;
+  let boxT = archTop - marginY, boxB = massBottom + marginY;
+  let boxW = boxR - boxL, boxH = boxB - boxT;
+  // Grow the shorter axis so the crop is exactly 16:9 (letterbox the content, never crop it out).
+  if (boxW / boxH > ASPECT) { const need = boxW / ASPECT; const add = need - boxH; boxT -= add / 2; boxB += add / 2; boxH = need; }
+  else { const need = boxH * ASPECT; const add = need - boxW; boxL -= add / 2; boxR += add / 2; boxW = need; }
+  let cw = Math.round(boxW), ch = Math.round(boxH);
+  let x0 = Math.round((boxL + boxR) / 2 - cw / 2), y0 = Math.round((boxT + boxB) / 2 - ch / 2);
+  // Clamp inside the canvas.
+  cw = Math.min(cw, CW); ch = Math.min(ch, CH);
+  x0 = Math.max(0, Math.min(CW - cw, x0)); y0 = Math.max(0, Math.min(CH - ch, y0));
   const crop = new PNG({ width: cw, height: ch });
   for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
-    const si = (CW * Math.min(CH - 1, y0 + y) + Math.min(CW - 1, x0 + x)) << 2, di = (cw * y + x) << 2;
+    const si = (CW * (y0 + y) + (x0 + x)) << 2, di = (cw * y + x) << 2;
     crop.data[di] = canvas.data[si]; crop.data[di + 1] = canvas.data[si + 1]; crop.data[di + 2] = canvas.data[si + 2]; crop.data[di + 3] = 255;
   }
   writeScaled(crop, cw, ch, OUT, OUTW, true);
