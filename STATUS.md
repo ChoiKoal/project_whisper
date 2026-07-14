@@ -1,19 +1,18 @@
-# STATUS — Apple 배포 준비 (태스크 #255)
+# STATUS — v1.10.3 릴리스 마감 (실 PCK 스모크 인계)
 
 ## 목표
-v1.9.1 macOS 빌드 Apple 공증 준비물 완비 (서명·공증은 콸 로컬 맥에서 수행).
-1. .app Info.plist 공증 요건 완비 (postprocess_macos_zip.py 보강)
-2. 커스텀 앱 아이콘 .icns 제작 (PIL 없이 struct/zlib 순수 파이썬)
-3. entitlements.plist (Godot 4.5 GL compat 최소셋)
-4. tools/notarize_local.sh (콸 맥 원커맨드)
-5. dist/apple-ready zip (앱+스크립트+entitlements+README 동봉)
-6. docs/apple-notarization-guide.md
-7. 검증: 재서명 verify, 부트 스모크, 기존 파이프라인 무회귀
+v1.10.3 — 홈 언더사이드 아트 v3(암반 로브 분할·질감 클러스터링·지층 대비·엣지 정리).
+비주얼 온리, 세이브 호환. v1.10.1~2 대체.
 
-## 불변
-- 기존 macOS/win zip 산출 경로·이름 불변. 게임 데이터(PCK) 무변경.
-- Apple 크리덴셜 절대 미취급 (문서에 절차만). ad-hoc 서명 유지.
+## 상태
+- 하네스 스위프 65/65 그린 완주 · 무실패 (커밋 45cc17b).
+- Godot 프로세스 없음(pgrep 무매치) → 실 PCK 스모크 재실행 진입.
+- **주의**: game/export_presets.cfg preset.2(Linux arm64) exclude_filter 임시 해제(dev 포함 PCK용).
+  이 dirty 상태는 커밋 금지 — 스모크 후 원복.
 
-## 진행
-- 착수. 기존 Info.plist는 Godot가 이미 CFBundleIdentifier/카테고리/버전/카피라이트 채움.
-  → 커스텀 아이콘(현재 Godot 기본 아이콘)·CFBundleVersion 빌드번호 동기·entitlements 추가가 델타.
+## 절차
+1. dev 포함 export → e2e_playthrough + v142_home_layout_harness 각각 --main-pack 구동.
+2. 프리셋 원복(git checkout -- game/export_presets.cfg), 트리 클린 확인.
+3. v1.10.3 정식 범프(project.godot config/version + export_presets 3필드) + 태그 + push.
+4. build_exports.sh → postprocess_macos_zip.py → GH 릴리스 + zip 2종.
+5. 캡슐 갱신, docs/handoff-v1103.md, .sweep_done 제거, 트리 클린.
