@@ -252,28 +252,48 @@ function makeUnderside(span, depth, salt, topProfile) {
       put(img, x, y, col[0], col[1], col[2], Math.round(a * 255));
     }
   }
-  undersideHangers(img, span, depth, rimCx, rimHalf, salt);
+  // (#257 v1.10.3 카나 재검수) 바디 실루엣까지의 거리 페이드용 — per-row 좌우 / per-column 하단
+  // 드로운 범위. 릴리프가 실루엣 가장자리에 매끈면으로 닿아 "반투명 회색 컵"으로 읽히는 것 방지.
+  const rowMinX = new Int32Array(depth).fill(span), rowMaxX = new Int32Array(depth).fill(-1);
+  const colMaxY = new Int32Array(span).fill(-1);
+  for (let y = 0; y < depth; y++) for (let x = 0; x < span; x++) {
+    if (img.data[((img.width * y + x) << 2) + 3] === 0) continue;
+    if (x < rowMinX[y]) rowMinX[y] = x;
+    if (x > rowMaxX[y]) rowMaxX[y] = x;
+    if (y > colMaxY[x]) colMaxY[x] = y;
+  }
+  undersideHangers(img, span, depth, rimCx, rimHalf, salt, rowMinX, rowMaxX, colMaxY);
+  if (global.__dbg) console.error('HANGER DBG', JSON.stringify(global.__dbg));
   return img;
 }
-function undersideHangers(img, span, depth, rimCx, rimHalf, salt) {
+function undersideHangers(img, span, depth, rimCx, rimHalf, salt, rowMinX, rowMaxX, colMaxY) {
   const count = 2 + ((rockNoise(salt, 3, salt + 21) * 2.0) | 0);   // 2..3, chunkier (멤쵸)
   for (let i = 0; i < count; i++) {
     const s = salt + 40 + i * 17;
     const ax = rimCx + (rockNoise(s, 1, s + 2) - 0.5) * 2.0 * rimHalf * 0.85;
     const ay = depth * (0.34 + rockNoise(s, 2, s + 3) * 0.42);
-    const isSpike = rockNoise(s, 4, s + 5) > 0.70;                  // spikes are the exception now
-    let chunkH = depth * (0.10 + rockNoise(s, 6, s + 7) * 0.16);
-    let chunkW = (span * 0.05) + rockNoise(s, 8, s + 9) * span * 0.055;
-    if (isSpike) { chunkW *= 0.55; chunkH *= 1.4; }
+    // (#257 v1.10.3 카나 재검수) isSpike 변형 제거 — 스파이크는 바디 밖(alpha==0)에도 픽셀을
+    // 찍어(구 `isSpike && t>0.6` 분기) 보이드로 삐져나온 "가는 스파이크 잔상"을 만들었다.
+    // 이제 hanger는 전부 chunky nub, 바디 내부(alpha>0)에만 조각한다.
+    const chunkH = depth * (0.10 + rockNoise(s, 6, s + 7) * 0.16);
+    const chunkW = (span * 0.05) + rockNoise(s, 8, s + 9) * span * 0.055;
     for (let dy = 0; dy < (chunkH | 0); dy++) {
       const t = dy / Math.max(1, chunkH);
-      const w = chunkW * (isSpike ? Math.pow(1 - t, 2.2) : (1 - t * 0.55));
+      const w = chunkW * (1 - t * 0.55);
       const yy = (ay + dy) | 0;
       if (yy < 0 || yy >= depth) continue;
       for (let dx = (-w) | 0; dx <= (w | 0); dx++) {
         const xx = (ax | 0) + dx;
         if (xx < 0 || xx >= span) continue;
         const sdx = dx / Math.max(1, w), hx = Math.abs(sdx);
+        // (#257 v1.10.3 카나 재검수) 바디 실루엣(좌/우 rim 대각선 + 하단 bot 등고선) 근처에서는
+        // 릴리프를 기존 rock 텍스처로 페이드아웃 — 매끈한 릴리프 면이 실루엣 가장자리까지 닿아
+        // 보이드 대비 "반투명 회색 컵"으로 읽히던 문제. 실루엣 14px 이내 0%, 48px 이상 내부 100%.
+        const dEdge = Math.min(xx - rowMinX[yy], rowMaxX[yy] - xx, colMaxY[xx] - yy);
+        global.__dbg = global.__dbg || {painted:0, skipped:0, dmin:1e9, dmax:-1e9};
+        const mix = clamp((dEdge - 14) / 34, 0, 1);
+        if (mix <= 0) { global.__dbg.skipped++; continue; }
+        global.__dbg.painted++; global.__dbg.dmin=Math.min(global.__dbg.dmin,dEdge); global.__dbg.dmax=Math.max(global.__dbg.dmax,dEdge);
         // Recessed rounded RELIEF, cooled into the body — a gentle lit-left/shadow-right volume
         // that stays DARKER than the surrounding rock (never a bright tan cup/spike, 카나 #3).
         const spine = (1 - hx) * 0.16;                 // subtle volume, not a highlight ridge
@@ -281,9 +301,14 @@ function undersideHangers(img, span, depth, rimCx, rimHalf, salt) {
         let col = rockCol(shade + rockNoise(xx, yy, s) * 0.09 - 0.045);
         col = lerpC(col, UNDER_SHADOW, 0.34 + 0.22 * t);
         col = lerpC(col, UNDER_SHADOW_DEEP, clamp((t - 0.3) / 0.7, 0, 1) * 0.35);
-        if (t > 0.45) col = lerpC(col, WHISPER_VIOLET, (t - 0.45) / 0.55 * (isSpike ? 0.46 : 0.34));   // violet rim on hanging tips
-        const a = t < 0.85 ? 1.0 : clamp((1 - t) / 0.15, 0, 1);
-        if (alphaAt(img, xx, yy) > 0 || (isSpike && t > 0.6)) put(img, xx, yy, col[0], col[1], col[2], Math.round(a * 255));
+        if (t > 0.45) col = lerpC(col, WHISPER_VIOLET, (t - 0.45) / 0.55 * 0.34);   // violet rim on hanging tips
+        // (#257 v1.10.3 카나 재검수) 바디 밖/침식 rim 덮어쓰기 금지 — 기존 알파 보존(min), alpha==0 스킵.
+        const ea = alphaAt(img, xx, yy);
+        if (ea <= 0) continue;
+        const ei = (img.width * yy + xx) << 2;
+        col = lerpC([img.data[ei], img.data[ei + 1], img.data[ei + 2]], col, mix);   // edge → rock 텍스처로 블렌드
+        const a = Math.min(ea / 255, t < 0.85 ? 1.0 : clamp((1 - t) / 0.15, 0, 1));
+        put(img, xx, yy, col[0], col[1], col[2], Math.round(a * 255));
       }
     }
   }
