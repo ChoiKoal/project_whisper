@@ -780,30 +780,25 @@ func _build_shard_underside() -> void:
 	top_profile.resize(span)
 	for i in range(span):
 		top_profile[i] = -1.0
+	# Trace EVERY island tile's lower-diamond edges (not just the lower-rim tiles). Restricting to
+	# rim tiles left interior notch columns (a tile foot sits above them, but the rim tile one row
+	# down doesn't cover that x) with no rock → the "blue triangle" voids in the staggered edge.
+	# Covering every column that has ANY island foot above it, up to that foot's bottom rim, closes
+	# the notches; the aprons/tiles (drawn in front) overpaint the non-notch part.
 	for r in range(height):
 		var row2 := _layout[r] if r < _layout.size() else ""
 		for c in range(min(width, row2.length())):
 			if not _is_island_cell(Vector2i(c, r)):
 				continue
-			# only tiles on the island's LOWER rim contribute a top edge (a tile whose SW or SE
-			# neighbour is off-island, i.e. the bottom silhouette the underside hangs from).
-			var sw_open := not _is_island_cell(Vector2i(c, r + 1))
-			var se_open := not _is_island_cell(Vector2i(c + 1, r))
-			if not (sw_open or se_open):
-				continue
 			var p := map_to_local(Vector2i(c, r))
 			var cx_img := p.x - minx                        # tile centre x in image space
 			var vtx_y := (p.y + TILE_HALF_H) - img_top_y    # bottom vertex y in image space
-			# Fill the rock UP to the tile's TOP vertex (whole diamond footprint), not just its two
-			# lower edges. Tracing only the lower edges left a void wedge in the V-notch BETWEEN two
-			# staggered rim tiles (the tri sits above the side vertices → the "blue triangle"). Rising
-			# to the top vertex packs rock under the whole tile foot so the notches are closed; the
-			# aprons/tiles (drawn in front, z above this sprite) overpaint the part that isn't a notch.
-			# Keep the HIGHEST rim per column (smallest y).
+			# Follow the tile's two LOWER edges (bottom vertex up to the side vertices, 0.5 px/px).
+			# Keep the HIGHEST rim per column (smallest y) so rock tucks under the topmost tile foot.
 			var tile_l := int(cx_img - TILE_HALF_W)
 			var tile_r := int(cx_img + TILE_HALF_W)
 			for x in range(maxi(0, tile_l), mini(span, tile_r + 1)):
-				var edge_y := (vtx_y - float(TILE_HALF_H)) + 0.5 * absf(float(x) - cx_img)
+				var edge_y := vtx_y - 0.5 * absf(float(x) - cx_img)
 				if top_profile[x] < 0.0 or edge_y < top_profile[x]:
 					top_profile[x] = edge_y
 	var img := CliffGen.make_underside(span, depth, MAP_SEED & 0x7fffffff, top_profile)

@@ -615,19 +615,21 @@ for (const [ox, oy, w, k] of debris) { const d = makeDebris(w, 900 + k); blit(d,
   const hang = Math.round(span * 0.34);
   const depth = Math.round((botY - imgTopY) + hang);
   const topProfile = new Float32Array(span).fill(-1);
+  // Trace EVERY island tile's lower-diamond edges (not just the lower-rim tiles). Restricting to
+  // rim tiles left interior notch columns (a tile foot sits above them, but the rim tile one row
+  // down doesn't cover that x) with no rock → the "blue triangle" voids in the staggered edge
+  // (카나 #4). Covering every column that has ANY island foot above it, up to that foot's bottom
+  // rim, closes the notches; the aprons/tiles (drawn in front) overpaint the non-notch part.
   for (let r = 0; r < H; r++) for (let c = 0; c < layout[r].length; c++) {
     if (!isIsland(c, r)) continue;
-    if (isIsland(c, r + 1) && isIsland(c + 1, r)) continue;  // only the lower rim contributes
     const [lx, ly] = cellLocal(c, r);
     const cxImg = OX + lx - ismnx;                 // tile centre x in image space
     const vtxY = (OY + ly + HH) - imgTopY;         // bottom vertex y in image space
-    // Fill the rock UP to the tile's TOP vertex (full diamond footprint), not just its lower
-    // edges. Tracing only the lower edges left a void wedge in the V-notch BETWEEN two staggered
-    // rim tiles (the tri sits above the side vertices → 카나 #4 "blue triangle"). Rising to the
-    // top vertex packs rock under the whole tile foot so the notches are closed. Smallest-y wins.
+    // Follow the tile's two LOWER edges (bottom vertex up to the side vertices, 0.5 px/px). Keep
+    // the HIGHEST rim per column (smallest y) so rock tucks right under the topmost tile foot.
     const tileL = Math.round(cxImg - HW), tileR = Math.round(cxImg + HW);
     for (let x = Math.max(0, tileL); x <= Math.min(span - 1, tileR); x++) {
-      const edgeY = (vtxY - HH) + 0.5 * Math.abs(x - cxImg);   // top vertex, down the UPPER edges to the sides
+      const edgeY = vtxY - 0.5 * Math.abs(x - cxImg);
       if (topProfile[x] < 0 || edgeY < topProfile[x]) topProfile[x] = edgeY;
     }
   }
