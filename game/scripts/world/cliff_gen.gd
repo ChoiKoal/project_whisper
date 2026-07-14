@@ -344,10 +344,10 @@ static func make_underside(span: int, depth: int, salt: int, top_profile: Packed
 		# STEPPED taper: quantise the vertical parameter into a few "shelves" so the sides
 		# descend in blocky layers (층계식) instead of a smooth straight line. A rocky wobble
 		# on top of that keeps each shelf edge jagged.
-		var shelf := floor(ty * 4.0) / 4.0             # 4 sediment shelves down the body
+		var shelf: float = floor(ty * 4.0) / 4.0       # 4 sediment shelves down the body
 		var step_t := lerpf(shelf, ty, 0.4)            # mostly shelved, a little smooth
 		# slow taper up top (stays wide as bedrock), pinches only in the lower third to a tail.
-		var base_half := rim_half * (1.0 - 0.72 * pow(step_t, 1.6))
+		var base_half: float = rim_half * (1.0 - 0.72 * pow(step_t, 1.6))
 		var wob := (_rock_noise(int(y * 0.5), salt, salt + 3) - 0.5) * span * 0.05
 		var jag := (_rock_noise(int(y / 11), salt + 11, salt + 7) - 0.5) * span * 0.05
 		var half := maxf(2.0, base_half + (wob + jag) * (1.0 - ty * 0.55))

@@ -34,8 +34,12 @@ const CLOSEUP = process.argv.includes("--closeup");
 // 실엔진 SubViewport 리드백이라 --headless dummy 드라이버에선 프레임버퍼가 없어 행(hang)한다
 // (tools_overview 상단 주석 참조). 그래서 히어로 샷도 이 오프라인 컴포지터에서 크롭한다.
 const HERO = process.argv.includes("--hero");
+// --capsule: 섬 중심 1.8배 크롭(1920×1080) → preview-home-capsule.png. 언더사이드(부유섬 암반)가
+// 프레임에 들어오도록 세로 중심을 섬 상단 rim ~ 매달린 암반 하단 중간에 둔다 (#257).
+const CAPSULE = process.argv.includes("--capsule");
 const OUT = CLOSEUP ? "/workspace/group/preview-portal-closeup.png"
           : HERO    ? "/workspace/group/preview-home-hero.png"
+          : CAPSULE ? "/workspace/group/preview-home-capsule.png"
                     : "/workspace/group/preview-home.png";
 
 const TW = 128, TH = 64, HW = 64, HH = 32, LIFT = 32;
@@ -577,10 +581,15 @@ for (const [ox, oy, w, k] of debris) { const d = makeDebris(w, 900 + k); blit(d,
     if (!isIsland(c, r)) continue;
     if (isIsland(c, r + 1) && isIsland(c + 1, r)) continue;  // only the lower rim contributes
     const [lx, ly] = cellLocal(c, r);
-    const tileL = Math.round(OX + lx - HW - ismnx), tileR = Math.round(OX + lx + HW - ismnx);
-    const rimY = (OY + ly + HH) - imgTopY;
-    for (let x = Math.max(0, tileL); x < Math.min(span, tileR); x++) {
-      if (topProfile[x] < 0 || rimY > topProfile[x]) topProfile[x] = rimY;
+    const cxImg = OX + lx - ismnx;                 // tile centre x in image space
+    const vtxY = (OY + ly + HH) - imgTopY;         // bottom vertex y in image space
+    // Trace the tile's two LOWER diamond edges (slope HH/HW = 0.5 px/px up from the bottom
+    // vertex) so the rock top hugs the real iso silhouette — no blue triangle above a flat rim
+    // on the jagged staggered edge. Keep the HIGHEST rim per column (smallest y).
+    const tileL = Math.round(cxImg - HW), tileR = Math.round(cxImg + HW);
+    for (let x = Math.max(0, tileL); x <= Math.min(span - 1, tileR); x++) {
+      const edgeY = vtxY - 0.5 * Math.abs(x - cxImg);
+      if (topProfile[x] < 0 || edgeY < topProfile[x]) topProfile[x] = edgeY;
     }
   }
   const u = makeUnderside(span, depth, 0x9e3779b9 & 0x7fffffff, topProfile);
@@ -820,11 +829,32 @@ if (CLOSEUP) {
     crop.data[di] = canvas.data[si]; crop.data[di + 1] = canvas.data[si + 1]; crop.data[di + 2] = canvas.data[si + 2]; crop.data[di + 3] = 255;
   }
   writeScaled(crop, cw, ch, OUT, 1400);
+} else if (CAPSULE) {
+  // (#257) 캡슐: 섬 중심 1.8배 크롭 → 1920×1080. 프레임 중심을 섬 slab 중심에서 아래로 살짝
+  // 내려 언더사이드(부유섬 암반)가 프레임 안에 들어오게 한다. src 크롭 종횡비 16:9 고정.
+  const OUTW = 1920, OUTH = 1080, ZOOM = 1.8;
+  const cw = Math.round(OUTW / ZOOM), ch = Math.round(OUTH / ZOOM);
+  // frame X = island slab horizontal centre (ism* are already canvas-space).
+  const islandCX = (ismnx + ismxx) / 2;
+  // frame Y = midway between the island TOP rim and the bottom of the hanging rock mass, so
+  // both the arch on top and the underside below sit inside the 16:9 frame.
+  let topRim = 1e9;
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) { if (!isIsland(c, r)) continue; const [, ly] = cellLocal(c, r); topRim = Math.min(topRim, OY + ly - HH); }
+  const massBottom = botY + Math.round((ismxx - ismnx) * 0.34);   // botY + hang (mirror of the underside tail)
+  const frameCY = (topRim + massBottom) / 2;
+  const x0 = Math.max(0, Math.min(CW - cw, Math.round(islandCX - cw / 2)));
+  const y0 = Math.max(0, Math.min(CH - ch, Math.round(frameCY - ch / 2)));
+  const crop = new PNG({ width: cw, height: ch });
+  for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
+    const si = (CW * Math.min(CH - 1, y0 + y) + Math.min(CW - 1, x0 + x)) << 2, di = (cw * y + x) << 2;
+    crop.data[di] = canvas.data[si]; crop.data[di + 1] = canvas.data[si + 1]; crop.data[di + 2] = canvas.data[si + 2]; crop.data[di + 3] = 255;
+  }
+  writeScaled(crop, cw, ch, OUT, OUTW, true);
 } else {
   writeScaled(canvas, CW, CH, OUT, 1600);
 }
-function writeScaled(src, sw, sh, out, targetW) {
-  const scale = Math.min(1, targetW / sw);
+function writeScaled(src, sw, sh, out, targetW, allowUpscale) {
+  const scale = allowUpscale ? (targetW / sw) : Math.min(1, targetW / sw);
   const oW = Math.max(1, Math.round(sw * scale)), oH = Math.max(1, Math.round(sh * scale));
   const o = new PNG({ width: oW, height: oH });
   for (let y = 0; y < oH; y++) { const syv = Math.min(sh - 1, Math.floor(y / scale));

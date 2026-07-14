@@ -792,12 +792,19 @@ func _build_shard_underside() -> void:
 			if not (sw_open or se_open):
 				continue
 			var p := map_to_local(Vector2i(c, r))
-			var tile_l := int(p.x - TILE_HALF_W - minx)
-			var tile_r := int(p.x + TILE_HALF_W - minx)
-			var rim_y := (p.y + TILE_HALF_H) - img_top_y   # bottom vertex of this tile in img space
-			for x in range(maxi(0, tile_l), mini(span, tile_r)):
-				if top_profile[x] < 0.0 or rim_y > top_profile[x]:
-					top_profile[x] = rim_y
+			var cx_img := p.x - minx                        # tile centre x in image space
+			var vtx_y := (p.y + TILE_HALF_H) - img_top_y    # bottom vertex y in image space
+			# Trace the tile's two LOWER diamond edges (SW + SE), which slope up from the bottom
+			# vertex to the side vertices at HH/HW = 0.5 px/px. Recording the sloped edge (not a
+			# flat line at the vertex) means the rock top hugs the real iso silhouette, so no blue
+			# triangle shows above a flat rim on the jagged staggered edge. Keep the HIGHEST rim
+			# per column (smallest y) so the rock tucks up under the topmost tile foot.
+			var tile_l := int(cx_img - TILE_HALF_W)
+			var tile_r := int(cx_img + TILE_HALF_W)
+			for x in range(maxi(0, tile_l), mini(span, tile_r + 1)):
+				var edge_y := vtx_y - 0.5 * absf(float(x) - cx_img)
+				if top_profile[x] < 0.0 or edge_y < top_profile[x]:
+					top_profile[x] = edge_y
 	var img := CliffGen.make_underside(span, depth, MAP_SEED & 0x7fffffff, top_profile)
 	var s := Sprite2D.new()
 	s.texture = ImageTexture.create_from_image(img)
