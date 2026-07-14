@@ -156,29 +156,30 @@ function makeUnderside(span, depth, salt, topProfile) {
   const rimCx = (rimL + rimR) * 0.5, rimHalf = Math.max(2, (rimR - rimL) * 0.5);
   for (let y = 0; y < depth; y++) {
     const ty = y / depth;
-    const shelf = Math.floor(ty * 5.0) / 5.0;
-    const stepT = shelf + (ty - shelf) * 0.35;
-    const baseHalf = rimHalf * Math.pow(1 - stepT, 1.25);
+    const shelf = Math.floor(ty * 4.0) / 4.0;
+    const stepT = shelf + (ty - shelf) * 0.4;
+    const baseHalf = rimHalf * (1 - 0.72 * Math.pow(stepT, 1.6));
     const wob = (rockNoise((y * 0.5) | 0, salt, salt + 3) - 0.5) * span * 0.05;
-    const jag = (rockNoise((y / 9) | 0, salt + 11, salt + 7) - 0.5) * span * 0.045;
-    const half = Math.max(2, baseHalf + (wob + jag) * (1 - ty * 0.7));
+    const jag = (rockNoise((y / 11) | 0, salt + 11, salt + 7) - 0.5) * span * 0.05;
+    const half = Math.max(2, baseHalf + (wob + jag) * (1 - ty * 0.55));
     for (let x = Math.max(0, (rimCx - half) | 0); x < Math.min(span, (rimCx + half) | 0); x++) {
       let topY = 0;
       if (haveProfile) { topY = topProfile[x]; if (topY < 0) continue; if (y < topY) continue; }
       const hx = Math.abs(x - rimCx) / Math.max(1, half);
-      const band = 0.66 - 0.20 * shelf;
-      const vfine = -0.10 * ty;
+      const shelfI = Math.round(shelf * 4.0);
+      let band = 0.98 - 0.11 * shelfI;
+      band += (shelfI % 2 === 0) ? 0.06 : -0.04;
       const strata = Math.floor(rockNoise((x / 7) | 0, (y / 6) | 0, salt) * 5.0) / 5.0;
-      const facet = (strata - 0.4) * 0.40;
-      const crack = (rockNoise((x / 3) | 0, (y / 5) | 0, salt + 5) < 0.12) ? -0.30 : 0.0;
-      const seam = (Math.abs(ty * 5.0 - Math.round(ty * 5.0)) < 0.06) ? -0.34 : 0.0;
-      const edge = -0.30 * hx * hx;
+      const facet = (strata - 0.4) * 0.34;
+      const crack = (rockNoise((x / 3) | 0, (y / 5) | 0, salt + 5) < 0.11) ? -0.26 : 0.0;
+      const seam = (Math.abs(ty * 4.0 - Math.round(ty * 4.0)) < 0.05) ? -0.30 : 0.0;
+      const edge = -0.34 * hx * hx;
       const n = rockNoise(x, y, salt) * 0.10 - 0.05;
-      let col = rockCol(band + vfine + facet + crack + seam + edge + n);
-      col = lerpC(col, UNDER_SHADOW, 0.28 + 0.24 * ty);
-      col = lerpC(col, UNDER_SHADOW_DEEP, clamp((ty - 0.55) / 0.45, 0, 1) * 0.5);
-      if (ty > 0.6) { const glow = clamp((ty - 0.6) / 0.4, 0, 1) * (1 - hx * 0.8) * 0.34; col = lerpC(col, WHISPER_VIOLET, glow); }
-      if (haveProfile && (y - topY) < 4 && hx < 0.9) col = ((x + y) % 3 !== 0) ? UNDER_MOSS : UNDER_MOSS_DK;
+      let col = rockCol(band + facet + crack + seam + edge + n);
+      col = lerpC(col, UNDER_SHADOW, 0.16 + 0.22 * ty);
+      col = lerpC(col, UNDER_SHADOW_DEEP, clamp((ty - 0.6) / 0.4, 0, 1) * 0.4);
+      if (ty > 0.62) { const glow = clamp((ty - 0.62) / 0.38, 0, 1) * (0.25 + 0.45 * hx * hx) * 0.30; col = lerpC(col, WHISPER_VIOLET, glow); }
+      if (haveProfile && (y - topY) < 4 && hx < 0.92) col = ((x + y) % 3 !== 0) ? UNDER_MOSS : UNDER_MOSS_DK;
       let a = 1.0;
       if (hx > 0.82) a = clamp((1 - hx) / 0.18, 0, 1);
       if (ty > 0.9) a *= clamp((1 - ty) / 0.1, 0, 1);
@@ -206,13 +207,13 @@ function undersideHangers(img, span, depth, rimCx, rimHalf, salt) {
       for (let dx = (-w) | 0; dx <= (w | 0); dx++) {
         const xx = (ax | 0) + dx;
         if (xx < 0 || xx >= span) continue;
-        const hx = Math.abs(dx) / Math.max(1, w);
-        const shade = 0.40 - 0.22 * t - 0.20 * hx;
+        const sdx = dx / Math.max(1, w), hx = Math.abs(sdx);
+        const shade = 0.72 - 0.30 * t - 0.16 * sdx - 0.14 * hx;
         let col = rockCol(shade + rockNoise(xx, yy, s) * 0.10 - 0.05);
-        col = lerpC(col, UNDER_SHADOW_DEEP, 0.42 + 0.22 * t);
-        if (isSpike && t > 0.55) col = lerpC(col, WHISPER_VIOLET, (t - 0.55) / 0.45 * 0.30);
+        col = lerpC(col, UNDER_SHADOW, 0.22 + 0.18 * t);
+        if (isSpike && t > 0.6) col = lerpC(col, WHISPER_VIOLET, (t - 0.6) / 0.4 * 0.28);
         const a = t < 0.85 ? 1.0 : clamp((1 - t) / 0.15, 0, 1);
-        if (alphaAt(img, xx, yy) > 0 || (isSpike && t > 0.4)) put(img, xx, yy, col[0], col[1], col[2], Math.round(a * 255));
+        if (alphaAt(img, xx, yy) > 0 || (isSpike && t > 0.6)) put(img, xx, yy, col[0], col[1], col[2], Math.round(a * 255));
       }
     }
   }
@@ -557,10 +558,20 @@ const centerLX = OX + _clx, centerLY = OY + _cly;
 const debris = [[-980, 120, 78, 0], [1020, 40, 64, 1], [-620, 560, 52, 2], [760, 600, 70, 3], [120, -560, 46, 4]];
 for (const [ox, oy, w, k] of debris) { const d = makeDebris(w, 900 + k); blit(d, centerLX + ox - w / 2, centerLY + oy - d.height / 2); }
 
-// Pass -1: irregular bedrock underside (#257) — top edge hugs the island's jagged bottom.
+// Pass -1: irregular bedrock underside (#257) — top edge hugs the island's jagged bottom,
+// mass spans the widest lower silhouette then descends in bedrock layers to a hanging tail.
 {
-  const span = Math.round(ismxx - ismnx), depth = Math.round(span * 0.62);
-  const imgTopY = botY - TH;
+  const span = Math.round(ismxx - ismnx);
+  let topRimY = 1e9;
+  for (let r = 0; r < H; r++) for (let c = 0; c < layout[r].length; c++) {
+    if (!isIsland(c, r)) continue;
+    if (isIsland(c, r + 1) && isIsland(c + 1, r)) continue;
+    const [, ly] = cellLocal(c, r);
+    topRimY = Math.min(topRimY, OY + ly + HH);
+  }
+  const imgTopY = topRimY - HH;
+  const hang = Math.round(span * 0.34);
+  const depth = Math.round((botY - imgTopY) + hang);
   const topProfile = new Float32Array(span).fill(-1);
   for (let r = 0; r < H; r++) for (let c = 0; c < layout[r].length; c++) {
     if (!isIsland(c, r)) continue;

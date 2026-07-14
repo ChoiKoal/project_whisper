@@ -344,12 +344,13 @@ static func make_underside(span: int, depth: int, salt: int, top_profile: Packed
 		# STEPPED taper: quantise the vertical parameter into a few "shelves" so the sides
 		# descend in blocky layers (층계식) instead of a smooth straight line. A rocky wobble
 		# on top of that keeps each shelf edge jagged.
-		var shelf := floor(ty * 5.0) / 5.0
-		var step_t := lerpf(shelf, ty, 0.35)           # mostly shelved, a little smooth
-		var base_half := rim_half * pow(1.0 - step_t, 1.25)
+		var shelf := floor(ty * 4.0) / 4.0             # 4 sediment shelves down the body
+		var step_t := lerpf(shelf, ty, 0.4)            # mostly shelved, a little smooth
+		# slow taper up top (stays wide as bedrock), pinches only in the lower third to a tail.
+		var base_half := rim_half * (1.0 - 0.72 * pow(step_t, 1.6))
 		var wob := (_rock_noise(int(y * 0.5), salt, salt + 3) - 0.5) * span * 0.05
-		var jag := (_rock_noise(int(y / 9), salt + 11, salt + 7) - 0.5) * span * 0.045
-		var half := maxf(2.0, base_half + (wob + jag) * (1.0 - ty * 0.7))
+		var jag := (_rock_noise(int(y / 11), salt + 11, salt + 7) - 0.5) * span * 0.05
+		var half := maxf(2.0, base_half + (wob + jag) * (1.0 - ty * 0.55))
 		var left := int(rim_cx - half)
 		var right := int(rim_cx + half)
 		for x in range(maxi(0, left), mini(span, right)):
@@ -363,29 +364,31 @@ static func make_underside(span: int, depth: int, salt: int, top_profile: Packed
 				if float(y) < top_y:
 					continue
 			var hx := absf(float(x) - rim_cx) / maxf(1.0, half)
-			# STRATA BANDS: 2-3 horizontal tone bands down the depth (bright-ish exposed rock
-			# near the torn top → progressively darker deep rock). Gives structure vs. a flat
-			# gradient.
-			var band := 0.66 - 0.20 * shelf                     # per-shelf base brightness
-			var vfine := -0.10 * ty                             # gentle continuous darkening
+			# STRATA BANDS: 3 horizontal tone bands down the depth — exposed warm rock near the
+			# torn top → progressively darker deep rock. Alternating shelves lighten/darken a
+			# touch so the sediment layering reads clearly (구조감).
+			var shelf_i := int(round(shelf * 4.0))
+			var band := 0.98 - 0.11 * shelf_i                    # per-shelf base brightness
+			band += (0.06 if (shelf_i % 2 == 0) else -0.04)      # alternate layer contrast
 			# faceted strata + cracks (same vocabulary as the cliff faces), coarser here.
 			var strata: float = floor(_rock_noise(x / 7, y / 6, salt) * 5.0) / 5.0
-			var facet: float = (strata - 0.4) * 0.40
-			var crack: float = -0.30 if (_rock_noise(x / 3, y / 5, salt + 5) < 0.12) else 0.0
+			var facet: float = (strata - 0.4) * 0.34
+			var crack: float = -0.26 if (_rock_noise(x / 3, y / 5, salt + 5) < 0.11) else 0.0
 			# thin dark seams between the strata shelves so the banding reads as sediment layers.
-			var seam := -0.34 if (absf(ty * 5.0 - round(ty * 5.0)) < 0.06) else 0.0
-			var edge := -0.30 * hx * hx                          # rounded rock sides
+			var seam := -0.30 if (absf(ty * 4.0 - round(ty * 4.0)) < 0.05) else 0.0
+			var edge := -0.34 * hx * hx                          # rounded rock sides
 			var n: float = _rock_noise(x, y, salt) * 0.10 - 0.05
-			var col := _rock_col(band + vfine + facet + crack + seam + edge + n)
-			# cool the whole underside toward a bluish shadow, deeper toward the tip.
-			col = col.lerp(UNDER_SHADOW, 0.28 + 0.24 * ty)
-			col = col.lerp(UNDER_SHADOW_DEEP, clampf((ty - 0.55) / 0.45, 0.0, 1.0) * 0.5)
-			# faint violet whisper-glow rising from the deep tip (subtle, centre-weighted).
-			if ty > 0.6:
-				var glow := clampf((ty - 0.6) / 0.4, 0.0, 1.0) * (1.0 - hx * 0.8) * 0.34
+			var col := _rock_col(band + facet + crack + seam + edge + n)
+			# cool the underside toward a bluish shadow, a little deeper toward the tip.
+			col = col.lerp(UNDER_SHADOW, 0.16 + 0.22 * ty)
+			col = col.lerp(UNDER_SHADOW_DEEP, clampf((ty - 0.6) / 0.4, 0.0, 1.0) * 0.4)
+			# faint violet whisper-glow along the deepest edges of the tail (subtle, NOT a
+			# central beam — weighted to the rounded sides so it rims the hanging rock).
+			if ty > 0.62:
+				var glow := clampf((ty - 0.62) / 0.38, 0.0, 1.0) * (0.25 + 0.45 * hx * hx) * 0.30
 				col = col.lerp(WHISPER_VIOLET, glow)
 			# moss/grass lip on the very first exposed rows under the island rim.
-			if have_profile and float(y) - top_y < 4.0 and hx < 0.9:
+			if have_profile and float(y) - top_y < 4.0 and hx < 0.92:
 				col = UNDER_MOSS if ((x + y) % 3 != 0) else UNDER_MOSS_DK
 			# soft alpha feather at the outer edge + fade out at the bottom tip.
 			var a := 1.0
@@ -426,17 +429,20 @@ static func _underside_hangers(img: Image, span: int, depth: int, rim_cx: float,
 				var xx := int(ax) + dx
 				if xx < 0 or xx >= span:
 					continue
-				var hx := absf(float(dx)) / maxf(1.0, w)
-				var shade := 0.40 - 0.22 * t - 0.20 * hx
+				var sdx := float(dx) / maxf(1.0, w)      # -1 left .. +1 right within the nub
+				var hx := absf(sdx)
+				# lit on the left face, shadowed on the right → reads as a rounded 3D nub, not a
+				# flat black triangle. Deeper toward the tip.
+				var shade := 0.72 - 0.30 * t - 0.16 * sdx - 0.14 * hx
 				var col := _rock_col(shade + _rock_noise(xx, yy, s) * 0.10 - 0.05)
-				col = col.lerp(UNDER_SHADOW_DEEP, 0.42 + 0.22 * t)
-				if is_spike and t > 0.55:
-					col = col.lerp(WHISPER_VIOLET, (t - 0.55) / 0.45 * 0.30)
+				col = col.lerp(UNDER_SHADOW, 0.22 + 0.18 * t)
+				if is_spike and t > 0.6:
+					col = col.lerp(WHISPER_VIOLET, (t - 0.6) / 0.4 * 0.28)
 				col.a = 1.0 if t < 0.85 else clampf((1.0 - t) / 0.15, 0.0, 1.0)
-				# only darken where there's already rock (chunks are attached to the body),
-				# except spikes which may protrude a little below into the void.
 				var existing := img.get_pixel(xx, yy)
-				if existing.a > 0.0 or (is_spike and t > 0.4):
+				# chunks are relief carved INTO the body (only where rock exists); a spike may
+				# protrude a short way past the body's lower edge as a short hanging tip.
+				if existing.a > 0.0 or (is_spike and t > 0.6):
 					img.set_pixel(xx, yy, col)
 
 

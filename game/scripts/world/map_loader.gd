@@ -756,14 +756,26 @@ func _build_shard_underside() -> void:
 	if maxx <= minx:
 		return
 	var span := int(maxx - minx)
-	var depth := int(span * 0.62)   # hangs down ~0.6× the island width
 	# (#257) Anchor the underside's top edge to the island's REAL jagged bottom outline so the
-	# rock reads as torn bedrock and the left/right gaps (old flat wedge vs. the 톱니 bottom on
-	# the 31×25 slab) are closed. For each image column x, top_profile[x] = the y (px from the
-	# image top) of the LOWEST island tile bottom-rim covering that column, or -1 if no island
-	# is above that column. The image top sits at (bottom_y - top_pad).
-	var top_pad := TILE_HALF_H * 2.0
-	var img_top_y := bottom_y - top_pad
+	# rock reads as torn bedrock spanning the whole slab and the left/right gaps (old flat wedge
+	# vs. the 톱니 bottom on the 31×25 slab) are closed. The image spans vertically from the
+	# island's HIGHEST bottom-facing rim (its widest lower silhouette) down past the point, plus
+	# a hanging tail. For each column x, top_profile[x] = y (px from image top) of the lowest
+	# island bottom-rim covering that column, or -1 if no island is above → no rock (no gap).
+	var top_rim_y := 1e9   # highest (smallest y) lower-rim bottom vertex → where the mass begins
+	for r in range(height):
+		var row0 := _layout[r] if r < _layout.size() else ""
+		for c in range(min(width, row0.length())):
+			if not _is_island_cell(Vector2i(c, r)):
+				continue
+			if _is_island_cell(Vector2i(c, r + 1)) and _is_island_cell(Vector2i(c + 1, r)):
+				continue
+			var pp := map_to_local(Vector2i(c, r))
+			top_rim_y = minf(top_rim_y, pp.y + TILE_HALF_H)
+	var top_pad := TILE_HALF_H          # tuck the top edge a little up into the aprons
+	var img_top_y := top_rim_y - top_pad
+	var hang := int(span * 0.34)         # rocky tail hanging below the bottom point
+	var depth := int((bottom_y - img_top_y) + hang)
 	var top_profile := PackedFloat32Array()
 	top_profile.resize(span)
 	for i in range(span):
@@ -790,7 +802,7 @@ func _build_shard_underside() -> void:
 	var s := Sprite2D.new()
 	s.texture = ImageTexture.create_from_image(img)
 	s.centered = false
-	# Top-centre of the underside sits a little ABOVE the island's bottom vertex so its top
+	# Top-centre of the underside sits a little ABOVE the island's widest bottom rim so its top
 	# edge tucks up into the perimeter aprons (no seam), then it descends in bedrock layers.
 	s.position = Vector2((minx + maxx) * 0.5 - span * 0.5, img_top_y)
 	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
