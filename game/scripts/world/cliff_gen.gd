@@ -336,14 +336,65 @@ static func _shelf_edge_offset(x: int, band_i: int, salt: int) -> float:
 		 + (_snoise1(float(x) / 7.0, salt + band_i * 57) - 0.5) * 7.0
 
 
+## (#257 v1.10.3, 멤쵸 판정) 3개 로브 구조. 하나의 대칭 원뿔 대신 크기·깊이가 다른 2~3개의
+## 겹치는 암반 로브(lobe)로 실루엣을 합성한다. 각 로브는 자체 중심·폭·깊이를 가지며, 로브
+## 사이는 깊은 그림자 골(gully)로 갈라진다. 중앙 돌출(꼬리)은 넓고 짧게(로브 폭↑, hang↓).
+## 지층 대비를 한 단계 강화하고 점묘 노이즈를 지층·로브 구조를 따라 클러스터링(균일 안개 제거).
+## 반환값은 로브들의 하단 실루엣을 담는 (per-column) bottom profile 계산에 쓰인다.
+##   반환: 각 로브 = {cx, half, top, bottom, salt}. make_underside 내부에서만 사용.
+static func _underside_lobes(span: int, depth: int, rim_cx: float, rim_half: float, salt: int) -> Array:
+	var lobes := []
+	# 로브 개수 2~3. 첫 로브는 넓고 중앙(메인 매스), 나머지는 좌/우로 벌어진 작은 로브.
+	var n := 2 + int(_rock_noise(salt, 7, salt + 31) * 1.999)   # 2 or 3
+	for i in range(n):
+		var s := salt + 100 + i * 29
+		var is_main := (i == 0)
+		# 중심: 메인은 rim 중앙 근처, 서브 로브는 좌우로 크게 오프셋(비대칭).
+		var off := 0.0 if is_main else (float(i) - 1.5) * rim_half * (0.62 + _rock_noise(s, 2, s + 1) * 0.3)
+		var lcx := rim_cx + off + (_rock_noise(s, 3, s + 2) - 0.5) * rim_half * 0.25
+		# 폭: 메인 로브가 가장 넓다(넓고 짧은 중앙). 서브는 변주.
+		var lhalf := rim_half * (0.86 if is_main else (0.42 + _rock_noise(s, 4, s + 3) * 0.30))
+		# 깊이(bottom): 로브마다 다르게 → 겹치는 바위 로브들. 메인은 가장 깊게.
+		var lbot := depth * ((0.80 + _rock_noise(s, 5, s + 4) * 0.18) if is_main else (0.48 + _rock_noise(s, 6, s + 5) * 0.30))
+		lobes.append({"cx": lcx, "half": lhalf, "bot": lbot, "salt": s, "main": is_main})
+	return lobes
+
+
+## 한 컬럼 x에서 로브들의 결합 하단 실루엣(bottom y)과 그 컬럼을 지배하는 로브의 국소 hx,
+## 로브 간 골(gully) 깊이를 계산. 반환 [bottom_y, dominant_hx, gully].
+static func _lobe_at(lobes: Array, x: float, salt: int) -> Array:
+	var best_bot := -1.0
+	var dom_hx := 1.0
+	var second_bot := -1.0
+	for lb in lobes:
+		var lcx: float = lb["cx"]
+		var lhalf: float = lb["half"]
+		# 로브 실루엣: 반원형 돔의 하단 + 컬럼별 부드러운 침식 워블.
+		var dx := (x - lcx) / maxf(1.0, lhalf)
+		if absf(dx) >= 1.0:
+			continue
+		var dome := sqrt(maxf(0.0, 1.0 - dx * dx))          # 0 가장자리 .. 1 중앙
+		var wob := (_snoise1(x / 22.0, lb["salt"]) - 0.5) * 0.14
+		var bot: float = lb["bot"] * (dome * (0.72 + wob) + 0.28)
+		if bot > best_bot:
+			second_bot = best_bot
+			best_bot = bot
+			dom_hx = absf(dx)
+		elif bot > second_bot:
+			second_bot = bot
+	# 골: 두 로브가 겹치는 컬럼에서 실루엣이 두 번째 로브 근처까지 파고들면 그림자 골.
+	var gully := 0.0
+	if second_bot > 0.0 and best_bot > 0.0:
+		gully = clampf(1.0 - absf(best_bot - second_bot) / (best_bot * 0.5 + 1.0), 0.0, 1.0)
+	return [best_bot, dom_hx, gully]
+
+
 static func make_underside(span: int, depth: int, salt: int, top_profile: PackedFloat32Array = PackedFloat32Array()) -> Image:
 	var img := Image.create(span, depth, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
-	var cx := span * 0.5
 	var have_profile := top_profile.size() == span
 	# Horizontal extent of the island footprint at the top (leftmost / rightmost column that
-	# actually has island above it). The rock converges from THIS real rim toward a central
-	# spike, so it never balloons out past the slab into empty air.
+	# actually has island above it).
 	var rim_l := 0.0
 	var rim_r := float(span)
 	if have_profile:
@@ -359,21 +410,19 @@ static func make_underside(span: int, depth: int, salt: int, top_profile: Packed
 	var rim_cx := (rim_l + rim_r) * 0.5
 	var rim_half := maxf(2.0, (rim_r - rim_l) * 0.5)
 	var nb := 5   # sediment bands
+	# 로브 실루엣을 미리 계산 (per-column bottom / hx / gully).
+	var lobes := _underside_lobes(span, depth, rim_cx, rim_half, salt)
+	var col_bot := PackedFloat32Array(); col_bot.resize(span)
+	var col_hx := PackedFloat32Array(); col_hx.resize(span)
+	var col_gully := PackedFloat32Array(); col_gully.resize(span)
+	for x in range(span):
+		var la := _lobe_at(lobes, float(x), salt)
+		col_bot[x] = la[0]
+		col_hx[x] = la[1]
+		col_gully[x] = la[2]
 	for y in range(depth):
 		var ty := float(y) / float(depth)              # 0 top .. 1 bottom
-		# CONTINUOUS taper (no per-row shelf JUMP in the silhouette — that jump was the left-side
-		# horizontal streak). The width tapers smoothly; the "층계식" reads from the banded SHADING.
-		# Irregular step widths come from a low-freq width wobble (불규칙 스텝).
-		var taper := 1.0 - 0.70 * pow(ty, 1.55)
-		var step_wob := (_snoise1(ty * 5.0, salt + 91) - 0.5) * 0.16
-		var base_half: float = rim_half * clampf(taper + step_wob, 0.08, 1.2)
-		# SMOOTH silhouette wobble (interpolated → no row-to-row jumps → no streak).
-		var wob := (_snoise1(float(y) / 9.0, salt) - 0.5) * span * 0.045
-		var jag := (_snoise1(float(y) / 3.3, salt + 11) - 0.5) * span * 0.022
-		var half := maxf(2.0, base_half + (wob + jag) * (1.0 - ty * 0.55))
-		var left := int(rim_cx - half)
-		var right := int(rim_cx + half)
-		for x in range(maxi(0, left), mini(span, right)):
+		for x in range(span):
 			# Respect the island's real bottom outline near the top: skip columns with no
 			# island above them, and don't draw ABOVE where the rim actually is.
 			var top_y := 0.0
@@ -383,49 +432,56 @@ static func make_underside(span: int, depth: int, salt: int, top_profile: Packed
 					continue
 				if float(y) < top_y:
 					continue
-			var hx := absf(float(x) - rim_cx) / maxf(1.0, half)
-			# JAGGED, DITHERED sediment band boundaries (지그재그 침식 노치 + 픽셀 디더) — never a
-			# straight ruler line. Gentler per-band contrast than before (명도 차 완화).
+			var bot := col_bot[x]
+			if bot <= 0.0 or float(y) > bot:
+				continue
+			var hx: float = col_hx[x]
+			var gully: float = col_gully[x]
+			# local vertical position within THIS column's rock mass (0 top .. 1 lobe bottom).
+			var ly := clampf((float(y) - top_y) / maxf(1.0, bot - top_y), 0.0, 1.0)
+			# STRATA BANDS — one step stronger contrast than before (멤쵸 #3). Jagged per-column seam.
 			var band_f := ty * nb
 			var nearest_seam := int(round(band_f))
 			var seam_y := float(nearest_seam) / float(nb) * float(depth) + _shelf_edge_offset(x, nearest_seam, salt)
 			var dist_to_seam := float(y) - seam_y
 			var band_i := clampi(int(band_f), 0, nb - 1)
-			var band := 0.95 - 0.055 * band_i
-			band += (0.028 if (band_i % 2 == 0) else -0.02)
-			# faceted strata + cracks (same vocabulary as the cliff faces), coarser here; keep the
-			# facet structure readable deeper down so the lower body isn't a smudge.
-			var strata: float = floor(_rock_noise(x / 7, y / 6, salt) * 5.0) / 5.0
-			var facet: float = (strata - 0.4) * (0.30 + 0.20 * ty)
-			var crack: float = -0.24 if (_rock_noise(x / 3, y / 5, salt + 5) < 0.13) else 0.0
-			# soft dithered seam notch right at the jagged boundary.
+			var band := 0.98 - 0.090 * band_i                    # 강화된 밴드 간 대비 (was 0.055)
+			band += (0.055 if (band_i % 2 == 0) else -0.045)     # 밴드 명암 강화 (was ±0.028/0.02)
+			# CLUSTERED faceted strata — 노이즈를 지층(수평 스트라이프) + 로브 구조를 따라 뭉친다.
+			# 균일 분포 대신 큰 블록(x/9,y/4) 클러스터를 만들어 안개가 아닌 바위 질감으로 읽히게.
+			var cluster: float = floor(_rock_noise(x / 9, y / 4, salt) * 4.0) / 4.0     # 0..0.75 큰 얼룩
+			var strata: float = floor(_rock_noise(x / 6, y / 5, salt + 2) * 5.0) / 5.0  # 지층 세부
+			var facet: float = (cluster - 0.375) * 0.42 + (strata - 0.4) * 0.30         # 강화된 대비
+			var crack: float = -0.34 if (_rock_noise(x / 3, y / 6, salt + 5) < 0.15) else 0.0
+			# seam notch (jagged, dithered).
 			var seam := 0.0
-			if absf(dist_to_seam) < 2.4:
+			if absf(dist_to_seam) < 2.6:
 				var dith := ((x * 7 + y * 3 + int(_rock_noise(x, y, salt + 9) * 4.0)) & 3) != 0
 				if dith:
-					seam = -0.20 * (1.0 - absf(dist_to_seam) / 2.4)
-			var edge := -0.34 * hx * hx                          # rounded rock sides
-			var n: float = _rock_noise(x, y, salt) * 0.10 - 0.05
-			var col := _rock_col(band + facet + crack + seam + edge + n)
-			# cool the underside toward a bluish shadow, a little deeper toward the tip.
-			col = col.lerp(UNDER_SHADOW, 0.16 + 0.20 * ty)
-			col = col.lerp(UNDER_SHADOW_DEEP, clampf((ty - 0.55) / 0.45, 0.0, 1.0) * 0.42)
-			# violet whisper rim-glow — weighted to the rounded SIDES so it rims the hanging rock
-			# (은은한 rim glow), stronger toward the tip, readable but not a central beam.
+					seam = -0.30 * (1.0 - absf(dist_to_seam) / 2.6)
+			var edge := -0.40 * hx * hx                          # rounded rock sides
+			# GULLY: deep shadow gorge between overlapping lobes.
+			var gsh := -0.55 * gully
+			var n: float = _rock_noise(x, y, salt) * 0.12 - 0.06
+			var col := _rock_col(band + facet + crack + seam + edge + gsh + n)
+			# cool toward a bluish shadow — LESS than before so the underside isn't washed/foggy
+			# and stays close to surface brightness (멤쵸: 흐리지 않게 전체 명도/샤프니스 점검).
+			col = col.lerp(UNDER_SHADOW, 0.08 + 0.14 * ty)
+			col = col.lerp(UNDER_SHADOW_DEEP, clampf((ly - 0.60) / 0.40, 0.0, 1.0) * 0.34)
+			# violet whisper rim-glow — weighted to the rounded SIDES / gully so it rims the rock.
 			if ty > 0.42:
-				var glow := clampf((ty - 0.42) / 0.58, 0.0, 1.0) * (0.14 + 0.60 * hx * hx) * 0.60
+				var glow := clampf((ty - 0.42) / 0.58, 0.0, 1.0) * (0.10 + 0.42 * hx * hx) * 0.50
 				col = col.lerp(WHISPER_VIOLET, glow)
 			# moss/grass lip on the very first exposed rows under the island rim.
 			if have_profile and float(y) - top_y < 4.0 and hx < 0.92:
 				col = UNDER_MOSS if ((x + y) % 3 != 0) else UNDER_MOSS_DK
-			# soft dithered alpha feather at the outer edge + fade out at the bottom tip.
+			# HARD-ish eroded edge (no foggy alpha feather that read as haze — 멤쵸 "안개 덩어리").
+			# Only a 1px dithered rim; interior stays fully opaque, crisp rock.
 			var a := 1.0
-			if hx > 0.80:
-				a = clampf((1.0 - hx) / 0.20, 0.0, 1.0)
-				if a < 1.0 and ((x + y * 2) & 1) == 1:
-					a = clampf(a + 0.35, 0.0, 1.0)
-			if ty > 0.9:
-				a *= clampf((1.0 - ty) / 0.1, 0.0, 1.0)
+			if hx > 0.90:
+				a = 1.0 if ((x + y) & 1) == 0 else 0.35          # 1px 지그재그 침식 rim (not a soft gradient)
+			if float(y) > bot - 2.0:
+				a = 1.0 if ((x + y) & 1) == 0 else 0.35
 			col.a = a
 			img.set_pixel(x, y, col)
 	# ---- hanging rock chunks + stalactites (asymmetric, 2-4) --------------------------------

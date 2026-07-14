@@ -774,7 +774,7 @@ func _build_shard_underside() -> void:
 			top_rim_y = minf(top_rim_y, pp.y + TILE_HALF_H)
 	var top_pad := TILE_HALF_H          # tuck the top edge a little up into the aprons
 	var img_top_y := top_rim_y - top_pad
-	var hang := int(span * 0.34)         # rocky tail hanging below the bottom point
+	var hang := int(span * 0.20)         # (#257 v1.10.3) 넓고 짧은 중앙 돌출 — 좁고 긴 꼬리 제거 (멤쵸 #2)
 	var depth := int((bottom_y - img_top_y) + hang)
 	var top_profile := PackedFloat32Array()
 	top_profile.resize(span)

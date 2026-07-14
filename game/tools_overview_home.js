@@ -614,7 +614,7 @@ for (const [ox, oy, w, k] of debris) { const d = makeDebris(w, 900 + k); blit(d,
     topRimY = Math.min(topRimY, OY + ly + HH);
   }
   const imgTopY = topRimY - HH;
-  const hang = Math.round(span * 0.34);
+  const hang = Math.round(span * 0.20);   // (#257 v1.10.3) 넓고 짧은 중앙 돌출 (멤쵸 #2)
   const depth = Math.round((botY - imgTopY) + hang);
   const topProfile = new Float32Array(span).fill(-1);
   // Trace EVERY island tile's lower-diamond edges (not just the lower-rim tiles). Restricting to
@@ -885,7 +885,7 @@ if (CLOSEUP) {
   let topRim = 1e9;
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) { if (!isIsland(c, r)) continue; const [, ly] = cellLocal(c, r); topRim = Math.min(topRim, OY + ly - HH); }
   const archTop = topRim - GATE_H - 70;                            // gate stands GATE_H above its cell + floating sigil headroom
-  const massBottom = botY + Math.round((ismxx - ismnx) * 0.34);    // botY + hang (mirror of the underside tail)
+  const massBottom = botY + Math.round((ismxx - ismnx) * 0.20);    // botY + hang (mirror of the underside tail, v1.10.3)
   const marginX = 90, marginY = 70;
   let boxL = ismnx - marginX, boxR = ismxx + marginX;
   let boxT = archTop - marginY, boxB = massBottom + marginY;
