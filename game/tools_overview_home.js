@@ -201,8 +201,8 @@ function makeUnderside(span, depth, salt, topProfile) {
       let band = 0.95 - 0.055 * bandI;
       band += (bandI % 2 === 0) ? 0.028 : -0.02;
       const strata = Math.floor(rockNoise((x / 7) | 0, (y / 6) | 0, salt) * 5.0) / 5.0;
-      const facet = (strata - 0.4) * 0.30;
-      const crack = (rockNoise((x / 3) | 0, (y / 5) | 0, salt + 5) < 0.11) ? -0.22 : 0.0;
+      const facet = (strata - 0.4) * (0.30 + 0.20 * ty);   // keep facet structure readable deeper down (not a smudge)
+      const crack = (rockNoise((x / 3) | 0, (y / 5) | 0, salt + 5) < 0.13) ? -0.24 : 0.0;
       // soft dithered seam: a thin darker notch right at the jagged boundary, dithered so it
       // dissolves into pixels rather than a hard line.
       let seam = 0.0;
@@ -213,10 +213,11 @@ function makeUnderside(span, depth, salt, topProfile) {
       const edge = -0.34 * hx * hx;
       const n = rockNoise(x, y, salt) * 0.10 - 0.05;
       let col = rockCol(band + facet + crack + seam + edge + n);
-      col = lerpC(col, UNDER_SHADOW, 0.18 + 0.24 * ty);
-      col = lerpC(col, UNDER_SHADOW_DEEP, clamp((ty - 0.5) / 0.5, 0, 1) * 0.55);   // unify the deep tip DARK (no bright tan wedge, 카나 #3)
-      // violet whisper rim-glow — stronger & reaching higher so it actually READS (카나 #3 "살릴 것").
-      if (ty > 0.40) { const glow = clamp((ty - 0.40) / 0.60, 0, 1) * (0.20 + 0.55 * hx * hx) * 0.55; col = lerpC(col, WHISPER_VIOLET, glow); }
+      col = lerpC(col, UNDER_SHADOW, 0.16 + 0.20 * ty);
+      col = lerpC(col, UNDER_SHADOW_DEEP, clamp((ty - 0.55) / 0.45, 0, 1) * 0.42);   // deep tip cools DARK (no bright tan wedge, 카나 #3) but not a flat smudge
+      // violet whisper rim-glow — weighted to the rounded SIDES so it rims the hanging rock (은은한
+      // rim glow, 카나 #3 "살릴 것"); stronger toward the tip, clearly readable but not a beam.
+      if (ty > 0.42) { const glow = clamp((ty - 0.42) / 0.58, 0, 1) * (0.14 + 0.60 * hx * hx) * 0.60; col = lerpC(col, WHISPER_VIOLET, glow); }
       if (haveProfile && (y - topY) < 4 && hx < 0.92) col = ((x + y) % 3 !== 0) ? UNDER_MOSS : UNDER_MOSS_DK;
       // dithered edge so the silhouette rim reads as eroded rock, not a clean bezier.
       let a = 1.0;
@@ -247,13 +248,14 @@ function undersideHangers(img, span, depth, rimCx, rimHalf, salt) {
         const xx = (ax | 0) + dx;
         if (xx < 0 || xx >= span) continue;
         const sdx = dx / Math.max(1, w), hx = Math.abs(sdx);
-        // Sculpt as a rounded 3D nub: bright lit left face → shadowed right, a central spine
-        // highlight, darker toward the tip. Avoids the flat black-triangle read (카나 #3/#4).
-        const spine = (1 - hx) * 0.30;                 // rounded volume highlight
-        const shade = 0.86 - 0.34 * t - 0.22 * sdx + spine;
-        let col = rockCol(shade + rockNoise(xx, yy, s) * 0.10 - 0.05);
-        col = lerpC(col, UNDER_SHADOW, 0.16 + 0.26 * t);
-        if (t > 0.5) col = lerpC(col, WHISPER_VIOLET, (t - 0.5) / 0.5 * (isSpike ? 0.42 : 0.30));   // violet rim on hanging tips
+        // Recessed rounded RELIEF, cooled into the body — a gentle lit-left/shadow-right volume
+        // that stays DARKER than the surrounding rock (never a bright tan cup/spike, 카나 #3).
+        const spine = (1 - hx) * 0.16;                 // subtle volume, not a highlight ridge
+        const shade = 0.60 - 0.26 * t - 0.16 * sdx + spine;
+        let col = rockCol(shade + rockNoise(xx, yy, s) * 0.09 - 0.045);
+        col = lerpC(col, UNDER_SHADOW, 0.34 + 0.22 * t);
+        col = lerpC(col, UNDER_SHADOW_DEEP, clamp((t - 0.3) / 0.7, 0, 1) * 0.35);
+        if (t > 0.45) col = lerpC(col, WHISPER_VIOLET, (t - 0.45) / 0.55 * (isSpike ? 0.46 : 0.34));   // violet rim on hanging tips
         const a = t < 0.85 ? 1.0 : clamp((1 - t) / 0.15, 0, 1);
         if (alphaAt(img, xx, yy) > 0 || (isSpike && t > 0.6)) put(img, xx, yy, col[0], col[1], col[2], Math.round(a * 255));
       }
