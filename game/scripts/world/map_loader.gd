@@ -756,15 +756,43 @@ func _build_shard_underside() -> void:
 	if maxx <= minx:
 		return
 	var span := int(maxx - minx)
-	var depth := int(span * 0.62)   # hangs down ~0.6× the island width to a point
-	var img := CliffGen.make_underside(span, depth, MAP_SEED & 0x7fffffff)
+	var depth := int(span * 0.62)   # hangs down ~0.6× the island width
+	# (#257) Anchor the underside's top edge to the island's REAL jagged bottom outline so the
+	# rock reads as torn bedrock and the left/right gaps (old flat wedge vs. the 톱니 bottom on
+	# the 31×25 slab) are closed. For each image column x, top_profile[x] = the y (px from the
+	# image top) of the LOWEST island tile bottom-rim covering that column, or -1 if no island
+	# is above that column. The image top sits at (bottom_y - top_pad).
+	var top_pad := TILE_HALF_H * 2.0
+	var img_top_y := bottom_y - top_pad
+	var top_profile := PackedFloat32Array()
+	top_profile.resize(span)
+	for i in range(span):
+		top_profile[i] = -1.0
+	for r in range(height):
+		var row2 := _layout[r] if r < _layout.size() else ""
+		for c in range(min(width, row2.length())):
+			if not _is_island_cell(Vector2i(c, r)):
+				continue
+			# only tiles on the island's LOWER rim contribute a top edge (a tile whose SW or SE
+			# neighbour is off-island, i.e. the bottom silhouette the underside hangs from).
+			var sw_open := not _is_island_cell(Vector2i(c, r + 1))
+			var se_open := not _is_island_cell(Vector2i(c + 1, r))
+			if not (sw_open or se_open):
+				continue
+			var p := map_to_local(Vector2i(c, r))
+			var tile_l := int(p.x - TILE_HALF_W - minx)
+			var tile_r := int(p.x + TILE_HALF_W - minx)
+			var rim_y := (p.y + TILE_HALF_H) - img_top_y   # bottom vertex of this tile in img space
+			for x in range(maxi(0, tile_l), mini(span, tile_r)):
+				if top_profile[x] < 0.0 or rim_y > top_profile[x]:
+					top_profile[x] = rim_y
+	var img := CliffGen.make_underside(span, depth, MAP_SEED & 0x7fffffff, top_profile)
 	var s := Sprite2D.new()
 	s.texture = ImageTexture.create_from_image(img)
 	s.centered = false
-	# Top-centre of the underside sits a little ABOVE the island's bottom vertex so its wide
-	# top tucks up into the perimeter aprons (no seam), then it tapers down to the point.
-	var top_pad := TILE_HALF_H * 2.0
-	s.position = Vector2((minx + maxx) * 0.5 - span * 0.5, bottom_y - top_pad)
+	# Top-centre of the underside sits a little ABOVE the island's bottom vertex so its top
+	# edge tucks up into the perimeter aprons (no seam), then it descends in bedrock layers.
+	s.position = Vector2((minx + maxx) * 0.5 - span * 0.5, img_top_y)
 	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	# Draw it below the aprons (further back) so the aprons overlap its top edge.
 	s.z_index = -1

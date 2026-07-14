@@ -292,46 +292,101 @@ static func _ramp_grad(x: int, y: int, dir: String) -> float:
 		_:    return clampf(1.0 - float(y) / float(TH), 0.0, 1.0) # ne
 
 
-## (v0.5d) Build the tapering rocky UNDERSIDE of a floating island shard: a dark rock mass
-## that hangs below the island's lower silhouette and narrows to a point-ish bottom, so the
-## island reads as "torn out of the earth, hovering". Returns an image `span` wide and
-## `depth` tall; its TOP edge is a wide arc (matching the island's lower rim) and it tapers
-## to a jagged narrow spike at the bottom. Anchored so its top-centre sits at the island's
-## bottom vertex: blit at (bottom_vertex.x - span/2, bottom_vertex.y - top_pad).
-##   span    : full width of the underside at its widest (island screen width-ish).
-##   depth   : how far it hangs down (px).
-##   top_pad : how many px of the top overlap up into the island's cliff aprons (blend).
-static func make_underside(span: int, depth: int, salt: int) -> Image:
+## Violet whisper glow — the sealed theme colour, used faintly at the shard's deep tip.
+const WHISPER_VIOLET := Color8(150, 118, 214)
+## Deep bluish shadow rock cast the whole underside is cooled toward (the hidden root).
+const UNDER_SHADOW := Color8(40, 38, 56)
+const UNDER_SHADOW_DEEP := Color8(26, 22, 40)
+## Mossy grass rim colours for the lip that hangs just under the island's jagged bottom.
+const UNDER_MOSS := Color8(74, 110, 54)
+const UNDER_MOSS_DK := Color8(48, 78, 40)
+
+## (#257 v1.10.1) Build the rocky UNDERSIDE of the floating home-island shard as irregular
+## BEDROCK — no longer a flat dirt wedge tapering straight to a point. The top edge hugs the
+## island's actual jagged bottom outline (`top_profile`, so left/right gaps are closed), the
+## silhouette descends in stepped/uneven layers with 2-3 strata bands (dark rock → darker
+## deep rock), and a faint violet whisper-glow warms the deepest tip. Same warm-rock noise
+## vocabulary as the cliff faces, now organised by banding instead of a smooth cone.
+##
+## Returns an image `span` wide × `depth` tall. Anchored so its top-centre sits a little above
+## the island's bottom vertex: blit at (bottom_vertex.x - span/2, bottom_vertex.y - top_pad).
+##   span         : full screen width of the island slab (px) — image width.
+##   depth        : how far the mass hangs down (px).
+##   top_profile  : per-column top y (px from image top) where the island's bottom rim sits
+##                  above column x, or < 0 for columns with NO island above them (no rock is
+##                  drawn there → the top edge follows the real 톱니 outline, no gap). May be
+##                  empty → falls back to a flat top row (legacy behaviour) for callers that
+##                  don't supply an outline.
+static func make_underside(span: int, depth: int, salt: int, top_profile: PackedFloat32Array = PackedFloat32Array()) -> Image:
 	var img := Image.create(span, depth, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
 	var cx := span * 0.5
-	# The taper: at y=0 the mass fills most of the span; at y=depth it pinches to a narrow
-	# spike. Half-width shrinks super-linearly (pow) so the bottom reads as a torn point.
+	var have_profile := top_profile.size() == span
+	# Horizontal extent of the island footprint at the top (leftmost / rightmost column that
+	# actually has island above it). The rock converges from THIS real rim toward a central
+	# spike, so it never balloons out past the slab into empty air.
+	var rim_l := 0.0
+	var rim_r := float(span)
+	if have_profile:
+		rim_l = float(span)
+		rim_r = 0.0
+		for x in range(span):
+			if top_profile[x] >= 0.0:
+				rim_l = minf(rim_l, float(x))
+				rim_r = maxf(rim_r, float(x) + 1.0)
+		if rim_r <= rim_l:
+			rim_l = 0.0
+			rim_r = float(span)
+	var rim_cx := (rim_l + rim_r) * 0.5
+	var rim_half := maxf(2.0, (rim_r - rim_l) * 0.5)
 	for y in range(depth):
 		var ty := float(y) / float(depth)              # 0 top .. 1 bottom
-		# widest near the very top, then taper; a couple of noisy bulges break the silhouette.
-		var base_half := (span * 0.5) * pow(1.0 - ty, 1.35)
-		# add a rocky wobble to the outline so it isn't a smooth cone.
-		var wob := (_rock_noise(int(y * 0.5), salt, salt + 3) - 0.5) * span * 0.06
-		var half := maxf(2.0, base_half + wob * (1.0 - ty))
-		var left := int(cx - half)
-		var right := int(cx + half)
+		# STEPPED taper: quantise the vertical parameter into a few "shelves" so the sides
+		# descend in blocky layers (층계식) instead of a smooth straight line. A rocky wobble
+		# on top of that keeps each shelf edge jagged.
+		var shelf := floor(ty * 5.0) / 5.0
+		var step_t := lerpf(shelf, ty, 0.35)           # mostly shelved, a little smooth
+		var base_half := rim_half * pow(1.0 - step_t, 1.25)
+		var wob := (_rock_noise(int(y * 0.5), salt, salt + 3) - 0.5) * span * 0.05
+		var jag := (_rock_noise(int(y / 9), salt + 11, salt + 7) - 0.5) * span * 0.045
+		var half := maxf(2.0, base_half + (wob + jag) * (1.0 - ty * 0.7))
+		var left := int(rim_cx - half)
+		var right := int(rim_cx + half)
 		for x in range(maxi(0, left), mini(span, right)):
-			# horizontal position within the mass (0 centre .. 1 edge)
-			var hx := absf(float(x) - cx) / maxf(1.0, half)
-			# darker, cooler rock than the cliff faces (it's in shadow, underground rock).
-			# vertical gradient: fades to near-black at the very bottom point.
-			var vshade := 0.72 - 0.44 * ty
-			# faceted strata + cracks (same vocabulary as the cliff faces).
+			# Respect the island's real bottom outline near the top: skip columns with no
+			# island above them, and don't draw ABOVE where the rim actually is.
+			var top_y := 0.0
+			if have_profile:
+				top_y = top_profile[x]
+				if top_y < 0.0:
+					continue
+				if float(y) < top_y:
+					continue
+			var hx := absf(float(x) - rim_cx) / maxf(1.0, half)
+			# STRATA BANDS: 2-3 horizontal tone bands down the depth (bright-ish exposed rock
+			# near the torn top → progressively darker deep rock). Gives structure vs. a flat
+			# gradient.
+			var band := 0.66 - 0.20 * shelf                     # per-shelf base brightness
+			var vfine := -0.10 * ty                             # gentle continuous darkening
+			# faceted strata + cracks (same vocabulary as the cliff faces), coarser here.
 			var strata: float = floor(_rock_noise(x / 7, y / 6, salt) * 5.0) / 5.0
-			var facet: float = (strata - 0.4) * 0.42
+			var facet: float = (strata - 0.4) * 0.40
 			var crack: float = -0.30 if (_rock_noise(x / 3, y / 5, salt + 5) < 0.12) else 0.0
-			# edge darkening so the sides read as rounded rock, not a flat slab.
-			var edge := -0.28 * hx * hx
+			# thin dark seams between the strata shelves so the banding reads as sediment layers.
+			var seam := -0.34 if (absf(ty * 5.0 - round(ty * 5.0)) < 0.06) else 0.0
+			var edge := -0.30 * hx * hx                          # rounded rock sides
 			var n: float = _rock_noise(x, y, salt) * 0.10 - 0.05
-			var col := _rock_col(vshade + facet + crack + edge + n)
-			# cool the whole underside toward a bluish shadow (it's the hidden root).
-			col = col.lerp(Color8(40, 38, 56), 0.30 + 0.25 * ty)
+			var col := _rock_col(band + vfine + facet + crack + seam + edge + n)
+			# cool the whole underside toward a bluish shadow, deeper toward the tip.
+			col = col.lerp(UNDER_SHADOW, 0.28 + 0.24 * ty)
+			col = col.lerp(UNDER_SHADOW_DEEP, clampf((ty - 0.55) / 0.45, 0.0, 1.0) * 0.5)
+			# faint violet whisper-glow rising from the deep tip (subtle, centre-weighted).
+			if ty > 0.6:
+				var glow := clampf((ty - 0.6) / 0.4, 0.0, 1.0) * (1.0 - hx * 0.8) * 0.34
+				col = col.lerp(WHISPER_VIOLET, glow)
+			# moss/grass lip on the very first exposed rows under the island rim.
+			if have_profile and float(y) - top_y < 4.0 and hx < 0.9:
+				col = UNDER_MOSS if ((x + y) % 3 != 0) else UNDER_MOSS_DK
 			# soft alpha feather at the outer edge + fade out at the bottom tip.
 			var a := 1.0
 			if hx > 0.82:
@@ -340,7 +395,49 @@ static func make_underside(span: int, depth: int, salt: int) -> Image:
 				a *= clampf((1.0 - ty) / 0.1, 0.0, 1.0)
 			col.a = a
 			img.set_pixel(x, y, col)
+	# ---- hanging rock chunks + stalactites (asymmetric, 2-4) --------------------------------
+	_underside_hangers(img, span, depth, rim_cx, rim_half, salt)
 	return img
+
+
+## Paint a few asymmetric hanging rock chunks and stalactite spikes onto the underside, so the
+## silhouette reads as broken bedrock rather than a clean wedge. Deterministic per salt.
+static func _underside_hangers(img: Image, span: int, depth: int, rim_cx: float, rim_half: float, salt: int) -> void:
+	var count := 2 + int(_rock_noise(salt, 3, salt + 21) * 3.0)   # 2..4
+	for i in range(count):
+		var s := salt + 40 + i * 17
+		# anchor somewhere across the width, biased off-centre (asymmetry).
+		var ax := rim_cx + (_rock_noise(s, 1, s + 2) - 0.5) * 2.0 * rim_half * 0.85
+		var ay := depth * (0.30 + _rock_noise(s, 2, s + 3) * 0.45)  # hang from mid-body
+		var is_spike := _rock_noise(s, 4, s + 5) > 0.45
+		var chunk_h := depth * (0.10 + _rock_noise(s, 6, s + 7) * 0.16)
+		var chunk_w := (span * 0.03) + _rock_noise(s, 8, s + 9) * span * 0.04
+		if is_spike:
+			chunk_w *= 0.5    # stalactites are thin
+			chunk_h *= 1.4
+		for dy in range(int(chunk_h)):
+			var t := float(dy) / maxf(1.0, chunk_h)
+			# spikes taper hard to a point; chunks taper gently (blocky nub).
+			var w := chunk_w * (pow(1.0 - t, 2.2) if is_spike else (1.0 - t * 0.55))
+			var yy := int(ay + dy)
+			if yy < 0 or yy >= depth:
+				continue
+			for dx in range(int(-w), int(w) + 1):
+				var xx := int(ax) + dx
+				if xx < 0 or xx >= span:
+					continue
+				var hx := absf(float(dx)) / maxf(1.0, w)
+				var shade := 0.40 - 0.22 * t - 0.20 * hx
+				var col := _rock_col(shade + _rock_noise(xx, yy, s) * 0.10 - 0.05)
+				col = col.lerp(UNDER_SHADOW_DEEP, 0.42 + 0.22 * t)
+				if is_spike and t > 0.55:
+					col = col.lerp(WHISPER_VIOLET, (t - 0.55) / 0.45 * 0.30)
+				col.a = 1.0 if t < 0.85 else clampf((1.0 - t) / 0.15, 0.0, 1.0)
+				# only darken where there's already rock (chunks are attached to the body),
+				# except spikes which may protrude a little below into the void.
+				var existing := img.get_pixel(xx, yy)
+				if existing.a > 0.0 or (is_spike and t > 0.4):
+					img.set_pixel(xx, yy, col)
 
 
 ## (v0.5d) Build a small floating debris islet: a tiny rock chunk (top diamond nub + a short
