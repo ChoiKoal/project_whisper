@@ -263,7 +263,6 @@ function makeUnderside(span, depth, salt, topProfile) {
     if (y > colMaxY[x]) colMaxY[x] = y;
   }
   undersideHangers(img, span, depth, rimCx, rimHalf, salt, rowMinX, rowMaxX, colMaxY);
-  if (global.__dbg) console.error('HANGER DBG', JSON.stringify(global.__dbg));
   return img;
 }
 function undersideHangers(img, span, depth, rimCx, rimHalf, salt, rowMinX, rowMaxX, colMaxY) {
@@ -290,23 +289,24 @@ function undersideHangers(img, span, depth, rimCx, rimHalf, salt, rowMinX, rowMa
         // 릴리프를 기존 rock 텍스처로 페이드아웃 — 매끈한 릴리프 면이 실루엣 가장자리까지 닿아
         // 보이드 대비 "반투명 회색 컵"으로 읽히던 문제. 실루엣 14px 이내 0%, 48px 이상 내부 100%.
         const dEdge = Math.min(xx - rowMinX[yy], rowMaxX[yy] - xx, colMaxY[xx] - yy);
-        global.__dbg = global.__dbg || {painted:0, skipped:0, dmin:1e9, dmax:-1e9};
         const mix = clamp((dEdge - 14) / 34, 0, 1);
-        if (mix <= 0) { global.__dbg.skipped++; continue; }
-        global.__dbg.painted++; global.__dbg.dmin=Math.min(global.__dbg.dmin,dEdge); global.__dbg.dmax=Math.max(global.__dbg.dmax,dEdge);
-        // Recessed rounded RELIEF, cooled into the body — a gentle lit-left/shadow-right volume
-        // that stays DARKER than the surrounding rock (never a bright tan cup/spike, 카나 #3).
-        const spine = (1 - hx) * 0.16;                 // subtle volume, not a highlight ridge
-        const shade = 0.60 - 0.26 * t - 0.16 * sdx + spine;
-        let col = rockCol(shade + rockNoise(xx, yy, s) * 0.09 - 0.045);
-        col = lerpC(col, UNDER_SHADOW, 0.34 + 0.22 * t);
-        col = lerpC(col, UNDER_SHADOW_DEEP, clamp((t - 0.3) / 0.7, 0, 1) * 0.35);
-        if (t > 0.45) col = lerpC(col, WHISPER_VIOLET, (t - 0.45) / 0.55 * 0.34);   // violet rim on hanging tips
-        // (#257 v1.10.3 카나 재검수) 바디 밖/침식 rim 덮어쓰기 금지 — 기존 알파 보존(min), alpha==0 스킵.
+        if (mix <= 0) continue;
+        // (#257 v1.10.4 카나 재검수) "반투명 회색-보라 스쿱" 제거 — hanger를 매끈한 rockCol
+        // 그라디언트로 새로 칠하면 주변 chunky rock보다 밝고 평평(std↓)해져 보이드 대비 반투명 컵으로
+        // 읽혔다. 이제 relief는 기존 텍스처 위에 곱연산 음영(darken)만 얹는다 → 지층/facet 노이즈 보존
+        // (평평한 매끈면 소멸), 항상 주변보다 어두운 recessed relief. 지오메트리·폭·질감 불변.
         const ea = alphaAt(img, xx, yy);
         if (ea <= 0) continue;
         const ei = (img.width * yy + xx) << 2;
-        col = lerpC([img.data[ei], img.data[ei + 1], img.data[ei + 2]], col, mix);   // edge → rock 텍스처로 블렌드
+        const base = [img.data[ei], img.data[ei + 1], img.data[ei + 2]];
+        // recessed volume: darken more toward the tip / shadow-right side, ease off toward the lit
+        // spine. Kept subtly darker than surrounding rock (never brightens → no bright cup, 카나 #3).
+        const spine = (1 - hx) * 0.08;                   // gentle lit spine (still a darken, less deep)
+        const dark = clamp(0.08 + 0.16 * t + 0.10 * (0.5 + 0.5 * sdx) - spine, 0, 0.34);
+        let col = darken(base, dark);
+        col = lerpC(col, UNDER_SHADOW_DEEP, clamp((t - 0.4) / 0.6, 0, 1) * 0.18);
+        if (t > 0.6) col = lerpC(col, WHISPER_VIOLET, (t - 0.6) / 0.4 * 0.16);   // faint violet only at deep tip
+        col = lerpC(base, col, mix);                     // edge → 기존 rock 텍스처로 페이드
         const a = Math.min(ea / 255, t < 0.85 ? 1.0 : clamp((1 - t) / 0.15, 0, 1));
         put(img, xx, yy, col[0], col[1], col[2], Math.round(a * 255));
       }
