@@ -493,32 +493,45 @@ static func make_underside(span: int, depth: int, salt: int, top_profile: Packed
 				a = 1.0 if ((x + y) & 1) == 0 else 0.35
 			col.a = a
 			img.set_pixel(x, y, col)
-	# ---- hanging rock chunks + stalactites (asymmetric, 2-4) --------------------------------
-	_underside_hangers(img, span, depth, rim_cx, rim_half, salt)
+	# ---- hanging rock chunks (asymmetric, 2-3) ----------------------------------------------
+	# (#257 v1.10.4 카나 재검수) 바디 실루엣까지의 거리 페이드용 — per-row 좌우 / per-column 하단
+	# 드로운 범위. relief가 실루엣 가장자리에 닿아 "반투명 회색 컵"으로 읽히는 것 방지 (JS 미러).
+	var row_min_x := PackedInt32Array(); row_min_x.resize(depth)
+	var row_max_x := PackedInt32Array(); row_max_x.resize(depth)
+	var col_max_y := PackedInt32Array(); col_max_y.resize(span)
+	for y in range(depth):
+		row_min_x[y] = span
+		row_max_x[y] = -1
+	for x in range(span):
+		col_max_y[x] = -1
+	for y in range(depth):
+		for x in range(span):
+			if img.get_pixel(x, y).a == 0.0:
+				continue
+			if x < row_min_x[y]: row_min_x[y] = x
+			if x > row_max_x[y]: row_max_x[y] = x
+			if y > col_max_y[x]: col_max_y[x] = y
+	_underside_hangers(img, span, depth, rim_cx, rim_half, salt, row_min_x, row_max_x, col_max_y)
 	return img
 
 
-## Paint a few asymmetric hanging rock chunks and stalactite spikes onto the underside, so the
-## silhouette reads as broken bedrock rather than a clean wedge. Deterministic per salt.
-static func _underside_hangers(img: Image, span: int, depth: int, rim_cx: float, rim_half: float, salt: int) -> void:
-	# Fewer, CHUNKIER hangers (멤쵸: 균일한 스탈락타이트 커튼 제거) — mostly blocky rock nubs, only
-	# an occasional thin spike, biased off-centre for asymmetry.
+## Paint a few asymmetric hanging rock chunks onto the underside, so the silhouette reads as
+## broken bedrock rather than a clean wedge. Deterministic per salt. (JS 컴포지터 미러 — 반드시 동기.)
+static func _underside_hangers(img: Image, span: int, depth: int, rim_cx: float, rim_half: float, salt: int, row_min_x: PackedInt32Array, row_max_x: PackedInt32Array, col_max_y: PackedInt32Array) -> void:
+	# Fewer, CHUNKIER hangers (멤쵸: 균일한 스탈락타이트 커튼 제거) — 전부 blocky rock nub.
 	var count := 2 + int(_rock_noise(salt, 3, salt + 21) * 2.0)   # 2..3
 	for i in range(count):
 		var s := salt + 40 + i * 17
 		# anchor somewhere across the width, biased off-centre (asymmetry).
 		var ax := rim_cx + (_rock_noise(s, 1, s + 2) - 0.5) * 2.0 * rim_half * 0.85
 		var ay := depth * (0.34 + _rock_noise(s, 2, s + 3) * 0.42)  # hang from mid-body
-		var is_spike := _rock_noise(s, 4, s + 5) > 0.70            # spikes are the exception now
+		# (#257 v1.10.4 카나 재검수) is_spike 변형 제거 — 스파이크는 바디 밖(alpha==0)에도 픽셀을
+		# 찍어(구 `is_spike and t>0.6`) 보이드로 삐져나온 "가는 스파이크 잔상"을 만들었다.
 		var chunk_h := depth * (0.10 + _rock_noise(s, 6, s + 7) * 0.16)
 		var chunk_w := (span * 0.05) + _rock_noise(s, 8, s + 9) * span * 0.055   # chunkier
-		if is_spike:
-			chunk_w *= 0.55   # stalactites are thin
-			chunk_h *= 1.4
 		for dy in range(int(chunk_h)):
 			var t := float(dy) / maxf(1.0, chunk_h)
-			# spikes taper hard to a point; chunks taper gently (blocky nub).
-			var w := chunk_w * (pow(1.0 - t, 2.2) if is_spike else (1.0 - t * 0.55))
+			var w := chunk_w * (1.0 - t * 0.55)          # chunks taper gently (blocky nub)
 			var yy := int(ay + dy)
 			if yy < 0 or yy >= depth:
 				continue
@@ -528,21 +541,26 @@ static func _underside_hangers(img: Image, span: int, depth: int, rim_cx: float,
 					continue
 				var sdx := float(dx) / maxf(1.0, w)      # -1 left .. +1 right within the nub
 				var hx := absf(sdx)
-				# Recessed rounded RELIEF, cooled into the body — a gentle lit-left/shadow-right
-				# volume that stays DARKER than the surrounding rock (never a bright tan cup/spike).
-				var spine := (1.0 - hx) * 0.16
-				var shade := 0.60 - 0.26 * t - 0.16 * sdx + spine
-				var col := _rock_col(shade + _rock_noise(xx, yy, s) * 0.09 - 0.045)
-				col = col.lerp(UNDER_SHADOW, 0.34 + 0.22 * t)
-				col = col.lerp(UNDER_SHADOW_DEEP, clampf((t - 0.3) / 0.7, 0.0, 1.0) * 0.35)
-				if t > 0.45:
-					col = col.lerp(WHISPER_VIOLET, (t - 0.45) / 0.55 * (0.46 if is_spike else 0.34))
-				col.a = 1.0 if t < 0.85 else clampf((1.0 - t) / 0.15, 0.0, 1.0)
+				# (#257 v1.10.4) 실루엣(좌/우 rim + 하단 등고선) 근처는 relief를 기존 rock으로 페이드.
+				var d_edge: float = minf(minf(float(xx - row_min_x[yy]), float(row_max_x[yy] - xx)), float(col_max_y[xx] - yy))
+				var mix := clampf((d_edge - 14.0) / 34.0, 0.0, 1.0)
+				if mix <= 0.0:
+					continue
 				var existing := img.get_pixel(xx, yy)
-				# chunks are relief carved INTO the body (only where rock exists); a spike may
-				# protrude a short way past the body's lower edge as a short hanging tip.
-				if existing.a > 0.0 or (is_spike and t > 0.6):
-					img.set_pixel(xx, yy, col)
+				if existing.a <= 0.0:
+					continue
+				# (#257 v1.10.4 카나 재검수) "반투명 회색-보라 스쿱" 제거 — relief를 매끈한 _rock_col
+				# 그라디언트로 새로 칠하는 대신 기존 텍스처 위 곱연산 음영(darken)만 얹는다. 지층/facet
+				# 노이즈 보존(평평한 매끈면 소멸), 항상 주변보다 어두운 recessed relief. 지오/폭/질감 불변.
+				var spine := (1.0 - hx) * 0.08           # gentle lit spine (still a darken)
+				var dark := clampf(0.08 + 0.16 * t + 0.10 * (0.5 + 0.5 * sdx) - spine, 0.0, 0.34)
+				var col := existing.darkened(dark)
+				col = col.lerp(UNDER_SHADOW_DEEP, clampf((t - 0.4) / 0.6, 0.0, 1.0) * 0.18)
+				if t > 0.6:
+					col = col.lerp(WHISPER_VIOLET, (t - 0.6) / 0.4 * 0.16)   # faint violet only at deep tip
+				col = existing.lerp(col, mix)            # edge → 기존 rock 텍스처로 페이드
+				col.a = minf(existing.a, 1.0 if t < 0.85 else clampf((1.0 - t) / 0.15, 0.0, 1.0))
+				img.set_pixel(xx, yy, col)
 
 
 ## (v0.5d) Build a small floating debris islet: a tiny rock chunk (top diamond nub + a short
