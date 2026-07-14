@@ -344,19 +344,25 @@ static func _shelf_edge_offset(x: int, band_i: int, salt: int) -> float:
 ##   반환: 각 로브 = {cx, half, top, bottom, salt}. make_underside 내부에서만 사용.
 static func _underside_lobes(span: int, depth: int, rim_cx: float, rim_half: float, salt: int) -> Array:
 	var lobes := []
-	# 로브 개수 2~3. 첫 로브는 넓고 중앙(메인 매스), 나머지는 좌/우로 벌어진 작은 로브.
-	var n := 2 + int(_rock_noise(salt, 7, salt + 31) * 1.999)   # 2 or 3
-	for i in range(n):
+	# 3개의 겹치는 암반 로브 — 크기·깊이·중심이 뚜렷이 다르다(비대칭). 좌·중(가장 깊고 넓음)·우.
+	# 로브 사이 컬럼에서 실루엣이 위로 후퇴하며 깊은 그림자 골(gully)이 생기도록 배치 오프셋을 크게.
+	# 로브별 정규화 중심 오프셋(×rim_half)과 상대 폭·깊이 계수. 메인(가운데)이 가장 크고 깊다.
+	var specs := [
+		Vector3(-0.66, 0.52, 0.60),   # 좌 로브: 얕고 좁음
+		Vector3( 0.05, 0.86, 0.98),   # 중앙(메인): 넓고 가장 깊음 — 넓고 짧은 돌출
+		Vector3( 0.62, 0.60, 0.72),   # 우 로브: 중간
+	]
+	for i in range(specs.size()):
+		var sp: Vector3 = specs[i]
 		var s := salt + 100 + i * 29
-		var is_main := (i == 0)
-		# 중심: 메인은 rim 중앙 근처, 서브 로브는 좌우로 크게 오프셋(비대칭).
-		var off := 0.0 if is_main else (float(i) - 1.5) * rim_half * (0.62 + _rock_noise(s, 2, s + 1) * 0.3)
-		var lcx := rim_cx + off + (_rock_noise(s, 3, s + 2) - 0.5) * rim_half * 0.25
-		# 폭: 메인 로브가 가장 넓다(넓고 짧은 중앙). 서브는 변주.
-		var lhalf := rim_half * (0.86 if is_main else (0.42 + _rock_noise(s, 4, s + 3) * 0.30))
-		# 깊이(bottom): 로브마다 다르게 → 겹치는 바위 로브들. 메인은 가장 깊게.
-		var lbot := depth * ((0.80 + _rock_noise(s, 5, s + 4) * 0.18) if is_main else (0.48 + _rock_noise(s, 6, s + 5) * 0.30))
-		lobes.append({"cx": lcx, "half": lhalf, "bot": lbot, "salt": s, "main": is_main})
+		# 결정적 지터로 대칭 깨기.
+		var jx := (_rock_noise(s, 3, s + 2) - 0.5) * 0.22
+		var jw := 0.85 + _rock_noise(s, 4, s + 3) * 0.30
+		var jd := 0.85 + _rock_noise(s, 5, s + 4) * 0.28
+		var lcx := rim_cx + (sp.x + jx) * rim_half
+		var lhalf := rim_half * sp.y * jw
+		var lbot := depth * sp.z * jd
+		lobes.append({"cx": lcx, "half": lhalf, "bot": lbot, "salt": s, "main": i == 1})
 	return lobes
 
 
@@ -373,9 +379,12 @@ static func _lobe_at(lobes: Array, x: float, salt: int) -> Array:
 		var dx := (x - lcx) / maxf(1.0, lhalf)
 		if absf(dx) >= 1.0:
 			continue
-		var dome := sqrt(maxf(0.0, 1.0 - dx * dx))          # 0 가장자리 .. 1 중앙
-		var wob := (_snoise1(x / 22.0, lb["salt"]) - 0.5) * 0.14
-		var bot: float = lb["bot"] * (dome * (0.72 + wob) + 0.28)
+		# 가파른 돔(pow 0.72)으로 로브 사이 컬럼은 위로 크게 후퇴 → 뚜렷한 골. 바닥 floor를 낮춤.
+		var dome := pow(maxf(0.0, 1.0 - dx * dx), 0.72)     # 0 가장자리 .. 1 중앙
+		# 저주파 워블(x/55)만 — 이전 x/22·0.16은 균일 톱니 커튼을 만들었다(멤쵸 "균일 스탈락타이트").
+		# 로브 실루엣은 매끈한 둥근 바위로, 실루엣 변주는 로브 배치와 소수의 hanger가 담당.
+		var wob := (_snoise1(x / 55.0, lb["salt"]) - 0.5) * 0.07
+		var bot: float = lb["bot"] * (dome * (0.93 + wob) + 0.10)
 		if bot > best_bot:
 			second_bot = best_bot
 			best_bot = bot
@@ -492,17 +501,19 @@ static func make_underside(span: int, depth: int, salt: int, top_profile: Packed
 ## Paint a few asymmetric hanging rock chunks and stalactite spikes onto the underside, so the
 ## silhouette reads as broken bedrock rather than a clean wedge. Deterministic per salt.
 static func _underside_hangers(img: Image, span: int, depth: int, rim_cx: float, rim_half: float, salt: int) -> void:
-	var count := 2 + int(_rock_noise(salt, 3, salt + 21) * 3.0)   # 2..4
+	# Fewer, CHUNKIER hangers (멤쵸: 균일한 스탈락타이트 커튼 제거) — mostly blocky rock nubs, only
+	# an occasional thin spike, biased off-centre for asymmetry.
+	var count := 2 + int(_rock_noise(salt, 3, salt + 21) * 2.0)   # 2..3
 	for i in range(count):
 		var s := salt + 40 + i * 17
 		# anchor somewhere across the width, biased off-centre (asymmetry).
 		var ax := rim_cx + (_rock_noise(s, 1, s + 2) - 0.5) * 2.0 * rim_half * 0.85
-		var ay := depth * (0.30 + _rock_noise(s, 2, s + 3) * 0.45)  # hang from mid-body
-		var is_spike := _rock_noise(s, 4, s + 5) > 0.45
+		var ay := depth * (0.34 + _rock_noise(s, 2, s + 3) * 0.42)  # hang from mid-body
+		var is_spike := _rock_noise(s, 4, s + 5) > 0.70            # spikes are the exception now
 		var chunk_h := depth * (0.10 + _rock_noise(s, 6, s + 7) * 0.16)
-		var chunk_w := (span * 0.03) + _rock_noise(s, 8, s + 9) * span * 0.04
+		var chunk_w := (span * 0.05) + _rock_noise(s, 8, s + 9) * span * 0.055   # chunkier
 		if is_spike:
-			chunk_w *= 0.5    # stalactites are thin
+			chunk_w *= 0.55   # stalactites are thin
 			chunk_h *= 1.4
 		for dy in range(int(chunk_h)):
 			var t := float(dy) / maxf(1.0, chunk_h)

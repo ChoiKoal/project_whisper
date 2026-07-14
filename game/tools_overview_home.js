@@ -163,6 +163,38 @@ function shelfEdgeOffset(x, bandI, salt) {
   return (snoise1(x / 26.0, salt + bandI * 131) - 0.5) * 22.0
        + (snoise1(x / 7.0, salt + bandI * 57) - 0.5) * 7.0;
 }
+// (#257 v1.10.3, 멤쵸 판정) 3-lobe silhouette. Mirrors CliffGen._underside_lobes / _lobe_at.
+function undersideLobes(span, depth, rimCx, rimHalf, salt) {
+  const lobes = [];
+  // 3개의 겹치는 암반 로브 — 좌·중(가장 넓고 깊음)·우. 정규화 [중심오프셋, 상대폭, 상대깊이].
+  const specs = [[-0.66, 0.52, 0.60], [0.05, 0.86, 0.98], [0.62, 0.60, 0.72]];
+  for (let i = 0; i < specs.length; i++) {
+    const sp = specs[i], s = salt + 100 + i * 29;
+    const jx = (rockNoise(s, 3, s + 2) - 0.5) * 0.22;
+    const jw = 0.85 + rockNoise(s, 4, s + 3) * 0.30;
+    const jd = 0.85 + rockNoise(s, 5, s + 4) * 0.28;
+    const lcx = rimCx + (sp[0] + jx) * rimHalf;
+    const lhalf = rimHalf * sp[1] * jw;
+    const lbot = depth * sp[2] * jd;
+    lobes.push({ cx: lcx, half: lhalf, bot: lbot, salt: s, main: i === 1 });
+  }
+  return lobes;
+}
+function lobeAt(lobes, x) {
+  let bestBot = -1, domHx = 1.0, secondBot = -1;
+  for (const lb of lobes) {
+    const dx = (x - lb.cx) / Math.max(1, lb.half);
+    if (Math.abs(dx) >= 1.0) continue;
+    const dome = Math.pow(Math.max(0, 1 - dx * dx), 0.72);
+    const wob = (snoise1(x / 55.0, lb.salt) - 0.5) * 0.07;   // 저주파만 (톱니 커튼 제거, 멤쵸)
+    const bot = lb.bot * (dome * (0.93 + wob) + 0.10);
+    if (bot > bestBot) { secondBot = bestBot; bestBot = bot; domHx = Math.abs(dx); }
+    else if (bot > secondBot) { secondBot = bot; }
+  }
+  let gully = 0.0;
+  if (secondBot > 0 && bestBot > 0) gully = clamp(1 - Math.abs(bestBot - secondBot) / (bestBot * 0.5 + 1), 0, 1);
+  return [bestBot, domHx, gully];
+}
 function makeUnderside(span, depth, salt, topProfile) {
   const img = new PNG({ width: span, height: depth }); img.data.fill(0);
   const haveProfile = topProfile && topProfile.length === span;
@@ -174,55 +206,49 @@ function makeUnderside(span, depth, salt, topProfile) {
   }
   const rimCx = (rimL + rimR) * 0.5, rimHalf = Math.max(2, (rimR - rimL) * 0.5);
   const NB = 5;   // sediment bands
+  const lobes = undersideLobes(span, depth, rimCx, rimHalf, salt);
+  const colBot = new Float32Array(span), colHx = new Float32Array(span), colGully = new Float32Array(span);
+  for (let x = 0; x < span; x++) { const la = lobeAt(lobes, x); colBot[x] = la[0]; colHx[x] = la[1]; colGully[x] = la[2]; }
   for (let y = 0; y < depth; y++) {
     const ty = y / depth;
-    // CONTINUOUS taper (no per-row shelf jump in the silhouette): the *width* tapers smoothly;
-    // the "층계식" reads from the banded SHADING, not from a stepped outline. Irregular step
-    // widths come from a low-freq width wobble (카나 #4 불규칙 스텝).
-    const taper = 1 - 0.70 * Math.pow(ty, 1.55);
-    const stepWob = (snoise1(ty * 5.0, salt + 91) - 0.5) * 0.16;   // uneven step widths
-    const baseHalf = rimHalf * clamp(taper + stepWob, 0.08, 1.2);
-    // SMOOTH silhouette wobble (interpolated → no row-to-row jumps → no left streak).
-    const wob = (snoise1(y / 9.0, salt) - 0.5) * span * 0.045;
-    const jag = (snoise1(y / 3.3, salt + 11) - 0.5) * span * 0.022;
-    const half = Math.max(2, baseHalf + (wob + jag) * (1 - ty * 0.55));
-    for (let x = Math.max(0, (rimCx - half) | 0); x < Math.min(span, (rimCx + half) | 0); x++) {
+    for (let x = 0; x < span; x++) {
       let topY = 0;
       if (haveProfile) { topY = topProfile[x]; if (topY < 0) continue; if (y < topY) continue; }
-      const hx = Math.abs(x - rimCx) / Math.max(1, half);
-      // Which sediment band is this pixel in? The band boundary is JAGGED per column (지그재그
-      // 침식 노치) + pixel-dithered, so the seam is never a straight horizontal line.
+      const bot = colBot[x];
+      if (bot <= 0 || y > bot) continue;
+      const hx = colHx[x], gully = colGully[x];
+      const ly = clamp((y - topY) / Math.max(1, bot - topY), 0, 1);
+      // STRATA BANDS — one step stronger contrast (멤쵸 #3). Jagged per-column seam.
       const bandF = ty * NB;
       const nearestSeam = Math.round(bandF);
       const seamY = nearestSeam / NB * depth + shelfEdgeOffset(x, nearestSeam, salt);
-      const distToSeam = y - seamY;                 // px above/below the jagged seam line
-      const bandI = clamp(Math.floor((y - shelfEdgeOffset(x, Math.floor(bandF) + 1, salt) * 0) / depth * NB), 0, NB - 1);
-      // band brightness — GENTLER contrast than before (카나 "명도 차 과함").
-      let band = 0.95 - 0.055 * bandI;
-      band += (bandI % 2 === 0) ? 0.028 : -0.02;
-      const strata = Math.floor(rockNoise((x / 7) | 0, (y / 6) | 0, salt) * 5.0) / 5.0;
-      const facet = (strata - 0.4) * (0.30 + 0.20 * ty);   // keep facet structure readable deeper down (not a smudge)
-      const crack = (rockNoise((x / 3) | 0, (y / 5) | 0, salt + 5) < 0.13) ? -0.24 : 0.0;
-      // soft dithered seam: a thin darker notch right at the jagged boundary, dithered so it
-      // dissolves into pixels rather than a hard line.
+      const distToSeam = y - seamY;
+      const bandI = clamp(Math.floor(ty * NB), 0, NB - 1);
+      let band = 0.98 - 0.090 * bandI;                    // 강화 밴드 대비 (was 0.055)
+      band += (bandI % 2 === 0) ? 0.055 : -0.045;         // 밴드 명암 강화
+      // CLUSTERED faceted strata — 노이즈를 지층+로브 구조를 따라 뭉침 (안개 제거, 바위 질감).
+      const cluster = Math.floor(rockNoise((x / 9) | 0, (y / 4) | 0, salt) * 4.0) / 4.0;
+      const strata = Math.floor(rockNoise((x / 6) | 0, (y / 5) | 0, salt + 2) * 5.0) / 5.0;
+      const facet = (cluster - 0.375) * 0.42 + (strata - 0.4) * 0.30;
+      const crack = (rockNoise((x / 3) | 0, (y / 6) | 0, salt + 5) < 0.15) ? -0.34 : 0.0;
       let seam = 0.0;
-      if (Math.abs(distToSeam) < 2.4) {
+      if (Math.abs(distToSeam) < 2.6) {
         const dith = ((x * 7 + y * 3 + (rockNoise(x, y, salt + 9) * 4 | 0)) & 3) !== 0;
-        if (dith) seam = -0.20 * (1 - Math.abs(distToSeam) / 2.4);
+        if (dith) seam = -0.30 * (1 - Math.abs(distToSeam) / 2.6);
       }
-      const edge = -0.34 * hx * hx;
-      const n = rockNoise(x, y, salt) * 0.10 - 0.05;
-      let col = rockCol(band + facet + crack + seam + edge + n);
-      col = lerpC(col, UNDER_SHADOW, 0.16 + 0.20 * ty);
-      col = lerpC(col, UNDER_SHADOW_DEEP, clamp((ty - 0.55) / 0.45, 0, 1) * 0.42);   // deep tip cools DARK (no bright tan wedge, 카나 #3) but not a flat smudge
-      // violet whisper rim-glow — weighted to the rounded SIDES so it rims the hanging rock (은은한
-      // rim glow, 카나 #3 "살릴 것"); stronger toward the tip, clearly readable but not a beam.
-      if (ty > 0.42) { const glow = clamp((ty - 0.42) / 0.58, 0, 1) * (0.14 + 0.60 * hx * hx) * 0.60; col = lerpC(col, WHISPER_VIOLET, glow); }
+      const edge = -0.40 * hx * hx;
+      const gsh = -0.55 * gully;                          // 로브 사이 깊은 그림자 골
+      const n = rockNoise(x, y, salt) * 0.12 - 0.06;
+      let col = rockCol(band + facet + crack + seam + edge + gsh + n);
+      // cool LESS toward shadow so the underside isn't washed/foggy vs the surface (멤쵸 샤프니스).
+      col = lerpC(col, UNDER_SHADOW, 0.08 + 0.14 * ty);
+      col = lerpC(col, UNDER_SHADOW_DEEP, clamp((ly - 0.60) / 0.40, 0, 1) * 0.34);
+      if (ty > 0.42) { const glow = clamp((ty - 0.42) / 0.58, 0, 1) * (0.10 + 0.42 * hx * hx) * 0.50; col = lerpC(col, WHISPER_VIOLET, glow); }
       if (haveProfile && (y - topY) < 4 && hx < 0.92) col = ((x + y) % 3 !== 0) ? UNDER_MOSS : UNDER_MOSS_DK;
-      // dithered edge so the silhouette rim reads as eroded rock, not a clean bezier.
+      // 1px dithered eroded rim (no soft alpha feather that read as haze — 멤쵸 "안개 덩어리").
       let a = 1.0;
-      if (hx > 0.80) { const e = (1 - hx) / 0.20; a = clamp(e, 0, 1); if (a < 1 && ((x + y * 2) & 1)) a = clamp(a + 0.35, 0, 1); }
-      if (ty > 0.9) a *= clamp((1 - ty) / 0.1, 0, 1);
+      if (hx > 0.90) a = ((x + y) & 1) === 0 ? 1.0 : 0.35;
+      if (y > bot - 2) a = ((x + y) & 1) === 0 ? 1.0 : 0.35;
       put(img, x, y, col[0], col[1], col[2], Math.round(a * 255));
     }
   }
@@ -230,15 +256,15 @@ function makeUnderside(span, depth, salt, topProfile) {
   return img;
 }
 function undersideHangers(img, span, depth, rimCx, rimHalf, salt) {
-  const count = 2 + ((rockNoise(salt, 3, salt + 21) * 3.0) | 0);
+  const count = 2 + ((rockNoise(salt, 3, salt + 21) * 2.0) | 0);   // 2..3, chunkier (멤쵸)
   for (let i = 0; i < count; i++) {
     const s = salt + 40 + i * 17;
     const ax = rimCx + (rockNoise(s, 1, s + 2) - 0.5) * 2.0 * rimHalf * 0.85;
-    const ay = depth * (0.30 + rockNoise(s, 2, s + 3) * 0.45);
-    const isSpike = rockNoise(s, 4, s + 5) > 0.45;
+    const ay = depth * (0.34 + rockNoise(s, 2, s + 3) * 0.42);
+    const isSpike = rockNoise(s, 4, s + 5) > 0.70;                  // spikes are the exception now
     let chunkH = depth * (0.10 + rockNoise(s, 6, s + 7) * 0.16);
-    let chunkW = (span * 0.03) + rockNoise(s, 8, s + 9) * span * 0.04;
-    if (isSpike) { chunkW *= 0.5; chunkH *= 1.4; }
+    let chunkW = (span * 0.05) + rockNoise(s, 8, s + 9) * span * 0.055;
+    if (isSpike) { chunkW *= 0.55; chunkH *= 1.4; }
     for (let dy = 0; dy < (chunkH | 0); dy++) {
       const t = dy / Math.max(1, chunkH);
       const w = chunkW * (isSpike ? Math.pow(1 - t, 2.2) : (1 - t * 0.55));
