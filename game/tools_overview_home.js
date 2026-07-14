@@ -247,9 +247,12 @@ function undersideHangers(img, span, depth, rimCx, rimHalf, salt) {
         const xx = (ax | 0) + dx;
         if (xx < 0 || xx >= span) continue;
         const sdx = dx / Math.max(1, w), hx = Math.abs(sdx);
-        const shade = 0.62 - 0.30 * t - 0.16 * sdx - 0.14 * hx;   // darker so the tail never reads brighter than the body (카나 #3)
+        // Sculpt as a rounded 3D nub: bright lit left face → shadowed right, a central spine
+        // highlight, darker toward the tip. Avoids the flat black-triangle read (카나 #3/#4).
+        const spine = (1 - hx) * 0.30;                 // rounded volume highlight
+        const shade = 0.86 - 0.34 * t - 0.22 * sdx + spine;
         let col = rockCol(shade + rockNoise(xx, yy, s) * 0.10 - 0.05);
-        col = lerpC(col, UNDER_SHADOW, 0.30 + 0.22 * t);
+        col = lerpC(col, UNDER_SHADOW, 0.16 + 0.26 * t);
         if (t > 0.5) col = lerpC(col, WHISPER_VIOLET, (t - 0.5) / 0.5 * (isSpike ? 0.42 : 0.30));   // violet rim on hanging tips
         const a = t < 0.85 ? 1.0 : clamp((1 - t) / 0.15, 0, 1);
         if (alphaAt(img, xx, yy) > 0 || (isSpike && t > 0.6)) put(img, xx, yy, col[0], col[1], col[2], Math.round(a * 255));
@@ -618,12 +621,13 @@ for (const [ox, oy, w, k] of debris) { const d = makeDebris(w, 900 + k); blit(d,
     const [lx, ly] = cellLocal(c, r);
     const cxImg = OX + lx - ismnx;                 // tile centre x in image space
     const vtxY = (OY + ly + HH) - imgTopY;         // bottom vertex y in image space
-    // Trace the tile's two LOWER diamond edges (slope HH/HW = 0.5 px/px up from the bottom
-    // vertex) so the rock top hugs the real iso silhouette — no blue triangle above a flat rim
-    // on the jagged staggered edge. Keep the HIGHEST rim per column (smallest y).
+    // Fill the rock UP to the tile's TOP vertex (full diamond footprint), not just its lower
+    // edges. Tracing only the lower edges left a void wedge in the V-notch BETWEEN two staggered
+    // rim tiles (the tri sits above the side vertices → 카나 #4 "blue triangle"). Rising to the
+    // top vertex packs rock under the whole tile foot so the notches are closed. Smallest-y wins.
     const tileL = Math.round(cxImg - HW), tileR = Math.round(cxImg + HW);
     for (let x = Math.max(0, tileL); x <= Math.min(span - 1, tileR); x++) {
-      const edgeY = vtxY - 0.5 * Math.abs(x - cxImg);
+      const edgeY = (vtxY - HH) + 0.5 * Math.abs(x - cxImg);   // top vertex, down the UPPER edges to the sides
       if (topProfile[x] < 0 || edgeY < topProfile[x]) topProfile[x] = edgeY;
     }
   }
