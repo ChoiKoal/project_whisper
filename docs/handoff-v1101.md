@@ -45,11 +45,13 @@
 - **다른 레이어 스커트/에이프런 무변경**(가이드 준수). 톱니 스텝 사이의 작은 하늘 삼각형은
   에이프런-레벨 기존 특성(v1.10.0에도 존재, 본 변경으로 오히려 축소) — 스코프 외.
 
-## 검증
-- **하네스**: run_sweep 전체 그린(65종). v050c(언더사이드/에이프런/데브리 assert) PASS —
-  aprons=31, underside=present, debris=5. v142 홈 레이아웃(코어 좌표 불변·homedeco 20) PASS.
-  e2e_playthrough PASS.
-- **실 PCK 스모크**: e2e + v142 PASS.
+## 검증 (v1.10.1 릴리스 구간 실측)
+- **하네스**: run_sweep 전체 그린 — **65/65 (SWEEP COMPLETE, exit 0)**. v050c(언더사이드/에이프런/
+  데브리 assert) PASS — aprons=31, underside=present, debris=5. v142 홈 레이아웃(코어 좌표 불변·
+  homedeco 20) PASS(0 failures). e2e_playthrough PASS(0 failures).
+- **실 PCK 스모크**(preset.2「Linux arm64」 exclude_filter 임시 해제 → `--export-pack` dev 포함
+  pack **7,802,276 B** → 각 하네스 `--main-pack` 구동 → 프리셋 원복, 트리 클린 확인):
+  e2e_playthrough + v142_home_layout 모두 **PASS (0 failures)**.
 - **미러 파리티**: top_profile 산출(sloped tracing, min-y/컬럼)이 GDScript/JS 동일.
 
 ## 프리뷰 (3종 재렌더)
