@@ -3,7 +3,8 @@
 - 검수 대상 SHA: `ea806bb96520fb766b2a54edb730ff75db830bef`
 - 브랜치: `test/wh-unit15-safety-memcho` → PR base `ruby/whisper-runtime-wip`
 - 실행 환경: **Linux aarch64** / Godot **4.5.stable.official.876b29033** (arm64 공식 빌드)
-  - 부모(루비) 실행 환경은 macOS. **서로 다른 OS·아키텍처에서의 독립 재현**이다.
+  - 부모(루비) 실행 환경은 macOS. 같은 머신 재실행도 재현이지만, 이번처럼
+    **다른 OS·아키텍처에서의 독립 재현**은 증거 수준이 한 단계 높다.
 - 실행 일시: 2026-09-16 (KST)
 
 > 이 문서는 **CURRENT15 합성 안전 게이트**에 한정된다. 전체 회귀·정상 플레이·모바일·
@@ -107,8 +108,10 @@ file.store_string(...)
 1. **루트 쓰기** — `FDN_EVIDENCE` 미설정 시 `"" + "/timing.json"` = `/timing.json`.
    증거 디렉터리 밖, 파일시스템 루트에 쓰려 한다.
 2. **nil 호출 크래시** — `open()`이 실패해 null을 반환하면 다음 줄에서 즉사한다.
-3. **증거 없는 성공** — 위 둘 중 어느 쪽이든 결국 `quit(0)`으로 끝났다.
-   **자기 출력을 기록하지 못한 진단기가 PASS를 내면 안 된다.**
+3. **증거 없는 성공** — 코드 흐름상 두 경로 모두 `quit(0)`에 도달하는 것으로 읽힌다.
+   ※ 원본이 실제로 어떻게 종료하는지는 **실행으로 확인하지 않았다**(probe가 headless에서
+   완주 불가). "반드시 quit(0)까지 간다"는 단정은 철회하고 정적 판독으로만 남긴다.
+   원칙은 유지: **자기 출력을 기록하지 못한 진단기가 PASS를 내면 안 된다.**
 
 ### 수정
 
@@ -116,7 +119,26 @@ file.store_string(...)
 미설정 / 상대경로 / 디렉터리 부재 / `open()` 실패 → 각각 사유를 출력하고 `false` 반환,
 호출부는 **exit 87**(격리 가드의 86과 구분)로 종료. 성공 시 기록 경로와 receipt 수를 출력.
 
-### ⚠️ 이 수정의 런타임 검증은 미완 (BLOCKED)
+### 런타임 검증 — 저장 함수는 검증됨 / 화면·입력 타이밍은 BLOCKED
+
+루비 지적대로 **둘은 분리 가능**했다. `hover_evidence_sink_harness`로 저장 함수만
+격리 headless 실행:
+
+| 케이스 | 결과 |
+|---|---|
+| `FDN_EVIDENCE` 미설정 | 거부 + 루트 파일 생성 없음 ✅ |
+| 상대경로 | 거부 ✅ |
+| 디렉터리 부재 | 거부 ✅ |
+| 정상 저장 | 기록 ✅ |
+| readback 대조 | 기록 내용 == 기대 JSON ✅ |
+
+`failures=0 missing=0 exit=0`. 증거: `evidence-unit15/hover-evidence-sink.log`,
+`hover-sink-results.json`.
+
+또한 `open()` 실패만 보던 것을 **store 오류 + close 후 readback 대조**까지 확장했다.
+close()가 flush에 실패해 파일이 잘려도 성공으로 보고되지 않는다.
+
+### ⚠️ 여전히 BLOCKED — probe 전체 실행
 
 `hover_timing_probe`는 **headless에서 구조적으로 완주할 수 없다**:
 

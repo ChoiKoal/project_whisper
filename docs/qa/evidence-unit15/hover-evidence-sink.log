@@ -1,0 +1,30 @@
+       [0] write_evidence (res://scenes/dev/hover_timing_probe.gd:67)
+       [1] _run (res://scenes/dev/hover_evidence_sink_harness.gd:49)
+       [2] _ready (res://scenes/dev/hover_evidence_sink_harness.gd:23)
+HOVER_TIMING_EVIDENCE_REFUSED reason=unset
+[PASS] unset — unset FDN_EVIDENCE refused=true stray_root_file=false
+ERROR: hover_timing_probe: FDN_EVIDENCE must be an absolute path, got 'relative/dir'
+   at: push_error (core/variant/variant_utility.cpp:1024)
+   GDScript backtrace (most recent call first):
+       [0] write_evidence (res://scenes/dev/hover_timing_probe.gd:72)
+       [1] _run (res://scenes/dev/hover_evidence_sink_harness.gd:55)
+       [2] _ready (res://scenes/dev/hover_evidence_sink_harness.gd:23)
+HOVER_TIMING_EVIDENCE_REFUSED reason=not_absolute path=relative/dir
+[PASS] relative — relative path refused
+ERROR: hover_timing_probe: FDN_EVIDENCE directory does not exist: '<ISO>/tmp/wh_sink_absent_207383'
+   at: push_error (core/variant/variant_utility.cpp:1024)
+   GDScript backtrace (most recent call first):
+       [0] write_evidence (res://scenes/dev/hover_timing_probe.gd:76)
+       [1] _run (res://scenes/dev/hover_evidence_sink_harness.gd:59)
+       [2] _ready (res://scenes/dev/hover_evidence_sink_harness.gd:23)
+HOVER_TIMING_EVIDENCE_REFUSED reason=missing_dir path=<ISO>/tmp/wh_sink_absent_207383
+[PASS] missing_dir — nonexistent dir refused
+HOVER_TIMING_EVIDENCE_WRITTEN path=<ISO>/tmp/wh_sink_ok_207442/timing.json receipts=1 bytes=45
+[PASS] happy_path — valid dir accepted
+[PASS] readback_match — file parses back to the written payload (bytes=45)
+SINK_FIXTURE failures=0 missing=0
+SINK_FIXTURE_DONE
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)
+ERROR: Pages in use exist at exit in PagedAllocator: N7Variant5Pools11BucketSmallE
+   at: ~PagedAllocator (./core/templates/paged_allocator.h:169)

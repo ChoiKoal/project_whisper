@@ -82,7 +82,26 @@ func write_evidence(data:Array)->bool:
 		push_error("hover_timing_probe: cannot open '%s' (FileAccess error %d)" % [path,FileAccess.get_open_error()])
 		print("HOVER_TIMING_EVIDENCE_REFUSED reason=open_failed path=",path," err=",FileAccess.get_open_error())
 		return false
-	file.store_string(JSON.stringify(data,"\t"))
+	var payload:=JSON.stringify(data,"\t")
+	file.store_string(payload)
+	var store_err:=file.get_error()
 	file.close()
-	print("HOVER_TIMING_EVIDENCE_WRITTEN path=",path," receipts=",data.size())
+	if store_err!=OK:
+		push_error("hover_timing_probe: write failed for '%s' (error %d)" % [path,store_err])
+		print("HOVER_TIMING_EVIDENCE_REFUSED reason=write_failed path=",path," err=",store_err)
+		return false
+	# Read back: close() can still fail to flush, and a truncated file would otherwise
+	# be reported as a successful run. Only a byte-identical readback counts.
+	var verify:=FileAccess.open(path,FileAccess.READ)
+	if verify==null:
+		push_error("hover_timing_probe: cannot reopen '%s' for verification" % path)
+		print("HOVER_TIMING_EVIDENCE_REFUSED reason=verify_open_failed path=",path)
+		return false
+	var written:=verify.get_as_text()
+	verify.close()
+	if written!=payload:
+		push_error("hover_timing_probe: readback mismatch for '%s' (%d vs %d bytes)" % [path,written.length(),payload.length()])
+		print("HOVER_TIMING_EVIDENCE_REFUSED reason=readback_mismatch path=",path)
+		return false
+	print("HOVER_TIMING_EVIDENCE_WRITTEN path=",path," receipts=",data.size()," bytes=",payload.length())
 	return true

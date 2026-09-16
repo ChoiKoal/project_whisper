@@ -1,0 +1,30 @@
+{
+  "fixture": "hover_evidence_sink_harness",
+  "exit_code": 0,
+  "expected_exit": 0,
+  "cases": [
+    "unset",
+    "relative",
+    "missing_dir",
+    "happy_path",
+    "readback_match"
+  ],
+  "failures": 0,
+  "missing": 0,
+  "stray_root_file": false,
+  "scope": "evidence sink only; probe screen/mouse timing remains BLOCKED (awaits RenderingServer.frame_post_draw)",
+  "command": [
+    "<GODOT>",
+    "--path",
+    "<REPO>/game",
+    "--headless",
+    "--quit-after",
+    "600",
+    "res://scenes/dev/hover_evidence_sink_harness.tscn"
+  ],
+  "env": {
+    "HOME": "<ISO>",
+    "WHISPER_TEST_HOME": "<ISO>",
+    "FDN_SINK_TMP": "<ISO>/tmp"
+  }
+}

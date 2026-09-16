@@ -1,0 +1,95 @@
+{
+  "purpose": "destructive harnesses must fail closed without an isolation sentinel",
+  "all_refused_with_86": true,
+  "canary_preserved_all": true,
+  "results": [
+    {
+      "scene": "cutscene_harness",
+      "exit_code": 86,
+      "expected_exit": 86,
+      "refused": true,
+      "guard_lines": [
+        "ERROR: cutscene_harness refused destructive user:// access: set WHISPER_TEST_HOME to the isolated HOME root (user_dir=/home/node/.local/share/godot/app_userdata/Project Whisper)",
+        "[0] require_isolated_user_data (res://scenes/dev/isolated_harness_guard.gd:16)"
+      ],
+      "canary_sha256_before": "b361aa66aa65df171240a6166db706c6f1dacc41544974f2e8e2efd305adb468",
+      "canary_sha256_after": "b361aa66aa65df171240a6166db706c6f1dacc41544974f2e8e2efd305adb468",
+      "canary_preserved": true,
+      "command": [
+        "<GODOT>",
+        "--path",
+        "<REPO>/game",
+        "--headless",
+        "--quit-after",
+        "900",
+        "res://scenes/dev/cutscene_harness.tscn"
+      ]
+    },
+    {
+      "scene": "m5_test_harness",
+      "exit_code": 86,
+      "expected_exit": 86,
+      "refused": true,
+      "guard_lines": [
+        "ERROR: m5_test_harness refused destructive user:// access: set WHISPER_TEST_HOME to the isolated HOME root (user_dir=/home/node/.local/share/godot/app_userdata/Project Whisper)",
+        "[0] require_isolated_user_data (res://scenes/dev/isolated_harness_guard.gd:16)"
+      ],
+      "canary_sha256_before": "b361aa66aa65df171240a6166db706c6f1dacc41544974f2e8e2efd305adb468",
+      "canary_sha256_after": "b361aa66aa65df171240a6166db706c6f1dacc41544974f2e8e2efd305adb468",
+      "canary_preserved": true,
+      "command": [
+        "<GODOT>",
+        "--path",
+        "<REPO>/game",
+        "--headless",
+        "--quit-after",
+        "900",
+        "res://scenes/dev/m5_test_harness.tscn"
+      ]
+    },
+    {
+      "scene": "v051_test_harness",
+      "exit_code": 86,
+      "expected_exit": 86,
+      "refused": true,
+      "guard_lines": [
+        "ERROR: v051_test_harness refused destructive user:// access: set WHISPER_TEST_HOME to the isolated HOME root (user_dir=/home/node/.local/share/godot/app_userdata/Project Whisper)",
+        "[0] require_isolated_user_data (res://scenes/dev/isolated_harness_guard.gd:16)"
+      ],
+      "canary_sha256_before": "b361aa66aa65df171240a6166db706c6f1dacc41544974f2e8e2efd305adb468",
+      "canary_sha256_after": "b361aa66aa65df171240a6166db706c6f1dacc41544974f2e8e2efd305adb468",
+      "canary_preserved": true,
+      "command": [
+        "<GODOT>",
+        "--path",
+        "<REPO>/game",
+        "--headless",
+        "--quit-after",
+        "900",
+        "res://scenes/dev/v051_test_harness.tscn"
+      ]
+    },
+    {
+      "scene": "v052_travel_stress",
+      "exit_code": 86,
+      "expected_exit": 86,
+      "refused": true,
+      "guard_lines": [
+        "ERROR: v052_travel_stress refused destructive user:// access: set WHISPER_TEST_HOME to the isolated HOME root (user_dir=/home/node/.local/share/godot/app_userdata/Project Whisper)",
+        "[0] require_isolated_user_data (res://scenes/dev/isolated_harness_guard.gd:16)"
+      ],
+      "canary_sha256_before": "b361aa66aa65df171240a6166db706c6f1dacc41544974f2e8e2efd305adb468",
+      "canary_sha256_after": "b361aa66aa65df171240a6166db706c6f1dacc41544974f2e8e2efd305adb468",
+      "canary_preserved": true,
+      "command": [
+        "<GODOT>",
+        "--path",
+        "<REPO>/game",
+        "--headless",
+        "--quit-after",
+        "900",
+        "res://scenes/dev/v052_travel_stress.tscn"
+      ]
+    }
+  ]
+}
