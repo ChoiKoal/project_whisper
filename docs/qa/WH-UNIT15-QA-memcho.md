@@ -51,7 +51,7 @@ ERROR: 2 resources still in use at exit (run with --verbose for details).
 `passed=true`는 script/assertion/exit/completion 실패가 없다는 뜻이며 **깨끗한 엔진 종료를
 의미하지 않는다.**
 
-원본 로그: `docs/qa/evidence-unit15/*.log`, 결과 JSON: `runner-results.jsonl`
+원본 로그: `docs/qa/evidence-unit15/*.log`, 결과 JSON: `runner-results.json`
 (개인 경로·자격정보는 `<HOME>` `<REPO>` `<EVIDENCE>` `<GODOT>`로 치환)
 
 ## 3. 격리 검증
