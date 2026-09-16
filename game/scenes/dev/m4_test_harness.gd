@@ -17,8 +17,8 @@ var _fail := 0
 
 # Expected exact tile-symbol counts from the transcribed layout.
 const EXPECT_COUNTS := {
-	"V": 721, "G": 476, "g": 169, "W": 84, "w": 45, "T": 25, "F": 23,
-	"m": 16, "D": 10, "R": 7, "s": 5, "O": 4, "K": 3, "M": 2, "N": 2,
+	"V": 721, "G": 453, "g": 169, "W": 78, "w": 45, "b": 6, "T": 22, "F": 23,
+	"m": 16, "D": 35, "a": 1, "R": 7, "s": 5, "O": 4, "K": 3, "M": 2, "N": 2,
 	"S": 1, "C": 1, "U": 1, "B": 1, "1": 0, "2": 1, "3": 1, "4": 2,
 }
 
@@ -77,7 +77,7 @@ func _test_tile_counts(loader: MapLoader) -> void:
 
 func _test_landmarks(loader: MapLoader) -> void:
 	_check("spawn cell = (12,32)", loader.spawn_cell == Vector2i(12, 32))
-	_check("cauldron cell = (13,32)", loader.cauldron_cell == Vector2i(13, 32))
+	_check("cauldron cell = (16,35), after the first harvest", loader.cauldron_cell == Vector2i(16, 35))
 	_check("stump cell = (12,33)", loader.stump_cell == Vector2i(12, 33))
 	_check("bush cell = (18,16)", loader.bush_cell == Vector2i(18, 16))
 	_check("3 stepping-stone slots (K)", loader.stepping_slot_cells.size() == 3)

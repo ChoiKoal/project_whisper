@@ -19,7 +19,11 @@
     "b": {"source": 1, "tile_id": "T1"},
     "n": {"source": 1, "tile_id": "T1"},
     "o": {"source": 1, "tile_id": "T1"},
-    "x": {"source": 1, "tile_id": "T1"}
+    "x": {"source": 1, "tile_id": "T1"},
+    "i": {"source": 1, "tile_id": "T1"},
+    "m": {"source": 1, "tile_id": "T1"},
+    "w": {"source": 1, "tile_id": "T1"},
+    "e": {"source": 1, "tile_id": "T1"}
   },
   "objects": {
     "C": {"scene": "cauldron.tscn", "object_id": "cauldron"},
@@ -35,6 +39,10 @@
     "b": {"kind": "homedeco", "l2_id": "deco_tome", "art": "home_deco_tome", "offset": [0, -48], "glow": "violet", "glow_scale": 0.4, "blocks": false},
     "n": {"kind": "homedeco", "l2_id": "deco_bell", "art": "home_deco_bell", "offset": [0, -48], "blocks": false},
     "o": {"kind": "homedeco", "l2_id": "deco_pool", "art": "home_deco_pool", "offset": [0, -48], "blocks": false},
-    "x": {"kind": "homedeco", "l2_id": "deco_rubble", "art": "home_deco_rubble", "art_variants": ["home_deco_rubble_b", "home_deco_rubble_c"], "offset": [0, -48], "blocks": false}
+    "x": {"kind": "homedeco", "l2_id": "deco_rubble", "art": "home_deco_rubble", "art_variants": ["home_deco_rubble_b", "home_deco_rubble_c"], "offset": [0, -48], "blocks": false},
+    "i": {"kind": "worlddeco", "l2_id": "maker_inputs", "art": "home_maker_inputs", "offset": [0, -80], "blocks": false},
+    "m": {"kind": "grounddeco", "ground_id": "maker_yard", "art": "home_maker_yard", "offset": [0, 0], "z_index": 1},
+    "w": {"kind": "worlddeco", "l2_id": "maker_build", "art": "home_maker_build", "offset": [0, -80], "blocks": false},
+    "e": {"kind": "worlddeco", "l2_id": "maker_whisper", "art": "home_maker_whisper", "offset": [0, -96], "glow": "violet", "glow_scale": 1.1, "blocks": false}
   }
 }

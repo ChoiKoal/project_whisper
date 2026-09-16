@@ -214,7 +214,10 @@ func _find_walkable_near(loader: MapLoader, origin: Vector2i, radius: int) -> Ve
 
 func _test_g1_refresh(map: Node, loader: MapLoader, touch: TouchController) -> void:
 	# A K stepping-stone slot is water (non-walkable) → AStar treats it solid.
-	var k: Vector2i = loader.stepping_slot_cells[0]
+	# Start at the southern slot adjoining the player's bank. The northern first
+	# array entry is isolated by two remaining water cells; routing there after
+	# only ONE stone previously passed by routing through authored VOID walls.
+	var k: Vector2i = loader.stepping_slot_cells[-1]
 	_check("G1 slot starts non-walkable", not loader.is_cell_walkable(k))
 	# Place D14 (swap to walkable source 1) via the interaction effect, exactly as
 	# the real placement path does; this emits stepping_stone_placed → grid refresh.

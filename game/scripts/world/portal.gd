@@ -150,6 +150,11 @@ func _ready() -> void:
 	# Adopt the current saved state and follow future changes.
 	_apply_state(GameState.portal_state(layer))
 	GameState.portal_state_changed.connect(_on_portal_changed)
+	# FDN representative candidate: one authored Home landmark, not a global reskin.
+	if object_id == "portal_nature" and not platinum:
+		var presence := load("res://scripts/foundation/portal_presence.gd").new() as Node
+		presence.name = "FoundationPortalPresence"
+		add_child(presence)
 
 
 func _on_portal_changed(changed_layer: String, state: String) -> void:

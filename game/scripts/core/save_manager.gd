@@ -28,6 +28,29 @@ const SAVE_PATH := "user://save1.json"
 ## "grove"), portal_states, WorldContext (current scene + arrival). BREAKING — a v1 save
 ## has no `worlds` map, so it is treated as 구버전 and rejected (fresh start).
 const SAVE_VERSION := 2
+const GROVE_LAYOUT = preload("res://scripts/foundation/grove_layout.gd")
+func inspect_grove_layout(data:Dictionary)->Dictionary:
+	return GROVE_LAYOUT.inspect(data)
+
+## The staged v2 candidate is opt-in until its runtime acceptance gates pass.
+## A run choice is persisted even before the first Grove visit (old Home-only saves stay v1).
+var grove_layout_revision := GROVE_LAYOUT.LEGACY
+var layout_load_error := ""
+var _layout_restore_blocked := false
+func new_game_for_layout(revision:String)->bool:
+	if revision not in GROVE_LAYOUT.SUPPORTED:return false
+	new_game()
+	grove_layout_revision=revision
+	return true
+func grove_revision_for_build()->String:
+	if not pending_load:return grove_layout_revision
+	var data:=_read_save()
+	if data.is_empty():return ""
+	return String(inspect_grove_layout(data).revision)
+func _reject_layout(reason:String)->void:
+	layout_load_error=reason
+	_layout_restore_blocked=true
+	push_warning("SaveManager: "+reason+"; original save preserved")
 
 ## Source id a gathered tile becomes (T0 VOID) — mirrors InteractionController.
 const VOID_SOURCE := 0
@@ -76,6 +99,8 @@ var _worlds: Dictionary = {}
 ## When true, the next home-island load should play the CS-05 return-ignition cutscene
 ## (queued by GroveSession after the clear). Persisted so a mid-return quit still fires it.
 var pending_return_ignition: bool = false
+## Optional additive v2 transaction intent. D22 is already consumed while CS04 is running.
+var pending_l1_clear: Array = []
 
 
 ## (v0.5.0 phase C) Queue the CS-05 return ignition for the next home-island boot.
@@ -140,6 +165,7 @@ func delete_save() -> void:
 
 ## Build the full save dictionary from current autoload + live-world state.
 func build_save_dict() -> Dictionary:
+	if not _save_layout_ready():return {}
 	# Refresh the CURRENT scene's world snapshot from the live world (if one is registered),
 	# leaving the other scene(s) in `_worlds` untouched → both worlds persist across travel.
 	if _loader != null:
@@ -150,6 +176,7 @@ func build_save_dict() -> Dictionary:
 		_worlds[WorldContext.current_scene] = w
 	var data := {
 		"version": SAVE_VERSION,
+		"world_layouts": {"grove":grove_layout_revision},
 		"inventory": _inventory_dict(),
 		"codex": Codex.to_dict(),
 		"time": {
@@ -163,6 +190,7 @@ func build_save_dict() -> Dictionary:
 			"cleared": cleared,
 		},
 		"quests": QuestManager.to_dict(),
+		"story_state": GameState.story_state.duplicate(true),
 		# v0.5.0 phase C multi-scene state.
 		"worlds": _worlds.duplicate(true),
 		"portal_states": GameState.portal_states.duplicate(),
@@ -192,12 +220,17 @@ func build_save_dict() -> Dictionary:
 		"whisper": WhisperCurrency.to_dict(),
 		"world_context": WorldContext.to_dict(),
 		"pending_return_ignition": pending_return_ignition,
+		"pending_l1_clear": pending_l1_clear.duplicate(),
 	}
 	return data
 
 
 func save_game() -> bool:
+	if _layout_restore_blocked:return false
+	if not _save_layout_ready():return false
 	var data := build_save_dict()
+	if data.is_empty():return false
+	if _loader!=null and not _registered_layout_matches(_worlds.get(WorldContext.current_scene,{})):return false
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f == null:
 		push_error("SaveManager: cannot open %s for write" % SAVE_PATH)
@@ -207,6 +240,15 @@ func save_game() -> bool:
 	game_saved.emit()
 	return true
 
+
+func _save_layout_ready()->bool:
+	var layout:=inspect_grove_layout({"world_layouts":{"grove":grove_layout_revision},"worlds":_worlds})
+	if not layout.ok:
+		_reject_layout(String(layout.reason));return false
+	if _loader!=null and WorldContext.current_scene==WorldContext.SCENE_GROVE:
+		if not _loader.layout_ready or _loader.layout_revision!=grove_layout_revision:
+			_reject_layout("run and constructed Grove layout differ");return false
+	return true
 
 func _inventory_dict() -> Dictionary:
 	var out := {}
@@ -263,7 +305,7 @@ func _map_dict() -> Dictionary:
 				void_cells.append([c, r])
 			elif cur == STEPPING_STONE_SOURCE and _is_stepping_slot(cell):
 				stone_cells.append([c, r])
-	return {
+	var result := {
 		"void_cells": void_cells,
 		"stepping_stones": stone_cells,
 		"objects": _object_states(),
@@ -273,6 +315,9 @@ func _map_dict() -> Dictionary:
 			"world_tree_gathered": _world_tree_gathered(),
 		},
 	}
+	if WorldContext.current_scene==WorldContext.SCENE_GROVE:
+		result["layout_revision"]=_loader.layout_revision
+	return result
 
 
 ## (v0.4.0-C) Serialize every persistent PlacedObject (structure/decor the player built).
@@ -350,6 +395,13 @@ func load_game() -> Dictionary:
 	var data := _read_save()
 	if data.is_empty():
 		return {}
+	if _loader!=null and WorldContext.current_scene==WorldContext.SCENE_GROVE:
+		if not _loader.layout_ready:
+			_reject_layout("Grove profile is not constructed");return {}
+		var revision:=String(inspect_grove_layout(data).revision)
+		if revision!=_loader.layout_revision:
+			_reject_layout("registered Grove differs from disk layout")
+			return {}
 	# (v0.5.0 phase C) The DESTINATION scene the world is being loaded INTO is authoritative —
 	# the live session set WorldContext.current_scene before calling us. _apply_core_state would
 	# otherwise overwrite it with the SAVED scene, so a load into the grove would restore the
@@ -376,7 +428,13 @@ func _read_save() -> Dictionary:
 	if typeof(parsed) != TYPE_DICTIONARY:
 		push_error("SaveManager: malformed save file")
 		return {}
-	return _migrate(parsed)
+	var data:=_migrate(parsed)
+	if data.is_empty():return {}
+	var layout:=inspect_grove_layout(data)
+	if not layout.ok:
+		_reject_layout(String(layout.reason))
+		return {}
+	return data
 
 
 ## Version migration hook. v2 is current. v0.5.0 phase C is a BREAKING bump: a v1 (single-
@@ -386,7 +444,10 @@ func _read_save() -> Dictionary:
 func _migrate(data: Dictionary) -> Dictionary:
 	var v := int(data.get("version", 0))
 	if v > SAVE_VERSION:
-		push_warning("SaveManager: save version %d newer than supported %d" % [v, SAVE_VERSION])
+		# Fail before applying inventory/cache, and latch the existing write guard so
+		# explicit save and WM-close autosave cannot downgrade an unreadable run.
+		_reject_layout("save version %d newer than supported %d" % [v, SAVE_VERSION])
+		return {}
 	if v < SAVE_VERSION:
 		push_warning("SaveManager: 구버전 세이브 (v%d < v%d) — starting fresh" % [v, SAVE_VERSION])
 		return {}
@@ -394,6 +455,14 @@ func _migrate(data: Dictionary) -> Dictionary:
 
 
 func _apply_core_state(data: Dictionary) -> void:
+	var layout:=inspect_grove_layout(data)
+	if not layout.ok:
+		_reject_layout(String(layout.reason))
+		return
+	grove_layout_revision=String(layout.revision)
+	layout_load_error=""
+	_layout_restore_blocked=false
+	GameState.story_state = GameState.sanitize_story_state(data.get("story_state", {}))
 	# Inventory
 	Inventory.clear()
 	var inv: Dictionary = data.get("inventory", {})
@@ -449,6 +518,16 @@ func _apply_core_state(data: Dictionary) -> void:
 	if data.has("world_context"):
 		WorldContext.from_dict(data["world_context"])
 	pending_return_ignition = bool(data.get("pending_return_ignition", false))
+	pending_l1_clear = []
+	var pending: Variant = data.get("pending_l1_clear", [])
+	if pending is Array and pending.size() == 2 and not cleared:
+		var valid := true
+		for value in pending:
+			if (not value is int and not value is float) or not is_finite(float(value)):
+				valid = false
+			elif float(value) != floorf(float(value)) or value < 0 or value >= 40:
+				valid = false
+		if valid: pending_l1_clear = [int(pending[0]), int(pending[1])]
 	# Held item is applied in apply_world_state (needs the InteractionController).
 
 
@@ -470,6 +549,7 @@ func restore_registered_world() -> bool:
 		return false
 	if not has_world_snapshot(WorldContext.current_scene):
 		return false
+	if not _registered_layout_matches(_worlds[WorldContext.current_scene]):return false
 	apply_world_state({})
 	game_loaded.emit()
 	return true
@@ -486,6 +566,7 @@ func apply_world_state(data: Dictionary) -> void:
 	if m.is_empty():
 		# Fallback to a legacy single-map save shape (defensive; v1 saves are rejected earlier).
 		m = data.get("map", {})
+	if not _registered_layout_matches(m):return
 	# Gathered tiles reload as the walkable HOLLOW (빈 자국). The key is still
 	# "void_cells" (no schema change); older saves with true-VOID gathered cells also
 	# come back as HOLLOW so the emptied spots are walkable per the v0.3.1 decision.
@@ -528,6 +609,20 @@ func apply_world_state(data: Dictionary) -> void:
 ## scene's YSortLayer (so they sort with the player) and refreshes pathfinding for any
 ## blocking structure. Does NOT emit placed_object_placed (loading is not a play action,
 ## so quests/audio must not re-fire).
+func _registered_layout_matches(snapshot:Dictionary)->bool:
+	if WorldContext.current_scene!=WorldContext.SCENE_GROVE or snapshot.is_empty():return true
+	var preflight:=inspect_grove_layout({"world_layouts":{"grove":grove_layout_revision},"worlds":{"grove":snapshot}})
+	if not preflight.ok:
+		_reject_layout(String(preflight.reason));return false
+	if _loader!=null and snapshot.get("layout_revision",GROVE_LAYOUT.LEGACY)==_loader.layout_revision:
+		for pair in snapshot.get("void_cells",[]):
+			if pair is Array and pair.size()==2 and _loader.is_protected_stream(Vector2i(int(pair[0]),int(pair[1]))):
+				_reject_layout("protected stream cannot be restored as gathered ground")
+				return false
+		return true
+	_reject_layout("Grove snapshot does not match registered map")
+	return false
+
 func _apply_placed_objects(states: Array) -> void:
 	if states.is_empty():
 		return
@@ -635,6 +730,7 @@ func _respawn_entry_for(cell: Vector2i):
 ## the title screen can offer "NG+ 시작".
 func mark_cleared() -> void:
 	cleared = true
+	pending_l1_clear = []
 
 
 ## Start New Game Plus. Picks up to NG_PLUS_CARRY (3) random recipes from the
@@ -646,6 +742,10 @@ func mark_cleared() -> void:
 ## `finished_run_recipes` = the recipe ids discovered in the run being left
 ## (defaults to the codex's current discovered recipes).
 func start_ng_plus(finished_run_recipes: Array = []) -> Array:
+	# NG+ is a new world, not a migration of an existing coordinate snapshot.
+	grove_layout_revision=GROVE_LAYOUT.LEGACY
+	layout_load_error=""
+	_layout_restore_blocked=false
 	var pool: Array = finished_run_recipes.duplicate()
 	if pool.is_empty():
 		var d := Codex.to_dict()
@@ -659,6 +759,8 @@ func start_ng_plus(finished_run_recipes: Array = []) -> Array:
 
 	# Reset the world.
 	Inventory.clear()
+	GameState.story_state.clear()
+	pending_l1_clear = []
 	GameState.set_game_time(0.0)
 	GameState.reset_portals()          # (v0.5.0-C) fresh portal line (nature flickering)
 	GameState.reset_layer2()           # (L2-3) no power nodes energized, not purified
@@ -711,7 +813,12 @@ func is_lifetime_recipe(recipe_id: String) -> bool:
 
 ## Reset all NG+ meta + a fresh world (used by "새로 시작" from the title).
 func new_game() -> void:
+	grove_layout_revision=GROVE_LAYOUT.LEGACY
+	layout_load_error=""
+	_layout_restore_blocked=false
 	Inventory.clear()
+	GameState.story_state.clear()
+	pending_l1_clear = []
 	GameState.set_game_time(0.0)
 	GameState.reset_portals()          # (v0.5.0-C) nature flickering, rest dormant
 	GameState.reset_layer2()           # (L2-3) no power nodes energized, not purified

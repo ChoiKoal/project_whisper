@@ -28,6 +28,11 @@ const LEGEND_PATH := "res://data/map_legend.json"
 ## (v0.5 phase B) Parallel height map: one char per cell — '0'/'1'/'2' heights, '/' ramp.
 ## Optional (a world without hills simply omits it → everything stays height 0).
 const HEIGHT_PATH := "res://data/map_height.txt"
+const GROVE_SURFACE_ART = preload("res://scripts/world/grove_surface_art.gd")
+const GROVE_EDGE_SIDES := {"br": TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_SIDE,
+	"bl": TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_SIDE,
+	"tl": TileSet.CELL_NEIGHBOR_TOP_LEFT_SIDE,
+	"tr": TileSet.CELL_NEIGHBOR_TOP_RIGHT_SIDE}
 ## (v0.5.0) Per-scene overrides. Empty → use the LAYOUT_PATH / LEGEND_PATH defaults.
 @export var layout_path_override: String = ""
 @export var legend_path_override: String = ""
@@ -35,6 +40,25 @@ const HEIGHT_PATH := "res://data/map_height.txt"
 ## height file entirely — the home island is flat, and applying the grove's 40×40 height map
 ## to a smaller world would be wrong).
 @export var height_path_override: String = ""
+@export_enum("legacy_auto", "grove_stacked", "cartesian") var topology_contract := "legacy_auto"
+var layout_revision := "l1-v1"
+var legacy_grove_bank := true
+var layout_ready := false
+var semantic_anchors:Dictionary={}
+func anchor_cells(key:String,fallback:Array)->Array:
+	return semantic_anchors.get(key,fallback).duplicate()
+func layout_symbol(cell:Vector2i)->String:
+	if cell.y<0 or cell.y>=_layout.size() or cell.x<0 or cell.x>=_layout[cell.y].length():return ""
+	return _layout[cell.y][cell.x]
+func is_protected_stream(cell:Vector2i)->bool:
+	return layout_revision=="l1-v2" and layout_symbol(cell) in ["X","K"]
+func allows_tile_placement(cell:Vector2i,item:String)->bool:
+	if not is_protected_stream(cell):return true
+	return layout_symbol(cell)=="K" and item=="D14" and get_cell_source_id(cell)==8
+func can_gather_cell(cell:Vector2i)->bool:
+	if is_protected_stream(cell):return false
+	var data:=get_cell_tile_data(cell)
+	return data!=null and bool(data.get_custom_data("gatherable"))
 ## (v0.5.0 phase C) Whether the procedural density scatter runs. The home island (제0세계) is
 ## a deliberately BARREN "빈 세계", so its scene sets this false — only authored objects appear.
 @export var enable_scatter: bool = true
@@ -153,10 +177,17 @@ func _ready() -> void:
 	_classify_elevation()
 	_build_objects()
 	_scatter_objects()
+	_apply_route_ramps()
 	_build_ridges()
 	_build_cliff_skirts()
 	_build_elevation()
 	_build_edge_overlays()
+	if _uses_grove_surface_art() and legacy_grove_bank:
+		var bank := Node2D.new()
+		bank.name = "BankTransition"
+		bank.z_index = JITTER_Z
+		bank.set_script(load("res://scripts/world/bank_transition.gd"))
+		add_child(bank)
 	# v0.5: brightness jitter retired — the real CC0 grass tiles carry their own
 	# per-diamond texture variation, so the synthetic ±3% jitter is redundant.
 	# (_build_brightness_jitter kept in the file for reference / harness compat.)
@@ -170,6 +201,7 @@ func _ready() -> void:
 	_lift_hill_objects()
 	_place_player()
 	_wire_stump_fade()
+	layout_ready=width>0 and height>0
 
 
 func _place_player() -> void:
@@ -502,20 +534,27 @@ func _build_edge_overlays() -> void:
 		var row := _layout[r]
 		for c in range(min(width, row.length())):
 			var cell := Vector2i(c, r)
-			if not _is_grass_cell(cell):
+			var soil_bank := _uses_grove_surface_art() and get_cell_source_id(cell)==1
+			if not _is_grass_cell(cell) and not soil_bank:
 				continue
 			for pair in EDGE_DIRS:
 				var nb: Vector2i = cell + pair[0]
+				if _uses_grove_surface_art():
+					# The actual TileSet is STACKED: (+1,0) is 128px horizontally,
+					# not an isometric side neighbour. Rendering uses TileSet topology.
+					nb = get_neighbor_cell(cell, GROVE_EDGE_SIDES[pair[1]])
 				var mat := _edge_material_at(nb)
-				if mat == "":
+				if mat == "" or (soil_bank and mat!="water"):
 					continue
-				var tex := load("res://assets/tiles/edge_%s_%s.png" % [mat, pair[1]])
+				var material_name := "soil_water" if soil_bank else mat
+				var tex := load("res://assets/tiles/edge_%s_%s.png" % [material_name, pair[1]])
 				if tex == null:
 					continue
 				var s := Sprite2D.new()
 				s.texture = tex
 				s.centered = true
 				s.position = map_to_local(cell)
+				if soil_bank: s.set_meta("soil_water_bank",pair[1])
 				_edge_overlay.add_child(s)
 
 
@@ -572,6 +611,7 @@ var cliff_skirt_count: int = 0
 var cliff_skirt_south_cells: Array[Vector2i] = []
 ## v0.5: loaded cliff-face textures (rock wall variants) used for the island edge.
 var _cliff_faces: Array[Texture2D] = []
+var _grove_skirt_profile: Dictionary = {}
 
 
 ## Deterministic cliff-face variant for an edge cell (varied rock wall look).
@@ -614,6 +654,19 @@ func _build_cliff_skirts() -> void:
 		push_warning("MapLoader: cliff-face textures missing; skipping skirts")
 		return
 
+	_grove_skirt_profile.clear()
+	if _uses_grove_surface_art():
+		var origins: Array = []
+		var faces: Array = []
+		for cell in get_used_cells():
+			if not _is_island_cell(cell): continue
+			var se := _is_cliff_open(get_neighbor_cell(cell,TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_SIDE))
+			var sw := _is_cliff_open(get_neighbor_cell(cell,TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_SIDE))
+			if not se and not sw: continue
+			origins.append(Vector2i(map_to_local(cell)+Vector2(-64,-32)))
+			faces.append(Vector2i(int(se),int(sw)))
+		_grove_skirt_profile=GROVE_SURFACE_ART.rim_profile(origins,faces,176)
+
 	for r in range(height):
 		var row := _layout[r] if r < _layout.size() else ""
 		for c in range(min(width, row.length())):
@@ -624,6 +677,9 @@ func _build_cliff_skirts() -> void:
 			# drop, so it must not sprout a skirt (v0.4.0 A3: ridge ≠ cliff).
 			var south_open := _is_cliff_open(Vector2i(c, r + 1))   # +row → screen SW
 			var east_open := _is_cliff_open(Vector2i(c + 1, r))    # +col → screen SE
+			if _uses_grove_surface_art():
+				south_open = _is_cliff_open(get_neighbor_cell(Vector2i(c,r), TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_SIDE))
+				east_open = _is_cliff_open(get_neighbor_cell(Vector2i(c,r), TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_SIDE))
 			if not south_open and not east_open:
 				continue
 			# South-facing (or corner) edges get the full cliff face and are recorded for
@@ -672,9 +728,24 @@ func _place_skirt(tex: Texture2D, cell: Vector2i) -> void:
 	# reads as the tile's own edge dropping away into the void below.
 	var center := map_to_local(cell)
 	s.position = center + Vector2(-64.0, -TILE_HALF_H * 0.5 + SKIRT_TOP_OFFSET)
+	if _uses_grove_surface_art():
+		var origin := Vector2i(center + Vector2(-64, -32))
+		var image: Image = GROVE_SURFACE_ART.skirt_wall(origin, 176,
+			_is_cliff_open(get_neighbor_cell(cell, TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_SIDE)),
+			_is_cliff_open(get_neighbor_cell(cell, TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_SIDE)),_grove_skirt_profile)
+		s.texture = ImageTexture.create_from_image(image)
+		s.position = Vector2(origin)
+		s.set_meta("grove_material_origin", origin)
+		s.set_meta("grove_rim_profile",true)
 	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_cliff_overlay.add_child(s)
 	cliff_skirt_count += 1
+
+
+func _uses_grove_surface_art() -> bool:
+	if topology_contract=="grove_stacked":return true
+	return (layout_path_override == "" or layout_path_override == LAYOUT_PATH) \
+		and not l2_cliff_palette and not l3_cliff_palette and not l4_cliff_palette
 
 
 # ---- floating rock shard (v0.5d, home island) ----------------------------
@@ -1012,6 +1083,21 @@ func elevation_of(cell: Vector2i) -> int:
 func is_ramp(cell: Vector2i) -> bool:
 	return ramp_cells.has(cell)
 
+## Side neighbours in the map's actual projection. Keep other worlds' existing
+## topology unchanged until their own movement/save fixtures have been reviewed.
+func uses_grove_topology() -> bool:
+	if topology_contract!="legacy_auto":return topology_contract=="grove_stacked"
+	return layout_path_override == "" or layout_path_override == LAYOUT_PATH
+
+func terrain_neighbor(cell: Vector2i, direction: Vector2i) -> Vector2i:
+	if not uses_grove_topology():
+		return cell + direction
+	var sides := {Vector2i(1, 0): TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_SIDE,
+		Vector2i(0, 1): TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_SIDE,
+		Vector2i(-1, 0): TileSet.CELL_NEIGHBOR_TOP_LEFT_SIDE,
+		Vector2i(0, -1): TileSet.CELL_NEIGHBOR_TOP_RIGHT_SIDE}
+	return get_neighbor_cell(cell, sides[direction])
+
 ## Public: may the player cross directly between two 4-adjacent cells? Same height →
 ## yes. Different height → only if EITHER endpoint is a ramp (the stair). Used by the
 ## height-aware AStar in TouchController and by movement/physics.
@@ -1028,13 +1114,31 @@ func height_offset(cell: Vector2i) -> float:
 		return -HILL_LIFT * _ramp_mid_level(cell)
 	return -HILL_LIFT * float(height_at(cell))
 
+## Same continuous ramp projection as GroveSurfaceArt.ramp; the body is unlifted.
+func visual_height_offset(world_position: Vector2) -> float:
+	var cell := world_to_cell(world_position)
+	if not uses_grove_topology() or not is_ramp(cell):
+		return height_offset(cell)
+	var high := 0
+	var low := 99
+	for d in [Vector2i(1,0),Vector2i(0,1),Vector2i(-1,0),Vector2i(0,-1)]:
+		var lv := height_at(terrain_neighbor(cell,d))
+		high = maxi(high,lv)
+		low = mini(low,lv)
+	var delta := to_local(world_position)-map_to_local(cell)
+	var dir := _ramp_climb_dir(cell)
+	var sx := 1.0 if dir in ["ne","se"] else -1.0
+	var sy := 1.0 if dir in ["se","sw"] else -1.0
+	var t := clampf(0.5+0.5*(sx*delta.x/64.0+sy*delta.y/32.0),0.0,1.0)
+	return -HILL_LIFT*lerpf(float(low),float(high),t)
+
 ## Mid level (float) a ramp bridges: average of its highest and lowest 4-neighbour
 ## levels (so a 0↔1 ramp draws at 0.5, a 1↔2 ramp at 1.5).
 func _ramp_mid_level(cell: Vector2i) -> float:
 	var lo := 99
 	var hi := 0
 	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-		var lv := height_at(cell + d)
+		var lv := height_at(terrain_neighbor(cell, d))
 		lo = mini(lo, lv)
 		hi = maxi(hi, lv)
 	if lo == 99:
@@ -1086,6 +1190,28 @@ func _classify_elevation() -> void:
 				elevation[cell] = lv
 				hill_cells[cell] = lv
 
+## Add traversable terrain only after the original cell-keyed spawn selection.
+## Editing the legacy height file changes rim exclusions and silently reseeds scatter.
+## These authored unoccupied cells keep their base level and gain a visible slope,
+## shared by height projection, ledge collision and TouchController.can_traverse.
+func _apply_route_ramps() -> void:
+	if not uses_grove_topology():
+		return
+	var cells: Variant = _legend.get("route_ramps", [])
+	if not cells is Array:
+		return
+	for raw in cells:
+		if not raw is Array or raw.size() != 2:
+			continue
+		if not (raw[0] is int or raw[0] is float) or not (raw[1] is int or raw[1] is float):
+			continue
+		var cell := Vector2i(int(raw[0]), int(raw[1]))
+		if not is_cell_walkable(cell) or _occupied.has(cell) or height_at(cell) <= 0:
+			push_warning("MapLoader: invalid/occupied route ramp %s" % cell)
+			continue
+		ramp_cells[cell] = true
+
+
 ## True if `cell` is raised and its screen-SOUTH (+row) or screen-EAST (+col) neighbour
 ## is at a LOWER level and is not itself reached by a ramp — i.e. a downhill face the
 ## player sees. Returns the drop direction(s) for face placement.
@@ -1096,11 +1222,11 @@ func _downhill_faces(cell: Vector2i) -> Array:  # of ["s"|"e", drop_levels]
 	var lv := height_at(cell)
 	if lv <= 0:
 		return out
-	var south := height_at(cell + Vector2i(0, 1))
-	var east := height_at(cell + Vector2i(1, 0))
-	if south < lv and not is_ramp(cell + Vector2i(0, 1)):
+	var south := height_at(terrain_neighbor(cell, Vector2i(0, 1)))
+	var east := height_at(terrain_neighbor(cell, Vector2i(1, 0)))
+	if south < lv and not is_ramp(terrain_neighbor(cell, Vector2i(0, 1))):
 		out.append(["s", lv - south])
-	if east < lv and not is_ramp(cell + Vector2i(1, 0)):
+	if east < lv and not is_ramp(terrain_neighbor(cell, Vector2i(1, 0))):
 		out.append(["e", lv - east])
 	return out
 
@@ -1110,6 +1236,17 @@ func _downhill_faces(cell: Vector2i) -> Array:  # of ["s"|"e", drop_levels]
 ## Cheap; called during scatter eligibility (elevation is classified first, see _ready).
 func _is_rim_cell(cell: Vector2i) -> bool:
 	return not _downhill_faces(cell).is_empty()
+
+## Spawn catalog v1 is part of the cell-keyed save contract. Geometry may change,
+## but changing its exclusion set reselects hash-sorted scatter in unrelated cells.
+## Keep this legacy predicate ONLY for authored/scatter identity, not for walls.
+func _is_spawn_rim_cell(cell: Vector2i) -> bool:
+	if is_ramp(cell) or height_at(cell) <= 0:
+		return false
+	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+		if height_at(cell + d) < height_at(cell) and not is_ramp(cell + d):
+			return true
+	return false
 
 
 ## Build the raised surface layers, cliff faces on transitions, ramp slopes, and the
@@ -1189,10 +1326,12 @@ func _build_cliff_faces() -> void:
 		var lvl := height_at(cell)
 		if lvl <= 0:
 			continue
-		var east := height_at(cell + Vector2i(1, 0))     # +col => screen SE
-		var south := height_at(cell + Vector2i(0, 1))     # +row => screen SW
-		var se_drop := (lvl - east) if (east < lvl and not is_ramp(cell + Vector2i(1, 0))) else 0
-		var sw_drop := (lvl - south) if (south < lvl and not is_ramp(cell + Vector2i(0, 1))) else 0
+		var east_cell := terrain_neighbor(cell, Vector2i(1, 0))
+		var south_cell := terrain_neighbor(cell, Vector2i(0, 1))
+		var east := height_at(east_cell)
+		var south := height_at(south_cell)
+		var se_drop := (lvl - east) if (east < lvl and not is_ramp(east_cell)) else 0
+		var sw_drop := (lvl - south) if (south < lvl and not is_ramp(south_cell)) else 0
 		var drop := maxi(se_drop, sw_drop)
 		if drop <= 0:
 			continue
@@ -1205,6 +1344,11 @@ func _build_cliff_faces() -> void:
 		# Top-left of the apron box = the raised diamond's top-left, lifted by the level.
 		var center: Vector2 = map_to_local(cell) + Vector2(0, -HILL_LIFT * float(lvl))
 		s.position = center + Vector2(-TILE_HALF_W, -TILE_HALF_H)
+		if _uses_grove_surface_art():
+			var depths := Vector2i(se_drop,sw_drop)*int(HILL_LIFT)
+			s.texture = ImageTexture.create_from_image(GROVE_SURFACE_ART.raised_wall(Vector2i(s.position),depths))
+			s.set_meta("raised_cell",cell)
+			s.set_meta("face_depths",depths)
 		s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		s.z_index = CLIFF_FACE_Z
 		_cliff_face_overlay.add_child(s)
@@ -1216,6 +1360,25 @@ func _build_cliff_faces() -> void:
 ## aprons (lower z). One per exposed lower neighbour.
 var ao_seat_count: int = 0
 func _build_ao_seats() -> void:
+	if _uses_grove_surface_art():
+		for cell in hill_cells:
+			var depths := Vector2i.ZERO
+			var sides := [Vector2i(1,0),Vector2i(0,1)]
+			for i in range(2):
+				var nb := terrain_neighbor(cell,sides[i])
+				if not is_ramp(nb): depths[i] = maxi(0,height_at(cell)-height_at(nb))*int(HILL_LIFT)
+			if depths==Vector2i.ZERO: continue
+			var sprite := Sprite2D.new()
+			sprite.texture = ImageTexture.create_from_image(GROVE_SURFACE_ART.contact(depths))
+			sprite.centered = false
+			sprite.position = map_to_local(cell)+Vector2(-64,-32-HILL_LIFT*height_at(cell))
+			sprite.z_index = CLIFF_FACE_Z-1
+			sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			sprite.set_meta("contact_edge",cell)
+			sprite.set_meta("face_depths",depths)
+			_cliff_face_overlay.add_child(sprite)
+			ao_seat_count += 1
+		return
 	var ao_tex := ImageTexture.create_from_image(CliffGen.make_ao_diamond(0.6))
 	for cell in hill_cells:
 		if is_ramp(cell):
@@ -1224,7 +1387,7 @@ func _build_ao_seats() -> void:
 		if lvl <= 0:
 			continue
 		for d in [Vector2i(1, 0), Vector2i(0, 1)]:
-			var nb: Vector2i = cell + d
+			var nb := terrain_neighbor(cell, d)
 			if height_at(nb) < lvl and not is_ramp(nb):
 				var s := Sprite2D.new()
 				s.texture = ao_tex
@@ -1249,6 +1412,16 @@ func _build_ramp_slopes() -> void:
 		# Anchor like the apron: ramp top diamond at the ramp's MID height.
 		var c: Vector2 = map_to_local(cell) + Vector2(0, height_offset(cell))
 		s.position = c + Vector2(-TILE_HALF_W, -TILE_HALF_H)
+		if _uses_grove_surface_art():
+			var low := 99
+			var high := 0
+			for d in [Vector2i(1,0),Vector2i(0,1),Vector2i(-1,0),Vector2i(0,-1)]:
+				var lv := height_at(terrain_neighbor(cell,d))
+				low = mini(low,lv)
+				high = maxi(high,lv)
+			s.texture = ImageTexture.create_from_image(GROVE_SURFACE_ART.ramp(dir,low,high))
+			s.position = map_to_local(cell)+Vector2(-64,-32-HILL_LIFT*high)
+			s.set_meta("ramp_surface",cell)
 		s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		s.z_index = CLIFF_FACE_Z
 		_cliff_face_overlay.add_child(s)
@@ -1260,7 +1433,7 @@ func _ramp_climb_dir(cell: Vector2i) -> String:
 	var best := "ne"
 	var best_lv := -1
 	for pair in [[Vector2i(1, 0), "se"], [Vector2i(-1, 0), "nw"], [Vector2i(0, 1), "sw"], [Vector2i(0, -1), "ne"]]:
-		var lv := height_at(cell + (pair[0] as Vector2i))
+		var lv := height_at(terrain_neighbor(cell, pair[0] as Vector2i))
 		if lv > best_lv:
 			best_lv = lv
 			best = String(pair[1])
@@ -1280,7 +1453,7 @@ func _build_ledge_collision() -> void:
 	# shared iso edge. Iterate island cells once; check the +col (SE) and +row (SW) edge.
 	for cell in hill_cells.keys() + ramp_cells.keys():
 		for d in [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)]:
-			var nb: Vector2i = cell + d
+			var nb := terrain_neighbor(cell, d)
 			if can_traverse(cell, nb):
 				continue
 			# Only add each edge once (from the higher cell, or the ramp-free side).
@@ -1317,6 +1490,11 @@ func _add_ledge_wall(cell: Vector2i, d: Vector2i) -> void:
 	var iso_angle := atan2(TILE_HALF_H, TILE_HALF_W)  # ≈ 0.4636 rad
 	# SE / NW edges rise to the right (+angle); SW / NE edges rise to the left (−angle).
 	cs.rotation = iso_angle if (d == Vector2i(1, 0) or d == Vector2i(-1, 0)) else -iso_angle
+	if uses_grove_topology():
+		var delta := map_to_local(terrain_neighbor(cell, d)) - center
+		cs.position = center + delta * 0.5
+		# Shared diamond side, not the normal between the cell centres.
+		cs.rotation = Vector2(delta.x, -delta.y).angle()
 	_ledge_body.add_child(cs)
 	ledge_collider_count += 1
 
@@ -1329,6 +1507,8 @@ func _lift_hill_objects() -> void:
 	for child in _ysort.get_children():
 		if not (child is Node2D):
 			continue
+		if child is Player and uses_grove_topology():
+			continue  # Logical body/save position is flat; Player lifts only its sprite.
 		apply_height_lift(child as Node2D)
 
 
@@ -1344,7 +1524,18 @@ func apply_height_lift(node: Node2D) -> void:
 	var cell := world_to_cell(node.global_position)
 	var off := height_offset(cell)
 	if off != 0.0:
-		node.position.y += off
+		if uses_grove_topology() and node is Gatherable:
+			# Keep trunks, interaction targets and respawn/save cells in the same
+			# logical space as Player. Only the ink and decorative children rise.
+			var delta := node.to_local(node.global_position+Vector2(0,off))
+			(node as Gatherable).offset += delta
+			for child in node.get_children():
+				if child is Node2D and not child is CollisionObject2D \
+					and not child is CollisionShape2D and not child is CollisionPolygon2D:
+					child.position += delta
+			node.set_meta("_logical_height_lift",true)
+		else:
+			node.position.y += off
 	node.set_meta("_height_lifted", true)
 	# Record the cell the lift was computed for + the applied offset, so a harness can verify
 	# the invariant without re-deriving the cell from the (now shifted) position.
@@ -1377,7 +1568,7 @@ func _build_objects() -> void:
 			# face). L2 objects (kind:l2obj) are authored deliberately per the level design, so
 			# they are NOT rim-skipped — the map places them where it wants them.
 			var is_l2 := String((objects[sym] as Dictionary).get("kind", "")) == "l2obj"
-			if not is_l2 and sym in ["T", "F", "R", "s", "t", "h"] and _is_rim_cell(cell):
+			if not is_l2 and sym in ["T", "F", "R", "s", "t", "h"] and _is_spawn_rim_cell(cell):
 				_occupied[cell] = true
 				continue
 			_occupied[cell] = true
@@ -1393,6 +1584,10 @@ var observation_cell: Vector2i = Vector2i(-1, -1)
 ## reads this to attach power-node / held-item / use-on-object state to the right nodes. The
 ## harness reads it to assert every object instantiated with a texture.
 var l2_object_nodes: Dictionary = {}   # l2_id(String) -> {cell, node, spec}
+## Generic terrain decals authored by a legend `kind:"grounddeco"`. These live under the
+## TileMapLayer (z 1), never in YSortLayer, so a multi-cell floor composition cannot occlude
+## the player or become a save/gameplay object. Recorded for deterministic visual contracts.
+var ground_deco_nodes: Dictionary = {} # ground_id@cell -> {cell, node, spec}
 ## L2 workbench (정비대 = cauldron equivalent) cell, for session wiring.
 var l2_workbench_cell: Vector2i = Vector2i(-1, -1)
 ## (L2-2) Cells sealed as the STATIC-CLOSED G3 정전 병목 (dark, non-walkable). Read by the
@@ -1413,6 +1608,15 @@ func _spawn_object(sym: String, cell: Vector2i, spec: Dictionary) -> void:
 	# 빛 웅덩이·비석/잔해 스캐터. 보행 가능 지면 위 비-블로킹 스프라이트라 데이터 경로는 l2obj
 	# 재사용(art/art_variants/offset/glow/blocks). 코어 로더 무변경, 심볼 하드코딩 없음.
 	if kind == "homedeco":
+		_spawn_l2_object(sym, cell, spec, world)
+		return
+	# Recovery art grammar: terrain plates and world props are distinct. A ground decal stays
+	# below every actor; a world deco uses the shared bottom-centre/Y-sort object path. Both are
+	# data-driven so the same grammar can be reused by the first region without symbol hardcoding.
+	if kind == "grounddeco":
+		_spawn_ground_deco(sym, cell, spec, world)
+		return
+	if kind == "worlddeco":
 		_spawn_l2_object(sym, cell, spec, world)
 		return
 	if kind == "observation":
@@ -1697,6 +1901,7 @@ func _spawn_l2_object(sym: String, cell: Vector2i, spec: Dictionary, world: Vect
 		g.texture = tex
 		g.offset = off
 		g.blocks_movement = bool(spec.get("blocks", false))
+		g.block_radius = float(spec.get("block_radius", 20.0))
 		node = g
 		object_spawns.append({"cell": cell, "symbol": sym})
 	else:
@@ -1726,6 +1931,33 @@ func _spawn_l2_object(sym: String, cell: Vector2i, spec: Dictionary, world: Vect
 	if l2_id == "workbench":
 		l2_workbench_cell = cell
 	l2_object_nodes[l2_id + "@" + str(cell)] = {"cell": cell, "node": node, "spec": spec}
+
+
+## Spawn a multi-cell terrain composition under actors and props. Unlike `_spawn_l2_object`,
+## this node is deliberately parented to the TileMapLayer and is not Y-sorted, collidable,
+## gatherable, or serialized. The raw tile remains authoritative for walkability/save diffs.
+func _spawn_ground_deco(sym: String, cell: Vector2i, spec: Dictionary, world: Vector2) -> void:
+	var art := String(spec.get("art", ""))
+	if art == "":
+		return
+	var path := "res://assets/objects/%s.png" % art
+	var tex := load(path) as Texture2D
+	if tex == null:
+		push_warning("MapLoader: ground-deco art missing: %s" % art)
+		return
+	var off_arr: Array = spec.get("offset", [0, 0])
+	var off := Vector2(float(off_arr[0]), float(off_arr[1])) if off_arr.size() >= 2 else Vector2.ZERO
+	var node := Sprite2D.new()
+	node.name = "GroundDeco_%s" % String(spec.get("ground_id", sym))
+	node.texture = tex
+	node.offset = off
+	node.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	node.position = world
+	node.z_index = int(spec.get("z_index", 1))
+	node.set_meta("object_id", String(spec.get("ground_id", sym)))
+	add_child(node)
+	var ground_id := String(spec.get("ground_id", sym))
+	ground_deco_nodes[ground_id + "@" + str(cell)] = {"cell": cell, "node": node, "spec": spec}
 
 
 ## Small circular blocking StaticBody at a spawned structure's base (so the player can't walk
@@ -1760,6 +1992,9 @@ func _object_texture(sym: String, cell: Vector2i) -> Array:  # [path, offset]
 			return ["res://assets/objects/tree_c.png", Vector2(0, -105)]
 		"F":
 			var pick := h % 3
+			# Review the authored growth silhouettes in v2 first; preserve legacy art.
+			if layout_revision == "l1-v2":
+				return ["res://assets/foundation/flowers/flower_%d.png" % pick, Vector2(0,-24)]
 			if pick == 0:
 				return ["res://assets/objects/flower.png", Vector2(0, -24)]
 			elif pick == 1:
@@ -1804,9 +2039,25 @@ func rebuild_gatherable(sym: String, cell: Vector2i) -> Gatherable:
 		# Re-apply the parts_box J2/J4 split on respawn so J4 sources survive the day cycle.
 		g.item_id = _l2_gather_item_id(g.object_id, g.item_id, cell)
 		g.blocks_movement = bool(spec.get("blocks", false))
+		g.block_radius = float(spec.get("block_radius", 20.0))
 		return g
 	var tex_off := _object_texture(sym, cell)
-	return _gatherable(spec, cell, tex_off[0], tex_off[1])
+	var gatherable := _gatherable(spec, cell, tex_off[0], tex_off[1])
+	# Representative shore-tree contact only. Children share the existing visual lift
+	# and disappear/rebuild with this exact gatherable, never a persistent terrain edit.
+	if sym == "T" and uses_grove_topology() and height_at(cell) == 0:
+		var on_shore := false
+		for side in [TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_SIDE, TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_SIDE, TileSet.CELL_NEIGHBOR_TOP_LEFT_SIDE, TileSet.CELL_NEIGHBOR_TOP_RIGHT_SIDE]:
+			if get_cell_source_id(get_neighbor_cell(cell, side)) in [8, 9]:
+				on_shore = true
+		if on_shore:
+			for layer in ["contact", "occlusion"]:
+				var root := Sprite2D.new()
+				root.name = "RootContact" if layer == "contact" else "RootOcclusion"
+				root.texture = load("res://assets/objects/shore_root_%s.png" % layer)
+				root.show_behind_parent = layer == "contact"
+				gatherable.add_child(root)
+	return gatherable
 
 
 func _gatherable(spec: Dictionary, cell: Vector2i, tex_path: String, off: Vector2) -> Gatherable:
@@ -1816,10 +2067,10 @@ func _gatherable(spec: Dictionary, cell: Vector2i, tex_path: String, off: Vector
 	g.unique = bool(gth.get("unique", false))
 	g.texture = load(tex_path)
 	g.offset = off
-	# v0.3.1 R3: only trees physically block the player; small scatter (rock/stone/flower/
-	# grass tuft/green bush) stays walkable-over. Detected from the art path — trees use
-	# tree_a/b/c.png, everything else is small.
-	g.blocks_movement = tex_path.contains("tree")
+	# Collision is explicit semantic metadata. Default false preserves unknown/low decals;
+	# grove T/R and every data-driven world object opt in through the existing `blocks` key.
+	g.blocks_movement = bool(spec.get("blocks", false))
+	g.block_radius = float(spec.get("block_radius", 20.0))
 	return g
 
 
@@ -1876,7 +2127,7 @@ func _is_scatter_eligible(cell: Vector2i) -> bool:
 	# screen-S/E downhill neighbour is lower. Objects there sat visually on the exposed
 	# cliff-face band ("dry bush + flowers render ON the cliff wall face"). Excluding the
 	# rim keeps scatter on the flat plateau top / flat ground only.
-	if _is_rim_cell(cell):
+	if _is_spawn_rim_cell(cell):
 		return false
 	# ≥1 cell away from any D path tile, gate cell, or key landmark object so gate
 	# topology / choke points are never blocked.
@@ -1999,6 +2250,11 @@ func world_to_cell(world: Vector2) -> Vector2i:
 ## pathfinding grid (M6a). Out-of-bounds / empty cells are treated non-walkable.
 func is_cell_walkable(cell: Vector2i) -> bool:
 	if cell.x < 0 or cell.y < 0 or cell.x >= width or cell.y >= height:
+		return false
+	# Authored V has a permanent BorderCollision diamond even if source 0's
+	# generic custom data is walkable. Gathered interior HOLLOW stays walkable.
+	if uses_grove_topology() and cell.y < _layout.size() \
+		and cell.x < _layout[cell.y].length() and _layout[cell.y][cell.x] == "V":
 		return false
 	var data := get_cell_tile_data(cell)
 	if data == null:

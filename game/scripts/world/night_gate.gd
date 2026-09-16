@@ -11,6 +11,8 @@ class_name NightGate
 
 const CLOSED_TEX := "res://assets/objects/night_bud_closed.png"
 const OPEN_TEX := "res://assets/objects/night_bud_open.png"
+## Only pollen/throat accents emit; leaves and stem keep their night material shading.
+const EMISSION_TEX := "res://assets/objects/night_bud_emission.png"
 const FLAVOR := "꽃봉오리가 닫혀 있다… 밤을 기다리는 걸까"
 
 var _sprite: Sprite2D
@@ -43,7 +45,7 @@ func _ready() -> void:
 	# reference because GlowSprite reparents itself onto the glow CanvasLayer, so a
 	# by-name child lookup would no longer find it.
 	_glow = GlowSprite.new()
-	_glow.texture = load(OPEN_TEX)
+	_glow.texture = load(EMISSION_TEX)
 	_glow.offset = Vector2(0, -60)
 	_glow.visible = false
 	_glow.name = "Glow"

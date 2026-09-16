@@ -13,11 +13,10 @@ class_name Gatherable
 ## items (e.g. pour I7 water on a `bush_dry`). Gathering and use are independent:
 ## a node can be gatherable, usable, or both.
 ##
-## v0.3.1 R3 (non-blocking gatherables): only large obstacles (trees) physically block
-## the player. Small scatter — rocks, stones, flowers, grass tufts, green bushes — set
-## `blocks_movement = false` so the player walks OVER them (they stay gatherable). Trees
-## set `blocks_movement = true` and get a small trunk StaticBody so you can't pass through
-## them. When a tree is gathered it queue_free()s, taking its collision with it.
+## Movement collision is semantic object data, not inferred from artwork or filenames.
+## `blocks_movement` and `block_radius` describe a compact ground footprint. Trees and
+## substantial R rocks block; small s stones, flowers, tufts, and low decals remain walkover.
+## A non-unique blocker frees its StaticBody with the object when gathered.
 
 const GROUP := "gatherable"
 
@@ -29,12 +28,11 @@ const GROUP := "gatherable"
 @export var unique: bool = false
 ## Stable id for `usable_on` targeting (e.g. "bush_dry"). Optional.
 @export var object_id: String = ""
-## v0.3.1 R3: whether this object physically blocks movement (trees). Small gatherables
-## leave this false so the player crosses over them. A trunk collision body is created in
-## _ready() only when true.
+## Whether this object physically blocks movement at its logical ground anchor.
 @export var blocks_movement: bool = false
-## Radius (px) of the trunk collision circle when `blocks_movement` is true.
-const TRUNK_RADIUS := 20.0
+## Radius (px) of the circular ground footprint. This is object metadata and must describe
+## the contact footprint, never the full height/width of tall sprite ink.
+@export_range(1.0, 64.0, 1.0) var block_radius: float = 20.0
 
 ## Set true once a unique object has been gathered.
 var _spent: bool = false
@@ -56,7 +54,7 @@ var _bright_pulse: float = 0.0
 func _ready() -> void:
 	add_to_group(GROUP)
 	if blocks_movement:
-		_add_trunk_collision()
+		_add_footprint_collision()
 	set_process(false)
 
 
@@ -91,16 +89,15 @@ func _process(delta: float) -> void:
 	self_modulate = c
 
 
-## Small circular StaticBody at the sprite base so the player can't walk through a tree
-## trunk. Placed at local (0,0) — the Gatherable's origin sits at the tile centre (the art
-## `offset` lifts the canopy up), which is where the trunk visually meets the ground.
-func _add_trunk_collision() -> void:
+## Compact circular StaticBody at the sprite base. It stays at local (0,0): the Gatherable
+## origin is the logical tile centre while sprite `offset` carries projected/tall artwork.
+func _add_footprint_collision() -> void:
 	var body := StaticBody2D.new()
 	body.collision_layer = 1  # same layer the player's move collision masks
 	body.collision_mask = 0
 	var col := CollisionShape2D.new()
 	var shape := CircleShape2D.new()
-	shape.radius = TRUNK_RADIUS
+	shape.radius = block_radius
 	col.shape = shape
 	body.add_child(col)
 	add_child(body)
@@ -128,4 +125,10 @@ func gather() -> String:
 
 ## World point used for highlight / distance checks (base of the sprite).
 func target_point() -> Vector2:
+	return global_position
+
+## Picking/prompts use the projected foot; gameplay reach and cells use target_point.
+func visual_target_point() -> Vector2:
+	if get_meta("_logical_height_lift",false):
+		return global_position+Vector2(0,float(get_meta("_lift_offset",0.0)))
 	return global_position

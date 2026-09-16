@@ -194,6 +194,65 @@ signal placed_object_recalled(item_id: String, cell: Vector2i)
 ## but had no physics wall — the "swiss-cheese" WASD/tap inconsistency the owner hit.
 signal tile_walkable_changed(cell: Vector2i)
 
+# ---- Optional run-local environmental episodes ---------------------------
+const L1_HOME_EPISODE := "WH-L1H-01"
+const STORY_OUTCOMES := ["nest", "bouquet", "moss", "other"]
+signal story_event_changed(episode_id: String, beat: String, value: String)
+var story_state: Dictionary = {}
+
+func story_episode() -> Dictionary:
+	return story_state.get(L1_HOME_EPISODE, {
+		"revision": 1, "perch_inspected": false, "active_outcome": "",
+		"active_item_id": "", "outcomes_seen": {}, "cairn_seen": {},
+		"home_line_seen": false, "record_unlocked": false,
+	}).duplicate(true)
+
+func sanitize_story_state(raw: Variant) -> Dictionary:
+	if not raw is Dictionary or not raw.get(L1_HOME_EPISODE) is Dictionary:
+		return {}
+	var value: Dictionary = raw[L1_HOME_EPISODE]
+	var revision: Variant = value.get("revision", 1)
+	if (not revision is int and not revision is float) or revision != 1:
+		return {}
+	var state := {
+		"revision": 1, "active_outcome": "", "active_item_id": "",
+		"outcomes_seen": {}, "cairn_seen": {},
+	}
+	for key in ["perch_inspected", "home_line_seen", "record_unlocked"]:
+		state[key] = value.get(key) is bool and value.get(key) == true
+	for key in ["outcomes_seen", "cairn_seen"]:
+		var seen: Variant = value.get(key, {})
+		if seen is Dictionary:
+			for outcome in STORY_OUTCOMES:
+				if seen.get(outcome) is bool and seen.get(outcome) == true:
+					state[key][outcome] = true
+	var item: Variant = value.get("active_item_id", "")
+	var active: Variant = value.get("active_outcome", "")
+	if item is String and active is String and active in STORY_OUTCOMES and story_classify(item) == active:
+		state["active_item_id"] = ItemDB.resolve_id(item)
+		state["active_outcome"] = active
+		state["outcomes_seen"][active] = true
+	return {L1_HOME_EPISODE: state}
+
+func story_classify(item_id: String) -> String:
+	if ItemDB.placement_class(item_id) not in ["structure", "decor"]:
+		return ""
+	return {"D10": "nest", "D18": "bouquet", "D55": "moss"}.get(ItemDB.resolve_id(item_id), "other")
+
+## State commits before any animation. Return true only for a newly seen outcome.
+func story_record_experiment(item_id: String) -> bool:
+	var outcome := story_classify(item_id)
+	if outcome.is_empty():
+		return false
+	var state := story_episode()
+	var first := not (state["outcomes_seen"] as Dictionary).has(outcome)
+	state["active_outcome"] = outcome
+	state["active_item_id"] = ItemDB.resolve_id(item_id)
+	state["outcomes_seen"][outcome] = true
+	story_state[L1_HOME_EPISODE] = state
+	story_event_changed.emit(L1_HOME_EPISODE, "outcome", outcome)
+	return first
+
 # ---- Day/night cycle (M4) -------------------------------------------------
 ## One full game day = 900s real (확정 스펙: 낮 540s / 저녁~새벽 360s).
 ## Phases as fractions of the day cycle:
@@ -211,7 +270,29 @@ const NIGHT_END: float = 0.9333    # +180s = 840s
 var game_time: float = 0.0
 
 ## Whether time should advance (paused menus / cutscenes can toggle this).
-var time_running: bool = true
+## Requested time pause edges must invalidate queued interactions synchronously,
+## including a pause/resume within one frame. Cinematic leases announce through
+## control_lock_changed instead; they never change this owner's requested state.
+signal time_requested_changed(running: bool)
+var _time_requested: bool = true
+var _cinematic_keys: Dictionary = {}
+var time_running: bool:
+	get: return _time_requested and _cinematic_keys.is_empty()
+	set(value):
+		if _time_requested == value:return
+		_time_requested = value
+		time_requested_changed.emit(value)
+
+## Lease-based cutscenes never overwrite another owner's requested time or legacy lock.
+func begin_cinematic(key: String) -> void:
+	var before := control_locked()
+	_cinematic_keys[key] = true
+	if not before: control_lock_changed.emit(true)
+
+func end_cinematic(key: String) -> void:
+	if not _cinematic_keys.has(key): return
+	_cinematic_keys.erase(key)
+	if not control_locked(): control_lock_changed.emit(false)
 
 # ---- v0.4.0-B B3: modal UI input lock -------------------------------------
 ## (B3.1) "조합 떠있을때 움직일수 있으면 이상하잖아" — while ANY window is open
@@ -257,10 +338,10 @@ func set_control_lock(locked: bool) -> void:
 		# same value do nothing (idempotent).
 		return
 	_control_locked = locked
-	control_lock_changed.emit(locked)
+	control_lock_changed.emit(control_locked())
 
 func control_locked() -> bool:
-	return _control_locked
+	return _control_locked or not _cinematic_keys.is_empty()
 
 var _phase: String = "day"
 

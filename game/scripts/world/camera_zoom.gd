@@ -1,6 +1,8 @@
 extends Camera2D
-## v0.5: grove camera. Default zoom 1.5 so the new CC0 pixel + elevation detail READS
-## larger; mouse wheel adjusts zoom within [MIN_ZOOM, MAX_ZOOM]. Zoom is suppressed while
+## Shared world camera. The settled gameplay baseline stays on integer zoom steps so nearest-
+## filtered pixel art maps each source texel to a stable screen-pixel block. This also exposes
+## enough surrounding topology for the normal viewport to be a valid map-review baseline.
+## Mouse wheel switches between native 1x and close 2x. Zoom is suppressed while
 ## a modal UI has captured input (so scrolling a panel doesn't zoom the world).
 ##
 ## (v0.5 phase B) The camera CLAMPS to the map's iso bounds via limit_* so it never
@@ -8,10 +10,10 @@ extends Camera2D
 ## the follow smooth. Limits are computed from the MapLoader's iso extents once the map
 ## is built, with a small margin so the cliff-skirt border stays on-screen.
 
-const DEFAULT_ZOOM := 1.5
+const DEFAULT_ZOOM := 1.0
 const MIN_ZOOM := 1.0
-const MAX_ZOOM := 2.2
-const ZOOM_STEP := 0.1
+const MAX_ZOOM := 2.0
+const ZOOM_STEP := 1.0
 ## Extra world-space margin (px) added around the map bounds so the diorama edge/cliff
 ## skirt is visible rather than clipped hard at the outermost tile.
 const BOUND_MARGIN := 220.0
@@ -31,7 +33,7 @@ func _ready() -> void:
 func play_awakening_reveal() -> void:
 	_revealing = true
 	# Start tight on the dais, nudged up toward the northern arc so the reveal pans across it.
-	zoom = Vector2(2.4, 2.4)
+	zoom = Vector2(2.0, 2.0)
 	offset = Vector2(0, -70)
 	var prev_smooth := position_smoothing_enabled
 	position_smoothing_enabled = false

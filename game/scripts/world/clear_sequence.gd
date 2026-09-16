@@ -82,76 +82,91 @@ func is_active() -> bool:
 
 
 func _on_planted(cell: Vector2i) -> void:
-	if _active:
+	if _active or _finished or SaveManager.cleared:
 		return
 	_planted_cell = cell
+	SaveManager.pending_l1_clear = [cell.x, cell.y]
 	play()
 
 
-## Public entry (also the harness hook). Plays the purification then emits `cleared`.
+var _sequence: Tween
+var _finished := false
+var _answered := false
+var _healed := false
+var _key := ""
+signal world_answer_beat
+
+## One cancellable timeline, no abandoned await chains after skip/scene exit.
 func play() -> void:
+	if _active or _finished: return
 	_active = true
-	if Codex != null and Codex.has_method("mark_cutscene_seen"):
-		Codex.mark_cutscene_seen("CS-04")
-	GameState.time_running = false
-	if AudioManager != null and AudioManager.has_method("play_sfx"):
-		AudioManager.play_sfx("clear_fanfare")
-	_run()
+	_key = "clear:%s" % get_instance_id()
+	Codex.mark_cutscene_seen("CS-04")
+	GameState.begin_cinematic(_key)
+	AudioManager.play_sfx("clear_fanfare")
+	_sequence = create_tween()
+	_flash.color.a = 0.9
+	_sequence.tween_interval(0.08)
+	_sequence.tween_property(_flash, "color:a", 0.0, 0.8)
+	_sequence.tween_callback(_spawn_ring)
+	_sequence.tween_callback(_heal_once)
+	_sequence.tween_property(_dim, "color:a", 0.55, 1.0)
+	_append_card(CARDS[0])
+	_sequence.tween_callback(func(): AudioManager.play_sfx("bird"))
+	_sequence.tween_interval(0.9)
+	_sequence.tween_callback(func(): _play_bird_shifted(1.18))
+	_sequence.tween_interval(0.9)
+	_sequence.tween_callback(_answer_once)
+	_sequence.tween_interval(1.4)
+	_append_card(CARDS[1])
+	_sequence.tween_interval(3.0)
+	_sequence.tween_property(_flash, "color", Color(0.42, 0.28, 0.62, 0.35), 1.4)
+	_append_card(CARDS[2])
+	_sequence.tween_callback(_finish_clear)
 
+func _append_card(text: String) -> void:
+	_sequence.tween_callback(func(): _line.text = text)
+	_sequence.tween_property(_line, "modulate:a", 1.0, 0.7)
+	_sequence.tween_interval(1.1)
+	_sequence.tween_property(_line, "modulate:a", 0.0, 0.5)
 
-func _run() -> void:
-	# 1. white flash (CQ-2: shared Director flash).
-	await CutsceneDirector.flash(self, _flash, 0.9, 0.08, 0.8)
-
-	# 2. expanding ripple ring + green-tint the hollow cells (visual, best-effort).
-	_spawn_ring()
+func _heal_once() -> void:
+	if _healed: return
+	_healed = true
 	_heal_hollow_cells()
 
-	# 3. text cards over a soft dim.
-	var dtw := create_tween()
-	dtw.tween_property(_dim, "color:a", 0.55, 1.0)
-	await dtw.finished
-	# Card 1 — "세계가, 숨을 뱉었다."
-	await _card(CARDS[0])
-	# (CQ-4 G8) 새소리 — 이번엔 다른 멜로디. 반복이 깨졌다 (CS-04 핵심 모티프): 두 번,
-	# 두 번째는 살짝 다른 피치로 재생해 '같은 새·같은 노래'의 루프가 깨졌음을 소리로.
-	await _broken_birdsong()
-	# Card 2 — "…들려? 방금, 세계가 대답했어."
-	await _card(CARDS[1])
-	# (CQ-4 G9) 3초 정적 — 대사도 소리도 없이. 그리고 발밑에서 보라 빛이 차오른다.
-	await _silence_then_rising_light()
-	# Card 3 — "돌아갈 시간이야. 나의 세계로."
-	await _card(CARDS[2])
+func _answer_once() -> void:
+	if _answered: return
+	_answered = true
+	world_answer_beat.emit()
 
-	# 4. hand off to the auto-return.
-	# (v0.6.1) Restore time BEFORE emitting cleared. GameState.time_running is an autoload
-	# flag that persists across the change_scene into the home island; leaving it false here
-	# left the home scene booting with time frozen (day/night stalled, HomeSession treating the
-	# world as permanently locked). The L2 purification (l2_gate_controller) already pairs its
-	# false→true — this L1 clear beat was the one path that never restored it.
+func _finish_clear() -> void:
+	if not _active or _finished: return
+	_finished = true
 	_active = false
-	if GameState != null:
-		GameState.time_running = true
+	if _sequence != null: _sequence.kill()
+	_heal_once()
+	_answer_once()
+	_flash.color.a = 0
+	_dim.color.a = 0
+	_line.modulate.a = 0
+	if is_instance_valid(_ring): _ring.queue_free()
+	GameState.end_cinematic(_key)
 	cleared.emit()
 
+func skip() -> void:
+	_finish_clear()
 
-func _card(text: String) -> void:
-	_line.text = text
-	var tw := create_tween()
-	tw.tween_property(_line, "modulate:a", 1.0, 0.7)
-	tw.tween_interval(1.1)
-	tw.tween_property(_line, "modulate:a", 0.0, 0.5)
-	await tw.finished
+func _input(event: InputEvent) -> void:
+	if _active and (event.is_action_pressed("ui_cancel") or event.is_action_pressed("interact")):
+		get_viewport().set_input_as_handled()
+		skip()
 
-
-## (CQ-4 G8) The world's answer: birdsong that is no longer the same loop. Two calls, the
-## second faintly pitch-shifted (playback via a temp player) so the "반복이 깨졌다" reads by ear.
-func _broken_birdsong() -> void:
-	if AudioManager != null and AudioManager.has_method("play_sfx"):
-		AudioManager.play_sfx("bird")
-	await get_tree().create_timer(0.9, true, false, true).timeout
-	_play_bird_shifted(1.18)
-	await get_tree().create_timer(0.9, true, false, true).timeout
+func _exit_tree() -> void:
+	if _sequence != null: _sequence.kill()
+	if is_instance_valid(_ring): _ring.queue_free()
+	GameState.end_cinematic(_key)
+	_active = false
 
 
 ## Play the bird stream at a shifted pitch (a different melody) via a one-shot temp player.

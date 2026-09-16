@@ -739,6 +739,9 @@ func _on_continue() -> void:
 	# route to the correct scene. A rejected 구버전 save falls back to a fresh home start.
 	var data := SaveManager._read_save()
 	if data.is_empty():
+		if not SaveManager.layout_load_error.is_empty():
+			_show_layout_error()
+			return
 		_on_new_game()
 		return
 	SaveManager.pending_load = true
@@ -750,11 +753,23 @@ func _on_ng_plus() -> void:
 	# Bring the finished run's discovery state into memory (core-only, no world),
 	# then roll NG+ (resets + seeds 3 carried recipes). Fresh world, no pending load.
 	var data := SaveManager._read_save()
+	if data.is_empty() and not SaveManager.layout_load_error.is_empty():
+		_show_layout_error()
+		return
 	SaveManager._apply_core_state(data)
 	SaveManager.start_ng_plus()
 	SaveManager.pending_load = false
 	get_tree().change_scene_to_file(HOME_SCENE)
 
+
+func _show_layout_error() -> void:
+	var message:=AcceptDialog.new()
+	message.title="저장된 세계를 열 수 없음"
+	message.dialog_text="지원하지 않거나 맞지 않는 지도 버전입니다.\n저장 파일은 변경하지 않았습니다."
+	add_child(message)
+	message.confirmed.connect(message.queue_free)
+	message.canceled.connect(message.queue_free)
+	message.popup_centered(Vector2i(520,180))
 
 func _on_quit() -> void:
 	get_tree().quit()

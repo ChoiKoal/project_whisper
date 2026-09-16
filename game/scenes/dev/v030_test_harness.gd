@@ -62,13 +62,14 @@ func _test_cliff_skirts(map: Node, loader: MapLoader) -> void:
 		return
 	_check("cliff skirt sprites placed", loader.cliff_skirt_count > 0)
 	_check("cliff skirt overlay draws below ground (z < 0)", overlay.z_index < 0)
-	# South-edge coverage: every skirt-south cell must actually be an island cell whose
-	# +row neighbour is off-island (a genuine southern lip). Also assert at least a
+	# South-edge coverage uses the TileSet's real SW side neighbour. STACKED rows
+	# alternate their horizontal offset; (0,+1) is not always the SW cell. Assert a
 	# few exist so the island reads as a slab.
 	_check("south-facing cliff cells recorded", loader.cliff_skirt_south_cells.size() >= 4)
 	var all_valid := true
 	for cell in loader.cliff_skirt_south_cells:
-		if not loader._is_island_cell(cell) or loader._is_island_cell(cell + Vector2i(0, 1)):
+		var neighbour := loader.get_neighbor_cell(cell, TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_SIDE)
+		if not loader._is_island_cell(cell) or not loader._is_cliff_open(neighbour):
 			all_valid = false
 			break
 	_check("every south skirt cell has an off-island south neighbour", all_valid)

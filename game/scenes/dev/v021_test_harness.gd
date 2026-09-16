@@ -56,12 +56,22 @@ func _ready() -> void:
 
 # ---- Bug A: draw order ----------------------------------------------------
 
+func _effective_z(item: CanvasItem) -> int:
+	var result := item.z_index
+	var parent := item.get_parent() as CanvasItem
+	if item.z_as_relative and parent != null: result += _effective_z(parent)
+	return result
+
 func _test_draw_order(map: Node, loader: MapLoader, ysort: Node2D) -> void:
 	var edge := loader.get_node_or_null("EdgeOverlay") as Node2D
 	# v0.5: BrightnessJitter retired (real CC0 tiles carry their own variation). The
 	# Elevation overlay is the new ground-treatment layer; assert its draw order stays
 	# below the YSort object layer, preserving the Bug-A invariant.
 	var jitter := loader.get_node_or_null("Elevation") as Node2D
+	# FDN separates the neutral lifetime owner from actual floor ink. Resolve
+	# its explicit surface domain rather than asserting its container's z.
+	var surface := loader.get_node_or_null("Elevation/Surfaces") as Node2D
+	if surface != null: jitter = surface
 	_check("EdgeOverlay present", edge != null)
 	_check("Elevation overlay present (jitter retired)", jitter != null)
 	_check("YSortLayer present", ysort != null)
@@ -72,7 +82,7 @@ func _test_draw_order(map: Node, loader: MapLoader, ysort: Node2D) -> void:
 	# = ground z (0) + their own z_index.
 	var ground_z := loader.z_index                      # 0
 	var edge_eff := ground_z + edge.z_index             # 0 + 1
-	var jitter_eff := ground_z + jitter.z_index         # 0 + HILL_Z
+	var jitter_eff := _effective_z(jitter)
 	var ysort_z := ysort.z_index                        # 5
 
 	_check("edge overlay z == EDGE_OVERLAY_Z", edge.z_index == MapLoader.EDGE_OVERLAY_Z)
@@ -87,6 +97,14 @@ func _test_draw_order(map: Node, loader: MapLoader, ysort: Node2D) -> void:
 	# Explicit bug-A assertion: the ground-treatment overlay is NOT drawn after the
 	# YSortLayer (so darkened ground can never cover the player).
 	_check("elevation overlay NOT drawn after YSortLayer", not (jitter_eff > ysort_z))
+	if surface != null:
+		var ink_count := 0
+		var ink_below := true
+		for child in surface.get_children():
+			if child is CanvasItem:
+				ink_count += 1
+				ink_below = ink_below and _effective_z(child) < ysort_z
+		_check("every real surface draw item below actor domain",ink_count>0 and ink_below)
 
 	# Glow is on a separate CanvasLayer (always above the root canvas), and the
 	# DayNight CanvasModulate tints only the root canvas — so darkened ground can no

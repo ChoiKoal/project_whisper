@@ -21,6 +21,8 @@ var _tree: SceneTree
 
 
 func _ready() -> void:
+	if not preload("res://scenes/dev/isolated_harness_guard.gd").require_isolated_user_data("cutscene_harness"):
+		get_tree().quit(86);return
 	_tree = get_tree()
 	call_deferred("_bootstrap")
 
@@ -89,18 +91,18 @@ func _test_catalog_seen_registry() -> void:
 	_fresh()
 	_check("1: 초기 상태 — 본 컷신 0", Codex.cutscene_seen_count() == 0)
 	var ordered: Array = Codex.cutscenes_ordered()
-	_check("1: 카탈로그 = 7 (CS-01~05 + E1/E2)", ordered.size() == 7)
+	_check("1: 카탈로그 = 8 (CS-01~05 + EP-L1H-01 + E1/E2)", ordered.size() == 8)
 	_check("1: 전부 미시청 (잠금)", ordered.all(func(e): return not bool(e.get("seen", true))))
 	# The canonical ids, in the catalog's declared order.
 	var ids: Array = ordered.map(func(e): return String(e.get("id", "")))
-	_check("1: 카탈로그 순서 = 캐논", ids == ["CS-01", "CS-02", "CS-03", "CS-04", "CS-05", "E1", "E2"],
+	_check("1: 카탈로그 순서 = 승인된 기록 레지스트리", ids == ["CS-01", "CS-02", "CS-03", "CS-04", "CS-05", "EP-L1H-01", "E1", "E2"],
 		str(ids))
 	# Mark each seen → unlocks, idempotent.
 	for cid in ids:
 		Codex.mark_cutscene_seen(cid)
-	_check("1: 전 컷신 시청 → 7 unlocked", Codex.cutscene_seen_count() == 7)
+	_check("1: 전 컷신 시청 → 8 unlocked", Codex.cutscene_seen_count() == 8)
 	Codex.mark_cutscene_seen("CS-01")
-	_check("1: 재시청 멱등 (여전히 7)", Codex.cutscene_seen_count() == 7)
+	_check("1: 재시청 멱등 (여전히 8)", Codex.cutscene_seen_count() == 8)
 	_check("1: 미지 id 무시", not Codex.is_cutscene_seen("CS-99"))
 
 
@@ -246,7 +248,7 @@ func _test_codex_replay_tab() -> void:
 	var seen := ui.set_replay_filter(true)
 	await _frames(2)
 	_check("4: 재감상 탭 → 본 컷신 2", seen == 2)
-	_check("4: 재감상 행 = 카탈로그 7 (잠금 포함)", ui.replay_row_count() == 7)
+	_check("4: 재감상 행 = 카탈로그 8 (잠금 포함)", ui.replay_row_count() == 8)
 	# Launch a replay for a SEEN cutscene → overlay spawns, codex closes.
 	var overlay := ui.start_replay("CS-01")
 	await _frames(2)

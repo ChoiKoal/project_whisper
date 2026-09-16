@@ -1,4 +1,6 @@
-[gd_scene load_steps=30 format=3 uid="uid://bwhisperhome01"]
+[gd_scene load_steps=31 format=3 uid="uid://bwhisperhome01"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/dialogue_panel.tscn" id="31_dialogue"]
 
 [ext_resource type="TileSet" uid="uid://bwhisperts0001" path="res://data/whisper_tileset.tres" id="1_tileset"]
 [ext_resource type="Script" path="res://scripts/world/map_loader.gd" id="2_maploader"]
@@ -152,6 +154,8 @@ area_id = "dais_edge"
 mode = "leave_spawn"
 map_loader_path = NodePath("../Ground")
 player_path = NodePath("../YSortLayer/Player")
+
+[node name="DialoguePanel" parent="." instance=ExtResource("31_dialogue")]
 
 [node name="PortalCutscene" type="CanvasLayer" parent="."]
 script = ExtResource("30_portalcs")
