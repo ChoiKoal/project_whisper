@@ -6,13 +6,34 @@
     "unset",
     "relative",
     "missing_dir",
+    "open_failure",
+    "readonly_dir_refused",
     "happy_path",
-    "readback_match"
+    "readback_exact"
   ],
   "failures": 0,
   "missing": 0,
   "stray_root_file": false,
-  "scope": "evidence sink only; probe screen/mouse timing remains BLOCKED (awaits RenderingServer.frame_post_draw)",
+  "probe_instance_parented": false,
+  "isolation_basis": "primary evidence is the code path: the probe instance is never added to the tree, so _ready() (and its call_deferred(\"run\")) never fires. The absence of SaveManager/new_game_for_layout lines in the log is corroborating, not proof.",
+  "no_user_fallback": true,
+  "refusal_without_FDN_SINK_TMP": {
+    "observed": "[BLOCKED] setup ... refusing to run",
+    "failures": 1,
+    "missing": 7
+  },
+  "residual_engine_lines": [],
+  "residual_before_unparenting": [
+    "WARNING: ObjectDB instances leaked at exit (run with --verbose for details).",
+    "ERROR: Pages in use exist at exit in PagedAllocator: N7Variant5Pools11BucketSmallE",
+    "at: ~PagedAllocator (./core/templates/paged_allocator.h:169)"
+  ],
+  "residual_note": "observed before/after the fixture change: parenting the probe produced ObjectDB leak + PagedAllocator lines; the unparented fixture produces none. Separate from the CURRENT15 3-line resource errors.",
+  "not_verified": [
+    "caller exit 87 (requires probe.run(), which cannot complete headless)",
+    "post-store write/flush failure branch — the read-only case is refused at open(), so store_string()/close() failure is NOT exercised"
+  ],
+  "scope": "evidence sink only; probe screen/mouse timing remains BLOCKED",
   "command": [
     "<GODOT>",
     "--path",

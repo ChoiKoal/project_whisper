@@ -129,14 +129,40 @@ file.store_string(...)
 | `FDN_EVIDENCE` 미설정 | 거부 + 루트 파일 생성 없음 ✅ |
 | 상대경로 | 거부 ✅ |
 | 디렉터리 부재 | 거부 ✅ |
+| `open()` 강제 실패 (대상 경로를 디렉터리로) | 거부, 크래시 없음 ✅ |
+| 읽기전용 디렉터리 | 거부 ✅ *(open 단계에서 거부됨 — 아래 주의)* |
 | 정상 저장 | 기록 ✅ |
-| readback 대조 | 기록 내용 == 기대 JSON ✅ |
+| readback 완전 대조 | 파일 바이트 == 기대 payload (45/45) ✅ |
 
 `failures=0 missing=0 exit=0`. 증거: `evidence-unit15/hover-evidence-sink.log`,
 `hover-sink-results.json`.
 
-또한 `open()` 실패만 보던 것을 **store 오류 + close 후 readback 대조**까지 확장했다.
-close()가 flush에 실패해 파일이 잘려도 성공으로 보고되지 않는다.
+`open()` 실패만 보던 것을 store 오류 + readback 대조까지 확장했다. **다만 읽기전용
+케이스는 실제 로그가 `open_failed`이므로, `store_string()` 이후의 쓰기·flush 실패
+분기는 아직 검증되지 않았다**(결과 JSON `not_verified`에 기재).
+
+### 🔴 fixture 자체의 격리 결함 (루비 발견)
+
+첫 버전은 `add_child(probe)`로 probe를 트리에 붙였다. probe의 `_ready()`는
+`call_deferred("run")`이고 `run()`은 `SaveManager.new_game_for_layout()`과 월드 생성을
+한다. 즉 **저장 함수만 본다면서 게임 초기화 전체를 예약**했고, 뒤이은 `queue_free()`는
+이미 예약된 호출을 취소하지 못한다.
+
+`write_evidence()`는 Node 의존이 없으므로 **미부착 인스턴스**로 호출하고 즉시 `free()`
+하도록 고쳤다. 근거의 우선순위는 **코드 경로**(트리에 없으므로 `_ready()` 자체가 호출되지
+않음)이고, 로그에 SaveManager 계열 줄이 없는 것은 보강 증거다.
+
+부수 관찰 — fixture 변경 전후:
+
+```
+트리 부착 버전 : ObjectDB 누수 경고 + PagedAllocator 오류 3줄
+미부착 버전    : 0줄
+```
+
+즉 그 경고들은 **내 fixture가 만든 것**이며, CURRENT15의 리소스 오류 3줄과는 별개다.
+
+또한 `FDN_SINK_TMP`가 없거나 상대경로면 `user://`로 넘어가던 fallback을 제거했다
+(fallback이야말로 sink 테스트가 실제 유저 디렉터리에 쓰게 되는 경로다).
 
 ### ⚠️ 여전히 BLOCKED — probe 전체 실행
 
