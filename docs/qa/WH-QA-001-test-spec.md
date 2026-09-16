@@ -129,7 +129,7 @@ if obj.has_method("can_gather") and obj.can_gather():
 ### B. commit 경계
 | # | 입력 | 기대 | 실패 신호 |
 |---|---|---|---|
-| B1 | commit 전 취소 | 지급 0 | 지급 발생 |
+| B1 | commit 전 취소 | `cancel.ok=true` → `take_commit.reason=stale_token` → `reward_granted=false` | 셋 중 하나라도 불일치 |
 | B2 | commit 직후 대상 파괴 | 정확히 1 | 0(유실) 또는 2(재지급) |
 | B3 | commit 직후 씬 전환·세이브 | 1, 세이브에 반영 | 로드 시 유실/중복 |
 | B4 | 연출 실패(에셋 누락) | 지급 유지 | 롤백 또는 재지급 |
@@ -188,6 +188,23 @@ if obj.has_method("can_gather") and obj.can_gather():
 8. 모듈이 시간(타이머)에 의존한다면 **프레임 드랍 시** 조기/중복 commit 여부
 
 ---
+
+## 3.5 하네스 자체 무결성 (루비 엔진 실행 피드백 반영)
+
+루비가 `61a5f2b`를 실제 Godot으로 돌려 **하네스 결함 3건**을 찾았다. 전부 반영:
+
+1. **`block_radius` 미존재** — 이 속성은 인계 ZIP에만 있고 **정본 `collab/whisper-polish`에는
+   없다**. 설정 시 스크립트 오류가 나고 이후 케이스가 통째로 중단됐다. 해당 대입 제거.
+   *(교훈: 하네스는 base 브랜치 API로 써야 한다. ZIP API로 쓴 건 내 리비전 착오다.)*
+2. **A5-unique 거짓 PASS** — A3가 남긴 `I9`가 unique 상한이라 `Inventory.add()`가
+   `item_added`를 **emit하기 전에 반환** → 재진입이 아예 안 일어났는데 `sigs==1`이라 PASS.
+   → 케이스마다 `Inventory.clear()`로 격리하고, **재진입이 실제 실행됐는지**(`_reentry_calls==1`)를
+   먼저 단언한다. 안 됐으면 `PROBE DID NOT ARM`으로 **FAIL** 처리한다.
+3. **누락 케이스가 green으로 보임** — 스크립트 오류로 REAL 행이 사라져도 요약은
+   `REAL failures: 0`이었다. → `EXPECTED_CASES` 목록을 선언하고, 리포트 시 **한 행이라도
+   비면 `RESULT: INVALID`**. 종료코드 0(완료) / 1(REAL 실패) / 2(무효)로 분리.
+
+> "행이 존재함"과 "그 행이 결함을 잡음"은 다르다(루비). 3번은 후자를 강제하는 장치다.
 
 ## 4. 산출물 / 경계
 
