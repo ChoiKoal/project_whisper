@@ -26,6 +26,8 @@ var _fail := 0
 var _placed_ok := 0
 
 func _ready() -> void:
+	if not preload("res://scenes/dev/isolated_harness_guard.gd").require_isolated_user_data("v052_travel_stress"):
+		get_tree().quit(86);return
 	_tree = get_tree()
 	call_deferred("_bootstrap")
 

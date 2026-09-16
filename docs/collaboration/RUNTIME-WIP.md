@@ -1,35 +1,28 @@
-# Runtime WIP snapshot — unit 14 candidate
+# Runtime WIP snapshot — unit 15 candidate
 
-**Draft review only. Not release-ready and not approved for merge.**
+**Draft source for scoped QA. Not release-ready; merge remains blocked.**
 
-This candidate includes the unit-14 held-ground placement/input fixes and three small generic flower sprites for explicit L1-v2. The source manifest identifies the exact packaged game files. It does not merge Kana's harvest action module or represent the requested large rare flowers as fixed.
+Use the exact Git commit supplied with this handoff, not the moving development worktree or the specs-only collaboration base. Unit 15 does not integrate Kana's harvesting module or Memcho's PR #3 harness.
 
-## Verified scope and remaining failures
+## Included changes and evidence
 
-- Latest explicit v2 normal automated progression completed: actual gathering, Fusion, nest, G1/cairn/G2/Rest/night/G3/world tree/clear, Home return and saved revisit. `v2-flower-normal`: exit 0, 172 assertions, 0 failures, persisted completion. No inventory, gate, time, clear or teleport injection; public input/Fusion UI callbacks are disclosed automation seams, not human playtesting.
-- Legacy normal progression completed on the final input changes before the v2-only flower dispatch: exit 0, 174 assertions. This is not all-platform or final full-suite coverage.
-- These normal runs retained 26 engine Lambda-error lines each. They are not clean engine passes.
-- A far-hover ghost/placement-preview check remains intermittent: two failed runs followed by a passing retry do not establish a fix. Cause remains unknown.
-- Default new-game and NG+ remain `l1-v1`; `l1-v2` is explicit candidate only.
-- Unit-13 nest-placement failure is historical and repaired in this candidate; its old evidence remains preserved, not re-labeled passing.
-- Save future-version handling, cinematic pending-action lifetime and unsafe dev-harness isolation findings from [RUNTIME-REVIEW.md](RUNTIME-REVIEW.md) remain tracked until specifically reproduced/fixed/verified.
-- Full regression, final art/HUD/harvesting feel, mobile-device/export/performance and human fun review are incomplete.
+- Future integer save versions are refused before state application; blocked-write handling preserves bytes through explicit save and close/autosave. Synthetic focused test: 10 assertions.
+- Pending touch/path actions cancel on modal/control/cinematic/time-request edges, including same-frame pause/resume. Synthetic focused test: 36 assertions.
+- Four destructive legacy harnesses now check fail-closed isolation before touching a save. Twelve negative synthetic-HOME cases refused execution with unchanged sentinel save bytes. Never test this against real user data.
+- Intermittent far-hover observation was traced to checking before presentation under a stalled frame. The oracle now awaits process and post-draw presentation rather than retrying until success. No new production-preview patch is claimed.
+- Exact NightGate closed/open flower textures reauthored, with separate pollen emission. Final R3 gate contract: 78 assertions across v1/v2. **Day narrowly retained; night still REWORK** because open-state, stem and ground-contact readability remain inadequate. This is not final art approval.
 
-## Safety before execution
+The parent independently ran the portable command on this publication copy with final R3: exact 3 scenes, 124 assertions, 0 failed scenes, unchanged source, and 3 engine resource-teardown ERROR lines. Exit success does not mean clean engine teardown. See `CURRENT15-QA.md` for prerequisites and isolated execution.
 
-Use Godot **4.5** and Python 3. **Never run against normal game user data.** `cutscene_harness`, `m5_test_harness`, `v051_test_harness`, and `v052_travel_stress` can delete `user://save1.json` without their own fail-closed guard.
+Final development-source automated normal routes: explicit v2 172 assertions and legacy v1 174 assertions, both verified saved revisit, exit 0 and unchanged source. Each retains 26 inherited freed-lambda ERROR lines. These are automated route receipts, not human enjoyment or mobile-device acceptance. Normal routes were not rerun in the publication copy; its focused safety suite was.
 
-For a POSIX environment, prepare disposable data:
+## Remaining gates
 
-```sh
-TEST_HOME="$(mktemp -d)"
-HOME="$TEST_HOME" XDG_DATA_HOME="$TEST_HOME/.local/share" WHISPER_TEST_HOME="$TEST_HOME" godot --path game
-```
+- Fix inherited Fusion/lambda errors; reconcile regression and export dependencies.
+- Integrate and test harvesting action state, node guard, state-before-signal reward ordering, cancellation and respawn identity.
+- Refine night flowers and complete representative scene/art, UI and player feedback.
+- Verify v2 gate-prefix reload/respawn, portal aprons, saturated placements and full ramp-end visual coverage.
+- Complete touch-only, device/export/performance and human play/fun QA.
+- Default new game remains **l1-v1**. **l1-v2 is an explicit candidate**, not the enabled default.
 
-Before any save-writing/destructive harness, verify resolved `user://` lies in the disposable location. If a platform ignores these environment variables, stop and configure an isolated test project. This is not Windows/mobile-device validation.
-
-Several historical dev harnesses need external evidence fixtures absent from this snapshot; report those as setup-blocked. Do not invent fixtures and label them historical evidence. No real-user saves are included.
-
-## Collaboration
-
-This is Ruby's isolated runtime branch, not the shared integration base. Teammates should cite the exact Git commit they inspect, use their own worktrees and return scoped PRs. No main or integration merge while blockers remain. Publication means source sharing, not gameplay acceptance. Unit-14 candidate delta requires independent review before publication; runtime and art conclusions remain separately scoped.
+Source-sharing approval, scoped safety execution, whole-game regression, human fun, visual acceptance and release readiness are separate judgments. Main and the integration base have not received this runtime draft by merge.

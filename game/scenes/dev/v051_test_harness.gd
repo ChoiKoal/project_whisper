@@ -23,6 +23,8 @@ var _scene: Node = null
 
 
 func _ready() -> void:
+	if not preload("res://scenes/dev/isolated_harness_guard.gd").require_isolated_user_data("v051_test_harness"):
+		get_tree().quit(86);return
 	print("=== v051 HOTFIX HARNESS ===")
 	SaveManager.new_game()
 	SaveManager.delete_save()

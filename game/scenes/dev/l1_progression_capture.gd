@@ -303,4 +303,14 @@ func _runtime_record(phase: String) -> Dictionary:
 	result["quest"] = QuestManager.active_id
 	result["story_state"] = GameState.story_state.duplicate(true)
 	result["game_time"] = GameState.game_time
+	result["day_phase"] = GameState.phase()
+	var gates:Array=[]
+	for node in _tree.get_nodes_in_group("night_gate"):
+		if not _tree.current_scene.is_ancestor_of(node):continue
+		var gate:=node as NightGate
+		var sprite:=gate._sprite
+		var rect:=sprite.get_rect()
+		var screen_rect:=Rect2(sprite.get_global_transform_with_canvas()*rect.position,rect.size*sprite.global_scale)
+		gates.append({"node":str(gate.get_path()),"cell":str(ground.world_to_cell(gate.global_position)),"root":str(gate.global_position),"open":gate.is_open(),"texture":sprite.texture.resource_path,"offset":str(sprite.offset),"scale":str(sprite.global_scale),"screen_rect":str(screen_rect),"body_layer":gate._body.collision_layer,"shape_disabled":gate._body.get_child(0).disabled})
+	result["night_gate_bindings"] = gates
 	return result

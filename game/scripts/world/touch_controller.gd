@@ -75,6 +75,8 @@ func _ready() -> void:
 	# starts/ends via time_running being driven through push/pop), drop any queued path +
 	# pending auto-interact so the player never auto-walks a stale target after unlock.
 	GameState.ui_modal_changed.connect(func(_open): _clear_pending_path())
+	GameState.control_lock_changed.connect(func(_locked): _clear_pending_path())
+	GameState.time_requested_changed.connect(func(_running): _clear_pending_path())
 
 
 # ---- dynamic object blockers ---------------------------------------------

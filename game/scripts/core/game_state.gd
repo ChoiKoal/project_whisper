@@ -270,11 +270,18 @@ const NIGHT_END: float = 0.9333    # +180s = 840s
 var game_time: float = 0.0
 
 ## Whether time should advance (paused menus / cutscenes can toggle this).
+## Requested time pause edges must invalidate queued interactions synchronously,
+## including a pause/resume within one frame. Cinematic leases announce through
+## control_lock_changed instead; they never change this owner's requested state.
+signal time_requested_changed(running: bool)
 var _time_requested: bool = true
 var _cinematic_keys: Dictionary = {}
 var time_running: bool:
 	get: return _time_requested and _cinematic_keys.is_empty()
-	set(value): _time_requested = value
+	set(value):
+		if _time_requested == value:return
+		_time_requested = value
+		time_requested_changed.emit(value)
 
 ## Lease-based cutscenes never overwrite another owner's requested time or legacy lock.
 func begin_cinematic(key: String) -> void:

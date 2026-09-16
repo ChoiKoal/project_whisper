@@ -444,7 +444,10 @@ func _read_save() -> Dictionary:
 func _migrate(data: Dictionary) -> Dictionary:
 	var v := int(data.get("version", 0))
 	if v > SAVE_VERSION:
-		push_warning("SaveManager: save version %d newer than supported %d" % [v, SAVE_VERSION])
+		# Fail before applying inventory/cache, and latch the existing write guard so
+		# explicit save and WM-close autosave cannot downgrade an unreadable run.
+		_reject_layout("save version %d newer than supported %d" % [v, SAVE_VERSION])
+		return {}
 	if v < SAVE_VERSION:
 		push_warning("SaveManager: 구버전 세이브 (v%d < v%d) — starting fresh" % [v, SAVE_VERSION])
 		return {}

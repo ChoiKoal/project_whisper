@@ -36,7 +36,14 @@ func run()->void:
 			var screen:=get_viewport().get_camera_2d().get_canvas_transform()*ground.cell_center_world(target)
 			get_viewport().warp_mouse(screen)
 			var motion:=InputEventMouseMotion.new();motion.position=screen;Input.parse_input_event(motion)
+			# Optional bounded main-thread stall exercises physics catch-up before _process.
+			var stall_ms:=int(OS.get_environment("FDN_PREVIEW_STALL_MS"))
+			if stall_ms>0:OS.delay_msec(mini(stall_ms,250))
 			await frames(5)
+			# Physics can catch up five ticks before Interaction._process updates the
+			# preview. Observe a rendered frame, not a retry-until-ghost condition.
+			await get_tree().process_frame
+			await RenderingServer.frame_post_draw
 			print("PREVIEW_RECEIPT ",JSON.stringify({"requested_screen":str(screen),"actual_mouse":str(get_viewport().get_mouse_position()),"hover":str(ic._hover_cell),"hover_placement":ic._hover_placement,"ghost":str(ic._ghost.global_position),"active":ic._ghost.is_active(),"wanted":str(ground.cell_center_world(target)),"player":str(player.global_position),"held":ic.get_held_item(),"count":Inventory.count("D10"),"touch_mode":ic._touch_mode,"has_hover":ic._has_hover_cell,"hover_object":str(ic._hover_object),"valid_now":ic.prefers_held_ground(target),"pointed_now":str(ground.world_to_cell(get_viewport().get_camera_2d().get_canvas_transform().affine_inverse()*get_viewport().get_mouse_position()))}))
 			check("far decor ghost matches explicit click destination",ic._ghost.is_active() and ic._ghost.global_position.distance_to(ground.cell_center_world(target))<1)
 			var event:=InputEventAction.new();event.action="interact";event.pressed=true

@@ -28,6 +28,8 @@ func _check(label: String, cond: bool) -> void:
 
 
 func _ready() -> void:
+	if not preload("res://scenes/dev/isolated_harness_guard.gd").require_isolated_user_data("m5_test_harness"):
+		get_tree().quit(86);return
 	print("=== M5 TEST HARNESS ===")
 	# Clean slate.
 	SaveManager.new_game()

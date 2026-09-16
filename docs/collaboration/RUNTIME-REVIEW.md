@@ -1,3 +1,15 @@
+# Current review scope — unit 15
+
+This document retains prior independent review history below. For current unit-15 scope use RUNTIME-WIP.md and CURRENT15-QA.md. Former future-save, pending-action and unsafe-harness findings now have implemented fixes and focused execution receipts; historical blocker lists below are not an assertion that those exact defects remain open.
+
+Parent publication-copy verification: exact 3 selected safety scenes / 124 assertions, unchanged source, 3 resource-teardown ERROR lines. No whole-suite, final-art, mobile-device or human-fun approval. Merge remains blocked.
+
+Independent unit-15 review inspected the 35-file delta against `848c1c2e5cd5c1aed2c5f09d01a21f6c461b2842`. It found no new critical/high production issue or credential/privacy leak, but **initially blocked draft publication** because CURRENT15-QA did not distinguish the historical R2 smoke from the separate final-R3 publication-copy run. The parent corrected that provenance statement and added the omitted Pillow regeneration prerequisite; code/assets remain exactly those reviewed and tested. Parent resolution permits labeled draft sharing only, not a new independent approval or merge readiness.
+
+One low-severity diagnostic issue remains: `hover_timing_probe.gd` does not validate `FDN_EVIDENCE` or a failed output-file open. **Do not run that standalone diagnostic in this draft.** It is not part of the portable three-scene safety command; its fail-closed output handling remains follow-up work.
+
+---
+
 # Independent reviews — runtime source draft
 
 ## Unit 14 delta review
