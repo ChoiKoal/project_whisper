@@ -22,6 +22,7 @@ class_name HomeSession
 var _loader: MapLoader
 var _player: Node2D
 var _portal_cutscene: Node
+var _return_dialogue_pending := false
 
 const LOCKED_HINT := "이 문은 아직 잠들어 있다"
 
@@ -90,8 +91,7 @@ func _setup() -> void:
 	# line self-heal until AFTER it plays, keeping the ignition beat crisp (reconcile would have
 	# pre-opened the gate, no-oping the cutscene's set_portal_state). In every other boot we heal
 	# immediately below so a stale/corrupted snapshot can't leave a purified portal re-locked.
-	var ignition_pending := WorldContext.arrival_mode == "portal_arrival" \
-		and SaveManager.pending_return_ignition
+	var ignition_pending := SaveManager.pending_return_ignition
 	if not ignition_pending:
 		GameState.reconcile_portal_line()
 
@@ -103,13 +103,14 @@ func _setup() -> void:
 	if WorldContext.arrival_mode == "portal_arrival":
 		WorldContext.arrival_mode = ""
 		_place_at_arrival()
-		if SaveManager.consume_pending_return_ignition():
-			await _play_return_ignition()
+	if ignition_pending:
+		await _play_return_ignition()
 
 	# (v1.3.1 BUG A) Heal the portal line after the ignition beat (if one played), so the final
 	# home portal states always match progression regardless of which boot path we took.
 	if ignition_pending:
 		GameState.reconcile_portal_line()
+	_materialize_l1h01_trace()
 
 	if AudioManager != null:
 		AudioManager.start_world_audio()
@@ -438,10 +439,58 @@ func _play_return_ignition() -> void:
 	_pan_to_side_portal()
 	if _portal_cutscene != null and _portal_cutscene.has_method("play_return_ignition"):
 		await _portal_cutscene.play_return_ignition()
+	# Durable intent remains present in any WM-close save until the beat completes/skips.
+	SaveManager.consume_pending_return_ignition()
 	# The state changes (nature→open, science→flickering) + grass tufts + quest advance are
 	# applied by the cutscene's signal callbacks (see PortalCutscene / QuestManager). Sprout
 	# a few Layer-1 grass tufts near the arrival point as the "가져온 세계의 흔적".
 	_sprout_arrival_grass()
+	_materialize_l1h01_trace()
+	SaveManager.save_game()
+
+
+## Saved player cells are never occupied: this noninteractive trace belongs to the portal.
+func _materialize_l1h01_trace() -> void:
+	if not SaveManager.cleared:
+		return
+	var nature: Portal = null
+	for portal in _portals:
+		if is_instance_valid(portal) and portal.layer == "nature":
+			nature = portal
+			break
+	if nature == null:
+		return
+	var state := GameState.story_episode()
+	var outcome: String = state.active_outcome if state.active_outcome != "" else "bare"
+	var trace := nature.get_node_or_null("L1H01ReturnTrace") as Sprite2D
+	if trace == null:
+		trace = Sprite2D.new()
+		trace.name = "L1H01ReturnTrace"
+		trace.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		trace.position = Vector2(-62, -22)
+		nature.add_child(trace)
+	trace.texture = load("res://assets/objects/home_l1_trace_%s.png" % outcome)
+	if state.home_line_seen or _return_dialogue_pending: return
+	var dialogue:=get_node_or_null("../DialoguePanel") as DialoguePanel
+	if not is_instance_valid(dialogue):
+		push_warning("Home story: dialogue view missing; return remains unseen")
+		return
+	var lines := {
+		"bare":"문턱에, 비어 있는 자리가 먼저 와 있었다.",
+		"nest":"새는 오지 않았다. 대신, 세계가 짚 한 올을 돌려줬다.",
+		"bouquet":"한 장이 떨어졌으니, 다음 장이 필 수 있겠지.",
+		"moss":"돌이 계절을 기억했다. 이 섬도 배울 수 있을까.",
+		"other":"대답은 꼭 정답 모양으로 오지는 않나 봐.",
+	}
+	_return_dialogue_pending=true
+	var completed:=await dialogue.present([{"source":"장소","place":"제0세계 · 자연의 문","body":lines[outcome]}],"l1h01:return:"+outcome)
+	_return_dialogue_pending=false
+	if not completed or not is_inside_tree(): return
+	state=GameState.story_episode()
+	state.home_line_seen=true
+	state.record_unlocked=true
+	GameState.story_state[GameState.L1_HOME_EPISODE]=state
+	Codex.mark_cutscene_seen("EP-L1H-01")
 	SaveManager.save_game()
 
 
@@ -595,7 +644,7 @@ func _draw_dais() -> void:
 		g.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		g.position = center + Vector2(0, -6)
 		g.scale = Vector2(1.4, 1.0)
-		g.modulate = Color(1.0, 1.0, 1.0, 0.55)
+		g.modulate = Color(1.0, 1.0, 1.0, 0.32)
 		var gm := CanvasItemMaterial.new()
 		gm.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 		g.material = gm
@@ -735,8 +784,8 @@ class _TraceDrawer extends Node2D:
 	var dais: Vector2
 	var portal_pts: Array = []
 	var crack_pts: Array = []
-	const PATH_COL := Color(0.30, 0.24, 0.19, 0.42)
-	const SIGIL := Color(0.32, 0.26, 0.42, 0.5)
+	const PATH_COL := Color(0.30, 0.24, 0.19, 0.28)
+	const SIGIL := Color(0.32, 0.26, 0.42, 0.30)
 	const CRACK := Color(0.20, 0.15, 0.12, 0.5)
 
 	func _ready() -> void:

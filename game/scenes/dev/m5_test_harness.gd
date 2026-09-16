@@ -273,8 +273,9 @@ func _test_ng_plus() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	var loader := grove.get_node("Ground") as MapLoader
-	# a base grass cell near spawn should be grass (src 2), not VOID
-	_check("NG+ world VOID cleared (base grass intact)", loader.get_cell_source_id(Vector2i(12, 31)) == 2)
+	# The existing L1 first-loop redesign made (12,31) authored dirt D, not grass.
+	# Reset must restore that exact base, never retain the gathered HOLLOW state.
+	_check("NG+ world VOID cleared (authored first-loop dirt intact)", loader.get_cell_source_id(Vector2i(12, 31)) == 1)
 	grove.queue_free()
 	await get_tree().process_frame
 

@@ -1,0 +1,282 @@
+{
+  "_comment": "L1-v2 DESIGN CANDIDATE; not production-wired. Existing source ids/art paths only. X gather override and Q clear-return need the integrations documented in legacy-versioning.md.",
+  "layout_revision": "l1-v2",
+  "tiles": {
+    "G": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "g": {
+      "source": 2,
+      "tile_id": "T2A",
+      "variants": [
+        "T2B",
+        "T2C",
+        "T2D"
+      ],
+      "variant_random": true
+    },
+    "D": {
+      "source": 1,
+      "tile_id": "T1"
+    },
+    "M": {
+      "source": 7,
+      "tile_id": "T4",
+      "speed_mult": 0.5
+    },
+    "W": {
+      "source": 8,
+      "tile_id": "T5A",
+      "walkable": false
+    },
+    "w": {
+      "source": 9,
+      "tile_id": "T5B",
+      "walkable": false
+    },
+    "m": {
+      "source": 10,
+      "tile_id": "T5M",
+      "walkable": false,
+      "glow": "violet"
+    },
+    "X": {
+      "source": 8,
+      "tile_id": "T5A",
+      "walkable": false,
+      "gatherable_override": false,
+      "protected_gate_water": "G1"
+    },
+    "V": {
+      "source": 0,
+      "tile_id": "T0",
+      "walkable": false,
+      "void": true
+    },
+    "S": {
+      "source": 2,
+      "tile_id": "T2A",
+      "spawn": true
+    },
+    "C": {
+      "source": 1,
+      "tile_id": "T1"
+    },
+    "Q": {
+      "source": 2,
+      "tile_id": "T2A",
+      "conditional_link": "clear_return"
+    },
+    "U": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "K": {
+      "source": 8,
+      "tile_id": "T5A",
+      "walkable": false,
+      "place_slot": "D14",
+      "gatherable_override": false,
+      "protected_gate_water": "G1"
+    },
+    "N": {
+      "source": 2,
+      "tile_id": "T2A",
+      "gate": "G3_night",
+      "walkable_when": "night"
+    },
+    "B": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "O": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "T": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "F": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "R": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "s": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "1": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "2": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "3": {
+      "source": 2,
+      "tile_id": "T2A"
+    },
+    "4": {
+      "source": 2,
+      "tile_id": "T2A"
+    }
+  },
+  "objects": {
+    "C": {
+      "scene": "cauldron.tscn",
+      "object_id": "cauldron"
+    },
+    "U": {
+      "scene": "rest_stump.tscn",
+      "object_id": "rest_stump"
+    },
+    "B": {
+      "scene": "bush_dry.tscn",
+      "object_id": "bush_dry",
+      "gate": "G2"
+    },
+    "N": {
+      "scene": "night_gate.tscn",
+      "object_id": "night_bloom_gate",
+      "gate": "G3"
+    },
+    "O": {
+      "scene": "world_tree.tscn",
+      "object_id": "world_tree",
+      "gatherable": {
+        "item_id": "I9",
+        "unique": true
+      },
+      "gate": "G4"
+    },
+    "m": {
+      "scene": "mystic_water.tscn",
+      "object_id": "mystic_water",
+      "gatherable": {
+        "item_id": "I7"
+      }
+    },
+    "T": {
+      "scene": "tree.tscn",
+      "gatherable": {
+        "item_id": "I4"
+      },
+      "blocks": true,
+      "block_radius": 20,
+      "variants": [
+        "O2A",
+        "O2B",
+        "O2C",
+        "O2D",
+        "O2E",
+        "O2F"
+      ]
+    },
+    "F": {
+      "scene": "flower.tscn",
+      "gatherable": {
+        "item_id": "I5"
+      },
+      "blocks": false,
+      "variants": [
+        "O1A",
+        "O1B",
+        "O1C",
+        "O1D",
+        "O1E"
+      ]
+    },
+    "R": {
+      "scene": "rock.tscn",
+      "gatherable": {
+        "item_id": "I6"
+      },
+      "blocks": true,
+      "block_radius": 24
+    },
+    "s": {
+      "scene": "stone.tscn",
+      "gatherable": {
+        "item_id": "I8"
+      },
+      "blocks": false
+    },
+    "t": {
+      "scene": "grass_tuft.tscn",
+      "gatherable": {
+        "item_id": "I2"
+      },
+      "blocks": false,
+      "_note": "scatter-only"
+    },
+    "h": {
+      "scene": "bush_green.tscn",
+      "gatherable": {
+        "item_id": "I2"
+      },
+      "blocks": false,
+      "_note": "scatter-only"
+    }
+  },
+  "route_ramps": [],
+  "landmarks": {
+    "2": "cairn",
+    "3": "gate_hint_G3",
+    "4": "listening_perch"
+  },
+  "design_contract": {
+    "tile_set": {
+      "tile_shape": "ISOMETRIC",
+      "tile_layout": "STACKED",
+      "tile_offset_axis": "HORIZONTAL",
+      "tile_size": [
+        128,
+        64
+      ]
+    },
+    "ramp_band": [[19,16],[19,17],[20,18],[20,19],[21,20],[21,21],[22,22]],
+    "runtime_amendment": "FDN13: contiguous NE-rising strip, not seven corner-touching horizontal slash tiles. Parent original preserved in evidence/13-l1-v2-integration/parent-candidate. Runtime candidate only; not production default or final art.",
+    "clear_return": {
+      "anchors": [
+        [
+          12,
+          6
+        ],
+        [
+          22,
+          37
+        ]
+      ],
+      "enabled_when": "world_tree_planted",
+      "edge_kind": "conditional_nonterrain_link"
+    },
+    "protected_symbols": [
+      "D",
+      "K",
+      "X",
+      "B",
+      "N",
+      "S",
+      "C",
+      "Q",
+      "U",
+      "O",
+      "1",
+      "2",
+      "3",
+      "4"
+    ],
+    "runtime_extensions_required": [
+      "legend_gatherable_override_for_X_and_K",
+      "revision_dispatched_clear_return_link",
+      "revision_dispatched_story_anchor_cells",
+      "v2_scatter_policy_dispatch"
+    ]
+  }
+}

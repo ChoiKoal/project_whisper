@@ -3,9 +3,9 @@ class_name TouchController
 ## M6a tap / click-to-move + tap-to-interact (mobile prep; also works with mouse).
 ##
 ## Responsibilities:
-##   - Maintain an AStarGrid2D over the MapLoader's walkable grid. Rebuild the
-##     solid mask whenever walkability changes (D14 stepping stone placed, bush
-##     gate bloomed, night gate day/night toggle).
+##   - Maintain a height-aware AStar2D over walkable terrain minus live semantic
+##     object blockers. Rebuild when tiles/gates change or a blocking Gatherable is
+##     gathered/respawned, so tap routes agree with CharacterBody physics.
 ##   - On a tap/click:
 ##       * a gatherable / cauldron / stump object → if the player is already
 ##         adjacent, interact now; otherwise path to the nearest walkable cell
@@ -31,6 +31,10 @@ var _interaction: InteractionController
 ## cell to its point id; solid/blocked cells simply have no point.
 var _astar: AStar2D
 var _region: Rect2i
+## Instance ids of blocking Gatherables belonging to this controller's world. The set lets
+## node_removed trigger a refresh after the node has already lost its parent/group.
+var _blocking_gatherable_ids: Dictionary = {}
+var _grid_refresh_queued: bool = false
 
 ## Pending auto-interaction to run when the player finishes the queued path.
 ## {"kind": "object"|"cell", "object": Node, "cell": Vector2i} or empty.
@@ -46,6 +50,11 @@ func _ready() -> void:
 	_interaction = get_node_or_null(interaction_path) as InteractionController
 	if _loader == null:
 		return
+	# Track dynamic blockers. Initial objects already exist, so seed the id set as well as
+	# listening for later ObjectRespawn additions/removals.
+	get_tree().node_added.connect(_on_tree_node_added)
+	get_tree().node_removed.connect(_on_tree_node_removed)
+	_sync_blocking_gatherable_ids()
 	# Build after the loader has laid tiles/objects.
 	call_deferred("_build_grid")
 	if _player != null:
@@ -68,6 +77,78 @@ func _ready() -> void:
 	GameState.ui_modal_changed.connect(func(_open): _clear_pending_path())
 
 
+# ---- dynamic object blockers ---------------------------------------------
+
+func _belongs_to_current_world(node: Node) -> bool:
+	return is_instance_valid(_loader) and _loader.is_inside_tree() and _loader.get_parent() != null \
+		and _loader.get_parent().is_ancestor_of(node)
+
+
+func _is_blocking_gatherable(node: Node) -> bool:
+	return node is Gatherable and (node as Gatherable).blocks_movement \
+		and _belongs_to_current_world(node)
+
+
+func _sync_blocking_gatherable_ids() -> void:
+	_blocking_gatherable_ids.clear()
+	if not is_inside_tree() or not is_instance_valid(_loader):
+		return
+	for node in get_tree().get_nodes_in_group(Gatherable.GROUP):
+		if _is_blocking_gatherable(node) and not node.is_queued_for_deletion():
+			_blocking_gatherable_ids[node.get_instance_id()] = true
+
+
+func _on_tree_node_added(node: Node) -> void:
+	if _is_blocking_gatherable(node):
+		_blocking_gatherable_ids[node.get_instance_id()] = true
+		_queue_grid_refresh()
+
+
+func _on_tree_node_removed(node: Node) -> void:
+	var id := node.get_instance_id()
+	if _blocking_gatherable_ids.erase(id):
+		_queue_grid_refresh()
+
+
+func _queue_grid_refresh() -> void:
+	if _grid_refresh_queued or not is_inside_tree():
+		return
+	_grid_refresh_queued = true
+	call_deferred("_flush_grid_refresh")
+
+
+func _flush_grid_refresh() -> void:
+	_grid_refresh_queued = false
+	_rebuild_solids()
+	_cancel_obstructed_path()
+
+
+## Graph refresh cannot retroactively change the world-space route held by Player.
+## Sweep that remaining route after dynamic blockers change; cancel only an unsafe
+## route (including its auto-interaction). A fresh tap can request a detour. Never
+## resume a canceled keyboard/modal path or fire path_finished for this cancellation.
+func _cancel_obstructed_path() -> void:
+	if not is_instance_valid(_player) or not _player.is_inside_tree():
+		return
+	var transform := _player.global_transform
+	for waypoint in _player._path:
+		if _player.test_move(transform, waypoint - transform.origin):
+			_clear_pending_path()
+			return
+		transform.origin = waypoint
+
+
+func _blocking_object_cells() -> Dictionary:
+	var cells := {}
+	if not is_inside_tree() or not is_instance_valid(_loader):
+		return cells
+	for node in get_tree().get_nodes_in_group(Gatherable.GROUP):
+		if not _is_blocking_gatherable(node) or node.is_queued_for_deletion():
+			continue
+		cells[_loader.world_to_cell(node.target_point())] = true
+	return cells
+
+
 # ---- AStar graph (height-aware) ------------------------------------------
 
 ## Stable point id for a cell (row-major). Cells never move, so the id is fixed even
@@ -87,16 +168,18 @@ func _build_grid() -> void:
 ## player can traverse the height step between them (same level, or one side a ramp).
 ## Called on build and whenever a gate / gather changes the passable set.
 func _rebuild_solids() -> void:
-	if _astar == null:
+	if _astar == null or not is_inside_tree() or not is_instance_valid(_loader):
 		return
 	_astar.clear()
 	var w := _loader.width
 	var h := _loader.height
-	# 1. points for every walkable cell.
+	var object_solids := _blocking_object_cells()
+	_sync_blocking_gatherable_ids()
+	# 1. Points for terrain-walkable cells not occupied by a live semantic blocker.
 	for r in range(h):
 		for c in range(w):
 			var cell := Vector2i(c, r)
-			if _loader.is_cell_walkable(cell):
+			if _loader.is_cell_walkable(cell) and not object_solids.has(cell):
 				_astar.add_point(_pid(cell), Vector2(c, r))
 	# 2. edges between traversable 4-neighbours (check +col / +row once per pair).
 	for r in range(h):
@@ -105,8 +188,8 @@ func _rebuild_solids() -> void:
 			if not _astar.has_point(_pid(cell)):
 				continue
 			for d in [Vector2i(1, 0), Vector2i(0, 1)]:
-				var nb: Vector2i = cell + d
-				if nb.x >= w or nb.y >= h:
+				var nb := _loader.terrain_neighbor(cell, d)
+				if not _region.has_point(nb):
 					continue
 				if not _astar.has_point(_pid(nb)):
 					continue
@@ -220,7 +303,8 @@ func _object_near(world_pos: Vector2) -> Node:
 	for node in get_tree().get_nodes_in_group(Gatherable.GROUP):
 		if not node.has_method("target_point"):
 			continue
-		var d: float = node.target_point().distance_to(world_pos)
+		var visual: Vector2 = node.visual_target_point() if node.has_method("visual_target_point") else node.target_point()
+		var d: float = visual.distance_to(world_pos)
 		if d <= best_d:
 			best_d = d
 			best = node
@@ -277,6 +361,8 @@ func _target_cell(cell: Vector2i) -> void:
 	# Plain move: only to a walkable destination.
 	if _loader.is_cell_walkable(cell):
 		_path_to_cell(cell)
+	elif _loader.is_protected_stream(cell):
+		_interaction.show_stream_hint(cell)
 
 
 ## Whether tapping this cell should trigger an interaction rather than a plain
@@ -288,44 +374,82 @@ func _cell_is_actionable(cell: Vector2i) -> bool:
 	if held == "":
 		return false
 	var tile_id := _interaction._logical_tile_id(cell)
-	return tile_id != "" and ItemDB.can_place_on_tile(held, tile_id)
+	return tile_id != "" and _interaction.can_place_on_cell(cell,held)
 
 
 # ---- pathfinding ---------------------------------------------------------
 
-func _path_to_cell(dest: Vector2i) -> bool:
-	if _astar == null:
-		return false
+func _waypoint_world(cell: Vector2i) -> Vector2:
+	var point := _loader.cell_center_world(cell)
+	if not _loader.uses_grove_topology():
+		point.y += _loader.height_offset(cell)
+	return point
+
+
+## A compact body does not occupy its whole tile. A player can legitimately stand
+## beside it inside the omitted graph cell. Join only a directly collision-free
+## neighbour; never synthesize an edge through the obstacle or a terrain ledge.
+func _path_ids_from_player(dest: Vector2i) -> PackedInt64Array:
+	var empty := PackedInt64Array()
+	if _astar == null or _player == null:
+		return empty
 	var start := _loader.world_to_cell(_player.global_position)
 	if not _region.has_point(start) or not _region.has_point(dest):
-		return false
-	# Both endpoints must be points in the walkable graph.
-	if not _astar.has_point(_pid(start)) or not _astar.has_point(_pid(dest)):
-		return false
-	var ids := _astar.get_id_path(_pid(start), _pid(dest))
+		return empty
+	if not _astar.has_point(_pid(dest)):
+		return empty
+	if _astar.has_point(_pid(start)):
+		return _astar.get_id_path(_pid(start), _pid(dest))
+	if not _loader.is_cell_walkable(start) or not _blocking_object_cells().has(start):
+		return empty
+	var best := empty
+	var best_cost := INF
+	for direction in [Vector2i(1,0),Vector2i(-1,0),Vector2i(0,1),Vector2i(0,-1)]:
+		var neighbour := _loader.terrain_neighbor(start, direction)
+		if not _region.has_point(neighbour) or not _astar.has_point(_pid(neighbour)):
+			continue
+		if not _height_traversable(start, neighbour):
+			continue
+		var motion := _waypoint_world(neighbour) - _player.global_position
+		if _player.test_move(_player.global_transform, motion):
+			continue
+		var route := _astar.get_id_path(_pid(neighbour), _pid(dest))
+		var cost := motion.length() + route.size() * 64.0
+		if not route.is_empty() and cost < best_cost:
+			best = route
+			best_cost = cost
+	return best
+
+
+func _path_to_cell(dest: Vector2i) -> bool:
+	var ids := _path_ids_from_player(dest)
 	if ids.is_empty():
 		return false
 	var pts: Array[Vector2] = []
 	for pid in ids:
 		var gp := _astar.get_point_position(pid)
 		var cell := Vector2i(int(gp.x), int(gp.y))
-		# Waypoint sits at the cell centre, lifted by the cell's height so the walk
-		# visually climbs ramps / stays on the plateau.
-		var world := _loader.cell_center_world(cell)
-		if _loader.has_method("height_offset"):
-			world.y += _loader.height_offset(cell)
-		pts.append(world)
+		pts.append(_waypoint_world(cell))
 	_player.set_path(pts)
 	return true
 
 
-## Nearest 4-neighbour walkable cell to `cell` (where the player can stand to act).
+## Shortest path-reachable 4-neighbour of `cell` (where the player can stand to act).
+## Query the live graph, not terrain alone: another tree/rock may occupy an adjacent tile.
 func _nearest_walkable_adjacent(cell: Vector2i) -> Vector2i:
+	if _astar == null or _player == null:
+		return Vector2i(-1, -1)
+	var best := Vector2i(-1, -1)
+	var best_len := 1 << 30
 	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-		var n: Vector2i = cell + d
-		if _loader.is_cell_walkable(n):
-			return n
-	return Vector2i(-1, -1)
+		var n: Vector2i = _loader.terrain_neighbor(cell, d)
+		if not _region.has_point(n) or not _astar.has_point(_pid(n)):
+			continue
+		var ids := _path_ids_from_player(n)
+		if not ids.is_empty() and ids.size() < best_len:
+			best = n
+			best_len = ids.size()
+	return best
 
 
 func _is_adjacent_to(world_point: Vector2) -> bool:

@@ -175,10 +175,13 @@ func _test_cliff_faces(loader: MapLoader) -> void:
 		var lvl: int = loader.height_at(cell)
 		if lvl <= 0:
 			continue
-		var e: int = loader.height_at(cell + Vector2i(1, 0))
-		var s: int = loader.height_at(cell + Vector2i(0, 1))
-		var se := e < lvl and not loader.is_ramp(cell + Vector2i(1, 0))
-		var sw := s < lvl and not loader.is_ramp(cell + Vector2i(0, 1))
+		# Independent engine-side oracle: STACKED rows do not use +col/+row.
+		var ec := loader.get_neighbor_cell(cell,TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_SIDE)
+		var sc := loader.get_neighbor_cell(cell,TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_SIDE)
+		var e: int = loader.height_at(ec)
+		var s: int = loader.height_at(sc)
+		var se := e < lvl and not loader.is_ramp(ec)
+		var sw := s < lvl and not loader.is_ramp(sc)
 		if se or sw:
 			expected_aprons += 1
 	_check("EVERY exposed raised edge cell is skirted (full perimeter, no gaps)",

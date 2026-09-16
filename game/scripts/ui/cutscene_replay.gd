@@ -54,6 +54,7 @@ var _flash: ColorRect
 var _label: Label
 var _skip_hint: Label
 var _done: bool = false
+var _lease := ""
 
 
 func _ready() -> void:
@@ -88,11 +89,21 @@ func _build() -> void:
 
 ## Public entry (also harness). Replays cutscene `cutscene_id`; frees itself when done.
 func play(cutscene_id: String) -> void:
+	if _id != "" or _done: return
 	_id = cutscene_id
-	if GameState != null:
-		GameState.time_running = false
-		GameState.set_control_lock(true)
+	if _id == "EP-L1H-01" and not Codex.is_cutscene_seen(_id):
+		_finish()
+		return
+	_lease = "replay:%s" % get_instance_id()
+	GameState.begin_cinematic(_lease)
 	_run()
+
+func episode_cards() -> Array:
+	var outcome: String = GameState.story_episode().active_outcome
+	var response: Dictionary = preload("res://scripts/world/l1_home_story_controller.gd").RESPONSE
+	return ["새는 없는데, 둥지 자국만 매일 새것 같았다.",
+		response.get(outcome, "비어 있는 자리에, 아직 놓지 않은 가능성이 남아 있었다."),
+		"문턱에, 내가 놓고 온 흔적이 먼저 와 있었다."]
 
 
 func is_done() -> bool:
@@ -110,7 +121,7 @@ func _run() -> void:
 			await CutsceneDirector.flash(self, _flash, 0.9, 0.12, 0.7)
 	if _done:
 		return
-	var cards: Array = SCRIPTS.get(_id, [])
+	var cards: Array = episode_cards() if _id == "EP-L1H-01" else SCRIPTS.get(_id, [])
 	for card in cards:
 		if _done:
 			return
@@ -129,14 +140,15 @@ func _run() -> void:
 
 func _finish() -> void:
 	if _done:
-		# Still ensure state restore even on a double-finish.
-		pass
+		return
 	_done = true
-	if GameState != null:
-		GameState.time_running = true
-		GameState.set_control_lock(false)
+	GameState.end_cinematic(_lease)
 	if is_instance_valid(self):
 		queue_free()
+
+func _exit_tree() -> void:
+	_done = true
+	GameState.end_cinematic(_lease)
 
 
 ## Public (harness / ESC): stop the replay immediately and restore state. Idempotent.

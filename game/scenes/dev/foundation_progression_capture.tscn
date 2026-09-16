@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="Script" path="res://scenes/dev/foundation_progression_capture.gd" id="1"]
+[node name="FoundationProgression" type="Node"]
+script = ExtResource("1")

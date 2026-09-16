@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/dev/l1_home_story_state_harness.gd" id="1"]
+
+[node name="L1HomeStoryStateHarness" type="Node"]
+script = ExtResource("1")

@@ -273,8 +273,12 @@ func _find_by_class(cls: String) -> Node:
 func _search(node: Node, cls: String) -> Node:
 	if node == null:
 		return null
-	if node.get_script() != null and str(node.get_script().get_global_name()) == cls:
-		return node
+	# A presentation subclass is still a MapLoader. Only checking the leaf
+	# script's global_name made the old fixture falsely report missing wiring.
+	var script: Script = node.get_script()
+	while script != null:
+		if str(script.get_global_name()) == cls: return node
+		script = script.get_base_script()
 	for c in node.get_children():
 		var r := _search(c, cls)
 		if r != null:

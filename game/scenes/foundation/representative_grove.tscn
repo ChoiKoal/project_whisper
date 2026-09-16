@@ -1,0 +1,38 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/dialogue_panel.tscn" id="8_dialogue"]
+
+[ext_resource type="PackedScene" path="res://scenes/foundation/legacy_grove.tscn" id="1_base"]
+[ext_resource type="Script" path="res://scripts/foundation/foundation_map.gd" id="2_foundation"]
+[ext_resource type="Script" path="res://scripts/foundation/surface_highlight.gd" id="3_highlight"]
+[ext_resource type="Script" path="res://scripts/foundation/surface_glow.gd" id="4_glow"]
+[ext_resource type="Script" path="res://scripts/foundation/surface_ghost.gd" id="5_ghost"]
+[ext_resource type="SpriteFrames" path="res://assets/foundation/traveler_frames.tres" id="6_traveler"]
+[ext_resource type="Script" path="res://scripts/foundation/surface_shadow.gd" id="7_shadow"]
+
+[node name="StartingGrove" instance=ExtResource("1_base")]
+
+[node name="Ground" parent="." index="4"]
+script = ExtResource("2_foundation")
+
+[node name="Player" parent="YSortLayer" index="0"]
+y_sort_enabled = false
+
+[node name="AnimatedSprite2D" parent="YSortLayer/Player" index="0"]
+position = Vector2(0,-42)
+scale = Vector2(1,1)
+sprite_frames = ExtResource("6_traveler")
+
+[node name="SurfaceShadow" type="Node2D" parent="YSortLayer/Player"]
+script = ExtResource("7_shadow")
+
+[node name="TileHighlight" parent="." index="5"]
+script = ExtResource("3_highlight")
+
+[node name="TileGlow" parent="." index="7"]
+script = ExtResource("4_glow")
+
+[node name="PlacementGhost" parent="." index="8"]
+script = ExtResource("5_ghost")
+
+[node name="DialoguePanel" parent="." instance=ExtResource("8_dialogue")]

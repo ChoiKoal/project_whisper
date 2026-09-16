@@ -20,6 +20,7 @@ class_name Player
 var _tilemap: TileMapLayer
 var _facing: String = "SE"  # one of: N NE E SE S SW W NW
 var _anim: AnimatedSprite2D
+var _base_anim_position := Vector2.ZERO
 
 ## Screen-space heading (degrees, atan2(y,x) with +x=right, +y=down) at the CENTRE
 ## of each facing's 45°-wide sector. The four grid-diagonal facings land on the four
@@ -73,6 +74,8 @@ func _ready() -> void:
 	# get_node_or_null (not $): every _anim use already null-guards, so a missing
 	# sprite child degrades to "no animation" instead of a null-deref in release.
 	_anim = get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+	if _anim != null:
+		_base_anim_position = _anim.position
 	if tilemap_path != NodePath():
 		_tilemap = get_node_or_null(tilemap_path) as TileMapLayer
 	_update_animation(false)
@@ -124,6 +127,15 @@ func _notification(what: int) -> void:
 func is_world_frozen() -> bool:
 	return GameState != null and (GameState.ui_modal_open() \
 			or not GameState.time_running or GameState.control_locked())
+
+
+func _process(_delta: float) -> void:
+	# L1's collision, path and saved body position share the flat logical grid.
+	# Elevation is a visual displacement only, including while idle after load.
+	if _anim != null and _tilemap is MapLoader:
+		var loader := _tilemap as MapLoader
+		if loader.uses_grove_topology():
+			_anim.position = _base_anim_position + Vector2(0, loader.visual_height_offset(global_position))
 
 
 func _physics_process(_delta: float) -> void:

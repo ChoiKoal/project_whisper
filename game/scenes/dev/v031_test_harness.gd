@@ -8,8 +8,8 @@ extends Node
 ##   Fix3 cursor     — the tile highlight is HIDDEN while the player is moving.
 ##   Fix4 hollow     — a gathered interior tile becomes the walkable HOLLOW (src 11),
 ##                     distinct from the unwalkable border VOID (src 0 with physics).
-##   R3 non-blocking — a small gatherable (rock) leaves its tile walkable AND has no
-##                     collision StaticBody (player walks over it); a tree DOES block.
+##   R3 semantics    — substantial R rock and tree have compact collision footprints;
+##                     small s stone remains walkover with no StaticBody.
 ##   R4 affordance   — holding a combo-only item shows the dimmed "조합 재료" affordance;
 ##                     a placeable item shows the "놓을 수 있다" line.
 ##
@@ -47,7 +47,7 @@ func _ready() -> void:
 	await _test_ui_fit(map, Vector2i(1920, 1080))
 	await _test_cursor_hidden_while_moving(map)
 	_test_hollow_walkable_distinct(map, loader)
-	_test_small_gatherable_non_blocking(map, loader)
+	_test_semantic_gatherable_collision(map, loader)
 	_test_held_affordance(map)
 
 	print("=== RESULT: %s (%d failures) ===" % ["PASS" if _fail == 0 else "FAIL", _fail])
@@ -163,45 +163,44 @@ func _test_hollow_walkable_distinct(map: Node, loader: MapLoader) -> void:
 			"cell=%s src=%d" % [border, loader.get_cell_source_id(border)])
 
 
-# ---- R3: small gatherable non-blocking; tree blocks ------------------------
+# ---- R3: semantic object footprints ---------------------------------------
 
-func _test_small_gatherable_non_blocking(map: Node, loader: MapLoader) -> void:
+func _test_semantic_gatherable_collision(map: Node, loader: MapLoader) -> void:
 	var rock: Gatherable = null
+	var stone: Gatherable = null
 	var tree: Gatherable = null
 	for node in get_tree().get_nodes_in_group(Gatherable.GROUP):
-		if not (node is Gatherable):
+		if not (node is Gatherable) or node is BushDry or node is WorldTree:
 			continue
 		var g := node as Gatherable
-		# Only plain scatter Gatherables — exclude BushDry / WorldTree subclasses (they own
-		# their own bespoke collision and are not the "small scatter" this test is about).
-		var is_plain: bool = not (g is BushDry) and not (g is WorldTree)
-		if not is_plain:
-			continue
-		# A small gatherable on genuinely walkable ground (scatter can land on an edge cell).
-		if not g.blocks_movement and rock == null and g.item_id != "" \
-				and loader.is_cell_walkable(loader.world_to_cell(g.target_point())):
+		if g.item_id == "I6" and rock == null:
 			rock = g
-		elif g.blocks_movement and tree == null:
+		elif g.item_id == "I8" and stone == null:
+			stone = g
+		elif g.item_id == "I4" and tree == null:
 			tree = g
-	_check("a non-blocking small gatherable exists", rock != null)
+	_check("a substantial R rock gatherable exists", rock != null)
 	if rock != null:
-		# It must have NO StaticBody child (the player walks over it)…
-		var has_body := false
-		for c in rock.get_children():
-			if c is StaticBody2D:
-				has_body = true
-		_check("small gatherable has no collision body", not has_body)
-		# …and the tile under it is walkable, so a tap-move path can cross it.
-		var rcell := loader.world_to_cell(rock.target_point())
-		_check("tile under small gatherable is walkable (test_move crosses)",
-			loader.is_cell_walkable(rcell), "cell=%s" % rcell)
+		_check("R rock uses the explicit 24px blocking footprint",
+			rock.blocks_movement and is_equal_approx(rock.block_radius, 24.0)
+				and _has_static_body(rock))
+	_check("a small s stone gatherable exists", stone != null)
+	if stone != null:
+		_check("s stone remains walkover with no collision body",
+			not stone.blocks_movement and not _has_static_body(stone))
+		var scell := loader.world_to_cell(stone.target_point())
+		_check("terrain beneath s remains walkable", loader.is_cell_walkable(scell),
+			"cell=%s" % scell)
 	_check("a blocking tree gatherable exists", tree != null)
 	if tree != null:
-		var tbody := false
-		for c in tree.get_children():
-			if c is StaticBody2D:
-				tbody = true
-		_check("tree gatherable HAS a collision body (blocks)", tbody)
+		_check("tree keeps its existing collision body", tree.blocks_movement and _has_static_body(tree))
+
+
+func _has_static_body(node: Node) -> bool:
+	for child in node.get_children():
+		if child is StaticBody2D:
+			return true
+	return false
 
 
 # ---- R4: held-item affordance line -----------------------------------------

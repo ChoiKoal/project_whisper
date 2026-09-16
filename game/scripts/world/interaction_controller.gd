@@ -121,7 +121,7 @@ func held_action_hint() -> String:
 	var obj := _target_object as Gatherable
 	if obj != null and obj.object_id != "" and ItemDB.can_use_on_object(_held_item, obj.object_id):
 		return "E: 사용"
-	if _has_tile_target and ItemDB.can_place_expanded(_held_item, _logical_tile_id(_target_cell)):
+	if _has_tile_target and can_place_on_cell(_target_cell,_held_item):
 		return "E: 배치"
 	return ""
 
@@ -267,7 +267,8 @@ func _resolve_hover() -> void:
 	for node in get_tree().get_nodes_in_group(Gatherable.GROUP):
 		if not node.has_method("target_point"):
 			continue
-		var d: float = node.target_point().distance_to(world)
+		var visual: Vector2 = node.visual_target_point() if node.has_method("visual_target_point") else node.target_point()
+		var d: float = visual.distance_to(world)
 		if d <= best_d:
 			best_d = d
 			best = node
@@ -279,7 +280,7 @@ func _resolve_hover() -> void:
 	if _tilemap.get_cell_source_id(cell) == -1:
 		return
 	var data := _tilemap.get_cell_tile_data(cell)
-	if data != null and bool(data.get_custom_data("gatherable")):
+	if _cell_gatherable(cell):
 		_hover_cell = cell
 		_has_hover_cell = true
 
@@ -290,7 +291,7 @@ func _idle_tile_gatherable() -> bool:
 	if not _has_tile_target:
 		return false
 	var data := _tilemap.get_cell_tile_data(_target_cell)
-	return data != null and bool(data.get_custom_data("gatherable"))
+	return _cell_gatherable(_target_cell)
 
 
 ## True if the held item can be PLACED on the current facing tile (D14 water / D22
@@ -298,7 +299,7 @@ func _idle_tile_gatherable() -> bool:
 func _idle_tile_placeable() -> bool:
 	if not _has_tile_target or _held_item == "":
 		return false
-	return ItemDB.can_place_expanded(_held_item, _logical_tile_id(_target_cell))
+	return can_place_on_cell(_target_cell,_held_item)
 
 
 ## v0.4.0 A2 targeting display. Three visual channels, mutually exclusive per frame:
@@ -417,6 +418,8 @@ func _update_prompt() -> void:
 	_prompt.text = text
 	# Anchor above the target point, centered.
 	var world: Vector2 = _target_object.target_point() if _target_object != null else _cell_center_world(_target_cell)
+	if _target_object != null and _target_object.has_method("visual_target_point"):
+		world = _target_object.visual_target_point()
 	_prompt.size = _prompt.get_minimum_size()
 	_prompt.global_position = world - Vector2(_prompt.size.x * 0.5, 64)
 
@@ -436,7 +439,7 @@ func _prompt_text() -> String:
 			if obj.object_id == "bush_dry" and _held_item == "I7":
 				return "E 물 주기"
 			return "E 사용"
-		if _has_tile_target and ItemDB.can_place_expanded(_held_item, _logical_tile_id(_target_cell)):
+		if _has_tile_target and can_place_on_cell(_target_cell,_held_item):
 			return "E 배치"
 	# Object interactions.
 	if _target_object != null:
@@ -445,11 +448,19 @@ func _prompt_text() -> String:
 		if _target_object.has_method("can_gather") and _target_object.can_gather():
 			return "E 채집"
 		if _target_object.has_method("on_interact"):
-			return "E 조합"
+			if _target_object is Cauldron:
+				return "E 조합"
+			if _target_object is RestStump:
+				return "E 쉬기"
+			# Portal controllers own their state-specific entry prompt; do not overlay a generic pill.
+			if _target_object is Portal:
+				return ""
+			return "E 살펴보기"
 	# Gatherable ground tile.
 	if _has_tile_target:
+		if _protected_stream(_target_cell):return "물살이 빠르다 · 디딤돌 자리로 건너기"
 		var data := _tilemap.get_cell_tile_data(_target_cell)
-		if data != null and bool(data.get_custom_data("gatherable")):
+		if _cell_gatherable(_target_cell):
 			return "E 채집"
 	return ""
 
@@ -527,7 +538,7 @@ func _do_interact() -> void:
 	if act_object != null and act_object.has_method("can_gather") and act_object.can_gather():
 		var granted: String = act_object.gather()
 		if granted != "":
-			_spawn_feedback(act_object.target_point(), granted)
+			_spawn_feedback(_object_visual_point(act_object), granted)
 		return
 
 	# 3. Non-gather interactable (e.g. Cauldron opens the Fusion UI).
@@ -554,7 +565,7 @@ func interact_with_object(obj: Node) -> void:
 	if obj.has_method("can_gather") and obj.can_gather():
 		var granted: String = obj.gather()
 		if granted != "":
-			_spawn_feedback(obj.target_point(), granted)
+			_spawn_feedback(_object_visual_point(obj), granted)
 		return
 	if obj.has_method("on_interact"):
 		obj.on_interact()
@@ -572,6 +583,9 @@ func interact_with_cell(cell: Vector2i) -> void:
 
 
 func _try_gather_tile(cell: Vector2i) -> void:
+	if _protected_stream(cell):
+		show_stream_hint(cell)
+		return
 	var data := _tilemap.get_cell_tile_data(cell)
 	if data == null:
 		return
@@ -598,12 +612,28 @@ func _notify_walkable_changed(cell: Vector2i) -> void:
 		GameState.tile_walkable_changed.emit(cell)
 
 
+func _protected_stream(cell:Vector2i)->bool:
+	return _tilemap is MapLoader and (_tilemap as MapLoader).is_protected_stream(cell)
+func _cell_gatherable(cell:Vector2i)->bool:
+	if _tilemap is MapLoader:return (_tilemap as MapLoader).can_gather_cell(cell)
+	var data:=_tilemap.get_cell_tile_data(cell)
+	return data!=null and bool(data.get_custom_data("gatherable"))
+func can_place_on_cell(cell:Vector2i,item:String)->bool:
+	if _tilemap is MapLoader and not (_tilemap as MapLoader).allows_tile_placement(cell,item):return false
+	return ItemDB.can_place_expanded(item,_logical_tile_id(cell))
+var _stream_hint_at := -1000
+func show_stream_hint(cell:Vector2i)->void:
+	if Time.get_ticks_msec()-_stream_hint_at<900:return
+	_stream_hint_at=Time.get_ticks_msec()
+	FloatingLabel.spawn(_feedback_layer,_cell_center_world(cell)-Vector2(0,40),"물살이 빠르다 · 디딤돌 자리로 건너기")
+
 # ---- placement / use framework ------------------------------------------
 
 ## Try to place the held item on the target tile. Returns true if placement
 ## happened (item consumed). Validity comes from ItemDB.placeable_on vs the
 ## target tile's logical id.
 func _try_place_on_tile(cell: Vector2i) -> bool:
+	if not can_place_on_cell(cell,_held_item):return false
 	var tile_id := _logical_tile_id(cell)
 	if tile_id == "":
 		return false
@@ -749,6 +779,11 @@ const SOURCE_TO_TILE_ID := {
 func _logical_tile_id(cell: Vector2i) -> String:
 	var src := _tilemap.get_cell_source_id(cell)
 	return SOURCE_TO_TILE_ID.get(src, "")
+
+
+## Feedback follows the visible foot; logical target_point remains the reach/save anchor.
+func _object_visual_point(obj: Node) -> Vector2:
+	return obj.visual_target_point() if obj.has_method("visual_target_point") else obj.target_point()
 
 
 func _spawn_feedback(world_pos: Vector2, item_id: String) -> void:

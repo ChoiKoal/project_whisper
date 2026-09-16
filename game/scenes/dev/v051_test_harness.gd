@@ -294,10 +294,21 @@ func _c_portal_entry() -> void:
 		reached[0] == "nature", "reached=%s" % reached[0])
 	# The travel cutscene is now active (control-locked) → confirm the travel beat kicked off.
 	_check("travel beat started (control-locked) after keyboard entry", GameState.control_locked())
-	# Reset the travel lock so we can continue testing in this same scene instance.
-	GameState.set_control_lock(false)
-	GameState.time_running = true
-	await _frames(1)
+	# End this fixture through real scene teardown. Clearing the legacy boolean must not
+	# release PortalCutscene's owned cinematic lease or leave its travel callback alive.
+	await _teardown()
+	_check("travel scene exit releases its own lock", not GameState.control_locked())
+	SaveManager.new_game()
+	WorldContext.current_scene = WorldContext.SCENE_HOME
+	WorldContext.arrival_mode = ""
+	SaveManager.pending_load = false
+	_scene = await _boot(HOME)
+	loader = _scene.get_node("Ground") as MapLoader
+	player = _scene.get_node("YSortLayer/Player") as Player
+	touch = _find(_scene, TouchController) as TouchController
+	for n in get_tree().get_nodes_in_group("gatherable"):
+		if n is Portal and n.layer == "science": science = n
+	_check("dormant fixture begins without another owner's travel lock", not GameState.control_locked())
 
 	# --- DORMANT gate: standing in the science apron + interacting shows the locked whisper and
 	#     does NOT travel (portal_reached must not fire, no travel lock). ---

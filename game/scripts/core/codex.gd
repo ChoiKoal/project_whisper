@@ -103,6 +103,7 @@ const CUTSCENE_CATALOG := [
 	{"id": "CS-03", "title": "세계수 앞에서"},
 	{"id": "CS-04", "title": "정화 — 어린 세계수를 되심다"},
 	{"id": "CS-05", "title": "귀환과 점화"},
+	{"id": "EP-L1H-01", "title": "새가 오기 전의 둥지"},
 	{"id": "E1", "title": "엔딩 「완성」"},
 	{"id": "E2", "title": "엔딩 「속삭임」"},
 ]

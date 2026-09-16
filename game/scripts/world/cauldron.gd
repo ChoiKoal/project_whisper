@@ -20,7 +20,7 @@ const GROUP := "gatherable"
 signal interacted
 
 ## v0.2.1: subtle bubbling — alternate between two brew-surface frames on a slow
-## timer + a faint scale pulse. Purely cosmetic (world-cauldron polish, 조합 쾌감 §5).
+## timer. Animate the brew pixels, never rescale the physical sprite off its pixel grid.
 const TEX_CALM := "res://assets/objects/cauldron.png"
 const TEX_BUBBLE := "res://assets/objects/cauldron_bubble.png"
 const BUBBLE_PERIOD := 0.55  ## seconds per brew frame
@@ -29,7 +29,7 @@ var _tex_calm: Texture2D
 var _tex_bubble: Texture2D
 var _bubble_t: float = 0.0
 var _bubble_on: bool = false
-var _pulse_t: float = 0.0
+
 
 ## v1.0.4 P0 hotfix: L2-L5 crafting stations reuse the Cauldron class (so E → Fusion
 ## works in real play — see interaction_controller.gd on_interact hook) but keep their own
@@ -87,11 +87,7 @@ func _process(delta: float) -> void:
 		_bubble_t -= BUBBLE_PERIOD
 		_bubble_on = not _bubble_on
 		texture = _tex_bubble if _bubble_on else _tex_calm
-	# Very subtle breathing pulse so the whole pot reads as alive (kept tiny so the
-	# base footprint / Y-sort origin doesn't visibly shift).
-	_pulse_t += delta * 2.2
-	var s := 1.0 + sin(_pulse_t) * 0.02
-	scale = Vector2(s, s)
+	# Native-scale sprite silhouette remains anchored; only liquid highlights animate.
 
 
 # ---- Gatherable-compatible interface (so the controller can target it) ----

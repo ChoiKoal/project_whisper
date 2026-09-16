@@ -40,6 +40,10 @@ func _setup() -> void:
 	_loader = get_node_or_null(map_loader_path) as MapLoader
 	_player = get_node_or_null(player_path) as Node2D
 	var respawn := get_node_or_null(respawn_path) as ObjectRespawn
+	if _loader==null or not _loader.layout_ready:
+		SaveManager.unregister_world()
+		SaveManager._reject_layout("Grove profile did not finish construction")
+		return
 	if _loader != null and _player != null and respawn != null:
 		SaveManager.register_world(_loader, _player, respawn)
 
@@ -52,10 +56,11 @@ func _setup() -> void:
 
 	# (v1.1.0 GP-4 §1) 시들지 않는 노목 QuestNPC near the grove spawn (reachable, off the portal apron).
 	if _loader != null and _loader.spawn_cell != Vector2i(-1, -1):
-		QuestNPC.spawn(self, _loader, _loader.spawn_cell + Vector2i(3, 1), "oak", "시들지 않는 노목",
+		QuestNPC.spawn(self, _loader, _loader.anchor_cells("oak_npc",[_loader.spawn_cell + Vector2i(3, 1)])[0], "oak", "시들지 않는 노목",
 			"…고맙구나. 색이란 걸, 다시 봤어.", "res://assets/objects/young_tree.png")
 
 	# Apply a pending "이어하기" load into this live scene.
+	SaveManager.game_loaded.connect(_ensure_landmarks_clear)
 	if SaveManager.pending_load:
 		SaveManager.pending_load = false
 		SaveManager.load_game()
@@ -64,6 +69,12 @@ func _setup() -> void:
 	# rebuilding fresh. Only when a snapshot already exists (a revisit, not the first entry).
 	elif SaveManager.has_world_snapshot(WorldContext.current_scene):
 		SaveManager.restore_registered_world()
+	_ensure_landmarks_clear()
+	# Additive story anchors are built AFTER saved player objects and respawn indexing.
+	var story = preload("res://scripts/world/l1_home_story_controller.gd").new()
+	story.name = "L1HomeStory"
+	add_child(story)
+	story.setup(_loader)
 	# (v1.3.1 BUG A) Self-heal the portal line from the progression flags every boot so a stale
 	# snapshot can never leave a purified world's home portal re-locked.
 	GameState.reconcile_portal_line()
@@ -72,6 +83,8 @@ func _setup() -> void:
 	var clear := get_node_or_null(clear_sequence_path) as ClearSequence
 	if clear != null:
 		clear.cleared.connect(_on_cleared)
+		if SaveManager.pending_l1_clear.size() == 2 and not SaveManager.cleared:
+			clear._on_planted(Vector2i(SaveManager.pending_l1_clear[0], SaveManager.pending_l1_clear[1]))
 
 	# (v0.4.0-C) Kick off the day/night soundscape (BGM + ambience) for this run.
 	if AudioManager != null:
@@ -127,16 +140,74 @@ func _spawn_return_portal() -> void:
 		return
 	_return_portal = ReturnPortalController.new()
 	add_child(_return_portal)
-	# Prominent, walkable cell near the spawn; the controller picks the first walkable candidate.
-	# Prefer just SOUTH of spawn (in front of the player on arrival), then west, then north.
+	# Keep the return landmark visible but off the spawn/cauldron/stump knot. The old `(0,+2)`
+	# landing merged portal + `E 조합` + player; the west pad keeps the way home visible while the
+	# east/south dirt first-loop leads to the first flower and relocated cauldron.
 	var candidates := [
-		_loader.spawn_cell + Vector2i(0, 2),
+		_loader.spawn_cell + Vector2i(-4, 0),
 		_loader.spawn_cell + Vector2i(-2, 0),
 		_loader.spawn_cell + Vector2i(2, 0),
 		_loader.spawn_cell + Vector2i(0, -2),
 	]
-	_return_portal.setup(_loader, _player, candidates, "E 홈으로 돌아가기")
+	_return_portal.setup(_loader, _player, _loader.anchor_cells("return_portal",candidates), "E 홈으로 돌아가기")
 	_return_portal.entered.connect(_on_return_portal)
+
+
+## New authored landmarks yield to restored player objects, never move/refund save data.
+## Recomputed after each restore; no schema migration or guessed placement backfill.
+func _ensure_landmarks_clear() -> void:
+	if _loader == null or not is_instance_valid(_return_portal):
+		return
+	var pot: Cauldron = null
+	for node in get_tree().get_nodes_in_group("gatherable"):
+		if node is Cauldron and get_parent().is_ancestor_of(node):
+			pot = node as Cauldron
+			break
+	if pot != null and not _landmark_cell_clear(_loader.cauldron_cell, pot):
+		var cell := _find_landmark_cell(pot, _loader.anchor_cells("cauldron_fallback",[Vector2i(13, 32)]), false)
+		if cell != Vector2i(-1, -1):
+			pot.global_position = _loader.cell_center_world(cell)
+			_loader.cauldron_cell = cell
+	var portal := _return_portal.portal
+	if portal != null:
+		var base := _loader.world_to_cell(portal.global_position)
+		var stand := _loader.world_to_cell(portal.entry_stand_point())
+		if not _landmark_cell_clear(base, portal) or not _landmark_cell_clear(stand, portal):
+			var cell := _find_landmark_cell(portal, _loader.anchor_cells("return_fallback",[Vector2i(8, 30), Vector2i(12, 34)]), true)
+			if cell != Vector2i(-1, -1):
+				portal.global_position = _loader.cell_center_world(cell)
+
+
+func _landmark_cell_clear(cell: Vector2i, except_node: Node2D) -> bool:
+	if not _loader.is_cell_walkable(cell):
+		return false
+	for group in ["placed_object", "gatherable"]:
+		for node in get_tree().get_nodes_in_group(group):
+			if node == except_node or not node is Node2D or not get_parent().is_ancestor_of(node):
+				continue
+			if _loader.world_to_cell((node as Node2D).global_position) == cell:
+				return false
+	return true
+
+
+func _find_landmark_cell(node: Node2D, preferred: Array, needs_apron: bool) -> Vector2i:
+	var candidates := preferred.duplicate()
+	var origin := _loader.world_to_cell(node.global_position)
+	for radius in range(1, 7):
+		for dy in range(-radius, radius + 1):
+			for dx in range(-radius, radius + 1):
+				if maxi(absi(dx), absi(dy)) == radius:
+					candidates.append(origin + Vector2i(dx, dy))
+	for candidate: Vector2i in candidates:
+		if not _landmark_cell_clear(candidate, node):
+			continue
+		if needs_apron:
+			var stand := _loader.world_to_cell(_loader.cell_center_world(candidate) + Vector2(0, Portal.ENTRY_FORWARD))
+			if not _landmark_cell_clear(stand, node):
+				continue
+		return candidate
+	push_warning("GroveSession: no unoccupied landmark fallback; preserved all player placements")
+	return Vector2i(-1, -1)
 
 
 func _on_return_portal() -> void:
@@ -160,10 +231,10 @@ func _spawn_zone_portals() -> void:
 	if ys == null:
 		return
 	# 화원 연결점: a walkable cell to the NW of spawn (오솔길로 북상). 심장: to the NE (세계수 하강).
-	_spawn_zone_portal(ys, [_loader.spawn_cell + Vector2i(-4, -3), _loader.spawn_cell + Vector2i(-3, -2),
-		_loader.spawn_cell + Vector2i(-5, 0)], "E 고요의 화원으로", WorldContext.SCENE_GARDEN)
-	_spawn_zone_portal(ys, [_loader.spawn_cell + Vector2i(4, -3), _loader.spawn_cell + Vector2i(3, -2),
-		_loader.spawn_cell + Vector2i(5, 0)], "E 생명의 심장으로", WorldContext.SCENE_HEART)
+	_spawn_zone_portal(ys, _loader.anchor_cells("garden_portal",[_loader.spawn_cell + Vector2i(-4, -3), _loader.spawn_cell + Vector2i(-3, -2),
+		_loader.spawn_cell + Vector2i(-5, 0)]), "E 고요의 화원으로", WorldContext.SCENE_GARDEN)
+	_spawn_zone_portal(ys, _loader.anchor_cells("heart_portal",[_loader.spawn_cell + Vector2i(4, -3), _loader.spawn_cell + Vector2i(3, -2),
+		_loader.spawn_cell + Vector2i(5, 0)]), "E 생명의 심장으로", WorldContext.SCENE_HEART)
 
 
 func _spawn_zone_portal(ys: Node2D, cell_candidates: Array, prompt: String, scene_id: String) -> void:

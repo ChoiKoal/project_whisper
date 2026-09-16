@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="Script" path="res://scenes/dev/portal_ignition_join_harness.gd" id="1"]
+[node name="IgnitionJoin" type="Node"]
+script=ExtResource("1")

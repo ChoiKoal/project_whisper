@@ -35,14 +35,19 @@ func _index() -> void:
 	# Build a position→node map once (O(children)) so indexing the (now dense, M6a)
 	# spawn list stays linear instead of O(objects × children).
 	var by_pos: Dictionary = {}
+	var by_cell: Dictionary = {}
 	if _ysort != null:
 		for ch in _ysort.get_children():
 			if ch is Gatherable:
 				by_pos[(ch as Node2D).position.round()] = ch
+				if ch.has_meta("_lift_cell"):
+					by_cell[ch.get_meta("_lift_cell")] = ch
 	# Rebuild the tracked list from the loader's spawn record + live children.
+	_tracked.clear()
+	_by_cell.clear()
 	for entry in _loader.object_spawns:
 		var cell: Vector2i = entry["cell"]
-		var node = by_pos.get(_loader.cell_center_world(cell).round(), null)
+		var node = by_cell.get(cell, by_pos.get(_loader.cell_center_world(cell).round(), null))
 		var te := {"cell": cell, "symbol": entry["symbol"], "node": node, "respawn_at": -1.0}
 		_tracked.append(te)
 		_by_cell[cell] = te
