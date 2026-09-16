@@ -1,0 +1,43 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+
+[PASS] cinematic reachable placement fixture
+[PASS] cinematic actual tap queued
+[PASS] cinematic lock synchronously clears pending and movement
+[PASS] cinematic unlock cannot resurrect pending
+[PASS] cinematic fresh route accepted
+[PASS] cinematic fresh route completed
+[PASS] cinematic no stale action on later arrival
+[PASS] legacy_control reachable placement fixture
+[PASS] legacy_control actual tap queued
+[PASS] legacy_control lock synchronously clears pending and movement
+[PASS] legacy_control unlock cannot resurrect pending
+[PASS] legacy_control fresh route accepted
+[PASS] legacy_control fresh route completed
+[PASS] legacy_control no stale action on later arrival
+[PASS] time_pause reachable placement fixture
+[PASS] time_pause actual tap queued
+[PASS] time_pause lock synchronously clears pending and movement
+[PASS] time_pause unlock cannot resurrect pending
+[PASS] time_pause fresh route accepted
+[PASS] time_pause fresh route completed
+[PASS] time_pause no stale action on later arrival
+[PASS] same_frame_time reachable placement fixture
+[PASS] same_frame_time actual tap queued
+[PASS] same_frame_time lock synchronously clears pending and movement
+[PASS] same_frame_time unlock cannot resurrect pending
+[PASS] same_frame_time fresh route accepted
+[PASS] same_frame_time fresh route completed
+[PASS] same_frame_time no stale action on later arrival
+[PASS] nested_cinematic reachable placement fixture
+[PASS] nested_cinematic actual tap queued
+[PASS] nested_cinematic lock synchronously clears pending and movement
+[PASS] own cancel preserves foreign cinematic lease
+[PASS] nested_cinematic unlock cannot resurrect pending
+[PASS] nested_cinematic fresh route accepted
+[PASS] nested_cinematic fresh route completed
+[PASS] nested_cinematic no stale action on later arrival
+PENDING_LOCK_SAFETY_DONE failures=0
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)
+ERROR: 2 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:795)

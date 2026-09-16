@@ -1,0 +1,7 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+
+ERROR: v051_test_harness refused destructive user:// access: set WHISPER_TEST_HOME to the isolated HOME root (user_dir=<HOME>/.local/share/godot/app_userdata/Project Whisper)
+   at: push_error (core/variant/variant_utility.cpp:1024)
+   GDScript backtrace (most recent call first):
+       [0] require_isolated_user_data (res://scenes/dev/isolated_harness_guard.gd:16)
+       [1] _ready (res://scenes/dev/v051_test_harness.gd:26)

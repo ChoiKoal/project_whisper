@@ -1,0 +1,89 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+
+[PASS] l1-v1 exact two N consumers
+[PASS] l1-v1 emission is separately authored, not whole plant
+[PASS] l1-v1 original native canvas/contact offset retained
+[PASS] l1-v1 emission is separately authored, not whole plant
+[PASS] l1-v1 original native canvas/contact offset retained
+[PASS] l1-v1 phase 0.3 state/body/glow
+[PASS] l1-v1 phase root/contact unchanged
+[PASS] l1-v1 exact open/closed binding
+[PASS] l1-v1 phase 0.3 state/body/glow
+[PASS] l1-v1 phase root/contact unchanged
+[PASS] l1-v1 exact open/closed binding
+[PASS] l1-v1 phase 0.65 state/body/glow
+[PASS] l1-v1 phase root/contact unchanged
+[PASS] l1-v1 exact open/closed binding
+[PASS] l1-v1 phase 0.65 state/body/glow
+[PASS] l1-v1 phase root/contact unchanged
+[PASS] l1-v1 exact open/closed binding
+[PASS] l1-v1 phase 0.8 state/body/glow
+[PASS] l1-v1 phase root/contact unchanged
+[PASS] l1-v1 exact open/closed binding
+[PASS] l1-v1 phase 0.8 state/body/glow
+[PASS] l1-v1 phase root/contact unchanged
+[PASS] l1-v1 exact open/closed binding
+[PASS] l1-v1 phase 0.97 state/body/glow
+[PASS] l1-v1 phase root/contact unchanged
+[PASS] l1-v1 exact open/closed binding
+[PASS] l1-v1 phase 0.97 state/body/glow
+[PASS] l1-v1 phase root/contact unchanged
+[PASS] l1-v1 exact open/closed binding
+[PASS] l1-v1 phase 0.3 state/body/glow
+[PASS] l1-v1 phase root/contact unchanged
+[PASS] l1-v1 exact open/closed binding
+[PASS] l1-v1 phase 0.3 state/body/glow
+[PASS] l1-v1 phase root/contact unchanged
+[PASS] l1-v1 exact open/closed binding
+NIGHT_WALK {"end":"(2560.0, 308.0748)","gate":"(2560.0, 256.0)","locked":false,"open":false,"revision":"l1-v1","start":"(2560.0, 356.0)"}
+[PASS] l1-v1 real keyboard stops at closed gate
+[PASS] l1-v1 first encounter releases its own lock
+NIGHT_WALK {"end":"(2560.0, 151.0)","gate":"(2560.0, 256.0)","locked":false,"open":true,"revision":"l1-v1","start":"(2560.0, 356.0)"}
+[PASS] l1-v1 real keyboard passes open gate
+[PASS] l1-v1 legitimate encounter finishes before teardown
+[PASS] l1-v2 exact two N consumers
+[PASS] l1-v2 emission is separately authored, not whole plant
+[PASS] l1-v2 original native canvas/contact offset retained
+[PASS] l1-v2 emission is separately authored, not whole plant
+[PASS] l1-v2 original native canvas/contact offset retained
+[PASS] l1-v2 phase 0.3 state/body/glow
+[PASS] l1-v2 phase root/contact unchanged
+[PASS] l1-v2 exact open/closed binding
+[PASS] l1-v2 phase 0.3 state/body/glow
+[PASS] l1-v2 phase root/contact unchanged
+[PASS] l1-v2 exact open/closed binding
+[PASS] l1-v2 phase 0.65 state/body/glow
+[PASS] l1-v2 phase root/contact unchanged
+[PASS] l1-v2 exact open/closed binding
+[PASS] l1-v2 phase 0.65 state/body/glow
+[PASS] l1-v2 phase root/contact unchanged
+[PASS] l1-v2 exact open/closed binding
+[PASS] l1-v2 phase 0.8 state/body/glow
+[PASS] l1-v2 phase root/contact unchanged
+[PASS] l1-v2 exact open/closed binding
+[PASS] l1-v2 phase 0.8 state/body/glow
+[PASS] l1-v2 phase root/contact unchanged
+[PASS] l1-v2 exact open/closed binding
+[PASS] l1-v2 phase 0.97 state/body/glow
+[PASS] l1-v2 phase root/contact unchanged
+[PASS] l1-v2 exact open/closed binding
+[PASS] l1-v2 phase 0.97 state/body/glow
+[PASS] l1-v2 phase root/contact unchanged
+[PASS] l1-v2 exact open/closed binding
+[PASS] l1-v2 phase 0.3 state/body/glow
+[PASS] l1-v2 phase root/contact unchanged
+[PASS] l1-v2 exact open/closed binding
+[PASS] l1-v2 phase 0.3 state/body/glow
+[PASS] l1-v2 phase root/contact unchanged
+[PASS] l1-v2 exact open/closed binding
+NIGHT_WALK {"end":"(2880.0, 308.0748)","gate":"(2880.0, 256.0)","locked":false,"open":false,"revision":"l1-v2","start":"(2880.0, 356.0)"}
+[PASS] l1-v2 real keyboard stops at closed gate
+[PASS] l1-v2 first encounter releases its own lock
+NIGHT_WALK {"end":"(2880.0, 181.0)","gate":"(2880.0, 256.0)","locked":false,"open":true,"revision":"l1-v2","start":"(2880.0, 356.0)"}
+[PASS] l1-v2 real keyboard passes open gate
+[PASS] l1-v2 legitimate encounter finishes before teardown
+NIGHT_FLOWER_ART_DONE failures=0
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)
+ERROR: 2 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:795)
