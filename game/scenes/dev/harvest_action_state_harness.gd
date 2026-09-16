@@ -117,6 +117,9 @@ func _run_all() -> void:
 	s.transition_hook = func(_phase: String) -> void:
 		nested["r"] = st_ref.take_commit(tok)
 	c = s.take_commit(t)
+	# 훅이 자기 RefCounted를 캡처한 순환 참조 해제 (루비 Godot 4.5 검수:
+	# 미해제 시 종료 시점 ObjectDB 누수 경고 + 리소스 사용 중 오류)
+	s.transition_hook = Callable()
 	_check("재진입: 외부 commit granted", c["granted"])
 	_check("재진입: 중첩 commit 거부",
 		nested.has("r") and (nested["r"]["reason"] == "reentrant_call" or nested["r"]["reason"] == "already_committed"))
