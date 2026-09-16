@@ -44,7 +44,45 @@ func run()->void:
 		await RenderingServer.frame_post_draw
 		var late:=receipt(ic,target,start,"rendered_stall"+str(stall));receipts.append(late);print("HOVER_TIMING ",JSON.stringify(late))
 		check("rendered far ghost matches unchanged click destination "+str(stall),ic._ghost.is_active() and ic._ghost.global_position.distance_to(ground.cell_center_world(target))<1)
-	var file:=FileAccess.open(OS.get_environment("FDN_EVIDENCE")+"/timing.json",FileAccess.WRITE);file.store_string(JSON.stringify(receipts,"\t"));file.close()
+	if not write_evidence(receipts):
+		SaveManager.unregister_world();scene.queue_free()
+		get_tree().quit(87);return
 	SaveManager.unregister_world();scene.queue_free();await physics(4)
 	print("HOVER_TIMING_DONE failures=",failures)
 	get_tree().quit(1 if failures else 0)
+
+
+## Evidence sink, fail-closed. Three ways this used to go wrong silently:
+##   * FDN_EVIDENCE unset -> "" + "/timing.json" resolved to the filesystem ROOT,
+##     so the probe tried to write outside any evidence directory.
+##   * FileAccess.open() returning null -> the next line called store_string() on
+##     nil and took the whole run down.
+##   * Either failure still ended at quit(0), so a run with NO evidence reported
+##     success. A diagnostic that cannot record its own output must not pass.
+## Returns false on any of those; the caller exits 87 (distinct from the isolation
+## guard's 86) so an evidence failure is never read as a timing result.
+func write_evidence(data:Array)->bool:
+	var dir:=OS.get_environment("FDN_EVIDENCE")
+	if dir.strip_edges().is_empty():
+		push_error("hover_timing_probe: FDN_EVIDENCE unset; refusing to write")
+		print("HOVER_TIMING_EVIDENCE_REFUSED reason=unset")
+		return false
+	dir=dir.strip_edges().trim_suffix("/")
+	if not dir.is_absolute_path():
+		push_error("hover_timing_probe: FDN_EVIDENCE must be an absolute path, got '%s'" % dir)
+		print("HOVER_TIMING_EVIDENCE_REFUSED reason=not_absolute path=",dir)
+		return false
+	if not DirAccess.dir_exists_absolute(dir):
+		push_error("hover_timing_probe: FDN_EVIDENCE directory does not exist: '%s'" % dir)
+		print("HOVER_TIMING_EVIDENCE_REFUSED reason=missing_dir path=",dir)
+		return false
+	var path:=dir+"/timing.json"
+	var file:=FileAccess.open(path,FileAccess.WRITE)
+	if file==null:
+		push_error("hover_timing_probe: cannot open '%s' (FileAccess error %d)" % [path,FileAccess.get_open_error()])
+		print("HOVER_TIMING_EVIDENCE_REFUSED reason=open_failed path=",path," err=",FileAccess.get_open_error())
+		return false
+	file.store_string(JSON.stringify(data,"\t"))
+	file.close()
+	print("HOVER_TIMING_EVIDENCE_WRITTEN path=",path," receipts=",data.size())
+	return true
