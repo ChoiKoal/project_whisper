@@ -108,7 +108,8 @@ if obj.has_method("can_gather") and obj.can_gather():
 | A3 | unique 대상 2회 | +1, 노드 잔존 | +2 또는 소멸 | 공통 |
 | A2b | E키 경로 + 터치 도착 경로 동일 프레임 | +1 | +2 | **BLOCKED** (컨트롤러+입력 주입 필요) |
 | A4 | **DETECTOR** 의도적 2회 add | 2/2 잡아냄 → PASS | 1이면 하네스 불량 | 하네스 |
-| A5 | `item_gathered` 리스너 안에서 같은 대상 `gather()` 재호출 | +1 | +2 (**unique도 뚫림**) | 하네스 |
+| A5-plain | **`Inventory.item_added`** 리스너에서 같은 대상 `gather()` 재호출 (budget 1) | 신호 1회 | 신호 2회 | 하네스 |
+| A5-unique | 위와 동일, unique 대상 | 신호 1회 | 신호 2회 (**인벤 증감으론 안 보임**) | 하네스 |
 
 > **A5 근거** (루비 지적 반영, 정본 소스 확인):
 > `Inventory.add()` 자체가 `item_added` / `changed`를 **동기 emit**하고 `gather()`로

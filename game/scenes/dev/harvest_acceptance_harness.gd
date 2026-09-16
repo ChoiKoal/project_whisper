@@ -229,6 +229,21 @@ func _t_b2_commit_then_destroy() -> void:
 		% [_count("I1") - c0, _sig_gathered.size() - s0])
 
 
+## B3 (BLOCKED) — commit, then a scene change / save lands in the same beat. Needs a
+## live scene tree + SaveManager; a bare fixture cannot reproduce the interleaving.
+func _t_b3_commit_then_scene_or_save() -> void:
+	_note("B3", BLOCKED, false,
+		"commit then scene transition / save — needs live scene tree + SaveManager")
+
+
+## B4 (BLOCKED) — presentation failure (missing asset / cancelled tween) must NOT roll
+## back or re-issue the grant. Needs the real feedback path, which lives in the
+## controller and art layer.
+func _t_b4_presentation_failure_keeps_grant() -> void:
+	_note("B4", BLOCKED, false,
+		"presentation failure must not rollback/re-grant — needs real feedback path")
+
+
 # ===========================================================================
 # AC D — rock footprint
 # ===========================================================================
@@ -266,6 +281,8 @@ func _run_all() -> void:
 	_t_a4_detector()
 	_t_b1_cancel_before_commit(null)
 	_t_b2_commit_then_destroy()
+	_t_b3_commit_then_scene_or_save()
+	_t_b4_presentation_failure_keeps_grant()
 	await _t_d1_block_then_pass()
 
 
