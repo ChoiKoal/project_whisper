@@ -17,7 +17,7 @@
 | 표기 | 뜻 |
 |---|---|
 | **REAL** | 실제 출하 코드 경로를 때린다. 실패 = 게임 결함 후보 |
-| **MUTANT** | 일부러 틀린 fixture. 하네스의 탐지력 확인용. **실패가 정상** |
+| **DETECTOR** | 일부러 계약 위반을 심은 fixture. **위반을 잡아내면 PASS.** DETECTOR FAIL = 하네스가 눈이 먼 것이고, 위쪽 REAL 결과 전부 무의미 |
 | **BLOCKED** | 빌드/모듈/기기 부재로 실행 불가. **FAIL로 표기하지 않는다** |
 | **미검증** | 실행했으나 증거가 부족해 판정 보류 |
 
@@ -104,15 +104,26 @@ if obj.has_method("can_gather") and obj.can_gather():
 | # | 입력 | 기대 | 실패 신호 | 플랫폼 |
 |---|---|---|---|---|
 | A1 | 같은 프레임 `gather()` 2회 | +1, signal 1 | +2 / signal 2 | 하네스 |
-| A2 | E경로 + `interact_with_object` 동일 프레임 | +1 | +2 | PC·모바일 |
+| A2 | `interact_with_object` **동일 진입점** 2회 | +1 | +2 | 하네스 |
 | A3 | unique 대상 2회 | +1, 노드 잔존 | +2 또는 소멸 | 공통 |
-| A4 | **MUTANT** 의도적 2회 add | 2 감지 | 1이면 하네스 불량 | 하네스 |
+| A2b | E키 경로 + 터치 도착 경로 동일 프레임 | +1 | +2 | **BLOCKED** (컨트롤러+입력 주입 필요) |
+| A4 | **DETECTOR** 의도적 2회 add | 2/2 잡아냄 → PASS | 1이면 하네스 불량 | 하네스 |
 | A5 | `item_gathered` 리스너 안에서 같은 대상 `gather()` 재호출 | +1 | +2 (**unique도 뚫림**) | 하네스 |
 
-> **A5 근거** (루비·카나 지적 반영): `gather()`는 `Inventory.add` → `emit` → `_spent = true`
-> 순서다. emit 시점에 `_spent`가 아직 false라 **동기 리스너가 재진입하면 unique 객체도
-> 이중 지급**된다. A3(순차 2회 호출)와 다른 벡터이므로 별도 케이스로 둔다.
-> 처방: 상태 확정(`_spent`, `queue_free` 예약)을 **emit보다 먼저**.
+> **A5 근거** (루비 지적 반영, 정본 소스 확인):
+> `Inventory.add()` 자체가 `item_added` / `changed`를 **동기 emit**하고 `gather()`로
+> 돌아온다. 즉 재진입 창은 `item_gathered`보다 **더 앞**에 열린다.
+> ```gdscript
+> _stacks[id] = current + to_add
+> item_added.emit(id, to_add)   # ← 여기서 이미 재진입 가능
+> changed.emit()
+> ```
+> 따라서 가드는 `item_gathered` 앞이 아니라 **`Inventory.add()` 진입 전**이어야 한다.
+> 확정 순서: **노드 가드 → Inventory.add → 기타 emit → queue_free 예약**.
+>
+> **unique는 개수로 탐지 불가**: `add()`가 `to_add = clampi(1 - current, 0, amount)`로
+> 상한을 걸어 두 번째 지급이 0이 된다. 그래서 A5·A3는 **신호 횟수**로 판정하고,
+> 인벤토리 증감은 보조 지표로만 쓴다. 재진입은 budget 1회로 제한해 무한 재귀를 막는다.
 
 ### B. commit 경계
 | # | 입력 | 기대 | 실패 신호 |
