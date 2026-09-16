@@ -1992,6 +1992,9 @@ func _object_texture(sym: String, cell: Vector2i) -> Array:  # [path, offset]
 			return ["res://assets/objects/tree_c.png", Vector2(0, -105)]
 		"F":
 			var pick := h % 3
+			# Review the authored growth silhouettes in v2 first; preserve legacy art.
+			if layout_revision == "l1-v2":
+				return ["res://assets/foundation/flowers/flower_%d.png" % pick, Vector2(0,-24)]
 			if pick == 0:
 				return ["res://assets/objects/flower.png", Vector2(0, -24)]
 			elif pick == 1:

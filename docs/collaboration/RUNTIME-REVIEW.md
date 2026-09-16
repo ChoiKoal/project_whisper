@@ -1,4 +1,14 @@
-# Independent review — unit-13 runtime draft
+# Independent reviews — runtime source draft
+
+## Unit 14 delta review
+
+Independent read-only verdict: **safe to publish the labeled draft; merge-ready: false**. The reviewed delta against `acb5766dd780d53f2577b9c1f6ebdb75fce02afe` covered 32 staged files. Changed game-file hashes matched the manifest, and the three generic flower assets reproduced byte-for-byte. No new severe logic, security/privacy or publication-accuracy defect was found in that bounded review.
+
+Explicit-v2 normal progression completed with 172 assertions; legacy completed with 174 before the v2-only flower dispatch. These are parent-verified automated receipts, not human QA or clean engine runs. The intermittent far-hover ghost failure remains unresolved; a passing retry did not establish a fix. Future-save-version handling, cinematic pending-action lifetime, unsafe historical harness isolation, Lambda errors and incomplete regression/device/art/fun acceptance keep merge blocked. See RUNTIME-WIP.md for the exact scope. No new engine run was performed by this reviewer.
+
+## Historical unit-13 review
+
+The old nest-placement failure below predates the scoped unit-14 normal-loop completions. Other findings are not automatically cleared by them.
 
 **Publication scope:** source-sharing draft only. **Merge readiness: NO.** No gameplay, visual, mobile, release or complete-project approval is granted.
 

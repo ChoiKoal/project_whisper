@@ -1,34 +1,35 @@
-# Runtime WIP snapshot — unit 13
+# Runtime WIP snapshot — unit 14 candidate
 
-**Draft review only. Not release-ready, not a passing gameplay build.**
+**Draft review only. Not release-ready and not approved for merge.**
 
-This branch snapshots Ruby's map/render/UI work through unit 13. The collaboration specifications remain under `docs/collaboration/`. The source manifest identifies the exact packaged game files; do not equate the original baseline SHA with this dirty-work snapshot.
+This candidate includes the unit-14 held-ground placement/input fixes and three small generic flower sprites for explicit L1-v2. The source manifest identifies the exact packaged game files. It does not merge Kana's harvest action module or represent the requested large rare flowers as fixed.
 
-## Known state
+## Verified scope and remaining failures
 
-- Versioned `l1-v1` / `l1-v2` data and revision-aware loading exist; old saves remain on legacy data.
-- Normal new-game / NG+ still select v1. V2 is an explicit candidate via `new_game_for_layout("l1-v2")`; it is not the default released level.
-- Latest v2 normal progression **FAILED** after gathering/crafting the nest, at the assertion that placing it triggers the optional episode. The cause is not established.
-- An earlier legacy playthrough completed before later versioning changes. It is not evidence that final v2 or final legacy source passes the complete loop.
-- Focused tests cover subsets of revision preflight, geometry, input and persistence. They were executed on intermediate revisions, not one final all-tests-green build.
-- Engine resource/Lambda errors and incomplete artwork, HUD, harvesting feel and mobile-device/export checks remain.
-- No game save or test-user data is shipped. Use a temporary HOME/user data directory.
+- Latest explicit v2 normal automated progression completed: actual gathering, Fusion, nest, G1/cairn/G2/Rest/night/G3/world tree/clear, Home return and saved revisit. `v2-flower-normal`: exit 0, 172 assertions, 0 failures, persisted completion. No inventory, gate, time, clear or teleport injection; public input/Fusion UI callbacks are disclosed automation seams, not human playtesting.
+- Legacy normal progression completed on the final input changes before the v2-only flower dispatch: exit 0, 174 assertions. This is not all-platform or final full-suite coverage.
+- These normal runs retained 26 engine Lambda-error lines each. They are not clean engine passes.
+- A far-hover ghost/placement-preview check remains intermittent: two failed runs followed by a passing retry do not establish a fix. Cause remains unknown.
+- Default new-game and NG+ remain `l1-v1`; `l1-v2` is explicit candidate only.
+- Unit-13 nest-placement failure is historical and repaired in this candidate; its old evidence remains preserved, not re-labeled passing.
+- Save future-version handling, cinematic pending-action lifetime and unsafe dev-harness isolation findings from [RUNTIME-REVIEW.md](RUNTIME-REVIEW.md) remain tracked until specifically reproduced/fixed/verified.
+- Full regression, final art/HUD/harvesting feel, mobile-device/export/performance and human fun review are incomplete.
 
-## Local review setup
+## Safety before execution
 
-Use Godot **4.5** and Python 3. **Do not run this snapshot against your normal game user directory.** In particular, `cutscene_harness`, `m5_test_harness`, `v051_test_harness`, and `v052_travel_stress` can delete `user://save1.json` without their own fail-closed isolation guard. They must not be launched directly from a regular editor/game profile.
+Use Godot **4.5** and Python 3. **Never run against normal game user data.** `cutscene_harness`, `m5_test_harness`, `v051_test_harness`, and `v052_travel_stress` can delete `user://save1.json` without their own fail-closed guard.
 
-For a POSIX review environment, prepare a disposable data directory:
+For a POSIX environment, prepare disposable data:
 
 ```sh
 TEST_HOME="$(mktemp -d)"
 HOME="$TEST_HOME" XDG_DATA_HOME="$TEST_HOME/.local/share" WHISPER_TEST_HOME="$TEST_HOME" godot --path game
 ```
 
-Verify Godot's resolved `user://` is inside the disposable location **before** any save-writing or destructive harness. On platforms where these environment variables do not isolate Godot user data, stop and configure a platform-appropriate isolated test project; the command above is not Windows/device validation.
+Before any save-writing/destructive harness, verify resolved `user://` lies in the disposable location. If a platform ignores these environment variables, stop and configure an isolated test project. This is not Windows/mobile-device validation.
 
-This command is a launch instruction, not a claim that this published branch was tested on every platform. For automation, set an isolated `HOME` and `WHISPER_TEST_HOME`. Some historical development harnesses refer to external evidence fixtures that are **not** in the repository; those harnesses must report missing-fixture setup failures rather than pretend a gameplay pass. A reproducible focused QA bundle will be supplied after the current normal-loop blocker is resolved.
+Several historical dev harnesses need external evidence fixtures absent from this snapshot; report those as setup-blocked. Do not invent fixtures and label them historical evidence. No real-user saves are included.
 
-## Review / merge policy
+## Collaboration
 
-Do not merge this branch to `collab/whisper-polish` or `main` while the normal-progression blocker remains. Teammates may inspect it by Git commit, identify defects, or prepare isolated test branches; do not mix its partial state with earlier successful reports. Ruby owns core integration and most art. Kana's pure action module and Memcho's independent tests remain separate PRs.
+This is Ruby's isolated runtime branch, not the shared integration base. Teammates should cite the exact Git commit they inspect, use their own worktrees and return scoped PRs. No main or integration merge while blockers remain. Publication means source sharing, not gameplay acceptance. Unit-14 candidate delta requires independent review before publication; runtime and art conclusions remain separately scoped.

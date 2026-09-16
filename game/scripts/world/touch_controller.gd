@@ -275,13 +275,18 @@ func handle_tap(world_pos: Vector2) -> void:
 	# is running — refuse the path outright (also the harness entrypoint, so it's asserted).
 	if _world_locked():
 		return
+	# An explicit Build tap on empty ground wins over a neighbouring sprite's
+	# generous pick radius, using the same rule as the keyboard hover preview.
+	var cell := _loader.world_to_cell(world_pos)
+	if _interaction != null and _interaction.prefers_held_ground(cell):
+		_target_placement(cell)
+		return
 	# 1. Object hit? (nearest gatherable/cauldron/stump within a tile of the tap)
 	var obj := _object_near(world_pos)
 	if obj != null:
 		_target_object(obj)
 		return
 	# 2. Tile hit.
-	var cell := _loader.world_to_cell(world_pos)
 	if cell.x < 0 or cell.y < 0 or cell.x >= _loader.width or cell.y >= _loader.height:
 		return
 	_target_cell(cell)
@@ -345,6 +350,18 @@ func _target_object(obj: Node) -> void:
 
 ## Tap on a tile: held-item placement/use or a gatherable ground tile → walk
 ## adjacent then act; a plain walkable tile → just move there.
+func _target_placement(cell: Vector2i) -> void:
+	var held := _interaction.get_held_item()
+	if _is_adjacent_to_cell(cell):
+		_player.clear_path()
+		_pending = {}
+		_interaction.interact_with_cell(cell)
+		return
+	var stand := _nearest_walkable_adjacent(cell)
+	if stand != Vector2i(-1,-1) and _path_to_cell(stand):
+		_pending = {"kind":"held_placement","cell":cell,"item":held}
+
+
 func _target_cell(cell: Vector2i) -> void:
 	var acts := _cell_is_actionable(cell)
 	if acts:
@@ -470,6 +487,15 @@ func _on_path_finished() -> void:
 	var pend := _pending
 	_pending = {}
 	match pend.get("kind", ""):
+		"held_placement":
+			# This is the original placement request, not permission to gather or
+			# use the player's later selection. Revalidate after the whole walk.
+			if _world_locked() or _interaction == null: return
+			var cell: Vector2i = pend["cell"]
+			if _interaction.get_held_item() != pend["item"]: return
+			if not _interaction.prefers_held_ground(cell): return
+			if not _interaction._cell_adjacent(cell,_loader.world_to_cell(_player.global_position)): return
+			_interaction.interact_with_cell(cell)
 		"object":
 			var obj = pend.get("object", null)
 			if obj != null and is_instance_valid(obj):

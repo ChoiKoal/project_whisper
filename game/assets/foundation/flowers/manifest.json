@@ -1,0 +1,52 @@
+{
+  "method": "authored pixel contour and material planes, no sampled source",
+  "scope": "v2 F / I5 only; rare flower user-regression identity not yet confirmed",
+  "aesthetic": "HOLD pending actual root review",
+  "assets": [
+    {
+      "file": "flower_0.png",
+      "sha256": "343f36c81da2cf8292a887966d01fa0ff8e7f4449b859401719e82d32839f89f",
+      "size": [
+        56,
+        64
+      ],
+      "colors": 13,
+      "bbox": [
+        8,
+        10,
+        50,
+        60
+      ]
+    },
+    {
+      "file": "flower_1.png",
+      "sha256": "39a186d9e62e5bc07ef008363bf5f3221aa3f804d47103dde4215d115707e037",
+      "size": [
+        56,
+        64
+      ],
+      "colors": 11,
+      "bbox": [
+        6,
+        6,
+        50,
+        60
+      ]
+    },
+    {
+      "file": "flower_2.png",
+      "sha256": "1d4816ed36b75b520d93f9ce98d8be7086b9d33ff193d7afeb0cab47aba0a793",
+      "size": [
+        56,
+        64
+      ],
+      "colors": 13,
+      "bbox": [
+        6,
+        8,
+        52,
+        60
+      ]
+    }
+  ]
+}

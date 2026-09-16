@@ -81,6 +81,7 @@ var _has_tile_target: bool = false
 var _hover_object: Node = null
 var _hover_cell: Vector2i = Vector2i.ZERO
 var _has_hover_cell: bool = false
+var _hover_placement: bool = false
 ## Whether the last-seen input was touch (hover highlight is a desktop-only aid).
 var _touch_mode: bool = false
 
@@ -134,6 +135,12 @@ func _process(_delta: float) -> void:
 		return
 	_resolve_target()
 	_resolve_hover()
+	# An explicit, adjacent ground placement owns both the action and its preview.
+	# A nearby object's generous pointer radius must not turn Build into gather.
+	if _hover_placement and _cell_adjacent(_hover_cell,_player_cell()):
+		_target_object = null
+		_target_cell = _hover_cell
+		_has_tile_target = true
 	_update_targeting()
 	_update_slot_hint()
 	_update_prompt()
@@ -147,6 +154,7 @@ func _clear_targeting_visuals() -> void:
 	_has_tile_target = false
 	_hover_object = null
 	_has_hover_cell = false
+	_hover_placement = false
 	if _brightened != null and is_instance_valid(_brightened) and _brightened.has_method("set_targeted"):
 		_brightened.set_targeted(false)
 	_brightened = null
@@ -252,6 +260,7 @@ func _cell_adjacent(cell: Vector2i, origin: Vector2i) -> bool:
 func _resolve_hover() -> void:
 	_hover_object = null
 	_has_hover_cell = false
+	_hover_placement = false
 	if _touch_mode or _player == null or _tilemap == null:
 		return
 	var cam := get_viewport().get_camera_2d()
@@ -259,6 +268,12 @@ func _resolve_hover() -> void:
 		return
 	var mouse_screen := get_viewport().get_mouse_position()
 	var world: Vector2 = cam.get_canvas_transform().affine_inverse() * mouse_screen
+	var pointed_cell := _tilemap.local_to_map(_tilemap.to_local(world))
+	if prefers_held_ground(pointed_cell):
+		_hover_cell = pointed_cell
+		_has_hover_cell = true
+		_hover_placement = true
+		return
 	# Nearest gatherable object within ~half a tile of the cursor. (v0.4.0: this is a
 	# PREVIEW brighten only — it may light up a far object under the pointer, but pressing
 	# E on a far preview does nothing; only a CLICK walk-then-gathers it.)
@@ -312,6 +327,20 @@ func _idle_tile_placeable() -> bool:
 ##     slots are handled separately by _update_slot_hint.
 ## While MOVING (no hover) everything hides — preserve the v0.3.1 "no jitter" rule.
 func _update_targeting() -> void:
+	# A pointer previews the same placement cell a click will request, even when
+	# walking is required. This never promotes a far cell to a direct-E target.
+	if _hover_placement:
+		_set_brightened(null)
+		if _tile_glow != null and _tile_glow.has_method("hide_glow"):
+			_tile_glow.hide_glow()
+		var functional := ItemDB.placement_class(_held_item) == "functional"
+		if _highlight != null:
+			if functional: _highlight.show_cell(_cell_center_world(_hover_cell),true)
+			else: _highlight.hide_highlight()
+		if _ghost != null:
+			if functional: _ghost.hide_ghost()
+			else: _ghost.show_ghost(_held_item,_cell_center_world(_hover_cell),true)
+		return
 	# --- resolve which object should be brightened this frame (hover > adjacent idle) ---
 	var moving: bool = _player != null and _player.is_moving()
 	var want_bright: Node = null
@@ -618,6 +647,22 @@ func _cell_gatherable(cell:Vector2i)->bool:
 	if _tilemap is MapLoader:return (_tilemap as MapLoader).can_gather_cell(cell)
 	var data:=_tilemap.get_cell_tile_data(cell)
 	return data!=null and bool(data.get_custom_data("gatherable"))
+## Shared keyboard/tap priority for a held placement on empty ground, including
+## non-gatherable G1 slots and hollows. Actual occupied/object-use cells retain priority.
+func prefers_held_ground(cell: Vector2i) -> bool:
+	if _held_item.is_empty() or Inventory.count(_held_item) < 1:
+		return false
+	if not ItemDB.is_placeable(_held_item):
+		return false
+	if not can_place_on_cell(cell,_held_item) or _placed_object_at(cell) != null:
+		return false
+	for node in get_tree().get_nodes_in_group(Gatherable.GROUP):
+		if node.is_queued_for_deletion() or not node.has_method("target_point"):
+			continue
+		if _tilemap.get_parent().is_ancestor_of(node) and _object_cell(node) == cell:
+			return false
+	return true
+
 func can_place_on_cell(cell:Vector2i,item:String)->bool:
 	if _tilemap is MapLoader and not (_tilemap as MapLoader).allows_tile_placement(cell,item):return false
 	return ItemDB.can_place_expanded(item,_logical_tile_id(cell))
