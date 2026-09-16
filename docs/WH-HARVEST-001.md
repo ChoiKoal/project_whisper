@@ -82,9 +82,12 @@
 - `inspect_state() -> Dictionary` — 직렬화 가능 원시값만
 
 ### 통합 계약 (루비 몫, 명시)
-- 지급 실행: `take_commit`이 granted=true를 준 그 지점에서 Inventory.add +
-  item_gathered emit + unique spent + queue_free 예약을 **한 번에**. 모듈은
-  허가만 발급하고 지급 자체·영속화·거래 판정은 통합 책임
+- 지급 실행: `take_commit`이 granted=true를 준 그 지점에서 지급 시퀀스를
+  **한 번에**. 순서 계약 (루비 검수 반영): **노드 가드(_spent 등) 확정 →
+  Inventory.add → 기타 emit → queue_free 예약.** Inventory.add 내부도
+  item_added/changed를 동기 emit하므로 "add 직후 가드"로는 재진입 창이
+  남는다 — 가드는 반드시 add 진입 이전. 모듈은 허가만 발급하고 지급
+  자체·영속화·거래 판정은 통합 책임
 - 대상 소멸/거리 이탈/대화 잠금 → cancel 또는 reset 호출은 통합 판단
 - respawn 세대는 target_key에 인코딩해 넘길 것 (구세대 토큰 자동 무효)
 
