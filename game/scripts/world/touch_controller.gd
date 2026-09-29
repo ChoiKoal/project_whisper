@@ -281,10 +281,12 @@ func handle_tap(world_pos: Vector2) -> void:
 	# generous pick radius, using the same rule as the keyboard hover preview.
 	var cell := _loader.world_to_cell(world_pos)
 	if _interaction != null and _interaction.prefers_held_ground(cell):
+		_interaction.cancel_harvest_except(null)
 		_target_placement(cell)
 		return
 	# 1. Object hit? (nearest gatherable/cauldron/stump within a tile of the tap)
 	var obj := _object_near(world_pos)
+	if _interaction != null: _interaction.cancel_harvest_except(obj)
 	if obj != null:
 		_target_object(obj)
 		return
@@ -300,6 +302,7 @@ func handle_tap(world_pos: Vector2) -> void:
 func move_to(cell: Vector2i) -> bool:
 	if _world_locked():
 		return false
+	if _interaction != null: _interaction.cancel_harvest_except(null)
 	_pending = {}
 	return _path_to_cell(cell)
 

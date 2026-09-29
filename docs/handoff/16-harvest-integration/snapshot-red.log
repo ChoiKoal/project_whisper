@@ -1,0 +1,20 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+
+[PASS] A1 first nonunique gather grants
+[PASS] A1 same-frame second direct call rejected
+[PASS] A1 exactly configured quantity
+[PASS] A1 consumed nonunique cannot gather
+[PASS] A5 item_added reentry armed unique=false
+[PASS] A5 finalized BEFORE item_added unique=false
+[PASS] A5 one reward unique=false
+[FAIL] snapshot during item_added records removed object
+[FAIL] snapshot during item_added records respawn deadline
+[PASS] A5 item_added reentry armed unique=true
+[PASS] A5 finalized BEFORE item_added unique=true
+[PASS] A5 one reward unique=true
+[PASS] A3 unique sequential repeat guarded
+HARVEST_REWARD_DONE failures=2
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)
+ERROR: 1 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:795)

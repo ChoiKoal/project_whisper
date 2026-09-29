@@ -1,0 +1,28 @@
+{
+  "scene": "map1_trench_capture",
+  "exit": 1,
+  "seconds": 16.87,
+  "passed": 33,
+  "failed": 32,
+  "script_errors": 9,
+  "engine_errors": [
+    "ERROR: Failed to load script \"res://scripts/foundation/foundation_map.gd\" with error \"Compilation failed\"."
+  ],
+  "command": [
+    "[AUDIT]/_runtime/godot-4.5/Godot.app/Contents/MacOS/Godot",
+    "--path",
+    "[WORLD]/game",
+    "--max-fps",
+    "60",
+    "--resolution",
+    "1600x900",
+    "--single-window",
+    "--quit-after",
+    "5400",
+    "[WORLD]/game/scenes/dev/map1_trench_capture.tscn"
+  ],
+  "home": "[WORLD]/evidence/17-map1-final-cleanup/homes/terrain-green1",
+  "log": "[WORLD]/evidence/17-map1-final-cleanup/terrain-green1.log",
+  "source_changed": [],
+  "completion_verified": false
+}

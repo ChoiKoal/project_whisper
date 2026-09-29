@@ -1,0 +1,26 @@
+{
+  "scene": "foundation_surface_harness",
+  "exit": 0,
+  "seconds": 65.07,
+  "passed": 172,
+  "failed": 0,
+  "script_errors": 0,
+  "engine_errors": [],
+  "command": [
+    "[AUDIT]/_runtime/godot-4.5/Godot.app/Contents/MacOS/Godot",
+    "--path",
+    "[WORLD]/game",
+    "--max-fps",
+    "60",
+    "--resolution",
+    "1600x900",
+    "--single-window",
+    "--quit-after",
+    "5400",
+    "[WORLD]/game/scenes/dev/foundation_surface_harness.tscn"
+  ],
+  "home": "[WORLD]/evidence/17-map1-final-cleanup/homes/ramp-surface-final",
+  "log": "[WORLD]/evidence/17-map1-final-cleanup/ramp-surface-final.log",
+  "source_changed": [],
+  "completion_verified": true
+}

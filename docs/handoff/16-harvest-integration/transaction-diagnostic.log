@@ -1,0 +1,25 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+
+[PASS] save listener armed tree=false
+[PASS] partial snapshot refused tree=false
+[PASS] midreward disk save postponed tree=false
+[PASS] requested save flushed at completed reward tree=false
+SAVE_DEBUG {"live_codex":{"attempted_pairs":[],"cutscenes_seen":[],"hint_gauge":0,"hints":{},"items":["I5"],"recipes":[],"truth_final_seen":false,"truth_logs":{}},"live_quests":{"active_id":"P0","done":[],"l2_active_id":"","l2_progress":0,"l3_active_id":"","l3_progress":0,"l4_active_id":"","l4_progress":0,"l5_active_id":"","l5_progress":0,"n_active":{},"n_progress":{},"progress":0,"unlocked_placeables":{}},"saved_codex":{"attempted_pairs":[],"cutscenes_seen":[],"hint_gauge":0.0,"hints":{},"items":["I5"],"recipes":[],"truth_final_seen":false,"truth_logs":{}},"saved_quests":{"active_id":"P0","done":[],"l2_active_id":"","l2_progress":0.0,"l3_active_id":"","l3_progress":0.0,"l4_active_id":"","l4_progress":0.0,"l5_active_id":"","l5_progress":0.0,"n_active":{},"n_progress":{},"progress":0.0,"unlocked_placeables":{}}}
+[FAIL] saved codex complete tree=false
+[FAIL] saved quests complete tree=false
+[PASS] saved truth complete tree=false
+[PASS] saved actual reward tree=false
+[PASS] save listener armed tree=true
+[PASS] partial snapshot refused tree=true
+[PASS] midreward disk save postponed tree=true
+[PASS] requested save flushed at completed reward tree=true
+SAVE_DEBUG {"live_codex":{"attempted_pairs":[],"cutscenes_seen":[],"hint_gauge":0,"hints":{},"items":["I5","I9"],"recipes":[],"truth_final_seen":false,"truth_logs":{"world_tree":{"text":"…잎 뒤에 새겨진 글: 나를 심은 이도 '완성하라'는 말을 들었다 한다. 완성하고 떠난 자리에서, 나는 홀로 시들었다. 그러니 너는 — 자꾸 말을 걸어 다오.","title":"세계수의 잎"}}},"live_quests":{"active_id":"P0","done":[],"l2_active_id":"","l2_progress":0,"l3_active_id":"","l3_progress":0,"l4_active_id":"","l4_progress":0,"l5_active_id":"","l5_progress":0,"n_active":{},"n_progress":{},"progress":0,"unlocked_placeables":{}},"saved_codex":{"attempted_pairs":[],"cutscenes_seen":[],"hint_gauge":0.0,"hints":{},"items":["I5","I9"],"recipes":[],"truth_final_seen":false,"truth_logs":{"world_tree":{"text":"…잎 뒤에 새겨진 글: 나를 심은 이도 '완성하라'는 말을 들었다 한다. 완성하고 떠난 자리에서, 나는 홀로 시들었다. 그러니 너는 — 자꾸 말을 걸어 다오.","title":"세계수의 잎"}}},"saved_quests":{"active_id":"P0","done":[],"l2_active_id":"","l2_progress":0.0,"l3_active_id":"","l3_progress":0.0,"l4_active_id":"","l4_progress":0.0,"l5_active_id":"","l5_progress":0.0,"n_active":{},"n_progress":{},"progress":0.0,"unlocked_placeables":{}}}
+[FAIL] saved codex complete tree=true
+[FAIL] saved quests complete tree=true
+[PASS] saved truth complete tree=true
+[PASS] saved actual reward tree=true
+HARVEST_SAVE_DONE failures=4
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)
+ERROR: 1 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:795)

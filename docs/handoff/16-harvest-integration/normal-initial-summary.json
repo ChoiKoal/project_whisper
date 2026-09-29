@@ -1,0 +1,28 @@
+{
+  "scene": "foundation_dialogue_progression_capture",
+  "exit": 1,
+  "seconds": 32.85,
+  "passed": 18,
+  "failed": 1,
+  "script_errors": 0,
+  "engine_errors": [
+    "ERROR: L1_CAPTURE: actual object gather yields I4"
+  ],
+  "command": [
+    "[AUDIT]/_runtime/godot-4.5/Godot.app/Contents/MacOS/Godot",
+    "--path",
+    "[WORLD]/game",
+    "--max-fps",
+    "60",
+    "--resolution",
+    "1600x900",
+    "--single-window",
+    "--quit-after",
+    "54000",
+    "[WORLD]/game/scenes/dev/foundation_dialogue_progression_capture.tscn"
+  ],
+  "home": "[WORLD]/evidence/16-harvest-integration/homes/normal-initial",
+  "log": "[WORLD]/evidence/16-harvest-integration/normal-initial.log",
+  "source_changed": [],
+  "completion_verified": false
+}

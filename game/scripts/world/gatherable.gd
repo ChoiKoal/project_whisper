@@ -34,8 +34,19 @@ const GROUP := "gatherable"
 ## the contact footprint, never the full height/width of tall sprite ink.
 @export_range(1.0, 64.0, 1.0) var block_radius: float = 20.0
 
-## Set true once a unique object has been gathered.
+## Finalized before any synchronous inventory/gameplay signals, for ALL objects.
 var _spent: bool = false
+var _gathered_at := -1.0
+var last_granted_amount := 0
+var _harvest_owner := 0
+
+func reserve_harvest(owner_id: int) -> bool:
+	if not can_gather() or _harvest_owner != 0: return false
+	_harvest_owner = owner_id
+	return true
+
+func release_harvest(owner_id: int) -> void:
+	if _harvest_owner == owner_id: _harvest_owner = 0
 
 ## ---- v0.4.0 A2: target-brighten (replaces the floor diamond) ---------------
 ## When the interaction system marks this object as the current target (the adjacent
@@ -105,22 +116,31 @@ func _add_footprint_collision() -> void:
 
 ## True if this object can still be gathered right now.
 func can_gather() -> bool:
-	return item_id != "" and not (unique and _spent)
+	return item_id != "" and not _spent and not is_queued_for_deletion()
 
 
 ## Perform the gather: grant the item and (if not unique) remove the object.
 ## Returns the granted item id, or "" if nothing was gathered.
 func gather() -> String:
-	if not can_gather():
+	if not can_gather() or _harvest_owner != 0:
 		return ""
 	var granted := item_id
-	Inventory.add(granted, amount)
-	GameState.item_gathered.emit(granted)
-	if unique:
-		_spent = true  # world-tree stays in world, flagged spent
-	else:
+	SaveManager.begin_reward(get_instance_id())
+	# Inventory.add emits item_added synchronously. Guard and removal intent must
+	# already be final when a listener reenters gather or snapshots this world.
+	_spent = true
+	_gathered_at = GameState.game_time
+	if not unique:
 		queue_free()
+	last_granted_amount = Inventory.add(granted, amount)
+	GameState.item_gathered.emit(granted)
+	_after_gather()
+	SaveManager.end_reward(get_instance_id())
 	return granted
+
+## Subclass side effects belong to the same save boundary as the inventory grant.
+func _after_gather() -> void:
+	pass
 
 
 ## World point used for highlight / distance checks (base of the sprite).

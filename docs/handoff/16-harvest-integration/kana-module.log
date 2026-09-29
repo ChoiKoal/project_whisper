@@ -1,0 +1,48 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+
+SCRIPT ERROR: Parse Error: Identifier "HarvestActionState" not declared in the current scope.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:25)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "s" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:25)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "r" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:26)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "c" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:30)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "c2" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:32)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "f" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:34)
+SCRIPT ERROR: Parse Error: Identifier "HarvestActionState" not declared in the current scope.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:38)
+SCRIPT ERROR: Parse Error: Identifier "HarvestActionState" not declared in the current scope.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:45)
+SCRIPT ERROR: Parse Error: Identifier "HarvestActionState" not declared in the current scope.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:49)
+SCRIPT ERROR: Parse Error: Identifier "HarvestActionState" not declared in the current scope.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:56)
+SCRIPT ERROR: Parse Error: Identifier "HarvestActionState" not declared in the current scope.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:63)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "r2" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:65)
+SCRIPT ERROR: Parse Error: Identifier "HarvestActionState" not declared in the current scope.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:70)
+SCRIPT ERROR: Parse Error: Identifier "HarvestActionState" not declared in the current scope.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:78)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "st" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:83)
+SCRIPT ERROR: Parse Error: Identifier "HarvestActionState" not declared in the current scope.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:88)
+SCRIPT ERROR: Parse Error: Identifier "HarvestActionState" not declared in the current scope.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:95)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "rr" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:98)
+SCRIPT ERROR: Parse Error: Identifier "HarvestActionState" not declared in the current scope.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:105)
+SCRIPT ERROR: Parse Error: Identifier "HarvestActionState" not declared in the current scope.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:111)
+SCRIPT ERROR: Parse Error: Identifier "HarvestActionState" not declared in the current scope.
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:128)
+SCRIPT ERROR: Parse Error: The variable type is being inferred from a Variant value, so it will be typed as Variant. (Warning treated as error.)
+          at: GDScript::reload (res://scenes/dev/harvest_action_state_harness.gd:115)
+ERROR: Failed to load script "res://scenes/dev/harvest_action_state_harness.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript.cpp:3041)

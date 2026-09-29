@@ -1,0 +1,116 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+OpenGL API 4.1 Metal - 90.5 - Compatibility - Using Device: Apple - Apple M1 Pro
+
+SCRIPT ERROR: Parse Error: Cannot infer the type of "a" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://scripts/foundation/internal_trench.gd:40)
+          GDScript backtrace (most recent call first):
+              [0] _run (res://scenes/dev/map1_trench_capture.gd:11)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "b" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://scripts/foundation/internal_trench.gd:41)
+          GDScript backtrace (most recent call first):
+              [0] _run (res://scenes/dev/map1_trench_capture.gd:11)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "level_a" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://scripts/foundation/internal_trench.gd:45)
+          GDScript backtrace (most recent call first):
+              [0] _run (res://scenes/dev/map1_trench_capture.gd:11)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "level_b" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://scripts/foundation/internal_trench.gd:46)
+          GDScript backtrace (most recent call first):
+              [0] _run (res://scenes/dev/map1_trench_capture.gd:11)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "top_a" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://scripts/foundation/internal_trench.gd:47)
+          GDScript backtrace (most recent call first):
+              [0] _run (res://scenes/dev/map1_trench_capture.gd:11)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "top_b" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://scripts/foundation/internal_trench.gd:48)
+          GDScript backtrace (most recent call first):
+              [0] _run (res://scenes/dev/map1_trench_capture.gd:11)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://scripts/foundation/foundation_map.gd:0)
+          GDScript backtrace (most recent call first):
+              [0] _run (res://scenes/dev/map1_trench_capture.gd:11)
+ERROR: Failed to load script "res://scripts/foundation/foundation_map.gd" with error "Compilation failed".
+   at: load (modules/gdscript/gdscript.cpp:3041)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://scenes/dev/map1_trench_capture.gd:11)
+SCRIPT ERROR: Invalid call. Nonexistent function 'classify' in base 'GDScript'.
+          at: _classify_void_cells (res://scripts/foundation/foundation_map.gd:40)
+          GDScript backtrace (most recent call first):
+              [0] _classify_void_cells (res://scripts/foundation/foundation_map.gd:40)
+              [1] _ready (res://scripts/world/map_loader.gd:168)
+              [2] _ready (res://scripts/foundation/foundation_map.gd:26)
+SCRIPT ERROR: Invalid call. Nonexistent function 'build' in base 'GDScript'.
+          at: _build_elevation (res://scripts/foundation/foundation_map.gd:136)
+          GDScript backtrace (most recent call first):
+              [0] _build_elevation (res://scripts/foundation/foundation_map.gd:136)
+              [1] _ready (res://scripts/world/map_loader.gd:183)
+              [2] _ready (res://scripts/foundation/foundation_map.gd:26)
+[PASS] v2 profile and real STACKED tiles
+L1_CAPTURE phase=DIAGNOSTIC_injected_position_time_bands path=[WORLD]/evidence/17-map1-final-cleanup/terrain-green1/bands.png state={"camera_limits":[-156,-220,5340,1532],"camera_position":[2880.0,416.0],"camera_zoom":[1.0,1.0],"canvas_modulate":"f1ead7ff","capture_kind":"normal_root_title_new_game_home_real_portal_with_test_apron_teleport","control_locked":false,"image_size":[1600,900],"map_dimensions":[40,40],"object_spawn_count":48,"path":"[WORLD]/evidence/17-map1-final-cleanup/terrain-green1/bands.png","pending_load":false,"phase":"DIAGNOSTIC_injected_position_time_bands","player_position":[2880.0,416.0],"portal_states":{"divinity":"dormant","machine":"dormant","magic":"dormant","nature":"flickering","return":"open","science":"dormant"},"return_portal_count":1,"save_error":0,"save_present":false,"scene":"StartingGrove","spawn_cell":[14,35],"test_state_injection":"Opening._unhandled_input(ui_cancel) called directly; player teleported to nature.entry_stand_point before real interact input","tile_count":1600,"world_context":{"arrival_mode":"","current_scene":"grove","travel_layer":""}}
+[FAIL] no raw T0 core at bands (19, 8)
+[PASS] V remains nonwalkable (19, 8)
+[FAIL] no raw T0 core at bands (20, 8)
+[PASS] V remains nonwalkable (20, 8)
+[FAIL] no raw T0 core at bands (21, 8)
+[PASS] V remains nonwalkable (21, 8)
+[FAIL] no raw T0 core at bands (24, 8)
+[PASS] V remains nonwalkable (24, 8)
+[FAIL] no raw T0 core at bands (25, 8)
+[PASS] V remains nonwalkable (25, 8)
+[FAIL] no raw T0 core at bands (19, 14)
+[PASS] V remains nonwalkable (19, 14)
+[FAIL] no raw T0 core at bands (20, 14)
+[PASS] V remains nonwalkable (20, 14)
+[FAIL] no raw T0 core at bands (21, 14)
+[PASS] V remains nonwalkable (21, 14)
+[FAIL] no raw T0 core at bands (22, 14)
+[PASS] V remains nonwalkable (22, 14)
+[FAIL] no raw T0 core at bands (23, 14)
+[PASS] V remains nonwalkable (23, 14)
+[FAIL] no raw T0 core at bands (25, 14)
+[PASS] V remains nonwalkable (25, 14)
+L1_CAPTURE phase=DIAGNOSTIC_injected_position_time_left-mouth path=[WORLD]/evidence/17-map1-final-cleanup/terrain-green1/left-mouth.png state={"camera_limits":[-156,-220,5340,1532],"camera_position":[2112.0,416.0],"camera_zoom":[1.0,1.0],"canvas_modulate":"f1ead7ff","capture_kind":"normal_root_title_new_game_home_real_portal_with_test_apron_teleport","control_locked":false,"image_size":[1600,900],"map_dimensions":[40,40],"object_spawn_count":48,"path":"[WORLD]/evidence/17-map1-final-cleanup/terrain-green1/left-mouth.png","pending_load":false,"phase":"DIAGNOSTIC_injected_position_time_left-mouth","player_position":[2112.0,416.0],"portal_states":{"divinity":"dormant","machine":"dormant","magic":"dormant","nature":"flickering","return":"open","science":"dormant"},"return_portal_count":1,"save_error":0,"save_present":false,"scene":"StartingGrove","spawn_cell":[14,35],"test_state_injection":"Opening._unhandled_input(ui_cancel) called directly; player teleported to nature.entry_stand_point before real interact input","tile_count":1600,"world_context":{"arrival_mode":"","current_scene":"grove","travel_layer":""}}
+[FAIL] no raw T0 core at left-mouth (14, 8)
+[PASS] V remains nonwalkable (14, 8)
+[FAIL] no raw T0 core at left-mouth (15, 8)
+[PASS] V remains nonwalkable (15, 8)
+[FAIL] no raw T0 core at left-mouth (16, 8)
+[PASS] V remains nonwalkable (16, 8)
+[FAIL] no raw T0 core at left-mouth (17, 8)
+[PASS] V remains nonwalkable (17, 8)
+[FAIL] no raw T0 core at left-mouth (18, 8)
+[PASS] V remains nonwalkable (18, 8)
+[FAIL] no raw T0 core at left-mouth (14, 14)
+[PASS] V remains nonwalkable (14, 14)
+[FAIL] no raw T0 core at left-mouth (15, 14)
+[PASS] V remains nonwalkable (15, 14)
+[FAIL] no raw T0 core at left-mouth (16, 14)
+[PASS] V remains nonwalkable (16, 14)
+[FAIL] no raw T0 core at left-mouth (17, 14)
+[PASS] V remains nonwalkable (17, 14)
+[FAIL] no raw T0 core at left-mouth (18, 14)
+[PASS] V remains nonwalkable (18, 14)
+L1_CAPTURE phase=DIAGNOSTIC_injected_position_time_right-mouth path=[WORLD]/evidence/17-map1-final-cleanup/terrain-green1/right-mouth.png state={"camera_limits":[-156,-220,5340,1532],"camera_position":[4160.0,416.0],"camera_zoom":[1.0,1.0],"canvas_modulate":"f1ead7ff","capture_kind":"normal_root_title_new_game_home_real_portal_with_test_apron_teleport","control_locked":false,"image_size":[1600,900],"map_dimensions":[40,40],"object_spawn_count":48,"path":"[WORLD]/evidence/17-map1-final-cleanup/terrain-green1/right-mouth.png","pending_load":false,"phase":"DIAGNOSTIC_injected_position_time_right-mouth","player_position":[4160.0,416.0],"portal_states":{"divinity":"dormant","machine":"dormant","magic":"dormant","nature":"flickering","return":"open","science":"dormant"},"return_portal_count":1,"save_error":0,"save_present":false,"scene":"StartingGrove","spawn_cell":[14,35],"test_state_injection":"Opening._unhandled_input(ui_cancel) called directly; player teleported to nature.entry_stand_point before real interact input","tile_count":1600,"world_context":{"arrival_mode":"","current_scene":"grove","travel_layer":""}}
+[FAIL] no raw T0 core at right-mouth (29, 8)
+[PASS] V remains nonwalkable (29, 8)
+[FAIL] no raw T0 core at right-mouth (30, 8)
+[PASS] V remains nonwalkable (30, 8)
+[FAIL] no raw T0 core at right-mouth (31, 8)
+[PASS] V remains nonwalkable (31, 8)
+[FAIL] no raw T0 core at right-mouth (32, 8)
+[PASS] V remains nonwalkable (32, 8)
+[FAIL] no raw T0 core at right-mouth (33, 8)
+[PASS] V remains nonwalkable (33, 8)
+[FAIL] no raw T0 core at right-mouth (29, 14)
+[PASS] V remains nonwalkable (29, 14)
+[FAIL] no raw T0 core at right-mouth (30, 14)
+[PASS] V remains nonwalkable (30, 14)
+[FAIL] no raw T0 core at right-mouth (31, 14)
+[PASS] V remains nonwalkable (31, 14)
+[FAIL] no raw T0 core at right-mouth (32, 14)
+[PASS] V remains nonwalkable (32, 14)
+[FAIL] no raw T0 core at right-mouth (33, 14)
+[PASS] V remains nonwalkable (33, 14)
+[FAIL] internal bank ownership exists
+[PASS] nonempty pixel oracle
+MAP1_TRENCH_DONE failures=32

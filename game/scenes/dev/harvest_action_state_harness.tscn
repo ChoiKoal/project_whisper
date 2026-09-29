@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://wh_harvest_harness01"]
+
+[ext_resource type="Script" path="res://scenes/dev/harvest_action_state_harness.gd" id="1"]
+
+[node name="HarvestActionStateHarness" type="Node"]
+script = ExtResource("1")

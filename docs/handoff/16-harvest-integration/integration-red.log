@@ -1,0 +1,7 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+
+[FAIL] flora action starts without immediate reward
+[PASS] direct gather cannot bypass reserved action
+[FAIL] same target repeat still no early reward
+[PASS] contact grants exactly once after anticipation
+HARVEST_INTEGRATION_DONE failures=2

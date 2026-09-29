@@ -1,0 +1,26 @@
+{
+  "scene": "map1_trench_capture",
+  "exit": 1,
+  "seconds": 15.38,
+  "passed": 33,
+  "failed": 32,
+  "script_errors": 0,
+  "engine_errors": [],
+  "command": [
+    "[AUDIT]/_runtime/godot-4.5/Godot.app/Contents/MacOS/Godot",
+    "--path",
+    "[WORLD]/game",
+    "--max-fps",
+    "60",
+    "--resolution",
+    "1600x900",
+    "--single-window",
+    "--quit-after",
+    "5400",
+    "[WORLD]/game/scenes/dev/map1_trench_capture.tscn"
+  ],
+  "home": "[WORLD]/evidence/17-map1-final-cleanup/homes/terrain-red",
+  "log": "[WORLD]/evidence/17-map1-final-cleanup/terrain-red.log",
+  "source_changed": [],
+  "completion_verified": false
+}

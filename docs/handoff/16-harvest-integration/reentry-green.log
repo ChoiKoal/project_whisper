@@ -1,0 +1,36 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+
+[PASS] flora action starts without immediate reward
+[PASS] direct gather cannot bypass reserved action
+[PASS] same target repeat still no early reward
+[PASS] contact grants exactly once after anticipation
+[PASS] cancellation armed movement
+[PASS] precontact movement gives zero
+[PASS] precontact movement releases only reservation
+[PASS] cancellation armed escape
+[PASS] precontact escape gives zero
+[PASS] precontact escape releases only reservation
+[PASS] cancellation armed modal
+[PASS] precontact modal gives zero
+[PASS] precontact modal releases only reservation
+[PASS] cancellation armed time
+[PASS] precontact time gives zero
+[PASS] precontact time releases only reservation
+[PASS] cancellation armed cinematic
+[PASS] precontact cinematic gives zero
+[PASS] precontact cinematic releases only reservation
+[PASS] cancellation armed focus
+[PASS] precontact focus gives zero
+[PASS] precontact focus releases only reservation
+[PASS] cancellation armed scene_exit
+[PASS] precontact scene_exit gives zero
+[PASS] precontact scene_exit releases only reservation
+[PASS] admission refuses far
+[PASS] admission refuses locked
+[PASS] cross-target reentry armed item_added
+[PASS] cross-target reentry both exactly once item_added
+[PASS] cross-target no stranded reservation item_added
+[PASS] cross-target reentry armed item_gathered
+[PASS] cross-target reentry both exactly once item_gathered
+[PASS] cross-target no stranded reservation item_gathered
+HARVEST_INTEGRATION_DONE failures=0

@@ -1,0 +1,41 @@
+[
+  {
+    "comparison": "[WORLD]/evidence/17-map1-final-cleanup/bands-before-after.png",
+    "sources": [
+      {
+        "path": "[WORLD]/evidence/17-map1-final-cleanup/terrain-red/bands.png",
+        "sha256": "cbde2e0a467863121ed5304e28f94f3788336118f595ca1541d8a18546d35198"
+      },
+      {
+        "path": "[WORLD]/evidence/17-map1-final-cleanup/bank-green/bands.png",
+        "sha256": "ff25436c926163d80a642d20a13187a077a9377fa6c9b5d750641ac1293be118"
+      }
+    ]
+  },
+  {
+    "comparison": "[WORLD]/evidence/17-map1-final-cleanup/left-mouth-before-after.png",
+    "sources": [
+      {
+        "path": "[WORLD]/evidence/17-map1-final-cleanup/terrain-red/left-mouth.png",
+        "sha256": "6e7e6cc99e09e737463e7e269e19e638bfc4e397f32d62d54e1ff09a7d2a3651"
+      },
+      {
+        "path": "[WORLD]/evidence/17-map1-final-cleanup/bank-green/left-mouth.png",
+        "sha256": "1e23fe5cac28457fd29e5cedaff80371cbad13cb93ef81e6480d906470a82387"
+      }
+    ]
+  },
+  {
+    "comparison": "[WORLD]/evidence/17-map1-final-cleanup/right-mouth-before-after.png",
+    "sources": [
+      {
+        "path": "[WORLD]/evidence/17-map1-final-cleanup/terrain-red/right-mouth.png",
+        "sha256": "318e94b6ff987d1e07bb5cc0561932f9fcb558caab37c70d61cb1049ef81b0ea"
+      },
+      {
+        "path": "[WORLD]/evidence/17-map1-final-cleanup/bank-green/right-mouth.png",
+        "sha256": "06e2cef9e5614e86475953cda8f384821fb8c567d32f53addf2967e1c1054f3a"
+      }
+    ]
+  }
+]

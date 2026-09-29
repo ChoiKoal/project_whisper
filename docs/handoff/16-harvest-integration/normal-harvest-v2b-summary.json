@@ -1,0 +1,29 @@
+{
+  "scene": "harvest_progression_capture",
+  "exit": 1,
+  "seconds": 34.82,
+  "passed": 37,
+  "failed": 1,
+  "script_errors": 0,
+  "engine_errors": [
+    "ERROR: L1_CAPTURE: normal action contact actually rewards I6",
+    "ERROR: 2 resources still in use at exit (run with --verbose for details)."
+  ],
+  "command": [
+    "[AUDIT]/_runtime/godot-4.5/Godot.app/Contents/MacOS/Godot",
+    "--path",
+    "[WORLD]/game",
+    "--max-fps",
+    "60",
+    "--resolution",
+    "1600x900",
+    "--single-window",
+    "--quit-after",
+    "54000",
+    "[WORLD]/game/scenes/dev/harvest_progression_capture.tscn"
+  ],
+  "home": "[WORLD]/evidence/16-harvest-integration/homes/normal-harvest-v2b",
+  "log": "[WORLD]/evidence/16-harvest-integration/normal-harvest-v2b.log",
+  "source_changed": [],
+  "completion_verified": false
+}

@@ -1,0 +1,44 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+OpenGL API 4.1 Metal - 90.5 - Compatibility - Using Device: Apple - Apple M1 Pro
+
+ROOT_FOCUS_ENTER at=2354
+[PASS] explicit staged v2 new run before Home/Grove instantiation
+[PASS] nature portal exists
+[PASS] path accepted (7, 7)
+[PASS] actual walk arrives (7, 7) actual=(1027.648, 256.0665)
+[PASS] actual Home walk reaches nature entry apron
+CONTROL_TRANSITION true at=18995
+CONTROL_TRANSITION false at=20388
+[PASS] real nature interaction travels to L1
+CONTROL_TRANSITION true at=22277
+CONTROL_TRANSITION false at=23766
+[PASS] normal Home walk/portal starts Q1
+L1_CAPTURE phase=normal_title_home_walk_nature_arrival path=[WORLD]/evidence/16-harvest-integration/normal-initial/01-l1-arrival.png state={"camera_limits":[-156,-220,5340,1532],"camera_position":[1920.0,1152.0],"camera_zoom":[1.0,1.0],"candidate_provenance":"l1-v2 only when explicitly selected before new-run Home; production default remains l1-v1. v2 diagonal ascent amendment is engineering layout, not authored-art approval.","canvas_modulate":"faf5e5ff","capture_kind":"normal_root_automated_progression_no_inventory_or_clear_injection","control_locked":false,"day_phase":"day","dialogue_automation":"Important modal beats read using fresh ui_accept and native touch; close/reveal via real input, no direct seen flags. Resizes disclosed separately.","focus_automation":"Observed OS focus losses only permit at most 3 explicit new public movement requests per walk; no private path restoration or disabled cancellation. Logged separately.","foundation_entry":"production starting_grove -> representative_grove -> preserved legacy_grove","game_time":12.0383306666667,"image_size":[1600,900],"layout_revision":"l1-v2","map_dimensions":[40,40],"night_gate_bindings":[{"body_layer":1,"cell":"(21, 7)","node":"/root/StartingGrove/YSortLayer/@Node2D@1006","offset":"(0.0, -60.0)","open":false,"root":"(2880.0, 256.0)","scale":"(1.0, 1.0)","screen_rect":"[P: (1696.0, -500.0), S: (128.0, 128.0)]","shape_disabled":false,"texture":"res://assets/objects/night_bud_closed.png"},{"body_layer":1,"cell":"(22, 7)","node":"/root/StartingGrove/YSortLayer/@Node2D@1007","offset":"(0.0, -60.0)","open":false,"root":"(3008.0, 256.0)","scale":"(1.0, 1.0)","screen_rect":"[P: (1824.0, -500.0), S: (128.0, 128.0)]","shape_disabled":false,"texture":"res://assets/objects/night_bud_closed.png"}],"object_spawn_count":48,"path":"[WORLD]/evidence/16-harvest-integration/normal-initial/01-l1-arrival.png","pending_load":false,"phase":"normal_title_home_walk_nature_arrival","player_position":[1920.0,1152.0],"portal_states":{"divinity":"dormant","machine":"dormant","magic":"dormant","nature":"flickering","return":"open","science":"dormant"},"quest":"Q1","return_portal_count":1,"save_error":0,"save_present":true,"scene":"StartingGrove","spawn_cell":[14,35],"story_state":{},"test_state_injection":"Only Opening real skip handler called directly. No teleports, ingredient/recipe injection, quest/clear signals or time edits. Real TouchController movement/tap, keyboard gather/place; Fusion UI callbacks after physical cauldron arrival. Automated input, not human/manual QA.","tile_count":1600,"world_context":{"arrival_mode":"portal_arrival","current_scene":"grove","travel_layer":"nature"}}
+[PASS] reachable tile for I2
+[PASS] path accepted (14, 34)
+[PASS] actual walk arrives (14, 34) actual=(1861.862, 1122.931)
+INPUT_PROBE {"has_hover":true,"hover_cell":"(13, 33)","hover_object":"<null>","lock":false,"mouse":"(728.0, 456.0)","player_cell":"(14, 34)","screen":"(729.4009, 456.0)","target_cell":"(13, 33)","target_object":"<null>","wanted":"(13, 33)"}
+[PASS] actual local keyboard tile gather I2(13, 33)
+[PASS] reachable tile for I2
+[PASS] path accepted (14, 34)
+[PASS] actual walk arrives (14, 34) actual=(1861.862, 1122.931)
+INPUT_PROBE {"has_hover":true,"hover_cell":"(14, 35)","hover_object":"<null>","lock":false,"mouse":"(858.0, 520.0)","player_cell":"(14, 34)","screen":"(858.1315, 520.0)","target_cell":"(13, 33)","target_object":"<null>","wanted":"(14, 35)"}
+[PASS] actual local keyboard tile gather I2(14, 35)
+[PASS] reachable source for I4
+[PASS] interaction target exists
+TAP_REQUEST {"pick":"(2880.0, 1184.0)","picked":"@Sprite2D@1047:<Sprite2D#209631315955>","point":"(2880.0, 1184.0)","stand":"(21, 35)","target":"@Sprite2D@1047:<Sprite2D#209631315955>"}
+TAP_QUEUED [(1856.0, 1120.0), (1920.0, 1152.0), (1984.0, 1120.0), (2048.0, 1152.0), (2112.0, 1184.0), (2176.0, 1152.0), (2240.0, 1184.0), (2304.0, 1152.0), (2368.0, 1184.0), (2432.0, 1152.0), (2496.0, 1184.0), (2560.0, 1152.0), (2624.0, 1184.0), (2688.0, 1152.0), (2752.0, 1184.0), (2816.0, 1152.0)] pending={ "kind": "object", "object": @Sprite2D@1047:<Sprite2D#209631315955> }
+TAP_END {"actual":"(2811.953, 1153.798)","distance":74.4487838745117,"locked":false,"pathing":false,"pending":"{  }","target":"(2880.0, 1184.0)"}
+[PASS] actual tap approaches/interacts at (2880.0, 1184.0)
+ERROR: L1_CAPTURE: actual object gather yields I4
+   at: push_error (core/variant/variant_utility.cpp:1024)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://scenes/dev/l1_gameplay_capture.gd:311)
+       [1] require (res://scenes/dev/l1_progression_capture.gd:12)
+       [2] gather_objects (res://scenes/dev/l1_progression_capture.gd:237)
+       [3] tap_object (res://scenes/dev/l1_progression_capture.gd:221)
+       [4] _frames (res://scenes/dev/l1_gameplay_capture.gd:301)
+L1_CAPTURE phase=failure_not_completion path=[WORLD]/evidence/16-harvest-integration/normal-initial/failure.png state={"camera_limits":[-156,-220,5340,1532],"camera_position":[2811.953,1153.798],"camera_zoom":[1.0,1.0],"candidate_provenance":"l1-v2 only when explicitly selected before new-run Home; production default remains l1-v1. v2 diagonal ascent amendment is engineering layout, not authored-art approval.","canvas_modulate":"f9f4e5ff","capture_kind":"normal_root_automated_progression_no_inventory_or_clear_injection","control_locked":false,"day_phase":"day","dialogue_automation":"Important modal beats read using fresh ui_accept and native touch; close/reveal via real input, no direct seen flags. Resizes disclosed separately.","focus_automation":"Observed OS focus losses only permit at most 3 explicit new public movement requests per walk; no private path restoration or disabled cancellation. Logged separately.","foundation_entry":"production starting_grove -> representative_grove -> preserved legacy_grove","game_time":17.6804226666667,"image_size":[1600,900],"layout_revision":"l1-v2","map_dimensions":[40,40],"night_gate_bindings":[{"body_layer":1,"cell":"(21, 7)","node":"/root/StartingGrove/YSortLayer/@Node2D@1006","offset":"(0.0, -60.0)","open":false,"root":"(2880.0, 256.0)","scale":"(1.0, 1.0)","screen_rect":"[P: (824.2571, -500.0), S: (128.0, 128.0)]","shape_disabled":false,"texture":"res://assets/objects/night_bud_closed.png"},{"body_layer":1,"cell":"(22, 7)","node":"/root/StartingGrove/YSortLayer/@Node2D@1007","offset":"(0.0, -60.0)","open":false,"root":"(3008.0, 256.0)","scale":"(1.0, 1.0)","screen_rect":"[P: (952.2571, -500.0), S: (128.0, 128.0)]","shape_disabled":false,"texture":"res://assets/objects/night_bud_closed.png"}],"object_spawn_count":48,"path":"[WORLD]/evidence/16-harvest-integration/normal-initial/failure.png","pending_load":false,"phase":"failure_not_completion","player_position":[2811.953,1153.798],"portal_states":{"divinity":"dormant","machine":"dormant","magic":"dormant","nature":"flickering","return":"open","science":"dormant"},"quest":"Q2","return_portal_count":1,"save_error":0,"save_present":true,"scene":"StartingGrove","spawn_cell":[14,35],"story_state":{},"test_state_injection":"Only Opening real skip handler called directly. No teleports, ingredient/recipe injection, quest/clear signals or time edits. Real TouchController movement/tap, keyboard gather/place; Fusion UI callbacks after physical cauldron arrival. Automated input, not human/manual QA.","tile_count":1600,"world_context":{"arrival_mode":"portal_arrival","current_scene":"grove","travel_layer":"nature"}}
+NORMAL_PROGRESSION_DONE failed=true manifest=[WORLD]/evidence/16-harvest-integration/normal-initial/normal-l1-runtime-state.json
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)

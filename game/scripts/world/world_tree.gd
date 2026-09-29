@@ -134,11 +134,8 @@ func target_point() -> Vector2:
 
 ## (EG-2) Gathering the 세계수 정수 ALSO collects the L1 진상 조각 + records its log (the leaf's
 ## inscription). The player who takes the essence has read the leaf.
-func gather() -> String:
-	var granted := super.gather()
-	if granted != "":
-		_collect_shard()
-	return granted
+func _after_gather() -> void:
+	_collect_shard()
 
 
 ## (EG-2) After the tree is 정수-spent, E on it 조사s the leaf: collect the shard + show the card.

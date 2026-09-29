@@ -1,0 +1,14 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+OpenGL API 4.1 Metal - 90.5 - Compatibility - Using Device: Apple - Apple M1 Pro
+
+[PASS] fresh bank matches live tile
+[PASS] actual low-bank gather changes source and rewards once
+[FAIL] gathered low-bank presentation follows live hollow
+L1_CAPTURE phase=diagnostic_public_gather path=[WORLD]/evidence/17-map1-final-cleanup/mutation-green/bank-gathered.png state={"camera_limits":[-156,-220,5340,1532],"camera_position":[2176.0,512.0],"camera_zoom":[1.0,1.0],"canvas_modulate":"faf5e6ff","capture_kind":"diagnostic normal-root low-bank mutation","control_locked":false,"image_size":[1600,900],"map_dimensions":[40,40],"object_spawn_count":48,"path":"[WORLD]/evidence/17-map1-final-cleanup/mutation-green/bank-gathered.png","pending_load":false,"phase":"diagnostic_public_gather","player_position":[2176.0,512.0],"portal_states":{"divinity":"dormant","machine":"dormant","magic":"dormant","nature":"flickering","return":"open","science":"dormant"},"return_portal_count":1,"save_error":0,"save_present":false,"scene":"StartingGrove","spawn_cell":[14,35],"test_state_injection":"new v2 direct scene and starting cell; public ground gather, isolated disk save/reload; separate explicit erase/restore fixture","tile_count":1600,"world_context":{"arrival_mode":"","current_scene":"grove","travel_layer":""}}
+[PASS] isolated mutation save
+[PASS] reload restores gathered bank source
+[FAIL] loaded bank presentation follows save overlay
+L1_CAPTURE phase=diagnostic_saved_hollow path=[WORLD]/evidence/17-map1-final-cleanup/mutation-green/bank-loaded.png state={"camera_limits":[-156,-220,5340,1532],"camera_position":[2176.0,512.0],"camera_zoom":[1.0,1.0],"canvas_modulate":"faf5e6ff","capture_kind":"diagnostic normal-root low-bank mutation","control_locked":false,"image_size":[1600,900],"map_dimensions":[40,40],"object_spawn_count":48,"path":"[WORLD]/evidence/17-map1-final-cleanup/mutation-green/bank-loaded.png","pending_load":false,"phase":"diagnostic_saved_hollow","player_position":[2176.0,512.0],"portal_states":{"divinity":"dormant","machine":"dormant","magic":"dormant","nature":"flickering","return":"open","science":"dormant"},"return_portal_count":1,"save_error":0,"save_present":true,"scene":"StartingGrove","spawn_cell":[14,35],"test_state_injection":"new v2 direct scene and starting cell; public ground gather, isolated disk save/reload; separate explicit erase/restore fixture","tile_count":1600,"world_context":{"arrival_mode":"","current_scene":"grove","travel_layer":""}}
+[FAIL] explicit erase hides auxiliary low bank
+[PASS] explicit restore refreshes low bank
+MAP1_BANK_MUTATION_DONE failures=3

@@ -1,0 +1,176 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+OpenGL API 4.1 Metal - 90.5 - Compatibility - Using Device: Apple - Apple M1 Pro
+
+[PASS] complete surface ownership bijection 
+[PASS] required ramp exists (19, 16) 
+[PASS] required ramp exists (19, 17) 
+[PASS] required ramp exists (20, 18) 
+[PASS] required ramp exists (20, 19) 
+[PASS] required ramp exists (21, 20) 
+[PASS] required ramp exists (21, 21) 
+[PASS] required ramp exists (22, 22) 
+[PASS] ramp sprite exists (19, 16) 
+[PASS] capture written 19-16-actor 
+[PASS] capture written 19-16-actor-hidden 
+[PASS] capture written 19-16-terrain 
+[PASS] exactly one top owner (19, 16) 1
+[PASS] one ramp surface no same-cell flat top (19, 16) 
+[PASS] shared high/low edge endpoints coincide (19, 16) -> (18, 17) 
+[PASS] full shared edge has raster ink within 2px (19, 16) -> (18, 17) 
+[PASS] shared high/low edge endpoints coincide (19, 16) -> (19, 15) 
+[PASS] full shared edge has raster ink within 2px (19, 16) -> (19, 15) 
+[PASS] two authoritative end edges tested (19, 16) 
+[PASS] capture written 19-16-face-id 
+[PASS] topological ramp full interior visible (19, 16) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] no ramp paints over physically foreground tops (19, 16) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] both visible ramp end bands agree with geometry (19, 16) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] capture written 19-16-reordered 
+[PASS] surface result independent of subtree insertion (19, 16) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] exact face mask unchanged by reorder (19, 16) 
+[PASS] capture written 19-16-reverse-children 
+[PASS] exact mask independent of surface child insertion (19, 16) 
+[PASS] capture written 19-16-camera-shift 
+[PASS] oracle coverage invariant under camera shift (19, 16) 
+[PASS] ramp sprite exists (19, 17) 
+[PASS] capture written 19-17-actor 
+[PASS] capture written 19-17-actor-hidden 
+[PASS] capture written 19-17-terrain 
+[PASS] exactly one top owner (19, 17) 1
+[PASS] one ramp surface no same-cell flat top (19, 17) 
+[PASS] shared high/low edge endpoints coincide (19, 17) -> (19, 18) 
+[PASS] full shared edge has raster ink within 2px (19, 17) -> (19, 18) 
+[PASS] shared high/low edge endpoints coincide (19, 17) -> (20, 16) 
+[PASS] full shared edge has raster ink within 2px (19, 17) -> (20, 16) 
+[PASS] two authoritative end edges tested (19, 17) 
+[PASS] capture written 19-17-face-id 
+[PASS] topological ramp full interior visible (19, 17) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] no ramp paints over physically foreground tops (19, 17) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] both visible ramp end bands agree with geometry (19, 17) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] capture written 19-17-reordered 
+[PASS] surface result independent of subtree insertion (19, 17) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] exact face mask unchanged by reorder (19, 17) 
+[PASS] capture written 19-17-reverse-children 
+[PASS] exact mask independent of surface child insertion (19, 17) 
+[PASS] capture written 19-17-camera-shift 
+[PASS] oracle coverage invariant under camera shift (19, 17) 
+[PASS] ramp sprite exists (20, 18) 
+[PASS] capture written 20-18-actor 
+[PASS] capture written 20-18-actor-hidden 
+[PASS] capture written 20-18-terrain 
+[PASS] exactly one top owner (20, 18) 1
+[PASS] one ramp surface no same-cell flat top (20, 18) 
+[PASS] shared high/low edge endpoints coincide (20, 18) -> (19, 19) 
+[PASS] full shared edge has raster ink within 2px (20, 18) -> (19, 19) 
+[PASS] shared high/low edge endpoints coincide (20, 18) -> (20, 17) 
+[PASS] full shared edge has raster ink within 2px (20, 18) -> (20, 17) 
+[PASS] two authoritative end edges tested (20, 18) 
+[PASS] capture written 20-18-face-id 
+[PASS] topological ramp full interior visible (20, 18) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] no ramp paints over physically foreground tops (20, 18) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] both visible ramp end bands agree with geometry (20, 18) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] capture written 20-18-reordered 
+[PASS] surface result independent of subtree insertion (20, 18) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] exact face mask unchanged by reorder (20, 18) 
+[PASS] capture written 20-18-reverse-children 
+[PASS] exact mask independent of surface child insertion (20, 18) 
+[PASS] capture written 20-18-camera-shift 
+[PASS] oracle coverage invariant under camera shift (20, 18) 
+[PASS] ramp sprite exists (20, 19) 
+[PASS] capture written 20-19-actor 
+[PASS] capture written 20-19-actor-hidden 
+[PASS] capture written 20-19-terrain 
+[PASS] exactly one top owner (20, 19) 1
+[PASS] one ramp surface no same-cell flat top (20, 19) 
+[PASS] shared high/low edge endpoints coincide (20, 19) -> (20, 20) 
+[PASS] full shared edge has raster ink within 2px (20, 19) -> (20, 20) 
+[PASS] shared high/low edge endpoints coincide (20, 19) -> (21, 18) 
+[PASS] full shared edge has raster ink within 2px (20, 19) -> (21, 18) 
+[PASS] two authoritative end edges tested (20, 19) 
+[PASS] capture written 20-19-face-id 
+[PASS] topological ramp full interior visible (20, 19) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] no ramp paints over physically foreground tops (20, 19) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] both visible ramp end bands agree with geometry (20, 19) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] capture written 20-19-reordered 
+[PASS] surface result independent of subtree insertion (20, 19) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] exact face mask unchanged by reorder (20, 19) 
+[PASS] capture written 20-19-reverse-children 
+[PASS] exact mask independent of surface child insertion (20, 19) 
+[PASS] capture written 20-19-camera-shift 
+[PASS] oracle coverage invariant under camera shift (20, 19) 
+[PASS] ramp sprite exists (21, 20) 
+[PASS] capture written 21-20-actor 
+[PASS] capture written 21-20-actor-hidden 
+[PASS] capture written 21-20-terrain 
+[PASS] exactly one top owner (21, 20) 1
+[PASS] one ramp surface no same-cell flat top (21, 20) 
+[PASS] shared high/low edge endpoints coincide (21, 20) -> (20, 21) 
+[PASS] full shared edge has raster ink within 2px (21, 20) -> (20, 21) 
+[PASS] shared high/low edge endpoints coincide (21, 20) -> (21, 19) 
+[PASS] full shared edge has raster ink within 2px (21, 20) -> (21, 19) 
+[PASS] two authoritative end edges tested (21, 20) 
+[PASS] capture written 21-20-face-id 
+[PASS] topological ramp full interior visible (21, 20) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] no ramp paints over physically foreground tops (21, 20) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] both visible ramp end bands agree with geometry (21, 20) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] capture written 21-20-reordered 
+[PASS] surface result independent of subtree insertion (21, 20) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] exact face mask unchanged by reorder (21, 20) 
+[PASS] capture written 21-20-reverse-children 
+[PASS] exact mask independent of surface child insertion (21, 20) 
+[PASS] capture written 21-20-camera-shift 
+[PASS] oracle coverage invariant under camera shift (21, 20) 
+[PASS] ramp sprite exists (21, 21) 
+[PASS] capture written 21-21-actor 
+[PASS] capture written 21-21-actor-hidden 
+[PASS] capture written 21-21-terrain 
+[PASS] exactly one top owner (21, 21) 1
+[PASS] one ramp surface no same-cell flat top (21, 21) 
+[PASS] shared high/low edge endpoints coincide (21, 21) -> (21, 22) 
+[PASS] full shared edge has raster ink within 2px (21, 21) -> (21, 22) 
+[PASS] shared high/low edge endpoints coincide (21, 21) -> (22, 20) 
+[PASS] full shared edge has raster ink within 2px (21, 21) -> (22, 20) 
+[PASS] two authoritative end edges tested (21, 21) 
+[PASS] capture written 21-21-face-id 
+[PASS] topological ramp full interior visible (21, 21) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] no ramp paints over physically foreground tops (21, 21) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] both visible ramp end bands agree with geometry (21, 21) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] capture written 21-21-reordered 
+[PASS] surface result independent of subtree insertion (21, 21) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] exact face mask unchanged by reorder (21, 21) 
+[PASS] capture written 21-21-reverse-children 
+[PASS] exact mask independent of surface child insertion (21, 21) 
+[PASS] capture written 21-21-camera-shift 
+[PASS] oracle coverage invariant under camera shift (21, 21) 
+[PASS] ramp sprite exists (22, 22) 
+[PASS] capture written 22-22-actor 
+[PASS] capture written 22-22-actor-hidden 
+[PASS] capture written 22-22-terrain 
+[PASS] exactly one top owner (22, 22) 1
+[PASS] one ramp surface no same-cell flat top (22, 22) 
+[PASS] shared high/low edge endpoints coincide (22, 22) -> (21, 23) 
+[PASS] full shared edge has raster ink within 2px (22, 22) -> (21, 23) 
+[PASS] shared high/low edge endpoints coincide (22, 22) -> (22, 21) 
+[PASS] full shared edge has raster ink within 2px (22, 22) -> (22, 21) 
+[PASS] two authoritative end edges tested (22, 22) 
+[PASS] capture written 22-22-face-id 
+[PASS] topological ramp full interior visible (22, 22) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] no ramp paints over physically foreground tops (22, 22) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] both visible ramp end bands agree with geometry (22, 22) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] capture written 22-22-reordered 
+[PASS] surface result independent of subtree insertion (22, 22) { "expected": 5460, "visible": 5460, "low_samples": 1274, "high_samples": 1274, "missed_low": 0, "missed_high": 0, "legitimate_cover": 0, "erroneous_foreground": 0, "edge_uncertain": 0 }
+[PASS] exact face mask unchanged by reorder (22, 22) 
+[PASS] capture written 22-22-reverse-children 
+[PASS] exact mask independent of surface child insertion (22, 22) 
+[PASS] capture written 22-22-camera-shift 
+[PASS] oracle coverage invariant under camera shift (22, 22) 
+[PASS] all-direction/parity raster covers only authoritative plane ne h0 missing=0 excess=0
+[PASS] all-direction/parity raster covers only authoritative plane ne h1 missing=0 excess=0
+[PASS] all-direction/parity raster covers only authoritative plane nw h0 missing=0 excess=0
+[PASS] all-direction/parity raster covers only authoritative plane nw h1 missing=0 excess=0
+[PASS] all-direction/parity raster covers only authoritative plane se h0 missing=0 excess=0
+[PASS] all-direction/parity raster covers only authoritative plane se h1 missing=0 excess=0
+[PASS] all-direction/parity raster covers only authoritative plane sw h0 missing=0 excess=0
+[PASS] all-direction/parity raster covers only authoritative plane sw h1 missing=0 excess=0
+[PASS] all live ramps enumerated 
+[PASS] manifest readback 
+SURFACE_DONE failures=0 checks=172

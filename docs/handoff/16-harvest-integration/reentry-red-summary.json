@@ -1,0 +1,24 @@
+{
+  "scene": "harvest_integration_harness",
+  "exit": 1,
+  "seconds": 7.82,
+  "passed": 29,
+  "failed": 4,
+  "script_errors": 0,
+  "engine_errors": [],
+  "command": [
+    "[AUDIT]/_runtime/godot-4.5/Godot.app/Contents/MacOS/Godot",
+    "--path",
+    "[WORLD]/game",
+    "--max-fps",
+    "60",
+    "--headless",
+    "--quit-after",
+    "5400",
+    "[WORLD]/game/scenes/dev/harvest_integration_harness.tscn"
+  ],
+  "home": "[WORLD]/evidence/16-harvest-integration/homes/reentry-red",
+  "log": "[WORLD]/evidence/16-harvest-integration/reentry-red.log",
+  "source_changed": [],
+  "completion_verified": false
+}

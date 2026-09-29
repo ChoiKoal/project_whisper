@@ -1,0 +1,162 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+
+=== ROCK COLLISION RED/GREEN HARNESS ===
+[PASS] L1 gatherable catalog remains 165 entries  (spawns=165 tracked=165)
+[PASS] R metadata explicitly means substantial blocking footprint
+[PASS] s metadata explicitly remains walkover
+[PASS] tree metadata preserves the existing blocking contract
+[PASS] item/catalog identity is unchanged
+[PASS] initial R is blocking at (12, 18)
+[PASS] initial R radius matches metadata at (12, 18)  (24.0)
+[PASS] initial R owns one centred circular footprint at (12, 18)
+[PASS] R logical root and projected foot agree at height 1
+[PASS] AStar omits initial blocking R cell (12, 18)
+[PASS] initial s remains nonblocking at (19, 18)
+[PASS] AStar retains walkover s cell (19, 18)
+[PASS] initial s remains nonblocking at (21, 19)
+[PASS] AStar retains walkover s cell (21, 19)
+[PASS] initial R is blocking at (26, 19)
+[PASS] initial R radius matches metadata at (26, 19)  (24.0)
+[PASS] initial R owns one centred circular footprint at (26, 19)
+[PASS] R logical root and projected foot agree at height 1
+[PASS] AStar omits initial blocking R cell (26, 19)
+[PASS] initial R is blocking at (10, 22)
+[PASS] initial R radius matches metadata at (10, 22)  (24.0)
+[PASS] initial R owns one centred circular footprint at (10, 22)
+[PASS] R logical root and projected foot agree at height 1
+[PASS] AStar omits initial blocking R cell (10, 22)
+[PASS] initial R is blocking at (8, 29)
+[PASS] initial R radius matches metadata at (8, 29)  (24.0)
+[PASS] initial R owns one centred circular footprint at (8, 29)
+[PASS] R logical root and projected foot agree at height 0
+[PASS] AStar omits initial blocking R cell (8, 29)
+[PASS] initial R is blocking at (18, 29)
+[PASS] initial R radius matches metadata at (18, 29)  (24.0)
+[PASS] initial R owns one centred circular footprint at (18, 29)
+[PASS] R logical root and projected foot agree at height 0
+[PASS] AStar omits initial blocking R cell (18, 29)
+[PASS] initial s remains nonblocking at (25, 30)
+[PASS] AStar retains walkover s cell (25, 30)
+[PASS] initial s remains nonblocking at (26, 31)
+[PASS] AStar retains walkover s cell (26, 31)
+[PASS] initial R is blocking at (22, 37)
+[PASS] initial R radius matches metadata at (22, 37)  (24.0)
+[PASS] initial R owns one centred circular footprint at (22, 37)
+[PASS] R logical root and projected foot agree at height 0
+[PASS] AStar omits initial blocking R cell (22, 37)
+[PASS] initial s remains nonblocking at (22, 11)
+[PASS] AStar retains walkover s cell (22, 11)
+[PASS] initial R is blocking at (19, 38)
+[PASS] initial R radius matches metadata at (19, 38)  (24.0)
+[PASS] initial R owns one centred circular footprint at (19, 38)
+[PASS] R logical root and projected foot agree at height 0
+[PASS] AStar omits initial blocking R cell (19, 38)
+[PASS] initial s remains nonblocking at (4, 31)
+[PASS] AStar retains walkover s cell (4, 31)
+[PASS] initial s remains nonblocking at (25, 36)
+[PASS] AStar retains walkover s cell (25, 36)
+[PASS] initial R is blocking at (13, 2)
+[PASS] initial R radius matches metadata at (13, 2)  (24.0)
+[PASS] initial R owns one centred circular footprint at (13, 2)
+[PASS] R logical root and projected foot agree at height 0
+[PASS] AStar omits initial blocking R cell (13, 2)
+[PASS] initial s remains nonblocking at (23, 8)
+[PASS] AStar retains walkover s cell (23, 8)
+[PASS] initial R is blocking at (15, 5)
+[PASS] initial R radius matches metadata at (15, 5)  (24.0)
+[PASS] initial R owns one centred circular footprint at (15, 5)
+[PASS] R logical root and projected foot agree at height 0
+[PASS] AStar omits initial blocking R cell (15, 5)
+[PASS] initial s remains nonblocking at (21, 28)
+[PASS] AStar retains walkover s cell (21, 28)
+[PASS] initial s remains nonblocking at (4, 21)
+[PASS] AStar retains walkover s cell (4, 21)
+[PASS] initial R is blocking at (18, 28)
+[PASS] initial R radius matches metadata at (18, 28)  (24.0)
+[PASS] initial R owns one centred circular footprint at (18, 28)
+[PASS] R logical root and projected foot agree at height 0
+[PASS] AStar omits initial blocking R cell (18, 28)
+[PASS] initial s remains nonblocking at (18, 20)
+[PASS] AStar retains walkover s cell (18, 20)
+[PASS] initial s remains nonblocking at (21, 33)
+[PASS] AStar retains walkover s cell (21, 33)
+[PASS] initial s remains nonblocking at (27, 36)
+[PASS] AStar retains walkover s cell (27, 36)
+[PASS] initial s remains nonblocking at (22, 32)
+[PASS] AStar retains walkover s cell (22, 32)
+[PASS] initial R is blocking at (17, 20)
+[PASS] initial R radius matches metadata at (17, 20)  (24.0)
+[PASS] initial R owns one centred circular footprint at (17, 20)
+[PASS] R logical root and projected foot agree at height 2
+[PASS] AStar omits initial blocking R cell (17, 20)
+[PASS] initial R is blocking at (24, 27)
+[PASS] initial R radius matches metadata at (24, 27)  (24.0)
+[PASS] initial R owns one centred circular footprint at (24, 27)
+[PASS] R logical root and projected foot agree at height 0
+[PASS] AStar omits initial blocking R cell (24, 27)
+[PASS] initial R is blocking at (27, 21)
+[PASS] initial R radius matches metadata at (27, 21)  (24.0)
+[PASS] initial R owns one centred circular footprint at (27, 21)
+[PASS] R logical root and projected foot agree at height 1
+[PASS] AStar omits initial blocking R cell (27, 21)
+[PASS] initial R is blocking at (12, 13)
+[PASS] initial R radius matches metadata at (12, 13)  (24.0)
+[PASS] initial R owns one centred circular footprint at (12, 13)
+[PASS] R logical root and projected foot agree at height 0
+[PASS] AStar omits initial blocking R cell (12, 13)
+[PASS] initial R is blocking at (25, 37)
+[PASS] initial R radius matches metadata at (25, 37)  (24.0)
+[PASS] initial R owns one centred circular footprint at (25, 37)
+[PASS] R logical root and projected foot agree at height 0
+[PASS] AStar omits initial blocking R cell (25, 37)
+[PASS] initial R is blocking at (10, 31)
+[PASS] initial R radius matches metadata at (10, 31)  (24.0)
+[PASS] initial R owns one centred circular footprint at (10, 31)
+[PASS] R logical root and projected foot agree at height 0
+[PASS] AStar omits initial blocking R cell (10, 31)
+[PASS] initial R is blocking at (17, 39)
+[PASS] initial R radius matches metadata at (17, 39)  (24.0)
+[PASS] initial R owns one centred circular footprint at (17, 39)
+[PASS] R logical root and projected foot agree at height 0
+[PASS] AStar omits initial blocking R cell (17, 39)
+[PASS] initial s remains nonblocking at (28, 29)
+[PASS] AStar retains walkover s cell (28, 29)
+[PASS] authored/scattered R and s sources still exist  (R=17 s=15)
+[PASS] real R fixtures cover logical heights 0/1/2  ({ 1: true, 0: true, 2: true })
+[PASS] found a path-reachable R with an adjacent stand cell
+[PASS] tap approach queues an object interaction
+[PASS] tap/AStar route approaches without entering R cell
+[PASS] approach reaches and gathers R through the real interaction path
+[PASS] gather removes physics obstacle and restores R cell to AStar
+[PASS] ObjectRespawn rebuilt the same R semantic
+[PASS] respawn restores physics and removes R cell from AStar
+[PASS] respawn preserves logical/projected height contract
+[PASS] fixture R radius is 24 at height 0
+[PASS] fixture R collision stays at logical ground footprint height 0
+[PASS] R stops actual keyboard Player at footprint height0 direction(1.0, 0.0)  (distance=44.003)
+[PASS] R stops actual keyboard Player at footprint height0 direction(-1.0, 0.0)  (distance=44.003)
+[PASS] R stops actual keyboard Player at footprint height0 direction(0.0, -1.0)  (distance=44.003)
+[PASS] R stops actual keyboard Player at footprint height0 direction(0.0, 1.0)  (distance=44.003)
+[PASS] s has no physics footprint at height 0
+[PASS] real Player walks over s at height 0  (distance=5.000)
+[PASS] fixture R radius is 24 at height 1
+[PASS] fixture R collision stays at logical ground footprint height 1
+[PASS] R stops actual keyboard Player at footprint height1 direction(1.0, 0.0)  (distance=44.003)
+[PASS] R stops actual keyboard Player at footprint height1 direction(-1.0, 0.0)  (distance=44.003)
+[PASS] R stops actual keyboard Player at footprint height1 direction(0.0, -1.0)  (distance=44.003)
+[PASS] R stops actual keyboard Player at footprint height1 direction(0.0, 1.0)  (distance=44.003)
+[PASS] s has no physics footprint at height 1
+[PASS] real Player walks over s at height 1  (distance=5.000)
+[PASS] fixture R radius is 24 at height 2
+[PASS] fixture R collision stays at logical ground footprint height 2
+[PASS] R stops actual keyboard Player at footprint height2 direction(1.0, 0.0)  (distance=44.003)
+[PASS] R stops actual keyboard Player at footprint height2 direction(-1.0, 0.0)  (distance=44.003)
+[PASS] R stops actual keyboard Player at footprint height2 direction(0.0, -1.0)  (distance=44.003)
+[PASS] R stops actual keyboard Player at footprint height2 direction(0.0, 1.0)  (distance=44.003)
+[PASS] s has no physics footprint at height 2
+[PASS] real Player walks over s at height 2  (distance=5.000)
+ROCK_COLLISION_RESULT failures=0
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)
+ERROR: 2 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:795)

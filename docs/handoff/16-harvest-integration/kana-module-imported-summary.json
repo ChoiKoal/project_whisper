@@ -1,0 +1,24 @@
+{
+  "scene": "harvest_action_state_harness",
+  "exit": 0,
+  "seconds": 1.49,
+  "passed": 31,
+  "failed": 0,
+  "script_errors": 0,
+  "engine_errors": [],
+  "command": [
+    "[AUDIT]/_runtime/godot-4.5/Godot.app/Contents/MacOS/Godot",
+    "--path",
+    "[WORLD]/game",
+    "--max-fps",
+    "60",
+    "--headless",
+    "--quit-after",
+    "5400",
+    "[WORLD]/game/scenes/dev/harvest_action_state_harness.tscn"
+  ],
+  "home": "[WORLD]/evidence/16-harvest-integration/homes/kana-module-imported",
+  "log": "[WORLD]/evidence/16-harvest-integration/kana-module-imported.log",
+  "source_changed": [],
+  "completion_verified": true
+}

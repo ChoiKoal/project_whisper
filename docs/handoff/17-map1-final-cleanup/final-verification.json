@@ -1,0 +1,63 @@
+{
+  "timestamp": "2026-09-17T01:16:12.873275+09:00",
+  "game_manifests_match": true,
+  "matching_diagnostic_frames": [
+    {
+      "before": "[WORLD]/evidence/17-map1-final-cleanup/terrain-red/bands.png",
+      "after": "[WORLD]/evidence/17-map1-final-cleanup/pixels-final3/bands.png",
+      "matching_fields": [
+        "camera_position",
+        "camera_zoom",
+        "camera_limits",
+        "player_position",
+        "image_size",
+        "canvas_modulate",
+        "tile_count",
+        "object_spawn_count"
+      ],
+      "kind": "diagnostic positioned/day-injected actual root, not normal input"
+    },
+    {
+      "before": "[WORLD]/evidence/17-map1-final-cleanup/terrain-red/left-mouth.png",
+      "after": "[WORLD]/evidence/17-map1-final-cleanup/pixels-final3/left-mouth.png",
+      "matching_fields": [
+        "camera_position",
+        "camera_zoom",
+        "camera_limits",
+        "player_position",
+        "image_size",
+        "canvas_modulate",
+        "tile_count",
+        "object_spawn_count"
+      ],
+      "kind": "diagnostic positioned/day-injected actual root, not normal input"
+    },
+    {
+      "before": "[WORLD]/evidence/17-map1-final-cleanup/terrain-red/right-mouth.png",
+      "after": "[WORLD]/evidence/17-map1-final-cleanup/pixels-final3/right-mouth.png",
+      "matching_fields": [
+        "camera_position",
+        "camera_zoom",
+        "camera_limits",
+        "player_position",
+        "image_size",
+        "canvas_modulate",
+        "tile_count",
+        "object_spawn_count"
+      ],
+      "kind": "diagnostic positioned/day-injected actual root, not normal input"
+    }
+  ],
+  "controls_unchanged_since_audit": true,
+  "live_godot": [],
+  "artifacts": {
+    "CHECKPOINT.md": "de78e4cf00ae013a3cbc8fbfad85293ffe4587fead65399fa5c5f7a2320b6d1d",
+    "final-audit.json": "9b4cc2901cb1c88ed96f3fdd29c5a2fe5c52f1f7dfc36016b1c690ac598ab16b",
+    "source-hash-manifest.json": "1f6119becf6504f313d5550d7c9c6338710f747ebe3f3889050207b7698719a6",
+    "production-from-entry.patch": "6791d9ba74b3a4ed5c0f3b47171d403f428411725edb25433051ca25f7fa6236",
+    "PROVENANCE-ERRATA.md": "838a5cddf3ed8af53b7b71483f15b4bc196b96be31c16a7de127c470f5aaabae",
+    "INDEPENDENT-REVIEW.md": "0726a4ecdb284c2b9aba9b4d00a41069f9a23a1901d6590e2408b4823ee9e8a9",
+    "pixels-final3-before-after-receipts.json": "0b87f4e4eada55e8380403ce1e4fbe0f6fa34d9b2406f2766b979ccadef5f1b3"
+  },
+  "stop": true
+}

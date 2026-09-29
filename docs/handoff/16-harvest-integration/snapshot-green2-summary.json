@@ -1,0 +1,26 @@
+{
+  "scene": "harvest_reward_harness",
+  "exit": 0,
+  "seconds": 1.3,
+  "passed": 13,
+  "failed": 0,
+  "script_errors": 0,
+  "engine_errors": [
+    "ERROR: 1 resources still in use at exit (run with --verbose for details)."
+  ],
+  "command": [
+    "[AUDIT]/_runtime/godot-4.5/Godot.app/Contents/MacOS/Godot",
+    "--path",
+    "[WORLD]/game",
+    "--max-fps",
+    "60",
+    "--headless",
+    "--quit-after",
+    "5400",
+    "[WORLD]/game/scenes/dev/harvest_reward_harness.tscn"
+  ],
+  "home": "[WORLD]/evidence/16-harvest-integration/homes/snapshot-green2",
+  "log": "[WORLD]/evidence/16-harvest-integration/snapshot-green2.log",
+  "source_changed": [],
+  "completion_verified": true
+}

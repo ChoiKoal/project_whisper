@@ -90,6 +90,7 @@ var _touch_mode: bool = false
 ## hover-preview object). Tracked so we can clear its self_modulate when the target
 ## changes/leaves. Any node in the gatherable group with a set_targeted() method.
 var _brightened: Node = null
+var _harvest: Node
 
 
 func _ready() -> void:
@@ -103,10 +104,17 @@ func _ready() -> void:
 	_tile_glow = get_node_or_null(tile_glow_path) as Node2D
 	_ysort_layer = get_node_or_null(ysort_layer_path) as Node2D
 	_ghost = get_node_or_null(placement_ghost_path) as PlacementGhost
+	_harvest = preload("res://scripts/gameplay/harvest_action_driver.gd").new()
+	add_child(_harvest)
 
 
 func set_held_item(item_id: String) -> void:
+	if item_id != _held_item: cancel_harvest_except(null)
 	_held_item = item_id
+
+func cancel_harvest_except(candidate: Node) -> void:
+	if is_instance_valid(_harvest) and _harvest.target != candidate:
+		_harvest.cancel()
 
 
 func get_held_item() -> String:
@@ -179,7 +187,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	# (v0.4.0-B B3.1) No world interaction while a window is open.
 	if GameState != null and GameState.ui_modal_open():
 		return
-	if event.is_action_pressed("interact"):
+	if event.is_action_pressed("interact") and not event.is_echo():
 		_do_interact()
 		var vp := get_viewport()
 		if vp:
@@ -553,6 +561,7 @@ func _do_interact() -> void:
 	var hover_cell_adjacent: bool = _has_hover_cell and _cell_adjacent(_hover_cell, player_cell)
 
 	var act_object: Node = _hover_object if hover_adjacent else _target_object
+	cancel_harvest_except(act_object)
 	var act_has_tile := (_has_hover_cell and hover_cell_adjacent) or _has_tile_target
 	var act_cell := _hover_cell if (_has_hover_cell and hover_cell_adjacent) else _target_cell
 	var obj := act_object as Gatherable
@@ -565,6 +574,9 @@ func _do_interact() -> void:
 
 	# 2. Gather a targeted object.
 	if act_object != null and act_object.has_method("can_gather") and act_object.can_gather():
+		if act_object is Gatherable:
+			_harvest.begin(act_object)
+			return
 		var granted: String = act_object.gather()
 		if granted != "":
 			_spawn_feedback(_object_visual_point(act_object), granted)
@@ -586,12 +598,16 @@ func _do_interact() -> void:
 ## the touch controller once the player has reached / is adjacent to a tapped
 ## object, bypassing the per-frame facing resolution.
 func interact_with_object(obj: Node) -> void:
+	cancel_harvest_except(obj)
 	if obj == null:
 		return
 	var g := obj as Gatherable
 	if _held_item != "" and g != null and _try_use_on_object(g):
 		return
 	if obj.has_method("can_gather") and obj.can_gather():
+		if obj is Gatherable:
+			_harvest.begin(obj,true)
+			return
 		var granted: String = obj.gather()
 		if granted != "":
 			_spawn_feedback(_object_visual_point(obj), granted)
@@ -604,6 +620,7 @@ func interact_with_object(obj: Node) -> void:
 ## touch controller for tapped tiles (water for D14, VOID for D22, gatherable
 ## ground). Returns nothing; no-op if neither placement nor gather applies.
 func interact_with_cell(cell: Vector2i) -> void:
+	cancel_harvest_except(null)
 	if _tilemap.get_cell_source_id(cell) == -1:
 		return
 	if _held_item != "" and _try_place_on_tile(cell):
@@ -831,8 +848,9 @@ func _object_visual_point(obj: Node) -> Vector2:
 	return obj.visual_target_point() if obj.has_method("visual_target_point") else obj.target_point()
 
 
-func _spawn_feedback(world_pos: Vector2, item_id: String) -> void:
-	var msg := "+1 %s" % ItemDB.item_name(item_id)
+func _spawn_feedback(world_pos: Vector2, item_id: String, quantity: int = 1) -> void:
+	if quantity <= 0: return
+	var msg := "+%d %s" % [quantity,ItemDB.item_name(item_id)]
 	FloatingLabel.spawn(_feedback_layer, world_pos - Vector2(0, 40), msg)
 
 

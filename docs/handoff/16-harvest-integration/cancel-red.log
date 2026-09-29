@@ -1,0 +1,34 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+
+[PASS] flora action starts without immediate reward
+[PASS] direct gather cannot bypass reserved action
+[PASS] same target repeat still no early reward
+[PASS] contact grants exactly once after anticipation
+[PASS] cancellation armed movement
+[FAIL] precontact movement gives zero
+[FAIL] precontact movement releases only reservation
+[PASS] cancellation armed escape
+[FAIL] precontact escape gives zero
+[FAIL] precontact escape releases only reservation
+[PASS] cancellation armed modal
+[FAIL] precontact modal gives zero
+[FAIL] precontact modal releases only reservation
+[PASS] cancellation armed time
+[FAIL] precontact time gives zero
+[FAIL] precontact time releases only reservation
+[PASS] cancellation armed cinematic
+[FAIL] precontact cinematic gives zero
+[FAIL] precontact cinematic releases only reservation
+[PASS] cancellation armed focus
+[FAIL] precontact focus gives zero
+[FAIL] precontact focus releases only reservation
+[PASS] cancellation armed scene_exit
+[PASS] precontact scene_exit gives zero
+[PASS] precontact scene_exit releases only reservation
+[FAIL] admission refuses far
+[FAIL] admission refuses locked
+HARVEST_INTEGRATION_DONE failures=14
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)
+ERROR: 3 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:795)

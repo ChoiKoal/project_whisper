@@ -1,0 +1,28 @@
+{
+  "scene": "harvest_progression_capture",
+  "exit": 0,
+  "seconds": 207.0,
+  "passed": 0,
+  "failed": 0,
+  "script_errors": 1,
+  "engine_errors": [
+    "ERROR: Failed to load script \"res://scenes/dev/harvest_progression_capture.gd\" with error \"Parse error\"."
+  ],
+  "command": [
+    "[AUDIT]/_runtime/godot-4.5/Godot.app/Contents/MacOS/Godot",
+    "--path",
+    "[WORLD]/game",
+    "--max-fps",
+    "60",
+    "--resolution",
+    "1600x900",
+    "--single-window",
+    "--quit-after",
+    "54000",
+    "[WORLD]/game/scenes/dev/harvest_progression_capture.tscn"
+  ],
+  "home": "[WORLD]/evidence/16-harvest-integration/homes/normal-harvest-v2",
+  "log": "[WORLD]/evidence/16-harvest-integration/normal-harvest-v2.log",
+  "source_changed": [],
+  "completion_verified": false
+}

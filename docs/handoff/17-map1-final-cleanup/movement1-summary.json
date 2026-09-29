@@ -1,0 +1,28 @@
+{
+  "scene": "map1_movement_harness",
+  "exit": 1,
+  "seconds": 127.29,
+  "passed": 138,
+  "failed": 51,
+  "script_errors": 0,
+  "engine_errors": [
+    "ERROR: 2 resources still in use at exit (run with --verbose for details)."
+  ],
+  "command": [
+    "[AUDIT]/_runtime/godot-4.5/Godot.app/Contents/MacOS/Godot",
+    "--path",
+    "[WORLD]/game",
+    "--max-fps",
+    "60",
+    "--resolution",
+    "1600x900",
+    "--single-window",
+    "--quit-after",
+    "18000",
+    "[WORLD]/game/scenes/dev/map1_movement_harness.tscn"
+  ],
+  "home": "[WORLD]/evidence/17-map1-final-cleanup/homes/movement1",
+  "log": "[WORLD]/evidence/17-map1-final-cleanup/movement1.log",
+  "source_changed": [],
+  "completion_verified": false
+}

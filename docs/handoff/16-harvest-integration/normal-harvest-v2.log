@@ -1,0 +1,7 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+OpenGL API 4.1 Metal - 90.5 - Compatibility - Using Device: Apple - Apple M1 Pro
+
+SCRIPT ERROR: Parse Error: Cannot infer the type of "is_resource" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://scenes/dev/harvest_progression_capture.gd:6)
+ERROR: Failed to load script "res://scenes/dev/harvest_progression_capture.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript.cpp:3041)

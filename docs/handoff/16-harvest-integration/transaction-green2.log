@@ -1,0 +1,23 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+
+[PASS] save listener armed tree=false
+[PASS] partial snapshot refused tree=false
+[PASS] midreward disk save postponed tree=false
+[PASS] requested save flushed at completed reward tree=false
+[PASS] saved codex complete tree=false
+[PASS] saved quests complete tree=false
+[PASS] saved truth complete tree=false
+[PASS] saved actual reward tree=false
+[PASS] save listener armed tree=true
+[PASS] partial snapshot refused tree=true
+[PASS] midreward disk save postponed tree=true
+[PASS] requested save flushed at completed reward tree=true
+[PASS] saved codex complete tree=true
+[PASS] saved quests complete tree=true
+[PASS] saved truth complete tree=true
+[PASS] saved actual reward tree=true
+HARVEST_SAVE_DONE failures=0
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)
+ERROR: 1 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:795)

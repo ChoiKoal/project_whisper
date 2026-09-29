@@ -1,0 +1,24 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+
+SCRIPT ERROR: Parse Error: Cannot infer the type of "present" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://scripts/core/save_manager.gd:361)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://scripts/core/game_state.gd:0)
+ERROR: Failed to load script "res://scripts/core/game_state.gd" with error "Compilation failed".
+   at: load (modules/gdscript/gdscript.cpp:3041)
+ERROR: Failed to instantiate an autoload, script 'res://scripts/core/save_manager.gd' does not inherit from 'Node'.
+   at: start (main/main.cpp:4335)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "present" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://scripts/core/save_manager.gd:361)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://scenes/dev/harvest_reward_harness.gd:0)
+ERROR: Failed to load script "res://scenes/dev/harvest_reward_harness.gd" with error "Compilation failed".
+   at: load (modules/gdscript/gdscript.cpp:3041)
+[PASS] A1 first nonunique gather grants
+[PASS] A1 same-frame second direct call rejected
+[PASS] A1 exactly configured quantity
+[PASS] A1 consumed nonunique cannot gather
+SCRIPT ERROR: Invalid assignment of property or key '_respawn' with value of type 'Node (ObjectRespawn)' on a base object of type 'Nil'.
+          at: run (res://scenes/dev/harvest_reward_harness.gd:42)
+          GDScript backtrace (most recent call first):
+              [0] run (res://scenes/dev/harvest_reward_harness.gd:42)

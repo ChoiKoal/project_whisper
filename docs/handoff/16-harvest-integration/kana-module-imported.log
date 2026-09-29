@@ -1,0 +1,35 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+
+PASS begin ok
+PASS contact ok
+PASS commit granted 1회
+PASS commit 2회차 거부
+PASS finish reward_granted
+PASS contact 전 commit 거부
+PASS contact ok
+PASS contact 중복 거부
+PASS 접촉 전 cancel = 미지급
+PASS cancel 후 finish 거부
+PASS commit 후 cancel 거부
+PASS commit 후 finish는 지급 유지
+PASS commit 없이 finish = reward 없음
+PASS 같은 대상 재begin 거부
+PASS 원 액션 토큰 유효
+PASS 교체 begin 허용
+PASS 이전 토큰 stale
+PASS 교체 시 이전은 auto_cancel 집계
+PASS commit 후 교체 begin 허용
+PASS commit분은 supersede_finish로 닫힘
+PASS commit 수 불변
+PASS unknown kind 거부
+PASS 빈 target 거부
+PASS 위조 토큰 거부
+PASS reset: committed-unfinished 보고
+PASS reset 후 구 토큰 stale
+PASS reset 후 새 begin 정상
+PASS finish 후 같은 대상 재시작 허용
+PASS 재진입: 외부 commit granted
+PASS 재진입: 중첩 commit 거부
+PASS inspect_state 직렬화 가능
+
+RESULT: ALL GREEN

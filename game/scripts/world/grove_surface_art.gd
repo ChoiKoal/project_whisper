@@ -120,3 +120,4 @@ static func ramp(dir: String, low: int, high: int) -> Image:
 			for dx in range(2):
 				for dy in range(2): image.set_pixel(x+dx,y+dy,color)
 	return image
+

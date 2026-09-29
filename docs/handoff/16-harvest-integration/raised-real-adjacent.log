@@ -1,0 +1,70 @@
+Godot Engine v4.5.stable.official.876b29033 - https://godotengine.org
+
+[PASS] legacy target feedback fallback retains logical point 
+[PASS] projected interaction foot level0 
+[PASS] decoration lifted exactly once level0 
+[PASS] raised root stays at saved logical cell level0 
+[PASS] raised target uses logical cell level0 
+[PASS] raised sprite preserves exact projected artwork level0 
+[PASS] trunk body stays at logical root level0 body=(1088.0, 288.0) root=(1088.0, 288.0)
+[PASS] interaction resolves original raised object cell level0 
+[PASS] actual trunk collision aligned level0 direction(1.0, 0.0) distance=40.0030517578125
+[PASS] actual trunk collision aligned level0 direction(-1.0, 0.0) distance=40.0030517578125
+[PASS] actual trunk collision aligned level0 direction(0.0, -1.0) distance=40.0030517578125
+[PASS] actual trunk collision aligned level0 direction(0.0, 1.0) distance=40.0030517578125
+[PASS] fixture is truly keyboard adjacent level0 
+[PASS] tap picks projected foot level0 
+[PASS] prompt uses projected foot level0 
+[PASS] direct anticipation has not paid early level0 
+[PASS] real direct gather grants item level0 
+[PASS] direct feedback uses projected foot level0 actual=(1088.0, 248.0) expected=(1088.0, 248.0)
+[PASS] tap anticipation has not paid early level0 
+[PASS] real tap gather grants item level0 
+[PASS] tap feedback uses projected foot level0 actual=(1088.0, 248.0) expected=(1088.0, 248.0)
+[PASS] raised blocking tree grants actual wood level0 
+[PASS] gathered trunk releases real physics path level0 distance=5.0
+[PASS] projected interaction foot level1 
+[PASS] decoration lifted exactly once level1 
+[PASS] raised root stays at saved logical cell level1 
+[PASS] raised target uses logical cell level1 
+[PASS] raised sprite preserves exact projected artwork level1 
+[PASS] trunk body stays at logical root level1 body=(1152.0, 320.0) root=(1152.0, 320.0)
+[PASS] interaction resolves original raised object cell level1 
+[PASS] actual trunk collision aligned level1 direction(1.0, 0.0) distance=40.0030517578125
+[PASS] actual trunk collision aligned level1 direction(-1.0, 0.0) distance=40.0030517578125
+[PASS] actual trunk collision aligned level1 direction(0.0, -1.0) distance=40.0030517578125
+[PASS] actual trunk collision aligned level1 direction(0.0, 1.0) distance=40.0030517578125
+[PASS] fixture is truly keyboard adjacent level1 
+[PASS] tap picks projected foot level1 
+[PASS] prompt uses projected foot level1 
+[PASS] direct anticipation has not paid early level1 
+[PASS] real direct gather grants item level1 
+[PASS] direct feedback uses projected foot level1 actual=(1152.0, 248.0) expected=(1152.0, 248.0)
+[PASS] tap anticipation has not paid early level1 
+[PASS] real tap gather grants item level1 
+[PASS] tap feedback uses projected foot level1 actual=(1152.0, 248.0) expected=(1152.0, 248.0)
+[PASS] raised blocking tree grants actual wood level1 
+[PASS] gathered trunk releases real physics path level1 distance=5.0
+[PASS] projected interaction foot level2 
+[PASS] decoration lifted exactly once level2 
+[PASS] raised root stays at saved logical cell level2 
+[PASS] raised target uses logical cell level2 
+[PASS] raised sprite preserves exact projected artwork level2 
+[PASS] trunk body stays at logical root level2 body=(1088.0, 352.0) root=(1088.0, 352.0)
+[PASS] interaction resolves original raised object cell level2 
+[PASS] actual trunk collision aligned level2 direction(1.0, 0.0) distance=40.0030517578125
+[PASS] actual trunk collision aligned level2 direction(-1.0, 0.0) distance=40.0030517578125
+[PASS] actual trunk collision aligned level2 direction(0.0, -1.0) distance=40.0030517578125
+[PASS] actual trunk collision aligned level2 direction(0.0, 1.0) distance=40.0030517578125
+[PASS] fixture is truly keyboard adjacent level2 
+[PASS] tap picks projected foot level2 
+[PASS] prompt uses projected foot level2 
+[PASS] direct anticipation has not paid early level2 
+[PASS] real direct gather grants item level2 
+[PASS] direct feedback uses projected foot level2 actual=(1088.0, 248.0) expected=(1088.0, 248.0)
+[PASS] tap anticipation has not paid early level2 
+[PASS] real tap gather grants item level2 
+[PASS] tap feedback uses projected foot level2 actual=(1088.0, 248.0) expected=(1088.0, 248.0)
+[PASS] raised blocking tree grants actual wood level2 
+[PASS] gathered trunk releases real physics path level2 distance=5.0
+OBJECT_PHYSICS_RESULT failures=0
