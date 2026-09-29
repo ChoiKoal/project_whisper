@@ -1,0 +1,22 @@
+{
+  "worker": 83596,
+  "supervisor": 83594,
+  "whole_refactor_complete": false,
+  "harvest_status": "implemented candidate; final v2/focused verified; final legacy and narrow independent test review pending",
+  "art_status": "overall HOLD; NightGate R3 unchanged night REWORK",
+  "next_priority": "WORK-QUEUE KOAL1549789881620897802 internal black terrain gaps, after harvest checkpoint closure",
+  "focused": {"summary": "portable-reviewed/summary.json", "expected_scenes": 9, "passed_scenes": 9, "assertions": 458, "failures": 0, "script_errors": 0, "engine_error_lines": 3, "source_changed": [], "full65": false},
+  "final_v2": {"summary": "final-v2-summary.json", "assertions": 196, "failures": 0, "script_errors": 0, "engine_error_lines": 27, "completion_verified": true, "source_changed": [], "saved_revisit": true},
+  "legacy_before_final_touch_fix": {"summary": "normal-harvest-legacy-summary.json", "assertions": 204, "completion_verified": true, "engine_error_lines": 26, "source_changed": [], "is_final_source_verification": false},
+  "tested_source_manifests": ["portable-reviewed/source-hashes.json", "final-v2/source-hashes.json"],
+  "independent_review": {"first": "deleg_92d4c171 FAIL findings reproduced/fixed", "second": "deleg_cb5fdcd1 FAIL held-ground finding reproduced/fixed", "last": "deleg_a06708cc no production defect found, passed=false due incomplete test-body read"},
+  "integration_game_files_edited": false,
+  "final_integration_hash_comparison": "not executed",
+  "locks_manipulated": false,
+  "supervisor_controls_changed": false,
+  "external_publication": false,
+  "real_user_saves_touched": false,
+  "latest_runner": "foreground final-v2 returned exit0 with completion manifest; no later job launched",
+  "limits": ["not full regression", "not human fun QA", "not mobile/device/export acceptance", "not global art approval", "normal ground tile harvesting still immediate", "deferred failed save flush has no automatic retry"],
+  "checkpoint": "CHECKPOINT.md"
+}

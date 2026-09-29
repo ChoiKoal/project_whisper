@@ -1,0 +1,26 @@
+{
+  "scene": "map1_movement_harness",
+  "exit": 0,
+  "seconds": 52.12,
+  "passed": 211,
+  "failed": 0,
+  "script_errors": 0,
+  "engine_errors": [],
+  "command": [
+    "/Users/choikoal/.hermes/state/whisper-design-audit/_runtime/godot-4.5/Godot.app/Contents/MacOS/Godot",
+    "--path",
+    "/Users/choikoal/.hermes/state/whisper-world-objects/game",
+    "--max-fps",
+    "60",
+    "--resolution",
+    "1600x900",
+    "--single-window",
+    "--quit-after",
+    "18000",
+    "/Users/choikoal/.hermes/state/whisper-world-objects/game/scenes/dev/map1_movement_harness.tscn"
+  ],
+  "home": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/homes/movement-final-source",
+  "log": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/movement-final-source.log",
+  "source_changed": [],
+  "completion_verified": true
+}

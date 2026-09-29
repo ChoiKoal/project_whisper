@@ -1,0 +1,26 @@
+{
+  "scene": "map1_trench_capture",
+  "exit": 0,
+  "seconds": 15.66,
+  "passed": 140,
+  "failed": 0,
+  "script_errors": 0,
+  "engine_errors": [],
+  "command": [
+    "/Users/choikoal/.hermes/state/whisper-design-audit/_runtime/godot-4.5/Godot.app/Contents/MacOS/Godot",
+    "--path",
+    "/Users/choikoal/.hermes/state/whisper-world-objects/game",
+    "--max-fps",
+    "60",
+    "--resolution",
+    "1600x900",
+    "--single-window",
+    "--quit-after",
+    "5400",
+    "/Users/choikoal/.hermes/state/whisper-world-objects/game/scenes/dev/map1_trench_capture.tscn"
+  ],
+  "home": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/homes/pixels-final3",
+  "log": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/pixels-final3.log",
+  "source_changed": [],
+  "completion_verified": true
+}

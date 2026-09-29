@@ -86,6 +86,11 @@ func run() -> void:
 			check("actual trunk collision aligned level%d direction%s" % [level,direction],distance>=39 and distance<=42,"distance=%s" % distance)
 		player.release_move_and_path()
 		interaction.set_process(false)
+		# Collision probing ended north of the trunk, potentially two STACKED rows
+		# away. Put the fixture on a real E-adjacent cell, not a forged target.
+		player.position=loader.cell_center_world(cell+Vector2i(1,0))
+		await frames(2)
+		check("fixture is truly keyboard adjacent level%d" % level,interaction._cell_adjacent(cell,interaction._player_cell()))
 		var touch := TouchController.new()
 		add_child(touch)
 		touch._loader = loader
@@ -107,13 +112,17 @@ func run() -> void:
 			var feedback := Node2D.new()
 			add_child(feedback)
 			interaction._feedback_layer = feedback
+			var receipt := {}
+			feedback.child_entered_tree.connect(func(child: Node):
+				if child is Label: receipt["origin"] = child.global_position)
 			interaction._target_object = flower
 			interaction._hover_object = null
 			if mode == "direct": interaction._do_interact()
 			else: touch._target_object(flower)
-			check("real %s gather grants item level%d" % [mode,level],Inventory.count("I5")==before+1 and flower.is_queued_for_deletion())
-			var label := feedback.get_child(0) as Label if feedback.get_child_count()>0 else null
-			check("%s feedback uses projected foot level%d" % [mode,level],label!=null and label.global_position.is_equal_approx(visual-Vector2(0,40)),"actual=%s expected=%s" % [label.global_position if label else Vector2.ZERO,visual-Vector2(0,40)])
+			check("%s anticipation has not paid early level%d" % [mode,level],Inventory.count("I5")==before)
+			await frames(15) # bounded contact, no repeated input or synthetic commit
+			check("real %s gather grants item level%d" % [mode,level],Inventory.count("I5")==before+1 and not is_instance_valid(flower))
+			check("%s feedback uses projected foot level%d" % [mode,level],receipt.has("origin") and receipt.origin.is_equal_approx(visual-Vector2(0,40)),"actual=%s expected=%s" % [receipt.get("origin",Vector2.ZERO),visual-Vector2(0,40)])
 			feedback.queue_free()
 		# Verify the blocking TREE itself, not only a nonblocking flower: the
 		# real gather removes its trunk and the Player can enter the cleared foot.
@@ -122,7 +131,8 @@ func run() -> void:
 		add_child(tree_feedback)
 		interaction._feedback_layer = tree_feedback
 		interaction.interact_with_object(tree)
-		check("raised blocking tree grants actual wood level%d" % level,Inventory.count("I4")==wood_before+1 and tree.is_queued_for_deletion())
+		await frames(15)
+		check("raised blocking tree grants actual wood level%d" % level,Inventory.count("I4")==wood_before+1 and not is_instance_valid(tree))
 		interaction._target_object = null
 		await frames(2)
 		player.position=origin+Vector2.RIGHT*90

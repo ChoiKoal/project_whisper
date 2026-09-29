@@ -5,6 +5,10 @@ extends "res://scripts/world/map_loader.gd"
 var _foundation_walls: Array[Sprite2D] = []
 const PLACED_SURFACE = preload("res://scripts/foundation/placed_surface.gd")
 const LAYOUTS=preload("res://scripts/foundation/grove_layout.gd")
+const INTERNAL_TRENCH=preload("res://scripts/foundation/internal_trench.gd")
+var trench_cells: Dictionary = {}
+var _internal_trenches: Node2D
+var _low_bank_surfaces: Dictionary = {}
 @export var required_layout_revision := ""
 
 func _ready() -> void:
@@ -21,6 +25,7 @@ func _ready() -> void:
 	legacy_grove_bank=enable_scatter
 	semantic_anchors=LAYOUTS.anchors(layout_revision)
 	super._ready()
+
 	if _ysort != null:
 		_ysort.child_entered_tree.connect(_on_foundation_child)
 		for child in _ysort.get_children(): _on_foundation_child(child)
@@ -30,10 +35,42 @@ func _on_foundation_child(child: Node) -> void:
 		_attach_placed_surface.call_deferred(child)
 
 func _classify_void_cells() -> void:
+	trench_cells.clear()
 	if layout_revision==LAYOUTS.CANDIDATE:
 		# V2 authored void is a gap, not an implicit 230px wall unrelated to height.
 		ridge_cells.clear()
+		trench_cells=INTERNAL_TRENCH.classify(self)
 	else:super._classify_void_cells()
+
+func _is_cliff_open(cell: Vector2i) -> bool:
+	# Internal cuts have their own shallow banks; no 176px exterior apron below.
+	if trench_cells.has(cell):return false
+	return super._is_cliff_open(cell)
+
+func _process(_delta:float) -> void:
+	# TileMapLayer.changed does not announce set_cell/erase_cell in Godot4.5.
+	# Check only the few extra low-bank owners; unchanged sources allocate nothing.
+	if not _low_bank_surfaces.is_empty():_sync_low_banks()
+
+func _sync_low_banks() -> void:
+	# Ground gathering and save overlay both mutate the authoritative TileMap.
+	# Only these extra low-bank display owners mirror it; no gameplay writes.
+	for cell:Vector2i in _low_bank_surfaces:
+		var top:Sprite2D=_low_bank_surfaces[cell]
+		if not is_instance_valid(top) or top.is_queued_for_deletion():continue
+		var source:=get_cell_source_id(cell)
+		top.visible=source>=0 and tile_set.has_source(source)
+		if not top.visible:continue
+		var coords:=get_cell_atlas_coords(cell)
+		if top.get_meta("bank_source",-1)==source and top.get_meta("bank_atlas",Vector2i(-1,-1))==coords:continue
+		var atlas:=tile_set.get_source(source) as TileSetAtlasSource
+		if atlas==null:top.hide();continue
+		var texture:=AtlasTexture.new()
+		texture.atlas=atlas.texture
+		texture.region=atlas.get_tile_texture_region(coords)
+		top.texture=texture
+		top.set_meta("bank_source",source)
+		top.set_meta("bank_atlas",coords)
 
 ## Candidate broad ascent uses one continuous plane across connected ramp cells.
 ## Permit a crossing only when BOTH shared-edge endpoints coincide. Legacy stays frozen.
@@ -81,7 +118,16 @@ func _build_elevation() -> void:
 	surfaces.z_as_relative = false
 	surfaces.y_sort_enabled = true
 	_cliff_face_overlay.add_child(surfaces)
-	for cell in hill_cells:
+	var top_cells:=hill_cells.duplicate()
+	# Full-rectangle T0 is retained for the exterior silhouette. Its corners can
+	# cover the low bank in the unsorted base TileMap; re-present ONLY those land
+	# cells in the same surface domain as the raised bank (never paint onto V).
+	for cut: Vector2i in trench_cells:
+		for side in INTERNAL_TRENCH.SIDES:
+			var neighbor:=get_neighbor_cell(cut,side)
+			if _is_island_cell(neighbor) and height_at(neighbor)==0:
+				top_cells[neighbor]=0
+	for cell in top_cells:
 		if is_ramp(cell): continue
 		var source := get_cell_source_id(cell)
 		if layout_revision!=LAYOUTS.CANDIDATE and (source < 2 or source > 5): source = _variant_source(cell.x,cell.y)
@@ -98,10 +144,14 @@ func _build_elevation() -> void:
 		top.position = map_to_local(cell)
 		top.offset = Vector2(-64,-32-HILL_LIFT*height_at(cell))
 		top.modulate = Color.WHITE.lerp(Color(1.14,1.13,1.06),float(height_at(cell))/2.0)
-		top.set_meta("surface_cell",cell)
+		top.set_meta("surface_cell" if hill_cells.has(cell) else "low_bank_surface_cell",cell)
+		if not hill_cells.has(cell):
+			_low_bank_surfaces[cell]=top
+			top.set_meta("bank_source",source)
+			top.set_meta("bank_atlas",ATLAS)
 		top.set_meta("render_role","walkable_surface")
 		surfaces.add_child(top)
-		hill_sprite_count += 1
+		if hill_cells.has(cell):hill_sprite_count += 1
 	_build_ao_seats()
 	_build_cliff_faces()
 	_build_ramp_slopes()
@@ -121,7 +171,10 @@ func _build_elevation() -> void:
 			child.set_meta("render_role", "walkable_surface")
 		if child.has_meta("raised_cell"):
 			_split_vertical_faces(child as Sprite2D)
-	if layout_revision==LAYOUTS.CANDIDATE:_build_ramp_end_faces()
+	if layout_revision==LAYOUTS.CANDIDATE:
+		_build_ramp_end_faces()
+		_internal_trenches=INTERNAL_TRENCH.build(self,trench_cells)
+		_sync_low_banks()
 
 func _build_ramp_end_faces()->void:
 	# Two exposed short ends of the contiguous candidate slope. These pixel faces
@@ -187,6 +240,11 @@ func _split_vertical_faces(original: Sprite2D) -> void:
 	original.queue_free()
 
 func clear_foundation_elevation() -> void:
+	_low_bank_surfaces.clear()
+	if is_instance_valid(_internal_trenches):
+		remove_child(_internal_trenches)
+		_internal_trenches.queue_free()
+	_internal_trenches=null
 	# Reparented walls are owned here, not by Elevation; clear both ownership domains.
 	for wall in _foundation_walls:
 		if is_instance_valid(wall):

@@ -77,7 +77,7 @@ var _discovered_this_frame := false
 
 
 func _wire_gameplay_sfx() -> void:
-	GameState.item_gathered.connect(func(_id): play_sfx("gather_pop"))
+	GameState.item_gathered.connect(_on_material_gathered)
 	GameState.recipe_discovered.connect(func(_rid):
 		_discovered_this_frame = true
 		play_sfx("fuse_discovery")
@@ -99,6 +99,12 @@ func _wire_gameplay_sfx() -> void:
 func _clear_discovery_flag() -> void:
 	_discovered_this_frame = false
 
+func _on_material_gathered(item_id: String) -> void:
+	var material := "flora"
+	if item_id == "I4": material = "wood"
+	elif item_id in ["I6","I8"]: material = "rock"
+	play_sfx("harvest_" + material)
+
 
 # ==== setup ================================================================
 
@@ -112,6 +118,8 @@ func _ensure_buses() -> void:
 
 
 func _load_streams() -> void:
+	for kind in ["flora","rock","wood"]:
+		_streams["harvest_"+kind] = preload("res://scripts/gameplay/harvest_sfx.gd").make_stream(kind)
 	for name_v in SFX_NAMES + ["bgm_day", "bgm_night"]:
 		var name := String(name_v)
 		# v0.5: BGM is now real CC0 .ogg (see CREDITS.md); everything else stays .wav.
