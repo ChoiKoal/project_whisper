@@ -69,3 +69,5 @@ func scene_contract()->void:
 	check("mismatch refuses before touching cells",ground.get_cell_source_id(Vector2i(1,1))==source)
 	SaveManager.unregister_world();scene.queue_free();await frames(3)
 	SaveManager.new_game()
+
+

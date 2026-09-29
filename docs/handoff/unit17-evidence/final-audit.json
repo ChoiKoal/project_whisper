@@ -1,0 +1,1549 @@
+{
+  "scope": "FINAL17 one manually authorized MAP1-only cleanup; STOP for the week; parent verification pending; NOT whole-project completion",
+  "timestamp": "2026-09-17T01:11:17.974353+09:00",
+  "head": "c25cf55f037e3acd2d708bd036e5c3165ea45906",
+  "source_manifest": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/source-hash-manifest.json",
+  "source_manifest_sha256": "1f6119becf6504f313d5550d7c9c6338710f747ebe3f3889050207b7698719a6",
+  "production_delta": {
+    "game/scripts/foundation/foundation_map.gd": {
+      "before_sha256": "0824d8a161ed73fa49f76a13585b451357e803795f3ccc11d2751948b74668ec",
+      "after_sha256": "7b7ea9713102f05816b7bc2df8a1cdd3d6c99f32c568522630d00196a76db677"
+    },
+    "game/scripts/foundation/internal_trench.gd": {
+      "before_sha256": null,
+      "after_sha256": "387b82393359018cf697a03ebf35b740a09afdd956d951f6560aa8f7ec07df30"
+    }
+  },
+  "all_game_delta": [
+    "game/scenes/dev/map1_bank_mutation_harness.gd",
+    "game/scenes/dev/map1_bank_mutation_harness.gd.uid",
+    "game/scenes/dev/map1_bank_mutation_harness.tscn",
+    "game/scenes/dev/map1_movement_harness.gd",
+    "game/scenes/dev/map1_movement_harness.gd.uid",
+    "game/scenes/dev/map1_movement_harness.tscn",
+    "game/scenes/dev/map1_normal_progression_capture.gd",
+    "game/scenes/dev/map1_normal_progression_capture.gd.uid",
+    "game/scenes/dev/map1_normal_progression_capture.tscn",
+    "game/scenes/dev/map1_trench_capture.gd",
+    "game/scenes/dev/map1_trench_capture.gd.uid",
+    "game/scenes/dev/map1_trench_capture.tscn",
+    "game/scripts/foundation/foundation_map.gd",
+    "game/scripts/foundation/internal_trench.gd",
+    "game/scripts/foundation/internal_trench.gd.uid"
+  ],
+  "integration_game_delta": [],
+  "entry_file_counts": {
+    "world": 2539,
+    "integration": 2159
+  },
+  "final_file_counts": {
+    "world": 2553,
+    "integration": 2159
+  },
+  "asset_layout_content_delta": [],
+  "unit16_gameplay_sources_changed": [],
+  "executed_final_receipts": [
+    {
+      "scene": "map1_bank_mutation_harness",
+      "exit": 0,
+      "seconds": 12.32,
+      "passed": 8,
+      "failed": 0,
+      "script_errors": 0,
+      "engine_errors": [],
+      "command": [
+        "/Users/choikoal/.hermes/state/whisper-design-audit/_runtime/godot-4.5/Godot.app/Contents/MacOS/Godot",
+        "--path",
+        "/Users/choikoal/.hermes/state/whisper-world-objects/game",
+        "--max-fps",
+        "60",
+        "--resolution",
+        "1600x900",
+        "--single-window",
+        "--quit-after",
+        "5400",
+        "/Users/choikoal/.hermes/state/whisper-world-objects/game/scenes/dev/map1_bank_mutation_harness.tscn"
+      ],
+      "home": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/homes/mutation-green2",
+      "log": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/mutation-green2.log",
+      "source_changed": [],
+      "completion_verified": true,
+      "tag": "mutation-green2",
+      "final_content_source_delta": [],
+      "summary_sha256": "baa93bc27ea66699c9a9e01b2e6a57cbf89771773dd01fb3e48afc10ed44a6a8"
+    },
+    {
+      "scene": "map1_trench_capture",
+      "exit": 0,
+      "seconds": 15.66,
+      "passed": 140,
+      "failed": 0,
+      "script_errors": 0,
+      "engine_errors": [],
+      "command": [
+        "/Users/choikoal/.hermes/state/whisper-design-audit/_runtime/godot-4.5/Godot.app/Contents/MacOS/Godot",
+        "--path",
+        "/Users/choikoal/.hermes/state/whisper-world-objects/game",
+        "--max-fps",
+        "60",
+        "--resolution",
+        "1600x900",
+        "--single-window",
+        "--quit-after",
+        "5400",
+        "/Users/choikoal/.hermes/state/whisper-world-objects/game/scenes/dev/map1_trench_capture.tscn"
+      ],
+      "home": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/homes/pixels-final3",
+      "log": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/pixels-final3.log",
+      "source_changed": [],
+      "completion_verified": true,
+      "tag": "pixels-final3",
+      "final_content_source_delta": [],
+      "summary_sha256": "13741c34f7d548589777f5b001c621b5a1fbd0dbb0bc578f3b73522c34c8ef1d"
+    },
+    {
+      "scene": "map1_movement_harness",
+      "exit": 0,
+      "seconds": 52.12,
+      "passed": 211,
+      "failed": 0,
+      "script_errors": 0,
+      "engine_errors": [],
+      "command": [
+        "/Users/choikoal/.hermes/state/whisper-design-audit/_runtime/godot-4.5/Godot.app/Contents/MacOS/Godot",
+        "--path",
+        "/Users/choikoal/.hermes/state/whisper-world-objects/game",
+        "--max-fps",
+        "60",
+        "--resolution",
+        "1600x900",
+        "--single-window",
+        "--quit-after",
+        "18000",
+        "/Users/choikoal/.hermes/state/whisper-world-objects/game/scenes/dev/map1_movement_harness.tscn"
+      ],
+      "home": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/homes/movement-final-source",
+      "log": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/movement-final-source.log",
+      "source_changed": [],
+      "completion_verified": true,
+      "tag": "movement-final-source",
+      "final_content_source_delta": [],
+      "summary_sha256": "e465c214da9006f5e27f6949427d21d3a497581452bd2cb5d21f5eb17605350f"
+    },
+    {
+      "scene": "foundation_surface_harness",
+      "exit": 0,
+      "seconds": 65.07,
+      "passed": 172,
+      "failed": 0,
+      "script_errors": 0,
+      "engine_errors": [],
+      "command": [
+        "/Users/choikoal/.hermes/state/whisper-design-audit/_runtime/godot-4.5/Godot.app/Contents/MacOS/Godot",
+        "--path",
+        "/Users/choikoal/.hermes/state/whisper-world-objects/game",
+        "--max-fps",
+        "60",
+        "--resolution",
+        "1600x900",
+        "--single-window",
+        "--quit-after",
+        "5400",
+        "/Users/choikoal/.hermes/state/whisper-world-objects/game/scenes/dev/foundation_surface_harness.tscn"
+      ],
+      "home": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/homes/ramp-surface-final",
+      "log": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/ramp-surface-final.log",
+      "source_changed": [],
+      "completion_verified": true,
+      "tag": "ramp-surface-final",
+      "final_content_source_delta": [],
+      "summary_sha256": "4fc830534652f1aa0adeeb75ad309d3cf64ec78699645d175ca8b26c600c40f1"
+    },
+    {
+      "scene": "map1_normal_progression_capture",
+      "exit": 0,
+      "seconds": 277.31,
+      "passed": 199,
+      "failed": 0,
+      "script_errors": 0,
+      "engine_errors": [
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead."
+      ],
+      "command": [
+        "/Users/choikoal/.hermes/state/whisper-design-audit/_runtime/godot-4.5/Godot.app/Contents/MacOS/Godot",
+        "--path",
+        "/Users/choikoal/.hermes/state/whisper-world-objects/game",
+        "--max-fps",
+        "60",
+        "--resolution",
+        "1600x900",
+        "--single-window",
+        "--quit-after",
+        "30000",
+        "/Users/choikoal/.hermes/state/whisper-world-objects/game/scenes/dev/map1_normal_progression_capture.tscn"
+      ],
+      "home": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/homes/normal-final-v2",
+      "log": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/normal-final-v2.log",
+      "source_changed": [],
+      "completion_verified": true,
+      "tag": "normal-final-v2",
+      "final_content_source_delta": [],
+      "summary_sha256": "4dd670fe853ec691ab1a7645abb067a5127a1212d3ba3ccef9e47ec47d26d2d8"
+    },
+    {
+      "scene": "map1_normal_progression_capture",
+      "exit": 0,
+      "seconds": 294.15,
+      "passed": 207,
+      "failed": 0,
+      "script_errors": 0,
+      "engine_errors": [
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead."
+      ],
+      "command": [
+        "/Users/choikoal/.hermes/state/whisper-design-audit/_runtime/godot-4.5/Godot.app/Contents/MacOS/Godot",
+        "--path",
+        "/Users/choikoal/.hermes/state/whisper-world-objects/game",
+        "--max-fps",
+        "60",
+        "--resolution",
+        "1600x900",
+        "--single-window",
+        "--quit-after",
+        "30000",
+        "/Users/choikoal/.hermes/state/whisper-world-objects/game/scenes/dev/map1_normal_progression_capture.tscn"
+      ],
+      "home": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/homes/normal-final-legacy",
+      "log": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/normal-final-legacy.log",
+      "source_changed": [],
+      "completion_verified": true,
+      "tag": "normal-final-legacy",
+      "final_content_source_delta": [],
+      "summary_sha256": "ef146dbcb34b482ad978da8f328cd400805643794f2943c888ee25504e5a43bd"
+    }
+  ],
+  "focused": {
+    "expected_scenes": [
+      "harvest_reward_harness",
+      "harvest_integration_harness",
+      "harvest_save_harness",
+      "terrain_object_physics_harness"
+    ],
+    "executed_scenes": [
+      "harvest_reward_harness",
+      "harvest_integration_harness",
+      "harvest_save_harness",
+      "terrain_object_physics_harness"
+    ],
+    "exact_set": true,
+    "passed_scenes": 4,
+    "failed_scenes": 0,
+    "assertions": 149,
+    "source_changed": [],
+    "engine_error_lines": 0,
+    "scope": "Focused synthetic harvest/safety/physics, NOT normal route, full regression, art/fun/device acceptance"
+  },
+  "final_execution_totals": {
+    "scenes": 10,
+    "assertions": 1086,
+    "failures": 0,
+    "script_errors": 0,
+    "engine_error_lines": 52,
+    "engine_errors": {
+      "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.": 52
+    },
+    "warnings": {
+      "WARNING: ObjectDB instances leaked at exit (run with --verbose for details).": 4
+    }
+  },
+  "pixel_oracle": {
+    "unique_internal_cuts": 43,
+    "tested_cut_pixels": 10313,
+    "raw_void_hits": 0,
+    "low_bank_pixels": 2013,
+    "low_bank_void_hits": 0
+  },
+  "movement": {
+    "cases": 34,
+    "modes": {
+      "keyboard": 17,
+      "tap": 17
+    },
+    "passages": 20,
+    "blocked": 14,
+    "physics_samples": 1548,
+    "postdraw_contact_samples": 1642,
+    "void_hits": 0,
+    "projection_errors": 0,
+    "outcomes": [
+      {
+        "accepted": true,
+        "arrived": false,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 48,
+        "end": [
+          2880.0,
+          308.003051757812
+        ],
+        "expected_passage": false,
+        "label": "night-0-closed-keyboard",
+        "mode": "keyboard",
+        "start": [
+          2880.0,
+          352.0
+        ],
+        "target": [
+          2880.0,
+          224.0
+        ],
+        "visit": "(22, 8)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": false,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 48,
+        "end": [
+          2893.2177734375,
+          303.757568359375
+        ],
+        "expected_passage": false,
+        "label": "night-0-closed-tap",
+        "mode": "tap",
+        "start": [
+          2880.0,
+          352.0
+        ],
+        "target": [
+          2880.0,
+          224.0
+        ],
+        "visit": "(22, 8)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": false,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 45,
+        "end": [
+          3008.0,
+          308.003051757812
+        ],
+        "expected_passage": false,
+        "label": "night-1-closed-keyboard",
+        "mode": "keyboard",
+        "start": [
+          3008.0,
+          352.0
+        ],
+        "target": [
+          3008.0,
+          224.0
+        ],
+        "visit": "(23, 8)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": false,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 49,
+        "end": [
+          3021.17724609375,
+          303.777709960938
+        ],
+        "expected_passage": false,
+        "label": "night-1-closed-tap",
+        "mode": "tap",
+        "start": [
+          3008.0,
+          352.0
+        ],
+        "target": [
+          3008.0,
+          224.0
+        ],
+        "visit": "(23, 8)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": true,
+        "contact_errors": 0,
+        "drawn_contact_samples": 491,
+        "end": [
+          2880.0,
+          227.0
+        ],
+        "expected_passage": true,
+        "label": "night-0-open-keyboard",
+        "mode": "keyboard",
+        "start": [
+          2880.0,
+          352.0
+        ],
+        "target": [
+          2880.0,
+          224.0
+        ],
+        "visit": "(22, 8)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 16,
+        "end": [
+          2880.0,
+          349.0
+        ],
+        "expected_passage": true,
+        "label": "night-0-open-keyboard-reverse",
+        "mode": "keyboard",
+        "start": [
+          2880.0,
+          224.0
+        ],
+        "target": [
+          2880.0,
+          352.0
+        ],
+        "visit": "(22, 8)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 34,
+        "end": [
+          2884.16186523438,
+          226.298629760742
+        ],
+        "expected_passage": true,
+        "label": "night-0-open-tap",
+        "mode": "tap",
+        "start": [
+          2880.0,
+          352.0
+        ],
+        "target": [
+          2880.0,
+          224.0
+        ],
+        "visit": "(22, 8)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 32,
+        "end": [
+          2884.162109375,
+          349.701324462891
+        ],
+        "expected_passage": true,
+        "label": "night-0-open-tap-reverse",
+        "mode": "tap",
+        "start": [
+          2880.0,
+          224.0
+        ],
+        "target": [
+          2880.0,
+          352.0
+        ],
+        "visit": "(22, 8)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 17,
+        "end": [
+          3008.0,
+          227.0
+        ],
+        "expected_passage": true,
+        "label": "night-1-open-keyboard",
+        "mode": "keyboard",
+        "start": [
+          3008.0,
+          352.0
+        ],
+        "target": [
+          3008.0,
+          224.0
+        ],
+        "visit": "(23, 8)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 18,
+        "end": [
+          3008.0,
+          349.0
+        ],
+        "expected_passage": true,
+        "label": "night-1-open-keyboard-reverse",
+        "mode": "keyboard",
+        "start": [
+          3008.0,
+          224.0
+        ],
+        "target": [
+          3008.0,
+          352.0
+        ],
+        "visit": "(23, 8)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 33,
+        "end": [
+          3012.16186523438,
+          226.298629760742
+        ],
+        "expected_passage": true,
+        "label": "night-1-open-tap",
+        "mode": "tap",
+        "start": [
+          3008.0,
+          352.0
+        ],
+        "target": [
+          3008.0,
+          224.0
+        ],
+        "visit": "(23, 8)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 36,
+        "end": [
+          3012.162109375,
+          349.701324462891
+        ],
+        "expected_passage": true,
+        "label": "night-1-open-tap-reverse",
+        "mode": "tap",
+        "start": [
+          3008.0,
+          224.0
+        ],
+        "target": [
+          3008.0,
+          352.0
+        ],
+        "visit": "(23, 8)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": false,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 49,
+        "end": [
+          3136.0,
+          532.003051757812
+        ],
+        "expected_passage": false,
+        "label": "bush-closed-keyboard",
+        "mode": "keyboard",
+        "start": [
+          3136.0,
+          544.0
+        ],
+        "target": [
+          3136.0,
+          416.0
+        ],
+        "visit": "(-1, -1)",
+        "visited": false,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": false,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 50,
+        "end": [
+          3166.93969726562,
+          518.896118164062
+        ],
+        "expected_passage": false,
+        "label": "bush-closed-tap",
+        "mode": "tap",
+        "start": [
+          3136.0,
+          544.0
+        ],
+        "target": [
+          3136.0,
+          416.0
+        ],
+        "visit": "(-1, -1)",
+        "visited": false,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 20,
+        "end": [
+          3136.0,
+          419.0
+        ],
+        "expected_passage": true,
+        "label": "bush-open-keyboard",
+        "mode": "keyboard",
+        "start": [
+          3136.0,
+          544.0
+        ],
+        "target": [
+          3136.0,
+          416.0
+        ],
+        "visit": "(24, 14)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 16,
+        "end": [
+          3136.0,
+          541.0
+        ],
+        "expected_passage": true,
+        "label": "bush-open-keyboard-reverse",
+        "mode": "keyboard",
+        "start": [
+          3136.0,
+          416.0
+        ],
+        "target": [
+          3136.0,
+          544.0
+        ],
+        "visit": "(24, 14)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 37,
+        "end": [
+          3140.162109375,
+          418.298675537109
+        ],
+        "expected_passage": true,
+        "label": "bush-open-tap",
+        "mode": "tap",
+        "start": [
+          3136.0,
+          544.0
+        ],
+        "target": [
+          3136.0,
+          416.0
+        ],
+        "visit": "(24, 14)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 35,
+        "end": [
+          3140.16186523438,
+          541.701354980469
+        ],
+        "expected_passage": true,
+        "label": "bush-open-tap-reverse",
+        "mode": "tap",
+        "start": [
+          3136.0,
+          416.0
+        ],
+        "target": [
+          3136.0,
+          544.0
+        ],
+        "visit": "(24, 14)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": false,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 48,
+        "end": [
+          2496.03173828125,
+          345.907257080078
+        ],
+        "expected_passage": false,
+        "label": "void-19-8-keyboard",
+        "mode": "keyboard",
+        "start": [
+          2496.0,
+          368.0
+        ],
+        "target": [
+          2496.0,
+          288.0
+        ],
+        "visit": "(-1, -1)",
+        "visited": false,
+        "void_hits": 0
+      },
+      {
+        "accepted": false,
+        "arrived": false,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 47,
+        "end": [
+          2496.0,
+          368.0
+        ],
+        "expected_passage": false,
+        "label": "void-19-8-tap",
+        "mode": "tap",
+        "start": [
+          2496.0,
+          368.0
+        ],
+        "target": [
+          2496.0,
+          288.0
+        ],
+        "visit": "(-1, -1)",
+        "visited": false,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": false,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 50,
+        "end": [
+          2495.97509765625,
+          540.0341796875
+        ],
+        "expected_passage": false,
+        "label": "void-19-14-keyboard",
+        "mode": "keyboard",
+        "start": [
+          2496.0,
+          560.0
+        ],
+        "target": [
+          2496.0,
+          480.0
+        ],
+        "visit": "(-1, -1)",
+        "visited": false,
+        "void_hits": 0
+      },
+      {
+        "accepted": false,
+        "arrived": false,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 52,
+        "end": [
+          2496.0,
+          560.0
+        ],
+        "expected_passage": false,
+        "label": "void-19-14-tap",
+        "mode": "tap",
+        "start": [
+          2496.0,
+          560.0
+        ],
+        "target": [
+          2496.0,
+          480.0
+        ],
+        "visit": "(-1, -1)",
+        "visited": false,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": false,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 51,
+        "end": [
+          1984.0,
+          588.003112792969
+        ],
+        "expected_passage": false,
+        "label": "void-15-14-keyboard",
+        "mode": "keyboard",
+        "start": [
+          1984.0,
+          560.0
+        ],
+        "target": [
+          1984.0,
+          480.0
+        ],
+        "visit": "(-1, -1)",
+        "visited": false,
+        "void_hits": 0
+      },
+      {
+        "accepted": false,
+        "arrived": false,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 49,
+        "end": [
+          1984.0,
+          588.075988769531
+        ],
+        "expected_passage": false,
+        "label": "void-15-14-tap",
+        "mode": "tap",
+        "start": [
+          1984.0,
+          560.0
+        ],
+        "target": [
+          1984.0,
+          480.0
+        ],
+        "visit": "(-1, -1)",
+        "visited": false,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": false,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 56,
+        "end": [
+          4288.0322265625,
+          537.907287597656
+        ],
+        "expected_passage": false,
+        "label": "void-33-14-keyboard",
+        "mode": "keyboard",
+        "start": [
+          4288.0,
+          560.0
+        ],
+        "target": [
+          4288.0,
+          480.0
+        ],
+        "visit": "(-1, -1)",
+        "visited": false,
+        "void_hits": 0
+      },
+      {
+        "accepted": false,
+        "arrived": false,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 54,
+        "end": [
+          4288.0,
+          560.0
+        ],
+        "expected_passage": false,
+        "label": "void-33-14-tap",
+        "mode": "tap",
+        "start": [
+          4288.0,
+          560.0
+        ],
+        "target": [
+          4288.0,
+          480.0
+        ],
+        "visit": "(-1, -1)",
+        "visited": false,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 19,
+        "end": [
+          2557.220703125,
+          513.3896484375
+        ],
+        "expected_passage": true,
+        "label": "ramp-19-16-false-keyboard",
+        "mode": "keyboard",
+        "start": [
+          2432.0,
+          576.0
+        ],
+        "target": [
+          2560.0,
+          512.0
+        ],
+        "visit": "(19, 16)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 21,
+        "end": [
+          2557.220703125,
+          513.3896484375
+        ],
+        "expected_passage": true,
+        "label": "ramp-19-16-false-tap",
+        "mode": "tap",
+        "start": [
+          2432.0,
+          576.0
+        ],
+        "target": [
+          2560.0,
+          512.0
+        ],
+        "visit": "(19, 16)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 18,
+        "end": [
+          2434.779296875,
+          574.6103515625
+        ],
+        "expected_passage": true,
+        "label": "ramp-19-16-true-keyboard",
+        "mode": "keyboard",
+        "start": [
+          2560.0,
+          512.0
+        ],
+        "target": [
+          2432.0,
+          576.0
+        ],
+        "visit": "(19, 16)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 20,
+        "end": [
+          2434.779296875,
+          574.6103515625
+        ],
+        "expected_passage": true,
+        "label": "ramp-19-16-true-tap",
+        "mode": "tap",
+        "start": [
+          2560.0,
+          512.0
+        ],
+        "target": [
+          2432.0,
+          576.0
+        ],
+        "visit": "(19, 16)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 20,
+        "end": [
+          2941.220703125,
+          705.3896484375
+        ],
+        "expected_passage": true,
+        "label": "ramp-22-22-false-keyboard",
+        "mode": "keyboard",
+        "start": [
+          2816.0,
+          768.0
+        ],
+        "target": [
+          2944.0,
+          704.0
+        ],
+        "visit": "(22, 22)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 21,
+        "end": [
+          2941.220703125,
+          705.3896484375
+        ],
+        "expected_passage": true,
+        "label": "ramp-22-22-false-tap",
+        "mode": "tap",
+        "start": [
+          2816.0,
+          768.0
+        ],
+        "target": [
+          2944.0,
+          704.0
+        ],
+        "visit": "(22, 22)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 20,
+        "end": [
+          2818.779296875,
+          766.6103515625
+        ],
+        "expected_passage": true,
+        "label": "ramp-22-22-true-keyboard",
+        "mode": "keyboard",
+        "start": [
+          2944.0,
+          704.0
+        ],
+        "target": [
+          2816.0,
+          768.0
+        ],
+        "visit": "(22, 22)",
+        "visited": true,
+        "void_hits": 0
+      },
+      {
+        "accepted": true,
+        "arrived": true,
+        "cinematic_interruption": false,
+        "contact_errors": 0,
+        "drawn_contact_samples": 22,
+        "end": [
+          2818.779296875,
+          766.6103515625
+        ],
+        "expected_passage": true,
+        "label": "ramp-22-22-true-tap",
+        "mode": "tap",
+        "start": [
+          2944.0,
+          704.0
+        ],
+        "target": [
+          2816.0,
+          768.0
+        ],
+        "visit": "(22, 22)",
+        "visited": true,
+        "void_hits": 0
+      }
+    ]
+  },
+  "normal_input": {
+    "normal-final-v2": {
+      "crossing_shots": [
+        "ramp-end-22",
+        "bank-row-15",
+        "bank-row-14",
+        "bank-row-13",
+        "bank-row-9",
+        "bank-row-8",
+        "bank-row-7"
+      ],
+      "kind": "passive observation of inherited harvest_progression_capture normal title/Home/L1/revisit route; no added state injection",
+      "projection_errors": 0,
+      "samples": 9514,
+      "void_hits": 0,
+      "recorded_motion_samples": 2378,
+      "required_finish": "normal_saved_revisit"
+    },
+    "normal-final-legacy": {
+      "crossing_shots": [],
+      "kind": "passive observation of inherited harvest_progression_capture normal title/Home/L1/revisit route; no added state injection",
+      "projection_errors": 0,
+      "samples": 10564,
+      "void_hits": 0,
+      "recorded_motion_samples": 2641,
+      "required_finish": "normal_saved_revisit"
+    }
+  },
+  "before_after": [
+    {
+      "comparison": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/pixels-final3-bands-before-after.png",
+      "sources": [
+        {
+          "path": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/terrain-red/bands.png",
+          "sha256": "cbde2e0a467863121ed5304e28f94f3788336118f595ca1541d8a18546d35198"
+        },
+        {
+          "path": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/pixels-final3/bands.png",
+          "sha256": "e7c53d9399861c52874de68567db1ef64310d294267c7cad94fa24b252989cff"
+        }
+      ]
+    },
+    {
+      "comparison": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/pixels-final3-left-mouth-before-after.png",
+      "sources": [
+        {
+          "path": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/terrain-red/left-mouth.png",
+          "sha256": "6e7e6cc99e09e737463e7e269e19e638bfc4e397f32d62d54e1ff09a7d2a3651"
+        },
+        {
+          "path": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/pixels-final3/left-mouth.png",
+          "sha256": "63719159a3ca64b096924e93d6826a7602efd81fd77833d496c608bf06afe0be"
+        }
+      ]
+    },
+    {
+      "comparison": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/pixels-final3-right-mouth-before-after.png",
+      "sources": [
+        {
+          "path": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/terrain-red/right-mouth.png",
+          "sha256": "318e94b6ff987d1e07bb5cc0561932f9fcb558caab37c70d61cb1049ef81b0ea"
+        },
+        {
+          "path": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/pixels-final3/right-mouth.png",
+          "sha256": "b326df2b35ee19532732beaaa27e0b047d685f333ce844f1ff20e18f7c62091c"
+        }
+      ]
+    }
+  ],
+  "attempts_including_failed": [
+    {
+      "tag": "bank-green",
+      "exit": 0,
+      "passed": 72,
+      "failed": 0,
+      "script_errors": 0,
+      "engine_errors": [],
+      "completion_verified": true
+    },
+    {
+      "tag": "bank-red",
+      "exit": 1,
+      "passed": 66,
+      "failed": 6,
+      "script_errors": 0,
+      "engine_errors": [],
+      "completion_verified": false
+    },
+    {
+      "tag": "corners-green",
+      "exit": 0,
+      "passed": 103,
+      "failed": 0,
+      "script_errors": 0,
+      "engine_errors": [],
+      "completion_verified": true
+    },
+    {
+      "tag": "corners-red",
+      "exit": 1,
+      "passed": 96,
+      "failed": 7,
+      "script_errors": 0,
+      "engine_errors": [],
+      "completion_verified": false
+    },
+    {
+      "tag": "movement-final-source",
+      "exit": 0,
+      "passed": 211,
+      "failed": 0,
+      "script_errors": 0,
+      "engine_errors": [],
+      "completion_verified": true
+    },
+    {
+      "tag": "movement-final",
+      "exit": 0,
+      "passed": 211,
+      "failed": 0,
+      "script_errors": 0,
+      "engine_errors": [],
+      "completion_verified": true
+    },
+    {
+      "tag": "movement-timing",
+      "exit": 1,
+      "passed": 183,
+      "failed": 11,
+      "script_errors": 0,
+      "engine_errors": [],
+      "completion_verified": false
+    },
+    {
+      "tag": "movement1",
+      "exit": 1,
+      "passed": 138,
+      "failed": 51,
+      "script_errors": 0,
+      "engine_errors": [
+        "ERROR: 2 resources still in use at exit (run with --verbose for details)."
+      ],
+      "completion_verified": false
+    },
+    {
+      "tag": "movement2",
+      "exit": 1,
+      "passed": 182,
+      "failed": 12,
+      "script_errors": 0,
+      "engine_errors": [],
+      "completion_verified": false
+    },
+    {
+      "tag": "mutation-green",
+      "exit": 1,
+      "passed": 5,
+      "failed": 3,
+      "script_errors": 0,
+      "engine_errors": [],
+      "completion_verified": false
+    },
+    {
+      "tag": "mutation-green2",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0,
+      "script_errors": 0,
+      "engine_errors": [],
+      "completion_verified": true
+    },
+    {
+      "tag": "mutation-red",
+      "exit": 1,
+      "passed": 5,
+      "failed": 3,
+      "script_errors": 0,
+      "engine_errors": [],
+      "completion_verified": false
+    },
+    {
+      "tag": "normal-final-legacy",
+      "exit": 0,
+      "passed": 207,
+      "failed": 0,
+      "script_errors": 0,
+      "engine_errors": [
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead."
+      ],
+      "completion_verified": true
+    },
+    {
+      "tag": "normal-final-v2",
+      "exit": 0,
+      "passed": 199,
+      "failed": 0,
+      "script_errors": 0,
+      "engine_errors": [
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead.",
+        "ERROR: Lambda capture at index 0 was freed. Passed \"null\" instead."
+      ],
+      "completion_verified": true
+    },
+    {
+      "tag": "pixels-final",
+      "exit": 1,
+      "passed": 133,
+      "failed": 1,
+      "script_errors": 0,
+      "engine_errors": [
+        "ERROR: 2 resources still in use at exit (run with --verbose for details)."
+      ],
+      "completion_verified": false
+    },
+    {
+      "tag": "pixels-final2",
+      "exit": 1,
+      "passed": 133,
+      "failed": 1,
+      "script_errors": 0,
+      "engine_errors": [],
+      "completion_verified": false
+    },
+    {
+      "tag": "pixels-final3",
+      "exit": 0,
+      "passed": 140,
+      "failed": 0,
+      "script_errors": 0,
+      "engine_errors": [],
+      "completion_verified": true
+    },
+    {
+      "tag": "ramp-surface-final",
+      "exit": 0,
+      "passed": 172,
+      "failed": 0,
+      "script_errors": 0,
+      "engine_errors": [],
+      "completion_verified": true
+    },
+    {
+      "tag": "terrain-green1",
+      "exit": 1,
+      "passed": 33,
+      "failed": 32,
+      "script_errors": 9,
+      "engine_errors": [
+        "ERROR: Failed to load script \"res://scripts/foundation/foundation_map.gd\" with error \"Compilation failed\"."
+      ],
+      "completion_verified": false
+    },
+    {
+      "tag": "terrain-green2",
+      "exit": 0,
+      "passed": 66,
+      "failed": 0,
+      "script_errors": 0,
+      "engine_errors": [],
+      "completion_verified": true
+    },
+    {
+      "tag": "terrain-red",
+      "exit": 1,
+      "passed": 33,
+      "failed": 32,
+      "script_errors": 0,
+      "engine_errors": [],
+      "completion_verified": false
+    }
+  ],
+  "ownership": {
+    "flag": "1",
+    "supervisor": 98235,
+    "worker": 98236,
+    "fds": [
+      4,
+      5
+    ],
+    "readback": "/Users/choikoal/.hermes/state/whisper-world-objects/evidence/17-map1-final-cleanup/final-lock-ownership.txt",
+    "locks_never_modified": true
+  },
+  "controls_readback": {
+    "approved_task": true,
+    "auto_resume_enabled": false,
+    "completed": false,
+    "paused": true,
+    "updated_at": "2026-09-16T03:46:08.183358+09:00",
+    "version": 1
+  },
+  "controls_sha256": "5017aa3df086ccd813816ce6b74080384bbeed56db00cb6c15bf950f935a1512",
+  "whisper_schedules_readback": [
+    {
+      "id": "f49f0390b564",
+      "name": "Whisper 리팩토링 매시간 진행 보고",
+      "enabled": false,
+      "state": "paused",
+      "paused_at": "2026-09-16T23:38:16.426009+09:00"
+    },
+    {
+      "id": "da915110ed26",
+      "name": "Whisper 15분 워치독",
+      "enabled": false,
+      "state": "paused",
+      "paused_at": "2026-09-16T23:38:16.405719+09:00"
+    }
+  ],
+  "live_godot": [],
+  "limitations": [
+    "52 inherited Fusion freed-lambda ERROR lines across the two normal runs; no unrelated Lambda rewrite. ObjectDB warning counted separately.",
+    "Closed NightGate/bush navigation requests may be admitted by the existing graph; actual physics stops them. Raw V targets rejected and no queued V waypoints or physical V crossings.",
+    "Night normal capture retains low contrast; precise foot/bank readability is visually uncertain though matching-frame projection and actual crossings passed.",
+    "The retained ramp-end dark triangular side silhouette is not artistically redesigned; surface raster coverage/ownership and bidirectional physics passed, some single-frame visual depth ambiguity remains.",
+    "Normal route has no forced position/time/items/quest/gates; v2 selected explicitly before run. Fusion callbacks, public touch APIs and Opening skip handler remain disclosed automation seams.",
+    "Diagnostic before/after and movement fixtures inject positions/time/water as labeled; initial BEFORE inherited provenance fields were generic/wrong and are corrected by PROVENANCE-ERRATA.md, never treated as normal play.",
+    "No human enjoyment, physical mobile-device, export/package, other-map or full65 acceptance; no publication/commit/push/merge/deploy."
+  ],
+  "stop": true,
+  "automatic_continuation_scheduled": false
+}

@@ -4,3 +4,5 @@ export/
 dist/
 game/.sweep_done
 tools/__pycache__/
+**/__pycache__/
+*.pyc

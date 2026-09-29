@@ -148,6 +148,17 @@ func unregister_world() -> void:
 
 
 # ==== SAVE =================================================================
+var _reward_owners: Dictionary = {}
+var _reward_save_requested := false
+
+func begin_reward(owner_id: int) -> void:
+	_reward_owners[owner_id] = true
+
+func end_reward(owner_id: int) -> void:
+	_reward_owners.erase(owner_id)
+	if _reward_owners.is_empty() and _reward_save_requested:
+		_reward_save_requested = false
+		save_game()
 
 func has_save() -> bool:
 	return FileAccess.file_exists(SAVE_PATH)
@@ -165,6 +176,7 @@ func delete_save() -> void:
 
 ## Build the full save dictionary from current autoload + live-world state.
 func build_save_dict() -> Dictionary:
+	if not _reward_owners.is_empty(): return {}
 	if not _save_layout_ready():return {}
 	# Refresh the CURRENT scene's world snapshot from the live world (if one is registered),
 	# leaving the other scene(s) in `_worlds` untouched → both worlds persist across travel.
@@ -226,6 +238,9 @@ func build_save_dict() -> Dictionary:
 
 
 func save_game() -> bool:
+	if not _reward_owners.is_empty():
+		_reward_save_requested = true
+		return false
 	if _layout_restore_blocked:return false
 	if not _save_layout_ready():return false
 	var data := build_save_dict()
@@ -357,12 +372,21 @@ func _object_states() -> Array:
 	for entry: Dictionary in _respawn._tracked:
 		var cell: Vector2i = entry["cell"]
 		var node = entry["node"]
-		var present := node != null and is_instance_valid(node)
+		var live := node != null and is_instance_valid(node)
+		var present: bool = live and not node.is_queued_for_deletion()
+		var respawn_at := float(entry["respawn_at"])
+		# Inventory listeners can save before deferred deletion/respawn polling.
+		# Preserve the spent world state together with its already-granted inventory.
+		if not present and respawn_at < 0.0:
+			var gathered_at := GameState.game_time
+			if live and node is Gatherable and node._gathered_at >= 0.0:
+				gathered_at = node._gathered_at
+			respawn_at = gathered_at + GameState.DAY_LENGTH
 		out.append({
 			"cell": [cell.x, cell.y],
 			"symbol": entry["symbol"],
 			"present": present,
-			"respawn_at": float(entry["respawn_at"]),
+			"respawn_at": respawn_at,
 		})
 	return out
 
